@@ -1,28 +1,23 @@
-This is a Kotlin Multiplatform project targeting Desktop (JVM).
+# Iris
 
-* [/shared](./shared/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - [commonMain](./shared/src/commonMain/kotlin) is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    the [iosMain](./shared/src/iosMain/kotlin) folder would be the right place for such calls.
-    Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./shared/src/jvmMain/kotlin)
-    folder is the appropriate location.
+A minimalist, fast, and aesthetic desktop media viewer and editor built with Kotlin Multiplatform (Compose for Desktop).
 
-### Running the apps
+## Features
 
-Use the run configurations provided by the run widget in your IDE's toolbar. You can also use these commands and options:
+- **Desktop First:** Built specifically for macOS, Windows, and Linux environments (JVM).
+- **Apple HIG Inspired:** Clean, distraction-free interface focusing on the content.
+- **Fast Media Preview:** Smooth zooming and panning for images, and responsive playback for videos.
+- **Lightweight Editing (Planned):** Crop, rotate, simple markup (shapes, text), and lossless video trimming.
+- **Echo Integration:** Designed to integrate seamlessly with the Echo clipboard manager.
 
-- Desktop app:
-  - Hot reload: `./gradlew :desktopApp:hotRun --auto`
-  - Standard run: `./gradlew :desktopApp:run`
+## Architecture
 
-### Running tests
-
-Use the run button in your IDE's editor gutter, or run tests using Gradle tasks:
-
-- Desktop tests: `./gradlew :shared:jvmTest`
+- **UI:** Compose Multiplatform (Desktop)
+- **Engine:** Skia (via Compose) for image manipulation, JavaCV (Bytedeco FFmpeg) for video rendering and processing.
 
 ---
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
+### Running the app
+
+- Hot reload: `./gradlew :desktopApp:hotRun --auto`
+- Standard run: `./gradlew :desktopApp:run`
