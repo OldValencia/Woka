@@ -16,23 +16,26 @@ data class IrisColors(
     val surface: Color,
     val textPrimary: Color,
     val textSecondary: Color,
-    val border: Color
+    val border: Color,
+    val accent: Color
 )
 
 val LightColors = IrisColors(
-    background = Color(0xFFF2F2F7),
-    surface = Color(0xFFFFFFFF),
+    background = Color(0xFFFFFFFF),
+    surface = Color(0xFFF2F2F7),
     textPrimary = Color(0xFF000000),
     textSecondary = Color(0xFF8E8E93),
-    border = Color(0xFFE5E5EA)
+    border = Color(0xFFE5E5EA),
+    accent = Color(0xFF007AFF)
 )
 
 val DarkColors = IrisColors(
-    background = Color(0xFF1C1C1E),
-    surface = Color(0xFF2C2C2E),
+    background = Color(0xFF000000),
+    surface = Color(0xFF1C1C1E),
     textPrimary = Color(0xFFFFFFFF),
     textSecondary = Color(0xFF8E8E93),
-    border = Color(0xFF3A3A3C)
+    border = Color(0xFF38383A),
+    accent = Color(0xFF0A84FF)
 )
 
 val LocalIrisColors = staticCompositionLocalOf { LightColors }

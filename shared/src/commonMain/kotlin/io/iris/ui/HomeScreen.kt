@@ -2,25 +2,24 @@ package io.iris.ui
 
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.rememberScrollbarAdapter
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import io.github.vinceglb.filekit.compose.rememberDirectoryPickerLauncher
 import io.iris.data.ViewLayout
 import io.iris.ui.components.*
@@ -35,7 +34,8 @@ object HomeDependencies : KoinComponent {
 @Composable
 fun HomeScreen(
     onNavigateToFolder: (String) -> Unit = {},
-    onRemoveFolder: (String) -> Unit = {}
+    onRemoveFolder: (String) -> Unit = {},
+    onOpenSettings: () -> Unit = {}
 ) {
     val viewModel = remember { HomeDependencies.viewModel }
     val state by viewModel.state.collectAsState()
@@ -48,69 +48,27 @@ fun HomeScreen(
         }
     }
 
-    Box(
-        modifier = Modifier.fillMaxSize().background(IrisTheme.colors.background)
-    ) {
-        if (state.linkedFolders.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                IrisButton(
-                    text = "+ Link Folder",
-                    onClick = { launcher.launch() }
-                )
-            }
-        } else {
-            val gridState = rememberLazyGridState()
-            val dragDropState = rememberGridDragDropState(gridState) { from, to ->
-                viewModel.reorderLinkedFolders(from, to)
-            }
-            
-            Column(modifier = Modifier.fillMaxSize()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val count = state.linkedFolders.size
-                    BasicText(
-                        text = "$count folder${if (count == 1) "" else "s"}",
-                        style = TextStyle(color = IrisTheme.colors.textSecondary, fontSize = 14.sp)
-                    )
-                    Spacer(modifier = Modifier.weight(1f))
-                    
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(IrisTheme.colors.surface)
-                            .pointerHoverIcon(PointerIcon.Hand)
-                            .clickable { /* Placeholder */ }
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        BasicText("Select", style = TextStyle(color = IrisTheme.colors.textPrimary, fontSize = 14.sp))
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(IrisTheme.colors.surface)
-                            .pointerHoverIcon(PointerIcon.Hand)
-                            .clickable { launcher.launch() }
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        BasicText("+ Link Folder", style = TextStyle(color = IrisTheme.colors.textPrimary, fontSize = 14.sp))
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
+    var searchQuery by remember { mutableStateOf("") }
 
-                    SortSwitcher(currentSort = state.sort, onSortChange = { viewModel.setSort(it) })
-                    Spacer(modifier = Modifier.width(8.dp))
-                    ViewLayoutSwitcher(currentLayout = state.layout, onLayoutChange = { viewModel.setLayout(it) })
+    Column(modifier = Modifier.fillMaxSize().background(IrisTheme.colors.background)) {
+        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            if (state.linkedFolders.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    BasicText(
+                        text = "No linked folders",
+                        style = TextStyle(color = IrisTheme.colors.textSecondary)
+                    )
+                }
+            } else {
+                val gridState = rememberLazyGridState()
+                val isScrolled = gridState.firstVisibleItemIndex > 0 || gridState.firstVisibleItemScrollOffset > 0
+                val dragDropState = rememberGridDragDropState(gridState) { from, to ->
+                    viewModel.reorderLinkedFolders(from, to)
                 }
                 
                 Box(
                     modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
+                        .fillMaxSize()
                         .pointerInput(Unit) {
                             awaitPointerEventScope {
                                 while (true) {
@@ -147,28 +105,59 @@ fun HomeScreen(
                     LazyVerticalGrid(
                         columns = columns,
                         state = gridState,
-                        modifier = Modifier.fillMaxSize().dragContainer(dragDropState).padding(16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        modifier = Modifier.fillMaxSize().dragContainer(dragDropState),
+                        horizontalArrangement = Arrangement.spacedBy(1.dp),
+                        verticalArrangement = Arrangement.spacedBy(1.dp),
+                        contentPadding = PaddingValues(top = 100.dp, bottom = 16.dp)
                     ) {
                         items(state.linkedFolders.size) { index ->
                             val path = state.linkedFolders[index]
-                            val itemModifier = Modifier.draggableItem(index, dragDropState)
-                            
-                            FolderCard(
-                                path = path,
-                                modifier = itemModifier,
-                                onClick = { onNavigateToFolder(path) },
-                                onRemove = { onRemoveFolder(path) }
-                            )
+                            if (searchQuery.isBlank() || path.contains(searchQuery, ignoreCase = true)) {
+                                val itemModifier = Modifier.draggableItem(index, dragDropState)
+                                
+                                FolderCard(
+                                    path = path,
+                                    modifier = itemModifier,
+                                    onClick = { onNavigateToFolder(path) },
+                                    onRemove = { onRemoveFolder(path) },
+                                    showTitle = state.showTitles
+                                )
+                            }
                         }
                     }
-                    VerticalScrollbar(
-                        modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
-                        adapter = rememberScrollbarAdapter(gridState)
-                    )
                 }
+
+                val count = state.linkedFolders.size
+                LibraryHeader(
+                    modifier = Modifier.align(Alignment.TopCenter).zIndex(1f),
+                    isScrolled = isScrolled,
+                    title = "Home",
+                    subtitle = "$count items",
+                    currentSort = state.sort,
+                    onSortChange = { viewModel.setSort(it) },
+                    currentLayout = state.layout,
+                    onLayoutChange = { viewModel.setLayout(it) },
+                    showTitles = state.showTitles,
+                    onShowTitlesChange = { viewModel.setShowTitles(it) },
+                    mediaFilter = "All",
+                    onMediaFilterChange = {},
+                    showMediaFilter = false,
+                    onSelectClick = { /* Select action */ }
+                )
+
+                VerticalScrollbar(
+                    modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight().padding(top = 16.dp, end = 4.dp).zIndex(2f),
+                    adapter = rememberScrollbarAdapter(gridState)
+                )
             }
         }
+            
+        BottomAppMenu(
+            onSettingsClick = onOpenSettings,
+            showLinkFolder = true,
+            onLinkFolderClick = { launcher.launch() },
+            searchQuery = searchQuery,
+            onSearchQueryChange = { searchQuery = it }
+        )
     }
 }

@@ -18,7 +18,10 @@ import kotlinx.coroutines.launch
 data class FolderState(
     val items: List<MediaItem> = emptyList(),
     val layout: ViewLayout = ViewLayout.Grid,
-    val sort: SortType = SortType.NameAsc
+    val sort: SortType = SortType.NameAsc,
+    val showTitles: Boolean = true,
+    val showFolders: Boolean = true,
+    val mediaFilter: String = "All"
 )
 
 class FolderViewModel(
@@ -47,12 +50,22 @@ class FolderViewModel(
         }
         
         // Folders first
-        val foldersFirst = sortedItems.sortedBy { if (it is MediaItem.Folder) 0 else 1 }
+        val filteredItems = if (settings.mediaFilter == "Photos") {
+            sortedItems.filter { it is MediaItem.Folder || it.file.extension.lowercase() in listOf("jpg", "jpeg", "png", "gif", "webp", "bmp", "heic") }
+        } else if (settings.mediaFilter == "Videos") {
+            sortedItems.filter { it is MediaItem.Folder || it.file.extension.lowercase() in listOf("mp4", "mkv", "avi", "mov", "webm") }
+        } else {
+            sortedItems
+        }
+        val foldersFirst = filteredItems.sortedBy { if (it is MediaItem.Folder) 0 else 1 }
         
         FolderState(
             items = foldersFirst,
             layout = layout,
-            sort = sort
+            sort = sort,
+            showTitles = settings.showTitles,
+            showFolders = settings.showFolders,
+            mediaFilter = settings.mediaFilter
         )
     }.stateIn(scope, SharingStarted.WhileSubscribed(5000), FolderState())
 
@@ -77,5 +90,17 @@ class FolderViewModel(
 
     fun setSort(sort: SortType) {
         settingsRepository.setFolderSort(path, sort)
+    }
+
+    fun setShowTitles(show: Boolean) {
+        settingsRepository.setShowTitles(show)
+    }
+
+    fun setShowFolders(show: Boolean) {
+        settingsRepository.setShowFolders(show)
+    }
+
+    fun setMediaFilter(filter: String) {
+        settingsRepository.setMediaFilter(filter)
     }
 }

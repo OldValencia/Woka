@@ -14,7 +14,8 @@ import java.io.File
 data class HomeState(
     val linkedFolders: List<String> = emptyList(),
     val layout: ViewLayout = ViewLayout.Grid,
-    val sort: SortType = SortType.NameAsc
+    val sort: SortType = SortType.NameAsc,
+    val showTitles: Boolean = true
 )
 
 class HomeViewModel(
@@ -38,7 +39,8 @@ class HomeViewModel(
             HomeState(
                 linkedFolders = sortedFolders,
                 layout = settings.folderLayouts["HOME"] ?: ViewLayout.Grid,
-                sort = sort
+                sort = sort,
+                showTitles = settings.showTitles
             )
         }
         .stateIn(
@@ -66,5 +68,9 @@ class HomeViewModel(
 
     fun setSort(sort: SortType) {
         settingsRepository.setFolderSort("HOME", sort)
+    }
+
+    fun setShowTitles(show: Boolean) {
+        settingsRepository.setShowTitles(show)
     }
 }

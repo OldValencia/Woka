@@ -87,6 +87,30 @@ class SettingsRepositoryImpl : SettingsRepository {
         }
     }
 
+    override fun setShowTitles(show: Boolean) {
+        _settings.update { current ->
+            val newSettings = current.copy(showTitles = show)
+            saveSettings(newSettings)
+            newSettings
+        }
+    }
+
+    override fun setShowFolders(show: Boolean) {
+        _settings.update { current ->
+            val newSettings = current.copy(showFolders = show)
+            saveSettings(newSettings)
+            newSettings
+        }
+    }
+
+    override fun setMediaFilter(filter: String) {
+        _settings.update { current ->
+            val newSettings = current.copy(mediaFilter = filter)
+            saveSettings(newSettings)
+            newSettings
+        }
+    }
+
     override fun setTheme(theme: String) {
         _settings.update { current ->
             val newSettings = current.copy(theme = theme)

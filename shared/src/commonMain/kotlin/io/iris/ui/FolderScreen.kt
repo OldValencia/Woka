@@ -1,55 +1,36 @@
 package io.iris.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.rememberScrollbarAdapter
-import androidx.compose.foundation.VerticalScrollbar
-import androidx.compose.foundation.HorizontalScrollbar
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.pointerHoverIcon
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.isCtrlPressed
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.isCtrlPressed
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import io.iris.data.MediaItem
-import io.iris.ui.theme.IrisTheme
-import io.iris.ui.components.SortSwitcher
-import io.iris.ui.components.ViewLayoutSwitcher
 import io.iris.data.ViewLayout
+import io.iris.navigation.Screen
+import io.iris.ui.components.BottomAppMenu
+import io.iris.ui.components.FolderCard
+import io.iris.ui.components.LibraryHeader
+import io.iris.ui.icons.IrisIcons
+import io.iris.ui.theme.IrisTheme
+import org.jetbrains.compose.resources.painterResource
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.parameter.parametersOf
 import java.io.File
-
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
-import io.iris.navigation.Screen
 
 class FolderDependencies(val path: String) : KoinComponent {
     val viewModel: FolderViewModel by inject { parametersOf(path) }
@@ -60,160 +41,187 @@ fun FolderScreen(
     path: String,
     stack: List<Screen>,
     onPopTo: (Screen) -> Unit,
-    onNavigateToFolder: (String) -> Unit
+    onNavigateToFolder: (String) -> Unit,
+    onOpenSettings: () -> Unit = {}
 ) {
     val dependencies = remember(path) { FolderDependencies(path) }
     val viewModel = dependencies.viewModel
     val state by viewModel.state.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
-    Column(modifier = Modifier.fillMaxSize().background(IrisTheme.colors.background)) {
-        val breadcrumbScrollState = rememberScrollState()
-        Box(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(modifier = Modifier.weight(1f)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().horizontalScroll(breadcrumbScrollState).padding(bottom = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        val breadcrumbs = stack.mapNotNull { screen ->
-                            if (screen is Screen.Home) "Home" to screen
-                            else if (screen is Screen.Folder) File(screen.path).name to screen
-                            else null
-                        }
-                        
-                        breadcrumbs.forEachIndexed { index, (name, screen) ->
-                            BasicText(
-                                text = name,
-                                modifier = Modifier.clickable { onPopTo(screen) },
-                                style = TextStyle(
-                                    color = if (index == breadcrumbs.lastIndex) IrisTheme.colors.textPrimary else IrisTheme.colors.textSecondary, 
-                                    fontSize = 16.sp,
-                                    fontWeight = if (index == breadcrumbs.lastIndex) FontWeight.Bold else FontWeight.Normal
-                                )
-                            )
-                            if (index < breadcrumbs.lastIndex) {
-                                BasicText(
-                                    text = " > ",
-                                    style = TextStyle(color = IrisTheme.colors.textSecondary, fontSize = 16.sp)
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.width(4.dp))
-                    }
-                    HorizontalScrollbar(
-                        modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth(),
-                        adapter = rememberScrollbarAdapter(breadcrumbScrollState)
-                    )
-                }
-                Spacer(modifier = Modifier.width(16.dp))
-                
-                val foldersCount = state.items.count { it is MediaItem.Folder }
-                val filesCount = state.items.count { it !is MediaItem.Folder }
-                val countText = buildString {
-                    if (foldersCount > 0) append("$foldersCount folder${if (foldersCount > 1) "s" else ""}")
-                    if (foldersCount > 0 && filesCount > 0) append(", ")
-                    if (filesCount > 0) append("$filesCount file${if (filesCount > 1) "s" else ""}")
-                    if (foldersCount == 0 && filesCount == 0) append("0 items")
-                }
-                BasicText(
-                    text = countText,
-                    style = TextStyle(color = IrisTheme.colors.textSecondary, fontSize = 14.sp)
-                )
+    var searchQuery by remember { mutableStateOf("") }
 
-                Spacer(modifier = Modifier.weight(1f))
-                
+    Column(modifier = Modifier.fillMaxSize().background(IrisTheme.colors.background)) {
+        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    BasicText(text = "Loading...", style = TextStyle(color = IrisTheme.colors.textSecondary))
+                }
+            } else {
+                val gridState = rememberLazyGridState()
+                val isScrolled = gridState.firstVisibleItemIndex > 0 || gridState.firstVisibleItemScrollOffset > 0
+
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(IrisTheme.colors.surface)
-                        .pointerHoverIcon(PointerIcon.Hand)
-                        .clickable { /* Placeholder */ }
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    BasicText("Select", style = TextStyle(color = IrisTheme.colors.textPrimary, fontSize = 14.sp))
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                
-                SortSwitcher(
-                    currentSort = state.sort,
-                    onSortChange = { viewModel.setSort(it) },
-                    allowCustomOrder = false
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                ViewLayoutSwitcher(currentLayout = state.layout, onLayoutChange = { viewModel.setLayout(it) })
-            }
-        }
-
-        if (isLoading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                BasicText(text = "Loading...", style = TextStyle(color = IrisTheme.colors.textSecondary))
-            }
-        } else {
-            val gridState = rememberLazyGridState()
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .pointerInput(Unit) {
-                        awaitPointerEventScope {
-                            while (true) {
-                                val event = awaitPointerEvent()
-                                if (event.type == PointerEventType.Scroll && event.keyboardModifiers.isCtrlPressed) {
-                                    val delta = event.changes.firstOrNull()?.scrollDelta?.y ?: 0f
-                                    if (delta > 0) {
-                                        val newLayout = when (state.layout) {
-                                            ViewLayout.BigGrid -> ViewLayout.Grid
-                                            ViewLayout.Grid -> ViewLayout.SmallGrid
-                                            ViewLayout.SmallGrid -> ViewLayout.SmallGrid
+                        .fillMaxSize()
+                        .pointerInput(Unit) {
+                            awaitPointerEventScope {
+                                while (true) {
+                                    val event = awaitPointerEvent()
+                                    if (event.type == PointerEventType.Scroll && event.keyboardModifiers.isCtrlPressed) {
+                                        val delta = event.changes.firstOrNull()?.scrollDelta?.y ?: 0f
+                                        if (delta > 0) {
+                                            val newLayout = when (state.layout) {
+                                                ViewLayout.BigGrid -> ViewLayout.Grid
+                                                ViewLayout.Grid -> ViewLayout.SmallGrid
+                                                ViewLayout.SmallGrid -> ViewLayout.SmallGrid
+                                            }
+                                            viewModel.setLayout(newLayout)
+                                        } else if (delta < 0) {
+                                            val newLayout = when (state.layout) {
+                                                ViewLayout.SmallGrid -> ViewLayout.Grid
+                                                ViewLayout.Grid -> ViewLayout.BigGrid
+                                                ViewLayout.BigGrid -> ViewLayout.BigGrid
+                                            }
+                                            viewModel.setLayout(newLayout)
                                         }
-                                        viewModel.setLayout(newLayout)
-                                    } else if (delta < 0) {
-                                        val newLayout = when (state.layout) {
-                                            ViewLayout.SmallGrid -> ViewLayout.Grid
-                                            ViewLayout.Grid -> ViewLayout.BigGrid
-                                            ViewLayout.BigGrid -> ViewLayout.BigGrid
-                                        }
-                                        viewModel.setLayout(newLayout)
+                                        event.changes.forEach { it.consume() }
                                     }
-                                    event.changes.forEach { it.consume() }
                                 }
                             }
                         }
+                ) {
+                    val columns = when (state.layout) {
+                        ViewLayout.SmallGrid -> GridCells.Adaptive(100.dp)
+                        ViewLayout.BigGrid -> GridCells.Adaptive(240.dp)
+                        ViewLayout.Grid -> GridCells.Adaptive(160.dp)
                     }
-            ) {
-                val columns = when (state.layout) {
-                    ViewLayout.SmallGrid -> GridCells.Adaptive(100.dp)
-                    ViewLayout.BigGrid -> GridCells.Adaptive(240.dp)
-                    ViewLayout.Grid -> GridCells.Adaptive(160.dp)
+
+                    LazyVerticalGrid(
+                        columns = columns,
+                        state = gridState,
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.spacedBy(1.dp),
+                        verticalArrangement = Arrangement.spacedBy(1.dp),
+                        contentPadding = PaddingValues(top = 90.dp, bottom = 16.dp)
+                    ) {
+                        val itemsToShow = if (searchQuery.isBlank()) {
+                            state.items
+                        } else {
+                            state.items.filter { it.file.name.contains(searchQuery, ignoreCase = true) }
+                        }
+
+                        val folders = itemsToShow.filterIsInstance<MediaItem.Folder>()
+                        val files = itemsToShow.filter { it !is MediaItem.Folder }
+
+                        if (folders.isNotEmpty()) {
+                            item(span = { GridItemSpan(maxLineSpan) }) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { viewModel.setShowFolders(!state.showFolders) }
+                                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    BasicText("Folders", style = TextStyle(color = IrisTheme.colors.textPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Image(
+                                        painter = painterResource(IrisIcons.Static.ChevronRight),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp).rotate(if (state.showFolders) 90f else 0f),
+                                        colorFilter = ColorFilter.tint(IrisTheme.colors.textSecondary)
+                                    )
+                                }
+                            }
+
+                            if (state.showFolders) {
+                                items(folders) { item ->
+                                    val onClickAction = { onNavigateToFolder(item.file.absolutePath) }
+                                    FolderCard(
+                                        path = item.file.absolutePath,
+                                        onClick = onClickAction,
+                                        showTitle = state.showTitles
+                                    )
+                                }
+                            }
+                        }
+
+                        if (files.isNotEmpty()) {
+                            item(span = { GridItemSpan(maxLineSpan) }) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(start = 16.dp, top = 24.dp, end = 16.dp, bottom = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    BasicText("Media", style = TextStyle(color = IrisTheme.colors.textPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold))
+                                }
+                            }
+
+                            items(files) { item ->
+                                val onClickAction = { /* Phase 3: Open Viewer */ }
+                                FolderCard(
+                                    path = item.file.absolutePath,
+                                    onClick = onClickAction,
+                                    showTitle = state.showTitles
+                                )
+                            }
+                        }
+                    }
                 }
 
-                LazyVerticalGrid(
-                    columns = columns,
-                    state = gridState,
-                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .fillMaxWidth()
+                        .zIndex(1f)
+                        .background(if (isScrolled) IrisTheme.colors.surface.copy(alpha = 0.85f) else Color.Transparent)
                 ) {
-                    items(state.items) { item ->
-                        val onClickAction = {
-                            if (item is MediaItem.Folder) onNavigateToFolder(item.file.absolutePath)
-                            else { /* Phase 3: Open Viewer */ }
-                        }
-                        io.iris.ui.components.FolderCard(
-                            path = item.file.absolutePath,
-                            onClick = onClickAction
-                        )
+                    val currentDirName = File(path).name
+                    val filesCount = state.items.count { it !is MediaItem.Folder }
+                    val countText = "$filesCount item${if (filesCount != 1) "s" else ""}"
+
+                    val breadcrumbsList = stack.mapNotNull { screen ->
+                        if (screen is Screen.Home) "Home" to { onPopTo(screen) }
+                        else if (screen is Screen.Folder) File(screen.path).name to { onPopTo(screen) }
+                        else null
                     }
+                    val parentScreen = stack.getOrNull(stack.size - 2) ?: stack.lastOrNull()
+
+                    LibraryHeader(
+                        title = currentDirName,
+                        subtitle = countText,
+                        currentSort = state.sort,
+                        onSortChange = { viewModel.setSort(it) },
+                        currentLayout = state.layout,
+                        onLayoutChange = { viewModel.setLayout(it) },
+                        showTitles = state.showTitles,
+                        onShowTitlesChange = { viewModel.setShowTitles(it) },
+                        mediaFilter = state.mediaFilter,
+                        onMediaFilterChange = { viewModel.setMediaFilter(it) },
+                        showMediaFilter = true,
+                        onSelectClick = { /* Select action */ },
+                        onBackClick = { parentScreen?.let { onPopTo(it) } },
+                        breadcrumbs = breadcrumbsList
+                    )
                 }
+
                 VerticalScrollbar(
-                    modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                    modifier = Modifier.align(Alignment.CenterEnd)
+                        .fillMaxHeight()
+                        .padding(top = 90.dp, end = 4.dp, bottom = 13.dp)
+                        .zIndex(2f),
                     adapter = rememberScrollbarAdapter(gridState)
                 )
             }
         }
+
+        BottomAppMenu(
+                onSettingsClick = onOpenSettings,
+                showLinkFolder = false,
+                onLinkFolderClick = {},
+                searchQuery = searchQuery,
+                onSearchQueryChange = { searchQuery = it }
+        )
     }
 }

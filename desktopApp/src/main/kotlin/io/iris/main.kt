@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.ui.Alignment
@@ -23,11 +24,19 @@ import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.rememberWindowState
 import io.iris.di.initKoin
 import io.iris.ui.theme.IrisTheme
+import org.jetbrains.compose.resources.painterResource
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.DpSize
+import io.iris.ui.icons.IrisIcons
 
 fun main() {
     initKoin()
     application {
-        val windowState = rememberWindowState()
+        val windowState = rememberWindowState(
+            size = DpSize(800.dp, 800.dp),
+            position = androidx.compose.ui.window.WindowPosition(Alignment.Center)
+        )
         Window(
             onCloseRequest = ::exitApplication,
             title = "Iris",
@@ -45,18 +54,18 @@ fun main() {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Spacer(Modifier.width(16.dp))
-                            BasicText("Iris", style = TextStyle(color = IrisTheme.colors.textPrimary, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold))
+                            BasicText("Iris", style = TextStyle(color = IrisTheme.colors.textPrimary, fontWeight = FontWeight.Bold))
                             Spacer(Modifier.weight(1f))
                             Box(modifier = Modifier.size(40.dp, 32.dp).clickable { window.isMinimized = true }, contentAlignment = Alignment.Center) {
-                                BasicText("—", style = TextStyle(color = IrisTheme.colors.textPrimary))
+                                Image(painter = painterResource(IrisIcons.Static.Collapse), contentDescription = "Minimize", modifier = Modifier.size(12.dp), colorFilter = ColorFilter.tint(IrisTheme.colors.textPrimary))
                             }
                             Box(modifier = Modifier.size(40.dp, 32.dp).clickable { 
                                 window.placement = if (window.placement == WindowPlacement.Maximized) WindowPlacement.Floating else WindowPlacement.Maximized
                             }, contentAlignment = Alignment.Center) {
-                                BasicText("□", style = TextStyle(color = IrisTheme.colors.textPrimary))
+                                Image(painter = painterResource(IrisIcons.Static.Expand), contentDescription = "Maximize", modifier = Modifier.size(12.dp), colorFilter = ColorFilter.tint(IrisTheme.colors.textPrimary))
                             }
                             Box(modifier = Modifier.size(40.dp, 32.dp).clickable { exitApplication() }, contentAlignment = Alignment.Center) {
-                                BasicText("✕", style = TextStyle(color = IrisTheme.colors.textPrimary))
+                                Image(painter = painterResource(IrisIcons.Static.Close), contentDescription = "Close", modifier = Modifier.size(12.dp), colorFilter = ColorFilter.tint(IrisTheme.colors.textPrimary))
                             }
                         }
                     }

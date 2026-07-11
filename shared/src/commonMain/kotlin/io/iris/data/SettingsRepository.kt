@@ -9,5 +9,8 @@ interface SettingsRepository {
     fun reorderLinkedFolders(fromIndex: Int, toIndex: Int)
     fun setFolderLayout(path: String, layout: ViewLayout)
     fun setFolderSort(path: String, sort: SortType)
+    fun setShowTitles(show: Boolean)
+    fun setShowFolders(show: Boolean)
+    fun setMediaFilter(filter: String)
     fun setTheme(theme: String)
 }

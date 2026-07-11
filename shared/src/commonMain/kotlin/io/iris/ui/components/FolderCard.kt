@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -38,7 +37,8 @@ fun FolderCard(
     path: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    onRemove: (() -> Unit)? = null
+    onRemove: (() -> Unit)? = null,
+    showTitle: Boolean = true
 ) {
     val file = File(path)
     val folderName = file.name
@@ -56,7 +56,6 @@ fun FolderCard(
     Box(
         modifier = modifier
             .aspectRatio(1f)
-            .clip(RoundedCornerShape(12.dp))
             .background(IrisTheme.colors.surface)
             .clickable(onClick = onClick)
     ) {
@@ -67,18 +66,20 @@ fun FolderCard(
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
-            // Dark gradient overlay for text readability
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.5f)
-                    .align(Alignment.BottomCenter)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))
+            if (showTitle || isFolder) {
+                // Dark gradient overlay for text readability
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.5f)
+                        .align(Alignment.BottomCenter)
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))
+                            )
                         )
-                    )
-            )
+                )
+            }
         } else {
             Image(
                 painter = painterResource(IrisIcons.Static.Folder),
@@ -104,16 +105,18 @@ fun FolderCard(
             }
         }
 
-        BasicText(
-            text = folderName,
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(16.dp),
-            style = TextStyle(
-                color = if (coverImage != null) Color.White else IrisTheme.colors.textPrimary,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
+        if (showTitle || isFolder) {
+            BasicText(
+                text = folderName,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(8.dp),
+                style = TextStyle(
+                    color = if (coverImage != null) Color.White else IrisTheme.colors.textPrimary,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
             )
-        )
+        }
     }
 }

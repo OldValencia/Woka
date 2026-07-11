@@ -39,6 +39,7 @@ object IrisIcons {
         val Clear = Res.drawable.icn_xmark_circle_fill
         val Tag = Res.drawable.icn_tag
         val Filter = Res.drawable.icn_line_3_horizontal_decrease
+        val MagnifyingGlassPlus = Res.drawable.icn_magnifyingglass_plus
         val Settings = Res.drawable.icn_settings
         val Grid = Res.drawable.icn_square_grid_2x2
         val List = Res.drawable.icn_list_bullet
