@@ -23,7 +23,9 @@ import io.iris.data.ViewLayout
 import io.iris.navigation.Screen
 import io.iris.ui.components.BottomAppMenu
 import io.iris.ui.components.FolderCard
+import io.iris.ui.components.GridLine
 import io.iris.ui.components.LibraryHeader
+import io.iris.ui.components.rememberKnownLayoutScrollbarAdapter
 import io.iris.ui.icons.IrisIcons
 import io.iris.ui.theme.IrisTheme
 import org.jetbrains.compose.resources.painterResource
@@ -60,6 +62,33 @@ fun FolderScreen(
             } else {
                 val gridState = rememberLazyGridState()
                 val isScrolled = gridState.firstVisibleItemIndex > 0 || gridState.firstVisibleItemScrollOffset > 0
+
+                val itemsToShow = if (searchQuery.isBlank()) {
+                    state.items
+                } else {
+                    state.items.filter { it.file.name.contains(searchQuery, ignoreCase = true) }
+                }
+                val folders = itemsToShow.filterIsInstance<MediaItem.Folder>()
+                val files = itemsToShow.filter { it !is MediaItem.Folder }
+
+                // The grid mixes short "Folders"/"Media" header rows with much taller square
+                // FolderCard rows. Compose's built-in scrollbar adapter estimates content size by
+                // averaging the height of whatever rows are currently visible, which this mix
+                // throws off enough that a fast scrollbar drag can get stuck short of the real
+                // end (see https://github.com/JetBrains/compose-multiplatform/issues/2679). Since
+                // we already know exactly how many rows of each kind exist, compute it exactly.
+                val scrollbarAdapter = rememberKnownLayoutScrollbarAdapter(gridState) {
+                    buildList {
+                        if (folders.isNotEmpty()) {
+                            add(GridLine.Header("folders_header"))
+                            if (state.showFolders) add(GridLine.Cells(folders.size))
+                        }
+                        if (files.isNotEmpty()) {
+                            add(GridLine.Header("media_header"))
+                            add(GridLine.Cells(files.size))
+                        }
+                    }
+                }
 
                 Box(
                     modifier = Modifier
@@ -105,15 +134,6 @@ fun FolderScreen(
                         verticalArrangement = Arrangement.spacedBy(1.dp),
                         contentPadding = PaddingValues(top = 90.dp, bottom = 16.dp)
                     ) {
-                        val itemsToShow = if (searchQuery.isBlank()) {
-                            state.items
-                        } else {
-                            state.items.filter { it.file.name.contains(searchQuery, ignoreCase = true) }
-                        }
-
-                        val folders = itemsToShow.filterIsInstance<MediaItem.Folder>()
-                        val files = itemsToShow.filter { it !is MediaItem.Folder }
-
                         if (folders.isNotEmpty()) {
                             item(span = { GridItemSpan(maxLineSpan) }) {
                                 Row(
@@ -211,7 +231,7 @@ fun FolderScreen(
                         .fillMaxHeight()
                         .padding(top = 90.dp, end = 4.dp, bottom = 13.dp)
                         .zIndex(2f),
-                    adapter = rememberScrollbarAdapter(gridState)
+                    adapter = scrollbarAdapter
                 )
             }
         }
