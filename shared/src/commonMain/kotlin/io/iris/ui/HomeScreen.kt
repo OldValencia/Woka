@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -20,7 +21,6 @@ import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import io.github.vinceglb.filekit.compose.rememberDirectoryPickerLauncher
 import io.iris.data.ViewLayout
 import io.iris.ui.components.*
 import io.iris.ui.theme.IrisTheme
@@ -40,11 +40,14 @@ fun HomeScreen(
     val viewModel = remember { HomeDependencies.viewModel }
     val state by viewModel.state.collectAsState()
 
-    val launcher = rememberDirectoryPickerLauncher(
-        title = "Select a folder to link"
-    ) { directory ->
-        directory?.path?.let { path ->
-            viewModel.onFolderPicked(path)
+    var showDirPicker by remember { mutableStateOf(false) }
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
+    if (showDirPicker) {
+        showDirPicker = false
+        coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            io.iris.utils.openDirectoryPicker("Select a folder to link")?.let { path ->
+                viewModel.onFolderPicked(path)
+            }
         }
     }
 
@@ -115,12 +118,25 @@ fun HomeScreen(
                             if (searchQuery.isBlank() || path.contains(searchQuery, ignoreCase = true)) {
                                 val itemModifier = Modifier.draggableItem(index, dragDropState)
                                 
+                                val onClickAction = {
+                                    if (state.isSelectMode) {
+                                        viewModel.toggleSelection(path)
+                                    } else {
+                                        onNavigateToFolder(path)
+                                    }
+                                }
+
                                 FolderCard(
                                     path = path,
                                     modifier = itemModifier.animateItem(),
-                                    onClick = { onNavigateToFolder(path) },
-                                    onRemove = { onRemoveFolder(path) },
-                                    showTitle = state.showTitles
+                                    onClick = onClickAction,
+                                    onRemove = if (state.isSelectMode) null else { { onRemoveFolder(path) } },
+                                    showTitle = state.showTitles,
+                                    isSelected = state.selectedPaths.contains(path),
+                                    onModifierClick = { isShift, isAlt ->
+                                        if (isShift) viewModel.selectRange(path)
+                                        else if (isAlt) viewModel.toggleSelection(path)
+                                    }
                                 )
                             }
                         }
@@ -142,7 +158,9 @@ fun HomeScreen(
                     mediaFilter = "All",
                     onMediaFilterChange = {},
                     showMediaFilter = false,
-                    onSelectClick = { /* Select action */ }
+                    onSelectClick = { viewModel.toggleSelectMode() },
+                    isSelectMode = state.isSelectMode,
+                    selectedCount = state.selectedPaths.size
                 )
 
                 VerticalScrollbar(
@@ -152,12 +170,22 @@ fun HomeScreen(
             }
         }
             
-        BottomAppMenu(
-            onSettingsClick = onOpenSettings,
-            showLinkFolder = true,
-            onLinkFolderClick = { launcher.launch() },
-            searchQuery = searchQuery,
-            onSearchQueryChange = { searchQuery = it }
-        )
+        if (state.isSelectMode) {
+            SelectionBottomMenu(
+                onUnlinkClick = { 
+                    state.selectedPaths.forEach { onRemoveFolder(it) }
+                    viewModel.toggleSelectMode() // This turns off select mode and clears selection
+                },
+                selectedCount = state.selectedPaths.size
+            )
+        } else {
+            BottomAppMenu(
+                onSettingsClick = onOpenSettings,
+                showLinkFolder = true,
+                onLinkFolderClick = { showDirPicker = true },
+                searchQuery = searchQuery,
+                onSearchQueryChange = { searchQuery = it }
+            )
+        }
     }
 }

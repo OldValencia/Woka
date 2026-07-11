@@ -27,7 +27,9 @@ fun SettingsOverlay(
     isOpen: Boolean,
     onClose: () -> Unit,
     currentTheme: String,
-    onThemeChange: (String) -> Unit
+    onThemeChange: (String) -> Unit,
+    globalShowTitles: Boolean,
+    onGlobalShowTitlesChange: (Boolean) -> Unit
 ) {
     AnimatedVisibility(
         visible = isOpen,
@@ -52,7 +54,8 @@ fun SettingsOverlay(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(width = 400.dp, height = 300.dp)
+                        .width(400.dp)
+                        .wrapContentHeight()
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
@@ -62,7 +65,7 @@ fun SettingsOverlay(
                         .border(1.dp, IrisTheme.colors.border, RoundedCornerShape(12.dp))
                         .padding(24.dp)
                 ) {
-                    Column(modifier = Modifier.fillMaxSize()) {
+                    Column(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
                         BasicText(
                             text = "Settings",
                             style = TextStyle(
@@ -115,25 +118,61 @@ fun SettingsOverlay(
                                 }
                             }
                         }
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        BasicText(
+                            text = "Library",
+                            style = TextStyle(
+                                color = IrisTheme.colors.textSecondary,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
                         
-                        Spacer(modifier = Modifier.weight(1f))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(IrisTheme.colors.background)
+                                .border(1.dp, IrisTheme.colors.border, RoundedCornerShape(8.dp))
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            BasicText(
+                                text = "Show Item Titles globally",
+                                style = TextStyle(
+                                    color = IrisTheme.colors.textPrimary,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            )
+                            IosSwitch(
+                                checked = globalShowTitles,
+                                onCheckedChange = onGlobalShowTitlesChange
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(32.dp))
                         
                         Box(
                             modifier = Modifier
-                                .align(Alignment.End)
+                                .fillMaxWidth()
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(IrisTheme.colors.background)
                                 .border(1.dp, IrisTheme.colors.border, RoundedCornerShape(8.dp))
                                 .pointerHoverIcon(PointerIcon.Hand)
                                 .clickable { onClose() }
-                                .padding(horizontal = 24.dp, vertical = 10.dp),
+                                .padding(vertical = 12.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             BasicText(
                                 text = "Close",
                                 style = TextStyle(
                                     color = IrisTheme.colors.textPrimary,
-                                    fontSize = 14.sp,
+                                    fontSize = 16.sp,
                                     fontWeight = FontWeight.Medium
                                 )
                             )

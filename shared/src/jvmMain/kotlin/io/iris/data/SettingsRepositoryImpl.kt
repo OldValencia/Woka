@@ -87,6 +87,16 @@ class SettingsRepositoryImpl : SettingsRepository {
         }
     }
 
+    override fun setFolderShowTitles(path: String, show: Boolean) {
+        _settings.update { current ->
+            val newMap = current.folderShowTitles.toMutableMap()
+            newMap[path] = show
+            val newSettings = current.copy(folderShowTitles = newMap)
+            saveSettings(newSettings)
+            newSettings
+        }
+    }
+
     override fun setShowTitles(show: Boolean) {
         _settings.update { current ->
             val newSettings = current.copy(showTitles = show)

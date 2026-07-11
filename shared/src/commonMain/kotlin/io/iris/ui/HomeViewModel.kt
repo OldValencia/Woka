@@ -5,7 +5,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.stateIn
 import io.iris.data.ViewLayout
 import io.iris.data.SortType
@@ -15,7 +16,9 @@ data class HomeState(
     val linkedFolders: List<String> = emptyList(),
     val layout: ViewLayout = ViewLayout.Grid,
     val sort: SortType = SortType.NameAsc,
-    val showTitles: Boolean = true
+    val showTitles: Boolean = true,
+    val isSelectMode: Boolean = false,
+    val selectedPaths: Set<String> = emptySet()
 )
 
 class HomeViewModel(
@@ -23,9 +26,16 @@ class HomeViewModel(
 ) {
     private val scope = CoroutineScope(Dispatchers.Main)
 
-    val state: StateFlow<HomeState> = settingsRepository.settings
-        .map { settings -> 
-            val rawFolders = settings.linkedFolders
+    private val _isSelectMode = MutableStateFlow(false)
+    private val _selectedPaths = MutableStateFlow<Set<String>>(emptySet())
+    private var lastSelectedPath: String? = null
+
+    val state: StateFlow<HomeState> = combine(
+        settingsRepository.settings,
+        _isSelectMode,
+        _selectedPaths
+    ) { settings, isSelectMode, selectedPaths ->
+        val rawFolders = settings.linkedFolders
             val sort = settings.folderSorts["HOME"] ?: SortType.NameAsc
             
             val sortedFolders = when (sort) {
@@ -40,7 +50,9 @@ class HomeViewModel(
                 linkedFolders = sortedFolders,
                 layout = settings.folderLayouts["HOME"] ?: ViewLayout.Grid,
                 sort = sort,
-                showTitles = settings.showTitles
+                showTitles = settings.folderShowTitles["HOME"] ?: settings.showTitles,
+                isSelectMode = isSelectMode,
+                selectedPaths = selectedPaths
             )
         }
         .stateIn(
@@ -71,6 +83,52 @@ class HomeViewModel(
     }
 
     fun setShowTitles(show: Boolean) {
-        settingsRepository.setShowTitles(show)
+        settingsRepository.setFolderShowTitles("HOME", show)
+    }
+
+    fun toggleSelectMode() {
+        _isSelectMode.value = !_isSelectMode.value
+        if (!_isSelectMode.value) {
+            _selectedPaths.value = emptySet()
+            lastSelectedPath = null
+        }
+    }
+
+    fun toggleSelection(path: String) {
+        if (!_isSelectMode.value) {
+            _isSelectMode.value = true
+        }
+        val current = _selectedPaths.value.toMutableSet()
+        if (current.contains(path)) current.remove(path) else current.add(path)
+        _selectedPaths.value = current
+        lastSelectedPath = path
+    }
+
+    fun selectRange(toPath: String) {
+        if (!_isSelectMode.value) {
+            _isSelectMode.value = true
+        }
+        val fromPath = lastSelectedPath ?: return toggleSelection(toPath)
+        val currentItems = state.value.linkedFolders
+        val fromIndex = currentItems.indexOf(fromPath)
+        val toIndex = currentItems.indexOf(toPath)
+        if (fromIndex != -1 && toIndex != -1) {
+            val start = minOf(fromIndex, toIndex)
+            val end = maxOf(fromIndex, toIndex)
+            val rangePaths = currentItems.subList(start, end + 1)
+            val current = _selectedPaths.value.toMutableSet()
+            current.addAll(rangePaths)
+            _selectedPaths.value = current
+            lastSelectedPath = toPath
+        }
+    }
+
+    fun clearSelection() {
+        _selectedPaths.value = emptySet()
+    }
+
+    fun selectAll() {
+        val currentItems = state.value.linkedFolders
+        _selectedPaths.value = currentItems.toSet()
     }
 }

@@ -21,7 +21,9 @@ data class FolderState(
     val sort: SortType = SortType.NameAsc,
     val showTitles: Boolean = true,
     val showFolders: Boolean = true,
-    val mediaFilter: String = "All"
+    val mediaFilter: String = "All",
+    val isSelectMode: Boolean = false,
+    val selectedPaths: Set<String> = emptySet()
 )
 
 class FolderViewModel(
@@ -32,11 +34,16 @@ class FolderViewModel(
     private val scope = CoroutineScope(Dispatchers.Main)
     
     private val _rawItems = MutableStateFlow<List<MediaItem>>(emptyList())
+    private val _isSelectMode = MutableStateFlow(false)
+    private val _selectedPaths = MutableStateFlow<Set<String>>(emptySet())
+    private var lastSelectedPath: String? = null
 
     val state: StateFlow<FolderState> = combine(
         _rawItems,
-        settingsRepository.settings
-    ) { rawItems, settings ->
+        settingsRepository.settings,
+        _isSelectMode,
+        _selectedPaths
+    ) { rawItems, settings, isSelectMode, selectedPaths ->
         val layout = settings.folderLayouts[path] ?: ViewLayout.Grid
         val sort = settings.folderSorts[path].let {
             if (it == SortType.Custom) SortType.NameAsc else (it ?: SortType.NameAsc)
@@ -63,9 +70,11 @@ class FolderViewModel(
             items = foldersFirst,
             layout = layout,
             sort = sort,
-            showTitles = settings.showTitles,
+            showTitles = settings.folderShowTitles[path] ?: settings.showTitles,
             showFolders = settings.showFolders,
-            mediaFilter = settings.mediaFilter
+            mediaFilter = settings.mediaFilter,
+            isSelectMode = isSelectMode,
+            selectedPaths = selectedPaths
         )
     }.stateIn(scope, SharingStarted.WhileSubscribed(5000), FolderState())
 
@@ -93,7 +102,7 @@ class FolderViewModel(
     }
 
     fun setShowTitles(show: Boolean) {
-        settingsRepository.setShowTitles(show)
+        settingsRepository.setFolderShowTitles(path, show)
     }
 
     fun setShowFolders(show: Boolean) {
@@ -102,5 +111,176 @@ class FolderViewModel(
 
     fun setMediaFilter(filter: String) {
         settingsRepository.setMediaFilter(filter)
+    }
+
+    fun toggleSelectMode() {
+        _isSelectMode.value = !_isSelectMode.value
+        if (!_isSelectMode.value) {
+            _selectedPaths.value = emptySet()
+            lastSelectedPath = null
+        }
+    }
+
+    fun toggleSelection(path: String) {
+        if (!_isSelectMode.value) {
+            _isSelectMode.value = true
+        }
+        val current = _selectedPaths.value.toMutableSet()
+        if (current.contains(path)) current.remove(path) else current.add(path)
+        _selectedPaths.value = current
+        lastSelectedPath = path
+    }
+
+    fun selectRange(toPath: String) {
+        if (!_isSelectMode.value) {
+            _isSelectMode.value = true
+        }
+        val fromPath = lastSelectedPath ?: return toggleSelection(toPath)
+        val currentItems = state.value.items
+        val fromIndex = currentItems.indexOfFirst { it.file.absolutePath == fromPath }
+        val toIndex = currentItems.indexOfFirst { it.file.absolutePath == toPath }
+        if (fromIndex != -1 && toIndex != -1) {
+            val start = minOf(fromIndex, toIndex)
+            val end = maxOf(fromIndex, toIndex)
+            val rangePaths = currentItems.subList(start, end + 1).map { it.file.absolutePath }
+            val current = _selectedPaths.value.toMutableSet()
+            current.addAll(rangePaths)
+            _selectedPaths.value = current
+            lastSelectedPath = toPath
+        }
+    }
+
+    fun clearSelection() {
+        _selectedPaths.value = emptySet()
+    }
+
+    fun selectAll() {
+        val currentItems = state.value.items
+        _selectedPaths.value = currentItems.map { it.file.absolutePath }.toSet()
+    }
+
+    fun refresh() {
+        loadItems()
+    }
+
+    fun deleteFiles(paths: List<String>) {
+        scope.launch(Dispatchers.IO) {
+            val desktop = java.awt.Desktop.getDesktop()
+            paths.forEach { path ->
+                val file = java.io.File(path)
+                if (file.exists()) {
+                    if (desktop.isSupported(java.awt.Desktop.Action.MOVE_TO_TRASH)) {
+                        desktop.moveToTrash(file)
+                    } else {
+                        if (file.isDirectory) file.deleteRecursively() else file.delete()
+                    }
+                }
+            }
+            refresh()
+            clearSelection()
+        }
+    }
+
+    fun duplicateFiles(paths: List<String>) {
+        scope.launch(Dispatchers.IO) {
+            paths.forEach { path ->
+                val file = java.io.File(path)
+                if (file.exists()) {
+                    val nameWithoutExt = file.nameWithoutExtension
+                    val ext = file.extension
+                    val parent = file.parentFile
+                    var newName = if (ext.isNotEmpty()) "$nameWithoutExt copy.$ext" else "$nameWithoutExt copy"
+                    var newFile = java.io.File(parent, newName)
+                    var counter = 1
+                    while (newFile.exists()) {
+                        newName = if (ext.isNotEmpty()) "$nameWithoutExt copy $counter.$ext" else "$nameWithoutExt copy $counter"
+                        newFile = java.io.File(parent, newName)
+                        counter++
+                    }
+                    if (file.isDirectory) {
+                        file.copyRecursively(newFile)
+                    } else {
+                        file.copyTo(newFile)
+                    }
+                }
+            }
+            refresh()
+        }
+    }
+
+    fun createFolder(name: String) {
+        scope.launch(Dispatchers.IO) {
+            var folderName = name
+            var newFile = java.io.File(path, folderName)
+            var counter = 1
+            while (newFile.exists()) {
+                folderName = "$name $counter"
+                newFile = java.io.File(path, folderName)
+                counter++
+            }
+            newFile.mkdirs()
+            refresh()
+        }
+    }
+
+    fun moveFiles(paths: List<String>, destinationPath: String) {
+        scope.launch(Dispatchers.IO) {
+            val destDir = java.io.File(destinationPath)
+            if (destDir.exists() && destDir.isDirectory) {
+                paths.forEach { path ->
+                    val file = java.io.File(path)
+                    if (file.exists()) {
+                        val newFile = java.io.File(destDir, file.name)
+                        if (!file.renameTo(newFile)) {
+                            if (file.isDirectory) {
+                                file.copyRecursively(newFile)
+                                file.deleteRecursively()
+                            } else {
+                                file.copyTo(newFile)
+                                file.delete()
+                            }
+                        }
+                    }
+                }
+                refresh()
+                clearSelection()
+            }
+        }
+    }
+
+    fun renameFile(path: String, newName: String) {
+        scope.launch(Dispatchers.IO) {
+            val file = java.io.File(path)
+            if (file.exists()) {
+                val newFile = java.io.File(file.parentFile, newName)
+                if (!newFile.exists()) {
+                    file.renameTo(newFile)
+                    refresh()
+                    clearSelection()
+                }
+            }
+        }
+    }
+
+
+    fun copyFiles(paths: List<String>, destinationPath: String) {
+        scope.launch(Dispatchers.IO) {
+            val destDir = java.io.File(destinationPath)
+            if (destDir.exists() && destDir.isDirectory) {
+                paths.forEach { path ->
+                    val file = java.io.File(path)
+                    if (file.exists()) {
+                        val newFile = java.io.File(destDir, file.name)
+                        if (file.isDirectory) {
+                            file.copyRecursively(newFile, overwrite = true)
+                        } else {
+                            file.copyTo(newFile, overwrite = true)
+                        }
+                    }
+                }
+                refresh()
+                clearSelection()
+            }
+        }
     }
 }

@@ -7,6 +7,7 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -26,9 +27,11 @@ import io.iris.ui.components.BottomAppMenu
 import io.iris.ui.components.FolderCard
 import io.iris.ui.components.GridLine
 import io.iris.ui.components.LibraryHeader
+import io.iris.ui.components.SelectionBottomMenu
 import io.iris.ui.components.rememberKnownLayoutScrollbarAdapter
 import io.iris.ui.icons.IrisIcons
 import io.iris.ui.theme.IrisTheme
+import io.iris.ui.components.RenameDialog
 import org.jetbrains.compose.resources.painterResource
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -53,6 +56,7 @@ fun FolderScreen(
     val isLoading by viewModel.isLoading.collectAsState()
 
     var searchQuery by remember { mutableStateOf("") }
+    var showRenameDialogFor by remember { mutableStateOf<String?>(null) }
 
     Column(modifier = Modifier.fillMaxSize().background(IrisTheme.colors.background)) {
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -153,16 +157,56 @@ fun FolderScreen(
                                         modifier = Modifier.size(14.dp).rotate(if (state.showFolders) 90f else 0f),
                                         colorFilter = ColorFilter.tint(IrisTheme.colors.textSecondary)
                                     )
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(4.dp))
+                                            .background(IrisTheme.colors.surface)
+                                            .pointerHoverIcon(androidx.compose.ui.input.pointer.PointerIcon.Hand)
+                                            .clickable { viewModel.createFolder("New Folder") }
+                                            .padding(horizontal = 8.dp, vertical = 2.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        BasicText("+", style = TextStyle(color = IrisTheme.colors.textPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold))
+                                    }
                                 }
                             }
 
                             if (state.showFolders) {
                                 items(folders, key = { it.file.absolutePath }) { item ->
-                                    val onClickAction = { onNavigateToFolder(item.file.absolutePath) }
+                                    val onClickAction = {
+                                        if (state.isSelectMode) {
+                                            viewModel.toggleSelection(item.file.absolutePath)
+                                        } else {
+                                            onNavigateToFolder(item.file.absolutePath)
+                                        }
+                                    }
                                     FolderCard(
                                         path = item.file.absolutePath,
                                         onClick = onClickAction,
                                         showTitle = state.showTitles,
+                                        isSelected = state.selectedPaths.contains(item.file.absolutePath),
+                                        onContextAction = { action ->
+                                            when (action) {
+                                                "Rename" -> { showRenameDialogFor = item.file.absolutePath }
+                                                "Copy" -> {
+                                                    io.iris.utils.openDirectoryPicker("Copy to...", path)?.let { dest ->
+                                                        viewModel.copyFiles(listOf(item.file.absolutePath), dest)
+                                                    }
+                                                }
+                                                "Duplicate" -> { viewModel.duplicateFiles(listOf(item.file.absolutePath)) }
+                                                "Move" -> {
+                                                    io.iris.utils.openDirectoryPicker("Move to...", path)?.let { dest ->
+                                                        viewModel.moveFiles(listOf(item.file.absolutePath), dest)
+                                                    }
+                                                }
+                                                "Delete" -> { viewModel.deleteFiles(listOf(item.file.absolutePath)) }
+                                            }
+                                        },
+                                        onModifierClick = { isShift, isAlt ->
+                                            if (isShift) viewModel.selectRange(item.file.absolutePath)
+                                            else if (isAlt) viewModel.toggleSelection(item.file.absolutePath)
+                                        },
                                         modifier = Modifier.animateItem()
                                     )
                                 }
@@ -182,11 +226,39 @@ fun FolderScreen(
                             }
 
                             items(files, key = { it.file.absolutePath }) { item ->
-                                val onClickAction = { /* Phase 3: Open Viewer */ }
+                                val onClickAction = {
+                                    if (state.isSelectMode) {
+                                        viewModel.toggleSelection(item.file.absolutePath)
+                                    } else {
+                                        /* Phase 3: Open Viewer */
+                                    }
+                                }
                                 FolderCard(
                                     path = item.file.absolutePath,
                                     onClick = onClickAction,
                                     showTitle = state.showTitles,
+                                    isSelected = state.selectedPaths.contains(item.file.absolutePath),
+                                    onContextAction = { action ->
+                                        when (action) {
+                                            "Rename" -> { showRenameDialogFor = item.file.absolutePath }
+                                            "Copy" -> {
+                                                io.iris.utils.openDirectoryPicker("Copy to...", path)?.let { dest ->
+                                                    viewModel.copyFiles(listOf(item.file.absolutePath), dest)
+                                                }
+                                            }
+                                            "Duplicate" -> { viewModel.duplicateFiles(listOf(item.file.absolutePath)) }
+                                            "Move" -> {
+                                                io.iris.utils.openDirectoryPicker("Move to...", path)?.let { dest ->
+                                                    viewModel.moveFiles(listOf(item.file.absolutePath), dest)
+                                                }
+                                            }
+                                            "Delete" -> { viewModel.deleteFiles(listOf(item.file.absolutePath)) }
+                                        }
+                                    },
+                                    onModifierClick = { isShift, isAlt ->
+                                        if (isShift) viewModel.selectRange(item.file.absolutePath)
+                                        else if (isAlt) viewModel.toggleSelection(item.file.absolutePath)
+                                    },
                                     modifier = Modifier.animateItem()
                                 )
                             }
@@ -224,9 +296,11 @@ fun FolderScreen(
                         mediaFilter = state.mediaFilter,
                         onMediaFilterChange = { viewModel.setMediaFilter(it) },
                         showMediaFilter = true,
-                        onSelectClick = { /* Select action */ },
+                        onSelectClick = { viewModel.toggleSelectMode() },
                         onBackClick = { parentScreen?.let { onPopTo(it) } },
-                        breadcrumbs = breadcrumbsList
+                        breadcrumbs = breadcrumbsList,
+                        isSelectMode = state.isSelectMode,
+                        selectedCount = state.selectedPaths.size
                     )
                 }
 
@@ -240,12 +314,54 @@ fun FolderScreen(
             }
         }
 
-        BottomAppMenu(
+        if (state.isSelectMode) {
+            SelectionBottomMenu(
+                onRenameClick = {
+                    if (state.selectedPaths.size == 1) {
+                        showRenameDialogFor = state.selectedPaths.first()
+                    }
+                },
+                onDeleteClick = { viewModel.deleteFiles(state.selectedPaths.toList()) },
+                onMoveClick = { 
+                    io.iris.utils.openDirectoryPicker("Move to...", path)?.let { dest ->
+                        viewModel.moveFiles(state.selectedPaths.toList(), dest)
+                    }
+                },
+                onCopyClick = { 
+                    io.iris.utils.openDirectoryPicker("Copy to...", path)?.let { dest ->
+                        viewModel.copyFiles(state.selectedPaths.toList(), dest)
+                    }
+                },
+                onDuplicateClick = { 
+                    viewModel.duplicateFiles(state.selectedPaths.toList())
+                    viewModel.clearSelection()
+                },
+                selectedCount = state.selectedPaths.size
+            )
+        } else {
+            BottomAppMenu(
                 onSettingsClick = onOpenSettings,
                 showLinkFolder = false,
                 onLinkFolderClick = {},
                 searchQuery = searchQuery,
                 onSearchQueryChange = { searchQuery = it }
+            )
+        }
+    }
+    
+    showRenameDialogFor?.let { renamePath ->
+        val file = File(renamePath)
+        val isDir = file.isDirectory
+        val initialName = if (isDir) file.name else file.nameWithoutExtension
+        val ext = if (isDir || file.extension.isEmpty()) "" else ".${file.extension}"
+        
+        RenameDialog(
+            initialName = initialName,
+            onDismiss = { showRenameDialogFor = null },
+            onConfirm = { newName ->
+                viewModel.renameFile(renamePath, newName + ext)
+                showRenameDialogFor = null
+            }
         )
     }
 }

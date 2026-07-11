@@ -82,7 +82,9 @@ fun App() {
                 isOpen = isSettingsOpen,
                 onClose = { isSettingsOpen = false },
                 currentTheme = settings.theme,
-                onThemeChange = { settingsRepo.setTheme(it) }
+                onThemeChange = { settingsRepo.setTheme(it) },
+                globalShowTitles = settings.showTitles,
+                onGlobalShowTitlesChange = { settingsRepo.setShowTitles(it) }
             )
         }
     }
