@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.isCtrlPressed
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -139,6 +140,7 @@ fun FolderScreen(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
+                                        .pointerHoverIcon(androidx.compose.ui.input.pointer.PointerIcon.Hand)
                                         .clickable { viewModel.setShowFolders(!state.showFolders) }
                                         .padding(horizontal = 16.dp, vertical = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically
@@ -155,12 +157,13 @@ fun FolderScreen(
                             }
 
                             if (state.showFolders) {
-                                items(folders) { item ->
+                                items(folders, key = { it.file.absolutePath }) { item ->
                                     val onClickAction = { onNavigateToFolder(item.file.absolutePath) }
                                     FolderCard(
                                         path = item.file.absolutePath,
                                         onClick = onClickAction,
-                                        showTitle = state.showTitles
+                                        showTitle = state.showTitles,
+                                        modifier = Modifier.animateItem()
                                     )
                                 }
                             }
@@ -178,12 +181,13 @@ fun FolderScreen(
                                 }
                             }
 
-                            items(files) { item ->
+                            items(files, key = { it.file.absolutePath }) { item ->
                                 val onClickAction = { /* Phase 3: Open Viewer */ }
                                 FolderCard(
                                     path = item.file.absolutePath,
                                     onClick = onClickAction,
-                                    showTitle = state.showTitles
+                                    showTitle = state.showTitles,
+                                    modifier = Modifier.animateItem()
                                 )
                             }
                         }

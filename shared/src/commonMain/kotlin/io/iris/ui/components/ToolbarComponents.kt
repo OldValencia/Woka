@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.border
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -14,10 +15,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.TextStyle
@@ -339,6 +342,8 @@ fun BottomAppMenu(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit
 ) {
+    var isSearchFocused by remember { mutableStateOf(false) }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -385,6 +390,11 @@ fun BottomAppMenu(
             modifier = Modifier
                 .clip(RoundedCornerShape(8.dp))
                 .background(IrisTheme.colors.background)
+                .border(
+                    width = 1.dp,
+                    color = if (isSearchFocused) IrisTheme.colors.accent else Color.Transparent,
+                    shape = RoundedCornerShape(8.dp)
+                )
                 .padding(horizontal = 12.dp, vertical = 8.dp)
                 .width(200.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -401,7 +411,8 @@ fun BottomAppMenu(
                 onValueChange = onSearchQueryChange,
                 textStyle = TextStyle(color = IrisTheme.colors.textPrimary, fontSize = 14.sp),
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().onFocusChanged { isSearchFocused = it.isFocused },
+                cursorBrush = SolidColor(IrisTheme.colors.accent),
                 decorationBox = { innerTextField ->
                     if (searchQuery.isEmpty()) {
                         BasicText("Search...", style = TextStyle(color = IrisTheme.colors.textSecondary, fontSize = 14.sp))

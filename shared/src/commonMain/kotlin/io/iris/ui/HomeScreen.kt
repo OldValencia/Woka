@@ -110,14 +110,14 @@ fun HomeScreen(
                         verticalArrangement = Arrangement.spacedBy(1.dp),
                         contentPadding = PaddingValues(top = 100.dp, bottom = 16.dp)
                     ) {
-                        items(state.linkedFolders.size) { index ->
+                        items(state.linkedFolders.size, key = { index -> state.linkedFolders[index] }) { index ->
                             val path = state.linkedFolders[index]
                             if (searchQuery.isBlank() || path.contains(searchQuery, ignoreCase = true)) {
                                 val itemModifier = Modifier.draggableItem(index, dragDropState)
                                 
                                 FolderCard(
                                     path = path,
-                                    modifier = itemModifier,
+                                    modifier = itemModifier.animateItem(),
                                     onClick = { onNavigateToFolder(path) },
                                     onRemove = { onRemoveFolder(path) },
                                     showTitle = state.showTitles
