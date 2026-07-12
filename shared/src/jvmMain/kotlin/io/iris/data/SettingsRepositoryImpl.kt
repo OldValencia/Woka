@@ -18,7 +18,7 @@ class SettingsRepositoryImpl : SettingsRepository {
 
     private val settingsDir = File(System.getProperty("user.home"), "Documents/Iris")
     private val settingsFile = File(settingsDir, "settings.json")
-    
+
     private val json = Json { ignoreUnknownKeys = true; prettyPrint = true }
 
     init {
@@ -49,18 +49,6 @@ class SettingsRepositoryImpl : SettingsRepository {
     override fun removeLinkedFolder(path: String) {
         _settings.update { current ->
             val newFolders = current.linkedFolders - path
-            val newSettings = current.copy(linkedFolders = newFolders)
-            saveSettings(newSettings)
-            newSettings
-        }
-    }
-
-    override fun reorderLinkedFolders(fromIndex: Int, toIndex: Int) {
-        _settings.update { current ->
-            if (fromIndex !in current.linkedFolders.indices || toIndex !in current.linkedFolders.indices) return@update current
-            val newFolders = current.linkedFolders.toMutableList()
-            val item = newFolders.removeAt(fromIndex)
-            newFolders.add(toIndex, item)
             val newSettings = current.copy(linkedFolders = newFolders)
             saveSettings(newSettings)
             newSettings
@@ -100,22 +88,6 @@ class SettingsRepositoryImpl : SettingsRepository {
     override fun setShowTitles(show: Boolean) {
         _settings.update { current ->
             val newSettings = current.copy(showTitles = show)
-            saveSettings(newSettings)
-            newSettings
-        }
-    }
-
-    override fun setShowFolders(show: Boolean) {
-        _settings.update { current ->
-            val newSettings = current.copy(showFolders = show)
-            saveSettings(newSettings)
-            newSettings
-        }
-    }
-
-    override fun setMediaFilter(filter: String) {
-        _settings.update { current ->
-            val newSettings = current.copy(mediaFilter = filter)
             saveSettings(newSettings)
             newSettings
         }

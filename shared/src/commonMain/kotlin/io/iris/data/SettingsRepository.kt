@@ -6,13 +6,10 @@ interface SettingsRepository {
     val settings: StateFlow<IrisSettings>
     fun addLinkedFolder(path: String)
     fun removeLinkedFolder(path: String)
-    fun reorderLinkedFolders(fromIndex: Int, toIndex: Int)
     fun setFolderLayout(path: String, layout: ViewLayout)
     fun setFolderSort(path: String, sort: SortType)
     fun setFolderShowTitles(path: String, show: Boolean)
     fun setShowTitles(show: Boolean)
-    fun setShowFolders(show: Boolean)
-    fun setMediaFilter(filter: String)
     fun setTheme(theme: String)
     fun addPinnedSession(session: PinnedSession)
     fun removePinnedSession(path: String)
