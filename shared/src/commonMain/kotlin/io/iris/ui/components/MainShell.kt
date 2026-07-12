@@ -27,54 +27,71 @@ fun MainShell(
     linkedFolders: List<String> = emptyList(),
     content: @Composable () -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            topBarArea {
-                GlobalTopBar(
-                    currentPath = currentPath,
-                    onClose = onCloseWindow,
-                    onMinimize = onMinimizeWindow,
-                    onMaximize = onMaximizeWindow,
-                    onNavigateBack = onNavigateBack,
-                    onBreadcrumbClick = onBreadcrumbClick,
-                    linkedFolders = linkedFolders,
-                    isMaximized = isMaximized
-                )
-            }
+    val dockAccessories = remember { DockAccessoriesState() }
 
-            Box(
-                modifier = Modifier.fillMaxWidth().weight(1f)
-            ) {
-                content()
+    CompositionLocalProvider(LocalDockAccessories provides dockAccessories) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                topBarArea {
+                    GlobalTopBar(
+                        currentPath = currentPath,
+                        onClose = onCloseWindow,
+                        onMinimize = onMinimizeWindow,
+                        onMaximize = onMaximizeWindow,
+                        onNavigateBack = onNavigateBack,
+                        onBreadcrumbClick = onBreadcrumbClick,
+                        linkedFolders = linkedFolders,
+                        isMaximized = isMaximized
+                    )
+                }
 
-                // Protection gradient/shadow behind the dock
                 Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .height(120.dp)
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    Color.Transparent,
-                                    IrisTheme.colors.background.copy(alpha = 0.9f)
+                    modifier = Modifier.fillMaxWidth().weight(1f)
+                ) {
+                    content()
+
+                    // Protection gradient/shadow behind the dock
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .height(120.dp)
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color.Transparent,
+                                        IrisTheme.colors.background.copy(alpha = 0.9f)
+                                    )
                                 )
                             )
-                        )
-                )
-
-                // Floating Dock
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 32.dp)
-                ) {
-                    FloatingDock(
-                        activeTab = activeTab,
-                        onTabSelected = onTabSelected,
-                        onSearchClick = onOpenSearch,
-                        onSettingsClick = onOpenSettings
                     )
+
+                    // Floating Dock + Accessories
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 60.dp)
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            dockAccessories.topAccessory?.invoke()
+                            
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                dockAccessories.leftAccessory?.invoke()
+                                FloatingDock(
+                                    activeTab = activeTab,
+                                    onTabSelected = onTabSelected,
+                                    onSearchClick = onOpenSearch,
+                                    onSettingsClick = onOpenSettings
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

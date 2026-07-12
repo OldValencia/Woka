@@ -28,6 +28,7 @@ fun main() {
             transparent = true,
             state = windowState
         ) {
+            window.minimumSize = java.awt.Dimension(800, 580)
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {

@@ -56,23 +56,29 @@ fun SettingsOverlay(
                 .background(Color.Black.copy(alpha = 0.42f))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
+                    indication = null
                 ) { onClose() },
-            contentAlignment = Alignment.BottomCenter
+            contentAlignment = Alignment.Center
         ) {
-            Box(modifier = Modifier.padding(bottom = 110.dp)) {
-            AnimatedVisibility(
-                visible = isOpen,
-                enter = fadeIn(tween(240)) + scaleIn(
-                    initialScale = 0.94f,
-                    animationSpec = spring(dampingRatio = 0.78f, stiffness = 420f)
-                ) + slideInVertically(
-                    animationSpec = spring(dampingRatio = 0.78f, stiffness = 420f)
-                ) { it / 16 },
-                exit = fadeOut(tween(150)) + scaleOut(targetScale = 0.94f, animationSpec = tween(150))
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(440.dp)
+            Box(
+                modifier = Modifier
+                    .animateEnterExit(
+                        enter = fadeIn(tween(240)) + scaleIn(
+                            initialScale = 0.3f,
+                            transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.65f, 1.2f),
+                            animationSpec = spring(dampingRatio = 0.7f, stiffness = 300f)
+                        ) + slideInVertically(
+                            animationSpec = spring(dampingRatio = 0.7f, stiffness = 300f)
+                        ) { it / 2 },
+                        exit = fadeOut(tween(150)) + scaleOut(
+                            targetScale = 0.3f,
+                            transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.65f, 1.2f),
+                            animationSpec = tween(150)
+                        ) + slideOutVertically(
+                            animationSpec = tween(150)
+                        ) { it / 2 }
+                    )
+                    .width(440.dp)
                         .wrapContentHeight()
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
@@ -129,10 +135,8 @@ fun SettingsOverlay(
                     }
                 }
             }
-            }
         }
     }
-}
 
 @Composable
 private fun SectionLabel(text: String) {

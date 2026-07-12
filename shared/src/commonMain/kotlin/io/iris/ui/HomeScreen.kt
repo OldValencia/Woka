@@ -16,6 +16,18 @@ import io.iris.ui.theme.IrisTheme
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import org.jetbrains.compose.resources.painterResource
+import io.iris.ui.icons.IrisIcons
+
 object HomeDependencies : KoinComponent {
     val viewModel: HomeViewModel by inject()
 }
@@ -26,6 +38,39 @@ fun HomeScreen(
 ) {
     val viewModel = remember { HomeDependencies.viewModel }
     val state by viewModel.state.collectAsState()
+    val dockAccessories = io.iris.ui.components.LocalDockAccessories.current
+
+    DisposableEffect(Unit) {
+        dockAccessories.setLeft("home") {
+            Box(
+                modifier = Modifier
+                    .padding(end = 12.dp)
+                    .size(52.dp)
+                    .shadow(
+                        elevation = 24.dp,
+                        shape = RoundedCornerShape(20.dp),
+                        spotColor = Color.Black.copy(alpha = 0.5f),
+                        ambientColor = Color.Black.copy(alpha = 0.5f)
+                    )
+                    .background(IrisTheme.colors.surface, RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(20.dp))
+                    .pointerHoverIcon(PointerIcon.Hand)
+                    .clickable { 
+                        val p = io.iris.utils.openDirectoryPicker("Link folder")
+                        if (p != null) io.iris.AppDependencies.settingsRepository.addLinkedFolder(p)
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(IrisIcons.Static.Add),
+                    contentDescription = "Add Linked Folder",
+                    modifier = Modifier.size(20.dp),
+                    colorFilter = ColorFilter.tint(IrisTheme.colors.textPrimary)
+                )
+            }
+        }
+        onDispose { dockAccessories.clearLeft("home") }
+    }
 
     Column(modifier = Modifier.fillMaxSize().background(IrisTheme.colors.background)) {
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
