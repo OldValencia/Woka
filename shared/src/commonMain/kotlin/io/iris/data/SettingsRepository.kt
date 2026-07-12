@@ -10,6 +10,7 @@ interface SettingsRepository {
     fun setFolderSort(path: String, sort: SortType)
     fun setFolderShowTitles(path: String, show: Boolean)
     fun setShowTitles(show: Boolean)
+    fun setShowHiddenFiles(show: Boolean)
     fun setTheme(theme: String)
     fun addPinnedSession(session: PinnedSession)
     fun removePinnedSession(path: String)

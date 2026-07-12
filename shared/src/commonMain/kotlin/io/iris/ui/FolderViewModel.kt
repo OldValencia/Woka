@@ -47,13 +47,15 @@ class FolderViewModel(
             SortType.DateDesc -> rawItems.sortedByDescending { it.file.lastModified() }
         }
         
+        val visibleItems = if (settings.showHiddenFiles) sortedItems else sortedItems.filter { !it.file.isHidden }
+        
         // Folders first
         val filteredItems = if (settings.mediaFilter == "Photos") {
-            sortedItems.filter { it is MediaItem.Folder || it.file.extension.lowercase() in listOf("jpg", "jpeg", "png", "gif", "webp", "bmp", "heic") }
+            visibleItems.filter { it is MediaItem.Folder || it.file.extension.lowercase() in listOf("jpg", "jpeg", "png", "gif", "webp", "bmp", "heic") }
         } else if (settings.mediaFilter == "Videos") {
-            sortedItems.filter { it is MediaItem.Folder || it.file.extension.lowercase() in listOf("mp4", "mkv", "avi", "mov", "webm") }
+            visibleItems.filter { it is MediaItem.Folder || it.file.extension.lowercase() in listOf("mp4", "mkv", "avi", "mov", "webm") }
         } else {
-            sortedItems
+            visibleItems
         }
         val foldersFirst = filteredItems.sortedBy { if (it is MediaItem.Folder) 0 else 1 }
         

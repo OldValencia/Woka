@@ -93,6 +93,14 @@ class SettingsRepositoryImpl : SettingsRepository {
         }
     }
 
+    override fun setShowHiddenFiles(show: Boolean) {
+        _settings.update { current ->
+            val newSettings = current.copy(showHiddenFiles = show)
+            saveSettings(newSettings)
+            newSettings
+        }
+    }
+
     override fun setTheme(theme: String) {
         _settings.update { current ->
             val newSettings = current.copy(theme = theme)

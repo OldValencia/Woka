@@ -125,7 +125,9 @@ fun App(
                 currentTheme = settings.theme,
                 onThemeChange = { settingsRepo.setTheme(it) },
                 globalShowTitles = settings.showTitles,
-                onGlobalShowTitlesChange = { settingsRepo.setShowTitles(it) }
+                onGlobalShowTitlesChange = { settingsRepo.setShowTitles(it) },
+                showHiddenFiles = settings.showHiddenFiles,
+                onShowHiddenFilesChange = { settingsRepo.setShowHiddenFiles(it) }
             )
 
             // Search Overlay

@@ -20,6 +20,7 @@ data class IrisSettings(
     val folderShowTitles: Map<String, Boolean> = emptyMap(),
     val showTitles: Boolean = true,
     val showFolders: Boolean = true,
+    val showHiddenFiles: Boolean = false,
     val mediaFilter: String = "All", // All, Photos, Videos
     val theme: String = "System",
     val pinnedSessions: List<PinnedSession> = emptyList()

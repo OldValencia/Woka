@@ -18,6 +18,7 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,8 +43,12 @@ fun SettingsOverlay(
     currentTheme: String,
     onThemeChange: (String) -> Unit,
     globalShowTitles: Boolean,
-    onGlobalShowTitlesChange: (Boolean) -> Unit
+    onGlobalShowTitlesChange: (Boolean) -> Unit,
+    showHiddenFiles: Boolean,
+    onShowHiddenFilesChange: (Boolean) -> Unit
 ) {
+    var selectedCategory by remember { androidx.compose.runtime.mutableStateOf("Appearance") }
+
     AnimatedVisibility(
         visible = isOpen,
         enter = fadeIn(tween(220)),
@@ -78,65 +83,158 @@ fun SettingsOverlay(
                             animationSpec = tween(150)
                         ) { it / 2 }
                     )
-                    .width(440.dp)
-                        .wrapContentHeight()
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) { /* absorb clicks so the scrim doesn't close the sheet */ }
-                        .shadow(
-                            elevation = 48.dp,
-                            shape = RoundedCornerShape(20.dp),
-                            ambientColor = Color.Black.copy(alpha = 0.30f),
-                            spotColor = Color.Black.copy(alpha = 0.45f)
-                        )
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(IrisTheme.colors.surfaceElevated)
-                        .border(1.dp, IrisTheme.colors.border, RoundedCornerShape(20.dp))
-                        .padding(28.dp)
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            BasicText(
-                                text = "Settings",
-                                style = TextStyle(
-                                    color = IrisTheme.colors.textPrimary,
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
+                    .width(560.dp)
+                    .height(420.dp)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { /* absorb clicks */ }
+                    .shadow(
+                        elevation = 48.dp,
+                        shape = RoundedCornerShape(20.dp),
+                        ambientColor = Color.Black.copy(alpha = 0.30f),
+                        spotColor = Color.Black.copy(alpha = 0.45f)
+                    )
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(IrisTheme.colors.surfaceElevated)
+                    .border(1.dp, IrisTheme.colors.border, RoundedCornerShape(20.dp))
+                    .padding(28.dp)
+            ) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        BasicText(
+                            text = "Settings",
+                            style = TextStyle(
+                                color = IrisTheme.colors.textPrimary,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold
                             )
-                            Spacer(Modifier.weight(1f))
-                            CloseIconButton(onClick = onClose)
+                        )
+                        Spacer(Modifier.weight(1f))
+                        CloseIconButton(onClick = onClose)
+                    }
+
+                    Spacer(modifier = Modifier.height(28.dp))
+
+                    Row(modifier = Modifier.fillMaxSize()) {
+                        // Sidebar
+                        Column(modifier = Modifier.width(140.dp).fillMaxHeight()) {
+                            SidebarItem(
+                                text = "Appearance",
+                                icon = IrisIcons.Static.Image,
+                                isSelected = selectedCategory == "Appearance",
+                                onClick = { selectedCategory = "Appearance" }
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            SidebarItem(
+                                text = "Library",
+                                icon = IrisIcons.Static.Folder,
+                                isSelected = selectedCategory == "Library",
+                                onClick = { selectedCategory = "Library" }
+                            )
                         }
 
-                        Spacer(modifier = Modifier.height(28.dp))
+                        Spacer(modifier = Modifier.width(28.dp))
 
-                        SectionLabel("Appearance")
-                        Spacer(modifier = Modifier.height(10.dp))
-                        SegmentedControl(
-                            options = listOf("System", "Light", "Dark"),
-                            selected = currentTheme,
-                            onSelect = onThemeChange
-                        )
-
-                        Spacer(modifier = Modifier.height(26.dp))
-
-                        SectionLabel("Library")
-                        Spacer(modifier = Modifier.height(10.dp))
-                        SettingsToggleRow(
-                            title = "Show Item Titles",
-                            subtitle = "Display file names under thumbnails everywhere",
-                            checked = globalShowTitles,
-                            onCheckedChange = onGlobalShowTitlesChange
-                        )
+                        // Content
+                        Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            AnimatedContent(
+                                targetState = selectedCategory,
+                                transitionSpec = {
+                                    fadeIn(tween(220)) togetherWith fadeOut(tween(180))
+                                },
+                                label = "CategoryTransition"
+                            ) { category ->
+                                Column(modifier = Modifier.fillMaxSize()) {
+                                    if (category == "Appearance") {
+                                        SectionLabel("Appearance")
+                                        Spacer(modifier = Modifier.height(10.dp))
+                                        SegmentedControl(
+                                            options = listOf("System", "Light", "Dark"),
+                                            selected = currentTheme,
+                                            onSelect = onThemeChange
+                                        )
+                                    } else if (category == "Library") {
+                                        SectionLabel("Library")
+                                        Spacer(modifier = Modifier.height(10.dp))
+                                        SettingsToggleRow(
+                                            title = "Show Item Titles",
+                                            subtitle = "Display file names under thumbnails everywhere",
+                                            checked = globalShowTitles,
+                                            onCheckedChange = onGlobalShowTitlesChange
+                                        )
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        SettingsToggleRow(
+                                            title = "Show Hidden Files",
+                                            subtitle = "Display files and folders hidden by the OS",
+                                            checked = showHiddenFiles,
+                                            onCheckedChange = onShowHiddenFilesChange
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun SidebarItem(
+    text: String,
+    icon: org.jetbrains.compose.resources.DrawableResource,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
+    val bgColor by animateColorAsState(
+        targetValue = when {
+            isSelected -> IrisTheme.colors.textPrimary.copy(alpha = 0.12f)
+            isHovered -> IrisTheme.colors.textPrimary.copy(alpha = 0.05f)
+            else -> Color.Transparent
+        },
+        animationSpec = tween(150)
+    )
+    val contentColor = if (isSelected) IrisTheme.colors.textPrimary else IrisTheme.colors.textSecondary
+    
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(32.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(bgColor)
+            .clickable(interactionSource = interactionSource, indication = null, onClick = onClick)
+            .pointerHoverIcon(PointerIcon.Hand),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Image(
+                painter = painterResource(icon),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(contentColor),
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            BasicText(
+                text = text,
+                style = TextStyle(
+                    color = contentColor,
+                    fontSize = 13.sp,
+                    fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
+                )
+            )
+        }
+    }
+}
 
 @Composable
 private fun SectionLabel(text: String) {

@@ -33,7 +33,6 @@ class LocalMediaRepository {
         val media = mutableListOf<MediaItem>()
 
         for (file in files) {
-            if (file.isHidden) continue
             if (file.isDirectory) {
                 folders.add(MediaItem.Folder(file))
             } else {
