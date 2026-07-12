@@ -30,7 +30,7 @@ fun MainShell(
     val dockAccessories = remember { DockAccessoriesState() }
 
     CompositionLocalProvider(LocalDockAccessories provides dockAccessories) {
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxSize().background(IrisTheme.colors.background)) {
             Column(modifier = Modifier.fillMaxSize()) {
                 topBarArea {
                     GlobalTopBar(

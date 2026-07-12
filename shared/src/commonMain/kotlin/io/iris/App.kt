@@ -20,6 +20,7 @@ import io.iris.ui.FolderScreen
 import io.iris.ui.HomeScreen
 import io.iris.ui.components.DockTab
 import io.iris.ui.components.MainShell
+import io.iris.ui.components.SearchOverlay
 import io.iris.ui.components.SettingsOverlay
 import io.iris.ui.theme.IrisTheme
 import org.koin.core.component.KoinComponent
@@ -131,7 +132,7 @@ fun App(
             )
 
             // Search Overlay
-            io.iris.ui.components.SearchOverlay(
+            SearchOverlay(
                 isOpen = isSearchOpen,
                 onClose = { isSearchOpen = false },
                 linkedFolders = settings.linkedFolders,

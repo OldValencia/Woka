@@ -24,8 +24,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.TextStyle
@@ -35,7 +33,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.iris.ui.theme.IrisTheme
 import java.io.File
-import androidx.compose.ui.input.pointer.pointerInput
 
 @Composable
 fun GlobalTopBar(
@@ -49,43 +46,12 @@ fun GlobalTopBar(
     isMaximized: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    // Window drag, drag-to-restore and double-click maximize are handled by the
+    // platform wrapper around the top bar (see desktop main.kt), not here.
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(60.dp)
-            .pointerInput(isMaximized) {
-                awaitPointerEventScope {
-                    var lastTapTime = 0L
-                    var startDragOffset: Offset? = null
-                    while (true) {
-                        val event = awaitPointerEvent(PointerEventPass.Initial)
-                        if (event.type == PointerEventType.Press) {
-                            val currentTime = System.currentTimeMillis()
-                            if (currentTime - lastTapTime < 300) {
-                                onMaximize()
-                                lastTapTime = 0L
-                                startDragOffset = null
-                            } else {
-                                lastTapTime = currentTime
-                                startDragOffset = event.changes.firstOrNull()?.position
-                            }
-                        } else if (event.type == PointerEventType.Move && isMaximized) {
-                            if (event.changes.any { it.pressed }) {
-                                val currentPos = event.changes.firstOrNull()?.position
-                                if (startDragOffset != null && currentPos != null) {
-                                    val dist = (currentPos - startDragOffset).getDistance()
-                                    if (dist > 5f) {
-                                        onMaximize()
-                                        startDragOffset = null
-                                    }
-                                }
-                            }
-                        } else if (event.type == PointerEventType.Release) {
-                            startDragOffset = null
-                        }
-                    }
-                }
-            }
             .padding(horizontal = 24.dp)
     ) {
         // Back Button on the left
