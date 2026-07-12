@@ -51,7 +51,7 @@ fun IosSwitch(
                 .padding(start = thumbOffset)
                 .size(27.dp)
                 .clip(CircleShape)
-                .background(Color.White)
+                .background(IrisTheme.colors.surfaceElevated)
         )
     }
 }

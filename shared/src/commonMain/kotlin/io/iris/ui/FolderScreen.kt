@@ -1,47 +1,64 @@
 package io.iris.ui
 
-import androidx.compose.foundation.*
+import androidx.compose.ui.ExperimentalComposeUiApi
+
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.isCtrlPressed
-import androidx.compose.ui.input.pointer.pointerHoverIcon
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import io.iris.data.MediaItem
-import io.iris.data.ViewLayout
 import io.iris.navigation.Screen
-import io.iris.ui.components.BottomAppMenu
 import io.iris.ui.components.FolderCard
-import io.iris.ui.components.GridLine
-import io.iris.ui.components.LibraryHeader
-import io.iris.ui.components.SelectionBottomMenu
-import io.iris.ui.components.rememberKnownLayoutScrollbarAdapter
-import io.iris.ui.icons.IrisIcons
 import io.iris.ui.theme.IrisTheme
-import io.iris.ui.components.RenameDialog
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.foundation.VerticalScrollbar
+import androidx.compose.foundation.rememberScrollbarAdapter
+import androidx.compose.animation.animateColorAsState
+import io.iris.AppDependencies
+import io.iris.data.PinnedSession
+import io.iris.data.ViewLayout
+import io.iris.data.SortType
+import io.iris.ui.icons.IrisIcons
 import org.jetbrains.compose.resources.painterResource
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.parameter.parametersOf
-import java.io.File
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.input.pointer.isCtrlPressed
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.Key
+import io.iris.utils.openDirectoryPicker
 
 class FolderDependencies(val path: String) : KoinComponent {
     val viewModel: FolderViewModel by inject { parametersOf(path) }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun FolderScreen(
     path: String,
@@ -55,9 +72,6 @@ fun FolderScreen(
     val state by viewModel.state.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
-    var searchQuery by remember { mutableStateOf("") }
-    var showRenameDialogFor by remember { mutableStateOf<String?>(null) }
-
     Column(modifier = Modifier.fillMaxSize().background(IrisTheme.colors.background)) {
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             if (isLoading) {
@@ -65,303 +79,336 @@ fun FolderScreen(
                     BasicText(text = "Loading...", style = TextStyle(color = IrisTheme.colors.textSecondary))
                 }
             } else {
-                val gridState = rememberLazyGridState()
-                val isScrolled = gridState.firstVisibleItemIndex > 0 || gridState.firstVisibleItemScrollOffset > 0
-
-                val itemsToShow = if (searchQuery.isBlank()) {
-                    state.items
-                } else {
-                    state.items.filter { it.file.name.contains(searchQuery, ignoreCase = true) }
-                }
-                val folders = itemsToShow.filterIsInstance<MediaItem.Folder>()
-                val files = itemsToShow.filter { it !is MediaItem.Folder }
-
-                // The grid mixes short "Folders"/"Media" header rows with much taller square
-                // FolderCard rows. Compose's built-in scrollbar adapter estimates content size by
-                // averaging the height of whatever rows are currently visible, which this mix
-                // throws off enough that a fast scrollbar drag can get stuck short of the real
-                // end (see https://github.com/JetBrains/compose-multiplatform/issues/2679). Since
-                // we already know exactly how many rows of each kind exist, compute it exactly.
-                val scrollbarAdapter = rememberKnownLayoutScrollbarAdapter(gridState) {
-                    buildList {
-                        if (folders.isNotEmpty()) {
-                            add(GridLine.Header("folders_header"))
-                            if (state.showFolders) add(GridLine.Cells(folders.size))
-                        }
-                        if (files.isNotEmpty()) {
-                            add(GridLine.Header("media_header"))
-                            add(GridLine.Cells(files.size))
+                val settingsRepo = remember { AppDependencies.settingsRepository }
+                val settings by settingsRepo.settings.collectAsState()
+                val isPinned = settings.pinnedSessions.any { it.path == path }
+                val currentSession = settings.pinnedSessions.find { it.path == path }
+                
+                val gridState = rememberLazyGridState(
+                    initialFirstVisibleItemIndex = currentSession?.scrollIndex ?: 0,
+                    initialFirstVisibleItemScrollOffset = currentSession?.scrollOffset ?: 0
+                )
+                
+                DisposableEffect(path) {
+                    onDispose {
+                        if (settingsRepo.settings.value.pinnedSessions.any { it.path == path }) {
+                            settingsRepo.addPinnedSession(PinnedSession(path, gridState.firstVisibleItemIndex, gridState.firstVisibleItemScrollOffset))
                         }
                     }
                 }
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .pointerInput(Unit) {
-                            awaitPointerEventScope {
-                                while (true) {
-                                    val event = awaitPointerEvent()
-                                    if (event.type == PointerEventType.Scroll && event.keyboardModifiers.isCtrlPressed) {
-                                        val delta = event.changes.firstOrNull()?.scrollDelta?.y ?: 0f
-                                        if (delta > 0) {
-                                            val newLayout = when (state.layout) {
-                                                ViewLayout.BigGrid -> ViewLayout.Grid
-                                                ViewLayout.Grid -> ViewLayout.SmallGrid
-                                                ViewLayout.SmallGrid -> ViewLayout.SmallGrid
-                                            }
-                                            viewModel.setLayout(newLayout)
-                                        } else if (delta < 0) {
-                                            val newLayout = when (state.layout) {
-                                                ViewLayout.SmallGrid -> ViewLayout.Grid
-                                                ViewLayout.Grid -> ViewLayout.BigGrid
-                                                ViewLayout.BigGrid -> ViewLayout.BigGrid
-                                            }
-                                            viewModel.setLayout(newLayout)
-                                        }
-                                        event.changes.forEach { it.consume() }
-                                    }
-                                }
-                            }
-                        }
-                ) {
-                    val columns = when (state.layout) {
-                        ViewLayout.SmallGrid -> GridCells.Adaptive(100.dp)
-                        ViewLayout.BigGrid -> GridCells.Adaptive(240.dp)
-                        ViewLayout.Grid -> GridCells.Adaptive(160.dp)
+                
+                val layout = settings.folderLayouts[path] ?: ViewLayout.Grid
+                val gridColumnSize = when (layout) {
+                    ViewLayout.SmallGrid -> 120.dp
+                    ViewLayout.Grid -> 240.dp
+                    ViewLayout.BigGrid -> 400.dp
+                }
+                
+                val zoomIn = {
+                    val newLayout = when (layout) {
+                        ViewLayout.SmallGrid -> ViewLayout.Grid
+                        ViewLayout.Grid -> ViewLayout.BigGrid
+                        ViewLayout.BigGrid -> ViewLayout.BigGrid
                     }
+                    if (newLayout != layout) settingsRepo.setFolderLayout(path, newLayout)
+                }
+                
+                val zoomOut = {
+                    val newLayout = when (layout) {
+                        ViewLayout.BigGrid -> ViewLayout.Grid
+                        ViewLayout.Grid -> ViewLayout.SmallGrid
+                        ViewLayout.SmallGrid -> ViewLayout.SmallGrid
+                    }
+                    if (newLayout != layout) settingsRepo.setFolderLayout(path, newLayout)
+                }
+                
+                var showFilterMenu by remember { mutableStateOf(false) }
+                
+                val focusRequester = remember { FocusRequester() }
+                LaunchedEffect(Unit) {
+                    focusRequester.requestFocus()
+                }
 
-                    LazyVerticalGrid(
-                        columns = columns,
-                        state = gridState,
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalArrangement = Arrangement.spacedBy(1.dp),
-                        verticalArrangement = Arrangement.spacedBy(1.dp),
-                        contentPadding = PaddingValues(top = 90.dp, bottom = 16.dp)
+                Column(modifier = Modifier.fillMaxSize()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 40.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        if (folders.isNotEmpty()) {
-                            item(span = { GridItemSpan(maxLineSpan) }) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .pointerHoverIcon(androidx.compose.ui.input.pointer.PointerIcon.Hand)
-                                        .clickable { viewModel.setShowFolders(!state.showFolders) }
-                                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    BasicText("Folders", style = TextStyle(color = IrisTheme.colors.textPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold))
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Image(
-                                        painter = painterResource(IrisIcons.Static.ChevronRight),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(14.dp).rotate(if (state.showFolders) 90f else 0f),
-                                        colorFilter = ColorFilter.tint(IrisTheme.colors.textSecondary)
-                                    )
-                                    Spacer(modifier = Modifier.width(16.dp))
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(4.dp))
-                                            .background(IrisTheme.colors.surface)
-                                            .pointerHoverIcon(androidx.compose.ui.input.pointer.PointerIcon.Hand)
-                                            .clickable { viewModel.createFolder("New Folder") }
-                                            .padding(horizontal = 8.dp, vertical = 2.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        BasicText("+", style = TextStyle(color = IrisTheme.colors.textPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold))
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(if (isPinned) IrisTheme.colors.surfaceHover else IrisTheme.colors.surfaceElevated)
+                                .border(1.dp, IrisTheme.colors.border, RoundedCornerShape(6.dp))
+                                .clickable { 
+                                    if (isPinned) {
+                                        settingsRepo.removePinnedSession(path)
+                                    } else {
+                                        settingsRepo.addPinnedSession(PinnedSession(path, gridState.firstVisibleItemIndex, gridState.firstVisibleItemScrollOffset))
                                     }
                                 }
-                            }
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            BasicText(if (isPinned) "Pinned" else "Pin", style = TextStyle(color = if (isPinned) IrisTheme.colors.accentFolders else IrisTheme.colors.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Medium))
+                        }
+                        
+                        Spacer(modifier = Modifier.width(12.dp))
 
-                            if (state.showFolders) {
-                                items(folders, key = { it.file.absolutePath }) { item ->
-                                    val onClickAction = {
-                                        if (state.isSelectMode) {
-                                            viewModel.toggleSelection(item.file.absolutePath)
-                                        } else {
-                                            onNavigateToFolder(item.file.absolutePath)
+                        if (state.isSelectMode) {
+                            BasicText("${state.selectedPaths.size} selected", style = TextStyle(color = IrisTheme.colors.textSecondary, fontSize = 13.sp, fontWeight = FontWeight.Medium))
+                            
+                            Spacer(modifier = Modifier.width(12.dp))
+                            
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(IrisTheme.colors.surfaceElevated)
+                                    .border(1.dp, IrisTheme.colors.border, RoundedCornerShape(6.dp))
+                                    .clickable { viewModel.selectAll() }
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                BasicText("Select All", style = TextStyle(color = IrisTheme.colors.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Medium))
+                            }
+                            
+                            Spacer(modifier = Modifier.width(12.dp))
+                            
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(IrisTheme.colors.surfaceElevated)
+                                    .border(1.dp, IrisTheme.colors.border, RoundedCornerShape(6.dp))
+                                    .clickable { 
+                                        if (state.selectedPaths.isNotEmpty()) {
+                                            viewModel.duplicateFiles(state.selectedPaths.toList())
+                                            viewModel.toggleSelectMode()
                                         }
                                     }
-                                    FolderCard(
-                                        path = item.file.absolutePath,
-                                        onClick = onClickAction,
-                                        showTitle = state.showTitles,
-                                        isSelected = state.selectedPaths.contains(item.file.absolutePath),
-                                        onContextAction = { action ->
-                                            when (action) {
-                                                "Rename" -> { showRenameDialogFor = item.file.absolutePath }
-                                                "Copy" -> {
-                                                    io.iris.utils.openDirectoryPicker("Copy to...", path)?.let { dest ->
-                                                        viewModel.copyFiles(listOf(item.file.absolutePath), dest)
-                                                    }
-                                                }
-                                                "Duplicate" -> { viewModel.duplicateFiles(listOf(item.file.absolutePath)) }
-                                                "Move" -> {
-                                                    io.iris.utils.openDirectoryPicker("Move to...", path)?.let { dest ->
-                                                        viewModel.moveFiles(listOf(item.file.absolutePath), dest)
-                                                    }
-                                                }
-                                                "Delete" -> { viewModel.deleteFiles(listOf(item.file.absolutePath)) }
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                BasicText("Duplicate", style = TextStyle(color = if (state.selectedPaths.isNotEmpty()) IrisTheme.colors.textPrimary else IrisTheme.colors.textSecondary, fontSize = 13.sp, fontWeight = FontWeight.Medium))
+                            }
+                            
+                            Spacer(modifier = Modifier.width(12.dp))
+                            
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(IrisTheme.colors.surfaceElevated)
+                                    .border(1.dp, IrisTheme.colors.border, RoundedCornerShape(6.dp))
+                                    .clickable { 
+                                        if (state.selectedPaths.isNotEmpty()) {
+                                            val dest = openDirectoryPicker("Copy to...", path)
+                                            if (dest != null) {
+                                                viewModel.copyFiles(state.selectedPaths.toList(), dest)
+                                                viewModel.toggleSelectMode()
                                             }
-                                        },
-                                        onModifierClick = { isShift, isAlt ->
-                                            if (isShift) viewModel.selectRange(item.file.absolutePath)
-                                            else if (isAlt) viewModel.toggleSelection(item.file.absolutePath)
-                                        },
-                                        modifier = Modifier.animateItem()
-                                    )
+                                        }
+                                    }
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                BasicText("Copy", style = TextStyle(color = if (state.selectedPaths.isNotEmpty()) IrisTheme.colors.textPrimary else IrisTheme.colors.textSecondary, fontSize = 13.sp, fontWeight = FontWeight.Medium))
+                            }
+                            
+                            Spacer(modifier = Modifier.width(12.dp))
+                            
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(IrisTheme.colors.surfaceElevated)
+                                    .border(1.dp, IrisTheme.colors.border, RoundedCornerShape(6.dp))
+                                    .clickable { 
+                                        if (state.selectedPaths.isNotEmpty()) {
+                                            val dest = openDirectoryPicker("Move to...", path)
+                                            if (dest != null) {
+                                                viewModel.moveFiles(state.selectedPaths.toList(), dest)
+                                                viewModel.toggleSelectMode()
+                                            }
+                                        }
+                                    }
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                BasicText("Move", style = TextStyle(color = if (state.selectedPaths.isNotEmpty()) IrisTheme.colors.textPrimary else IrisTheme.colors.textSecondary, fontSize = 13.sp, fontWeight = FontWeight.Medium))
+                            }
+                            
+                            Spacer(modifier = Modifier.width(12.dp))
+                            
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(IrisTheme.colors.surfaceElevated)
+                                    .border(1.dp, IrisTheme.colors.border, RoundedCornerShape(6.dp))
+                                    .clickable { 
+                                        if (state.selectedPaths.isNotEmpty()) {
+                                            viewModel.deleteFiles(state.selectedPaths.toList())
+                                            viewModel.toggleSelectMode() // Exit after delete
+                                        }
+                                    }
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                BasicText("Delete", style = TextStyle(color = if (state.selectedPaths.isNotEmpty()) IrisTheme.colors.danger else IrisTheme.colors.textSecondary, fontSize = 13.sp, fontWeight = FontWeight.Medium))
+                            }
+                            
+                            Spacer(modifier = Modifier.width(12.dp))
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(if (state.isSelectMode) IrisTheme.colors.surfaceHover else IrisTheme.colors.surfaceElevated)
+                                .border(1.dp, IrisTheme.colors.border, RoundedCornerShape(6.dp))
+                                .clickable { viewModel.toggleSelectMode() }
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            BasicText(if (state.isSelectMode) "Done" else "Select", style = TextStyle(color = if (state.isSelectMode) IrisTheme.colors.accentFolders else IrisTheme.colors.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Medium))
+                        }
+                        
+                        Spacer(modifier = Modifier.width(12.dp))
+                        
+                        Box {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(if (showFilterMenu) IrisTheme.colors.surfaceHover else IrisTheme.colors.surfaceElevated)
+                                    .border(1.dp, IrisTheme.colors.border, RoundedCornerShape(6.dp))
+                                    .clickable { showFilterMenu = !showFilterMenu }
+                                    .padding(horizontal = 10.dp, vertical = 9.dp)
+                            ) {
+                                androidx.compose.foundation.Image(
+                                    painter = painterResource(IrisIcons.Static.Filter),
+                                    contentDescription = "Filter",
+                                    modifier = Modifier.width(21.dp).height(12.dp),
+                                    colorFilter = ColorFilter.tint(IrisTheme.colors.textPrimary)
+                                )
+                            }
+                            
+                            if (showFilterMenu) {
+                                Popup(
+                                    alignment = Alignment.TopEnd,
+                                    onDismissRequest = { showFilterMenu = false }
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .padding(top = 36.dp)
+                                            .width(180.dp)
+                                            .shadow(12.dp, RoundedCornerShape(10.dp), spotColor = Color.Black.copy(alpha = 0.2f))
+                                            .background(IrisTheme.colors.surfaceElevated, RoundedCornerShape(10.dp))
+                                            .border(1.dp, IrisTheme.colors.border, RoundedCornerShape(10.dp))
+                                            .padding(6.dp)
+                                    ) {
+                                        DropdownItem("Zoom In", enabled = layout != ViewLayout.BigGrid) { 
+                                            zoomIn()
+                                            showFilterMenu = false 
+                                        }
+                                        DropdownItem("Zoom Out", enabled = layout != ViewLayout.SmallGrid) { 
+                                            zoomOut()
+                                            showFilterMenu = false 
+                                        }
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(IrisTheme.colors.border))
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        val sort = state.sort
+                                        val nameLabel = if (sort == SortType.NameAsc) "Name ↑" else if (sort == SortType.NameDesc) "Name ↓" else "Name"
+                                        val dateLabel = if (sort == SortType.DateAsc) "Date ↑" else if (sort == SortType.DateDesc) "Date ↓" else "Date"
+                                        
+                                        DropdownItem("Sort by $nameLabel") { 
+                                            viewModel.setSort(if (sort == SortType.NameAsc) SortType.NameDesc else SortType.NameAsc)
+                                            showFilterMenu = false 
+                                        }
+                                        DropdownItem("Sort by $dateLabel") { 
+                                            viewModel.setSort(if (sort == SortType.DateAsc) SortType.DateDesc else SortType.DateAsc)
+                                            showFilterMenu = false 
+                                        }
+                                    }
                                 }
                             }
                         }
+                    }
 
-                        if (files.isNotEmpty()) {
-                            item(span = { GridItemSpan(maxLineSpan) }) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(start = 16.dp, top = 24.dp, end = 16.dp, bottom = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    BasicText("Media", style = TextStyle(color = IrisTheme.colors.textPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold))
+                    Box(modifier = Modifier.fillMaxWidth().weight(1f)
+                        .focusRequester(focusRequester)
+                        .focusable()
+                        .onPointerEvent(PointerEventType.Scroll, PointerEventPass.Initial) { event ->
+                            if (event.keyboardModifiers.isCtrlPressed) {
+                                val delta = event.changes.firstOrNull()?.scrollDelta?.y ?: 0f
+                                if (delta < 0) {
+                                    zoomIn()
+                                } else if (delta > 0) {
+                                    zoomOut()
                                 }
+                                event.changes.forEach { it.consume() }
                             }
-
-                            items(files, key = { it.file.absolutePath }) { item ->
+                        }
+                        .onPreviewKeyEvent { event ->
+                            if (event.type == KeyEventType.KeyDown && event.isCtrlPressed) {
+                                when (event.key) {
+                                    Key.Equals, Key.Plus, Key.NumPadAdd -> {
+                                        zoomIn()
+                                        true
+                                    }
+                                    Key.Minus, Key.NumPadSubtract -> {
+                                        zoomOut()
+                                        true
+                                    }
+                                    else -> false
+                                }
+                            } else false
+                        }
+                    ) {
+                        LazyVerticalGrid(
+                            columns = GridCells.Adaptive(gridColumnSize),
+                            state = gridState,
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalArrangement = Arrangement.spacedBy(28.dp),
+                            verticalArrangement = Arrangement.spacedBy(28.dp),
+                            // Paddings from mockup: 20px 40px 120px 40px
+                            contentPadding = PaddingValues(top = 20.dp, start = 40.dp, end = 40.dp, bottom = 120.dp)
+                        ) {
+                            items(state.items, key = { it.file.absolutePath }) { item ->
+                                val isDir = item is MediaItem.Folder
+                                val isSelected = state.selectedPaths.contains(item.file.absolutePath)
                                 val onClickAction = {
                                     if (state.isSelectMode) {
                                         viewModel.toggleSelection(item.file.absolutePath)
                                     } else {
-                                        /* Phase 3: Open Viewer */
+                                        if (isDir) onNavigateToFolder(item.file.absolutePath)
+                                        else { /* Phase 3: Open Viewer */ }
                                     }
                                 }
                                 FolderCard(
                                     path = item.file.absolutePath,
                                     onClick = onClickAction,
                                     showTitle = state.showTitles,
-                                    isSelected = state.selectedPaths.contains(item.file.absolutePath),
-                                    onContextAction = { action ->
-                                        when (action) {
-                                            "Rename" -> { showRenameDialogFor = item.file.absolutePath }
-                                            "Copy" -> {
-                                                io.iris.utils.openDirectoryPicker("Copy to...", path)?.let { dest ->
-                                                    viewModel.copyFiles(listOf(item.file.absolutePath), dest)
-                                                }
-                                            }
-                                            "Duplicate" -> { viewModel.duplicateFiles(listOf(item.file.absolutePath)) }
-                                            "Move" -> {
-                                                io.iris.utils.openDirectoryPicker("Move to...", path)?.let { dest ->
-                                                    viewModel.moveFiles(listOf(item.file.absolutePath), dest)
-                                                }
-                                            }
-                                            "Delete" -> { viewModel.deleteFiles(listOf(item.file.absolutePath)) }
-                                        }
-                                    },
-                                    onModifierClick = { isShift, isAlt ->
-                                        if (isShift) viewModel.selectRange(item.file.absolutePath)
-                                        else if (isAlt) viewModel.toggleSelection(item.file.absolutePath)
-                                    },
-                                    modifier = Modifier.animateItem()
+                                    isSelected = isSelected
                                 )
                             }
                         }
+                        
+                        VerticalScrollbar(
+                            modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight().padding(end = 4.dp, top = 20.dp, bottom = 120.dp),
+                            adapter = rememberScrollbarAdapter(gridState)
+                        )
                     }
                 }
-
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .fillMaxWidth()
-                        .zIndex(1f)
-                        .background(if (isScrolled) IrisTheme.colors.surface.copy(alpha = 0.85f) else Color.Transparent)
-                ) {
-                    val currentDirName = File(path).name
-                    val filesCount = state.items.count { it !is MediaItem.Folder }
-                    val countText = "$filesCount item${if (filesCount != 1) "s" else ""}"
-
-                    val breadcrumbsList = stack.mapNotNull { screen ->
-                        if (screen is Screen.Home) "Home" to { onPopTo(screen) }
-                        else if (screen is Screen.Folder) File(screen.path).name to { onPopTo(screen) }
-                        else null
-                    }
-                    val parentScreen = stack.getOrNull(stack.size - 2) ?: stack.lastOrNull()
-
-                    LibraryHeader(
-                        title = currentDirName,
-                        subtitle = countText,
-                        currentSort = state.sort,
-                        onSortChange = { viewModel.setSort(it) },
-                        currentLayout = state.layout,
-                        onLayoutChange = { viewModel.setLayout(it) },
-                        showTitles = state.showTitles,
-                        onShowTitlesChange = { viewModel.setShowTitles(it) },
-                        mediaFilter = state.mediaFilter,
-                        onMediaFilterChange = { viewModel.setMediaFilter(it) },
-                        showMediaFilter = true,
-                        onSelectClick = { viewModel.toggleSelectMode() },
-                        onBackClick = { parentScreen?.let { onPopTo(it) } },
-                        breadcrumbs = breadcrumbsList,
-                        isSelectMode = state.isSelectMode,
-                        selectedCount = state.selectedPaths.size
-                    )
-                }
-
-                VerticalScrollbar(
-                    modifier = Modifier.align(Alignment.CenterEnd)
-                        .fillMaxHeight()
-                        .padding(top = 90.dp, end = 4.dp, bottom = 13.dp)
-                        .zIndex(2f),
-                    adapter = scrollbarAdapter
-                )
             }
-        }
-
-        if (state.isSelectMode) {
-            SelectionBottomMenu(
-                onRenameClick = {
-                    if (state.selectedPaths.size == 1) {
-                        showRenameDialogFor = state.selectedPaths.first()
-                    }
-                },
-                onDeleteClick = { viewModel.deleteFiles(state.selectedPaths.toList()) },
-                onMoveClick = { 
-                    io.iris.utils.openDirectoryPicker("Move to...", path)?.let { dest ->
-                        viewModel.moveFiles(state.selectedPaths.toList(), dest)
-                    }
-                },
-                onCopyClick = { 
-                    io.iris.utils.openDirectoryPicker("Copy to...", path)?.let { dest ->
-                        viewModel.copyFiles(state.selectedPaths.toList(), dest)
-                    }
-                },
-                onDuplicateClick = { 
-                    viewModel.duplicateFiles(state.selectedPaths.toList())
-                    viewModel.clearSelection()
-                },
-                selectedCount = state.selectedPaths.size
-            )
-        } else {
-            BottomAppMenu(
-                onSettingsClick = onOpenSettings,
-                showLinkFolder = false,
-                onLinkFolderClick = {},
-                searchQuery = searchQuery,
-                onSearchQueryChange = { searchQuery = it }
-            )
         }
     }
+}
+
+@Composable
+private fun DropdownItem(text: String, enabled: Boolean = true, onClick: () -> Unit) {
+    val src = remember { MutableInteractionSource() }
+    val isHovered by src.collectIsHoveredAsState()
+    val bg by animateColorAsState(if (isHovered && enabled) IrisTheme.colors.surfaceHover else Color.Transparent)
+    val fg = if (enabled) IrisTheme.colors.textPrimary else IrisTheme.colors.textTertiary
     
-    showRenameDialogFor?.let { renamePath ->
-        val file = File(renamePath)
-        val isDir = file.isDirectory
-        val initialName = if (isDir) file.name else file.nameWithoutExtension
-        val ext = if (isDir || file.extension.isEmpty()) "" else ".${file.extension}"
-        
-        RenameDialog(
-            initialName = initialName,
-            onDismiss = { showRenameDialogFor = null },
-            onConfirm = { newName ->
-                viewModel.renameFile(renamePath, newName + ext)
-                showRenameDialogFor = null
-            }
-        )
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(6.dp))
+            .background(bg)
+            .then(if (enabled) Modifier.clickable(interactionSource = src, indication = null, onClick = onClick) else Modifier)
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+    ) {
+        BasicText(text, style = TextStyle(color = fg, fontSize = 13.sp))
     }
 }

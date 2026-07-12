@@ -9,7 +9,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
@@ -99,7 +98,7 @@ fun RenameDialog(
                         .clickable(enabled = newName.isNotBlank(), onClick = { onConfirm(newName) })
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
-                    BasicText("Rename", style = TextStyle(color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium))
+                    BasicText("Rename", style = TextStyle(color = IrisTheme.colors.onAccent, fontSize = 16.sp, fontWeight = FontWeight.Medium))
                 }
             }
         }

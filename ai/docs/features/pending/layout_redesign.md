@@ -40,11 +40,24 @@ This redesign shifts the application from a traditional sidebar layout to a more
 
 ## Execution Plan
 
-1. **Clean up existing UI:** Remove `AppSidebar.kt`, `GlobalTopBar.kt` (or heavily rewrite it), and the current `MainShell` layout.
-2. **Build Smart Breadcrumbs:** Implement the path state, collapse logic, and the `...` expansion popup.
-3. **Build Top Bar:** Integrate breadcrumbs and window controls.
-4. **Build Floating Dock:** Implement the dock, active state coloring, and routing integration.
-5. **Implement Spotlight Search:** Build a centered floating search modal.
-6. **Implement Settings Animation:** Build the settings panel anchored to the dock's settings icon.
-7. **Build Home View:** Implement the linked folders dashboard.
-8. **Update Theming (`IrisTheme.kt`):** Add the new OLED-friendly palette and dock gradient/blur tokens.
+- [x] **Clean up existing UI:** Remove `AppSidebar.kt`, `GlobalTopBar.kt` (or heavily rewrite it), and the current `MainShell` layout.
+- [ ] **Build Smart Breadcrumbs:** Implement the path state, collapse logic, and the `...` expansion popup.
+- [ ] **Build Top Bar:** Integrate breadcrumbs and window controls.
+- [x] **Build Floating Dock:** Implement the dock, active state coloring, and routing integration.
+- [ ] **Implement Spotlight Search:** Build a centered floating search modal.
+- [ ] **Implement Settings Animation:** Build the settings panel anchored to the dock's settings icon.
+- [ ] **Build Home View:** Implement the linked folders dashboard.
+- [x] **Update Theming (`IrisTheme.kt`):** Add the new OLED-friendly palette and dock gradient/blur tokens.
+- [x] **Folder Navigation & Zoom:** Implement discrete Zoom modes (Small, Grid, Big) and Sorting (Name/Date, Asc/Desc) per folder.
+- [x] **Library & Pinned Folders:** Implement the Library dock popup that grows upwards and displays pinned folders, with a glowing badge indicator.
+- [x] **Select Mode & File Operations:** Implement multi-item selection with vibrant borders. Integrate file actions (Delete, Duplicate, Copy, Move) using native Desktop directory pickers.
+
+## Progress Log (Recent)
+- **Dock Refinements:** Renamed "Navigation" to "Library" and added a glowing badge indicator when pinned items exist. Fixed the hovering logic and upward-growing behavior for the Library popup.
+- **Folder Screen Features:**
+  - Replaced percentage zoom with discrete 3-mode zoom (Small/Grid/Big) persisted per folder.
+  - Implemented Sorting via the filter popup.
+  - Added Select Mode UI and wired it to `FolderViewModel`.
+  - Added thick vibrant orange borders for selected items.
+  - Added Delete, Duplicate, Copy, and Move file operations in Select Mode. Integrated AWT `JFileChooser` for picking destination directories.
+  - Fixed filter SVG icon aspect ratio so it perfectly aligns with surrounding buttons.

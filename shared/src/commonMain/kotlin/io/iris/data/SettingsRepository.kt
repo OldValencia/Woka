@@ -14,4 +14,6 @@ interface SettingsRepository {
     fun setShowFolders(show: Boolean)
     fun setMediaFilter(filter: String)
     fun setTheme(theme: String)
+    fun addPinnedSession(session: PinnedSession)
+    fun removePinnedSession(path: String)
 }

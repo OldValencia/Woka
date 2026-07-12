@@ -15,9 +15,16 @@ import io.iris.ui.FolderScreen
 import io.iris.ui.HomeDependencies
 import io.iris.ui.HomeScreen
 import io.iris.ui.components.SettingsOverlay
+import io.iris.ui.components.DockTab
+import io.iris.ui.components.MainShell
 import io.iris.ui.theme.IrisTheme
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.dp
 
 object AppDependencies : KoinComponent {
     val router: Router by inject()
@@ -25,11 +32,17 @@ object AppDependencies : KoinComponent {
 }
 
 @Composable
-fun App() {
+fun App(
+    topBarArea: @Composable (content: @Composable () -> Unit) -> Unit = { it() },
+    onCloseWindow: () -> Unit = {},
+    onMinimizeWindow: () -> Unit = {},
+    onMaximizeWindow: () -> Unit = {},
+    isMaximized: Boolean = false
+) {
     val router = remember { AppDependencies.router }
     val settingsRepo = remember { AppDependencies.settingsRepository }
     val settings by settingsRepo.settings.collectAsState()
-    
+
     val isSystemDark = isSystemInDarkTheme()
     val isDark = when (settings.theme) {
         "Light" -> false
@@ -38,12 +51,43 @@ fun App() {
     }
 
     var isSettingsOpen by remember { mutableStateOf(false) }
+    val stack by router.stack.collectAsState()
+    val currentScreen = stack.lastOrNull() ?: Screen.Home
 
     IrisTheme(darkTheme = isDark) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            val stack by router.stack.collectAsState()
-            val currentScreen = stack.lastOrNull() ?: Screen.Home
-            
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(12.dp))
+                .background(IrisTheme.colors.background)
+                .border(1.dp, IrisTheme.colors.border, RoundedCornerShape(12.dp))
+        ) {
+            val currentPath = (currentScreen as? Screen.Folder)?.path
+            val activeTab = when (currentScreen) {
+                is Screen.Home -> DockTab.Home
+                is Screen.Folder -> DockTab.Navigation
+                else -> DockTab.Editor
+            }
+
+            MainShell(
+                topBarArea = topBarArea,
+                currentPath = currentPath,
+                activeTab = activeTab,
+                onTabSelected = { tab -> 
+                    if (tab == DockTab.Home) {
+                        router.popTo(Screen.Home)
+                    }
+                },
+                onCloseWindow = onCloseWindow,
+                onMinimizeWindow = onMinimizeWindow,
+                onMaximizeWindow = onMaximizeWindow,
+                isMaximized = isMaximized,
+                onOpenSettings = { isSettingsOpen = true },
+                onOpenSearch = { }, // Placeholder for search overlay
+                onNavigateBack = if (stack.size > 1) { { router.pop() } } else null,
+                onBreadcrumbClick = { path -> router.navigateTo(Screen.Folder(path)) },
+                linkedFolders = settings.linkedFolders
+            ) {
             AnimatedContent(
                 targetState = currentScreen,
                 transitionSpec = {
@@ -75,6 +119,7 @@ fun App() {
                         onOpenSettings = { isSettingsOpen = true }
                     )
                 }
+            }
             }
 
             // Settings Overlay

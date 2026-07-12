@@ -129,6 +129,24 @@ class SettingsRepositoryImpl : SettingsRepository {
         }
     }
 
+    override fun addPinnedSession(session: PinnedSession) {
+        _settings.update { current ->
+            val newSessions = current.pinnedSessions.filter { it.path != session.path } + session
+            val newSettings = current.copy(pinnedSessions = newSessions)
+            saveSettings(newSettings)
+            newSettings
+        }
+    }
+
+    override fun removePinnedSession(path: String) {
+        _settings.update { current ->
+            val newSessions = current.pinnedSessions.filter { it.path != path }
+            val newSettings = current.copy(pinnedSessions = newSessions)
+            saveSettings(newSettings)
+            newSettings
+        }
+    }
+
     private fun saveSettings(newSettings: IrisSettings) {
         scope.launch {
             try {
