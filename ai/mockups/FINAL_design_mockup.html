@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iris Media Viewer — Fluid Luxury</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        :root {
+            /* Новая ультра-дорогая палитра для OLED: глубокий полуночный графит */
+            --bg-canvas: #0E1015;   
+            --bg-island: rgba(22, 26, 34, 0.8); 
+            --bg-card: #161920;
+            
+            /* Нативные цвета для активных иконок */
+            --color-home: #0A84FF;   
+            --color-folders: #FF9F0A; 
+            --color-editor: #BF5AF2; 
+            --color-search: #30D158;
+            --color-settings: #8E8E93;
+
+            --text-main: #F4F4F6;
+            --text-muted: #515764; 
+            --border: rgba(255, 255, 255, 0.04);
+            --border-glow: rgba(255, 255, 255, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-canvas);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .window-drag-handle {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 60px;
+            z-index: 99;
+            pointer-events: none;
+        }
+
+        /* --- TOPBAR --- */
+        header {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 100;
+        }
+
+        .mac-controls { display: flex; gap: 6px; }
+        .mac-dot { width: 11px; height: 11px; border-radius: 50%; opacity: 0.4; }
+        .mac-close { background: #FF5F56; }
+        .mac-min { background: #FFBD2E; }
+        .mac-max { background: #27C93F; }
+
+        /* Умный сжатый URL */
+        .smart-breadcrumbs { 
+            display: flex; align-items: center; font-size: 15px; font-weight: 600; letter-spacing: -0.1px;
+            background: var(--bg-island); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+            padding: 7px 18px; border-radius: 30px; border: 1px solid var(--border);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .smart-breadcrumbs .root-folder { color: var(--text-muted); }
+        .smart-breadcrumbs .separator { color: rgba(255,255,255,0.06); margin: 0 10px; }
+        .smart-breadcrumbs .collapsed-menu {
+            color: var(--text-main); background: rgba(255,255,255,0.03);
+            padding: 1px 6px; border-radius: 4px; cursor: pointer; margin: 0 2px;
+            font-size: 13px; transition: border-color 0.15s;
+            border: 1px solid transparent;
+        }
+        .smart-breadcrumbs .collapsed-menu:hover { border-color: rgba(255,255,255,0.15); }
+        .smart-breadcrumbs .current-folder { color: var(--text-main); }
+
+        .win-controls { display: flex; align-items: center; height: 100%; }
+        .win-btn {
+            width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+            font-size: 11px; color: var(--text-muted); cursor: pointer; border-radius: 6px;
+        }
+        .win-btn:hover { background: rgba(255,255,255,0.04); color: var(--text-main); }
+        .win-btn.close:hover { background: #E81123; color: white; }
+
+        /* --- CONTENT CANVAS --- */
+        .content-view {
+            flex: 1;
+            padding: 20px 40px 120px 40px; 
+            overflow-y: auto;
+        }
+
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); 
+            gap: 28px; 
+        }
+        
+        .media-card {
+            position: relative; cursor: pointer; display: flex; flex-direction: column; gap: 10px;
+            transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .media-card:hover { transform: translateY(-2px); }
+
+        .media-thumb-wrapper { 
+            width: 100%; aspect-ratio: 16 / 10; border-radius: 10px; overflow: hidden; 
+            background: var(--bg-card); border: 1px solid var(--border); position: relative;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .media-card:hover .media-thumb-wrapper {
+            border-color: var(--border-glow); box-shadow: 0 16px 32px rgba(0, 0, 0, 0.35);
+        }
+
+        .gradient-media { width: 100%; height: 100%; opacity: 0.65; }
+        .gm-1 { background: linear-gradient(135deg, #162447, #1f4068); }
+        .gm-2 { background: linear-gradient(135deg, #2D3748, #1A202C); }
+
+        .file-badge {
+            position: absolute; top: 10px; right: 10px;
+            background: rgba(14, 16, 21, 0.8); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.05); padding: 2px 7px; border-radius: 5px;
+            font-size: 10px; font-weight: 700; color: #FFF;
+        }
+
+        .media-info { padding: 0 2px; }
+        .media-title { font-size: 14px; font-weight: 600; color: #CDCDD2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .media-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .media-card:hover .media-title { color: #FFF; }
+
+        /* --- PREMIUM FLOATING DOCK --- */
+        .dock-container {
+            position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
+            background: var(--bg-island); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.05); padding: 6px; border-radius: 20px;
+            display: flex; align-items: center; gap: 4px;
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255,255,255,0.03);
+            z-index: 500;
+        }
+
+        .dock-item {
+            height: 40px; padding: 0 16px; border-radius: 14px;
+            display: flex; align-items: center; gap: 8px;
+            color: #838893; font-size: 13.5px; font-weight: 600; cursor: pointer;
+            transition: all 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+            position: relative;
+        }
+        .dock-item:hover {
+            background: rgba(255, 255, 255, 0.02); color: var(--text-main);
+        }
+
+        .dock-icon { width: 16px; height: 16px; fill: currentColor; transition: color 0.15s; }
+
+        /* Элитная динамическая покраска активных иконок */
+        .dock-item.active-home { color: #FFF; background: rgba(255,255,255,0.03); }
+        .dock-item.active-home .dock-icon { color: var(--color-home); }
+
+        .dock-item.active-folders { color: #FFF; background: rgba(255,255,255,0.03); }
+        .dock-item.active-folders .dock-icon { color: var(--color-folders); }
+
+        .dock-item.active-editor { color: #FFF; background: rgba(255,255,255,0.03); }
+        .dock-item.active-editor .dock-icon { color: var(--color-editor); }
+
+        .dock-separator { width: 1px; height: 20px; background-color: rgba(255, 255, 255, 0.06); margin: 0 4px; }
+
+        .dock-btn-secondary { width: 40px; height: 40px; padding: 0; justify-content: center; border-radius: 14px; }
+        .dock-btn-secondary:hover .dock-icon-sec { color: var(--text-main); }
+        
+        .dock-icon-sec { font-size: 14px; color: #626773; transition: color 0.15s; }
+        .dock-btn-secondary:hover .i-search { color: var(--color-search); }
+        .dock-btn-secondary:hover .i-settings { color: var(--color-settings); }
+    </style>
+</head>
+<body>
+
+    <div class="window-drag-handle"></div>
+
+    <header>
+        <div class="mac-controls">
+            <div class="mac-dot mac-close"></div>
+            <div class="mac-dot mac-min"></div>
+            <div class="mac-dot mac-max"></div>
+        </div>
+
+        <div class="smart-breadcrumbs">
+            <span class="root-folder">D:\References</span>
+            <span class="separator">/</span>
+            <span class="collapsed-menu" title="Click to expand path">...</span>
+            <span class="separator">/</span>
+            <span class="current-folder">UI Inspiration</span>
+        </div>
+
+        <div class="win-controls">
+            <div class="win-btn">─</div>
+            <div class="win-btn">❑</div>
+            <div class="win-btn close">✕</div>
+        </div>
+    </header>
+
+    <div class="content-view">
+        <div class="media-grid">
+            <div class="media-card">
+                <div class="media-thumb-wrapper"><div class="gradient-media gm-1"></div><div class="file-badge">PNG</div></div>
+                <div class="media-info">
+                    <div class="media-title">architecture_render_4k.png</div>
+                    <div class="media-meta">4.2 MB • 4K</div>
+                </div>
+            </div>
+            <div class="media-card">
+                <div class="media-thumb-wrapper"><div class="gradient-media gm-2"></div><div class="file-badge">RAW</div></div>
+                <div class="media-info">
+                    <div class="media-title">studio_lighting_setup.cr2</div>
+                    <div class="media-meta">32.1 MB • RAW</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dock-container">
+        <div class="dock-item active-home">
+            <svg class="dock-icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            <span>Home</span>
+        </div>
+        
+        <div class="dock-item">
+            <svg class="dock-icon" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+            <span>Folders</span>
+        </div>
+
+        <div class="dock-item">
+            <svg class="dock-icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+            <span>Editor</span>
+        </div>
+
+        <div class="dock-separator"></div>
+
+        <div class="dock-item dock-btn-secondary" title="Search (Ctrl+F)">
+            <span class="dock-icon-sec i-search">🔍</span>
+        </div>
+        <div class="dock-item dock-btn-secondary" title="Settings">
+            <span class="dock-icon-sec i-settings">⚙️</span>
+        </div>
+    </div>
+
+</body>
+</html>

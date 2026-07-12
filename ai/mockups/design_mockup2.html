@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iris Media Viewer — Fluid Canvas</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        :root {
+            /* Палитра ультра-премиум: глубокий бархатный черный */
+            --bg-canvas: #08090B;   
+            --bg-island: rgba(22, 25, 31, 0.85); /* Полупрозрачное стекло для дока/островов */
+            --bg-card-hover: #13161C;
+            
+            --accent: #007AFF; 
+            --text-main: #F4F4F6;
+            --text-muted: #4E535E; 
+            --border: rgba(255, 255, 255, 0.04);
+            --border-glow: rgba(255, 255, 255, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+
+        /* Симуляция честного окна ОС */
+        body {
+            background-color: var(--bg-canvas);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Область для перетаскивания окна */
+        .window-drag-handle {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 60px;
+            z-index: 99;
+            pointer-events: none;
+        }
+
+        /* --- TOPBAR (Кристально чистый) --- */
+        header {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 100;
+            background: linear-gradient(to bottom, rgba(8,9,11,0.9), rgba(8,9,11,0));
+        }
+
+        /* Место под macOS светофоры (слева) */
+        .mac-controls {
+            display: flex; gap: 6px; pointer-events: auto;
+        }
+        .mac-dot { width: 11px; height: 11px; border-radius: 50%; opacity: 0.4; }
+        .mac-close { background: #FF5F56; }
+        .mac-min { background: #FFBD2E; }
+        .mac-max { background: #27C93F; }
+
+        /* Центрированный или сдвинутый крупный URL */
+        .smart-breadcrumbs { 
+            display: flex; align-items: center; font-size: 16px; font-weight: 700; letter-spacing: -0.2px;
+            background: var(--bg-island); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            padding: 6px 16px; border-radius: 30px; border: 1px solid var(--border);
+            pointer-events: auto;
+        }
+        .smart-breadcrumbs .root-folder { color: var(--text-muted); }
+        .smart-breadcrumbs .separator { color: rgba(255,255,255,0.08); margin: 0 10px; font-weight: 400; }
+        .smart-breadcrumbs .current-folder { color: var(--text-main); }
+
+        /* Кнопки Windows (Справа в углу) */
+        .win-controls { display: flex; align-items: center; height: 100%; pointer-events: auto; }
+        .win-btn {
+            width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+            font-size: 12px; color: var(--text-muted); cursor: pointer; border-radius: 6px;
+            transition: all 0.15s;
+        }
+        .win-btn:hover { background: rgba(255,255,255,0.04); color: var(--text-main); }
+        .win-btn.close:hover { background: #E81123; color: white; }
+
+
+        /* --- CONTENT AREA (Бескрайний холст) --- */
+        .content-view {
+            flex: 1;
+            padding: 20px 40px 120px 40px; /* Большой отступ снизу под Док */
+            overflow-y: auto;
+        }
+
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); /* Чуть крупнее под ультравайд */
+            gap: 32px; /* Больше пространства между медиа */
+        }
+        
+        /* Дорогие карточки без жестких рамок */
+        .media-card {
+            position: relative; 
+            cursor: pointer; 
+            display: flex; 
+            flex-direction: column;
+            gap: 12px;
+            transition: transform 0.25s cubic-bezier(0.1, 0.8, 0.2, 1);
+        }
+        .media-card:hover {
+            transform: scale(1.02);
+        }
+
+        .media-thumb-wrapper { 
+            width: 100%; 
+            aspect-ratio: 16 / 10; /* Кинематографичные пропорции */
+            border-radius: 12px; 
+            overflow: hidden; 
+            background: #111317; 
+            border: 1px solid var(--border);
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            transition: border-color 0.25s, box-shadow 0.25s;
+        }
+        .media-card:hover .media-thumb-wrapper {
+            border-color: var(--border-glow);
+            box-shadow: 0 20px 38px rgba(0, 0, 0, 0.4);
+        }
+
+        .gradient-media { width: 100%; height: 100%; opacity: 0.75; }
+        .gm-1 { background: linear-gradient(135deg, #1f4068, #162447); }
+        .gm-2 { background: linear-gradient(135deg, #3F4441, #242725); }
+        .gm-3 { background: linear-gradient(135deg, #4A1525, #2C0B14); }
+
+        .file-badge {
+            position: absolute; top: 12px; right: 12px;
+            background: rgba(8, 9, 11, 0.75); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.04); padding: 3px 8px; border-radius: 6px;
+            font-size: 11px; font-weight: 700; color: #FFF; letter-spacing: 0.5px;
+        }
+
+        /* Инфо-блок под превью */
+        .media-info { padding: 0 4px; }
+        .media-title { font-size: 14.5px; font-weight: 600; color: #D4D4D8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .media-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; font-weight: 500; }
+        .media-card:hover .media-title { color: #FFF; }
+
+
+        /* --- PREMIUM FLOATING DOCK (Главный элемент 2026 года) --- */
+        .dock-container {
+            position: absolute;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-island);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 8px 12px;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+            z-index: 500;
+        }
+
+        .dock-item {
+            height: 44px;
+            padding: 0 16px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #8E939E;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .dock-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-main);
+            transform: translateY(-2px);
+        }
+        .dock-item.active {
+            background: rgba(255, 255, 255, 0.06);
+            color: #FFF;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .dock-icon {
+            width: 16px; height: 16px; fill: currentColor;
+        }
+        /* Тонкие цветные точки активности под вкладками дока */
+        .dock-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: 4px; left: 50%; transform: translateX(-50%);
+            width: 4px; height: 4px; border-radius: 50%;
+            background-color: var(--accent);
+        }
+
+        /* Разделитель внутри дока */
+        .dock-separator {
+            width: 1px; height: 24px;
+            background-color: rgba(255, 255, 255, 0.08);
+            margin: 0 6px;
+        }
+
+        .dock-btn-secondary {
+            width: 44px; height: 44px; padding: 0; justify-content: center; border-radius: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Область перемещения borderless окна -->
+    <div class="window-drag-handle"></div>
+
+    <!-- HEADER -->
+    <header>
+        <!-- Системные macOS (для демонстрации кроссплатформы) -->
+        <div class="mac-controls">
+            <div class="mac-dot mac-close"></div>
+            <div class="mac-dot mac-min"></div>
+            <div class="mac-dot mac-max"></div>
+        </div>
+
+        <!-- Парящие хлебные крошки -->
+        <div class="smart-breadcrumbs">
+            <span class="root-folder">D:\References</span>
+            <span class="separator">/</span>
+            <span class="current-folder">UI Inspiration</span>
+        </div>
+
+        <!-- Системные Windows -->
+        <div class="win-controls">
+            <div class="win-btn">─</div>
+            <div class="win-btn">❑</div>
+            <div class="win-btn close">✕</div>
+        </div>
+    </header>
+
+    <!-- CONTENT CANVAS -->
+    <div class="content-view">
+        <div class="media-grid">
+            <!-- Card 1 -->
+            <div class="media-card">
+                <div class="media-thumb-wrapper">
+                    <div class="gradient-media gm-1"></div>
+                    <div class="file-badge">PNG</div>
+                </div>
+                <div class="media-info">
+                    <div class="media-title">architecture_render_4k.png</div>
+                    <div class="media-meta">4.2 MB • 3840x2160</div>
+                </div>
+            </div>
+            <!-- Card 2 -->
+            <div class="media-card">
+                <div class="media-thumb-wrapper">
+                    <div class="gradient-media gm-2"></div>
+                    <div class="file-badge">RAW</div>
+                </div>
+                <div class="media-info">
+                    <div class="media-title">studio_lighting_setup.cr2</div>
+                    <div class="media-meta">32.1 MB • Canon RAW</div>
+                </div>
+            </div>
+            <!-- Card 3 -->
+            <div class="media-card">
+                <div class="media-thumb-wrapper">
+                    <div class="gradient-media gm-3"></div>
+                    <div class="file-badge">MP4</div>
+                </div>
+                <div class="media-info">
+                    <div class="media-title">hero_animation_loop.mp4</div>
+                    <div class="media-meta">18.5 MB • 0:12</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FLOATING DOCK (Управление всем софтом в один уровень) -->
+    <div class="dock-container">
+        <!-- Режим HOME -->
+        <div class="dock-item active">
+            <svg class="dock-icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            <span>Home</span>
+        </div>
+        
+        <!-- Режим NAVIGATION / Вкладки -->
+        <div class="dock-item">
+            <svg class="dock-icon" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+            <span>Folders</span>
+        </div>
+
+        <!-- Режим EDITOR -->
+        <div class="dock-item">
+            <svg class="dock-icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+            <span>Editor</span>
+        </div>
+
+        <div class="dock-separator"></div>
+
+        <!-- Быстрые утилитарные кнопки внутри Дока -->
+        <div class="dock-item dock-btn-secondary" title="Search (Ctrl+F)">
+            <span>🔍</span>
+        </div>
+        <div class="dock-item dock-btn-secondary" title="Settings">
+            <span>⚙️</span>
+        </div>
+    </div>
+
+</body>
+</html>
