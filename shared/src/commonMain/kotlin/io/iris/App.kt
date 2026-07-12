@@ -3,28 +3,27 @@ package io.iris
 import androidx.compose.animation.*
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.dp
 import io.iris.data.SettingsRepository
 import io.iris.navigation.Router
 import io.iris.navigation.Screen
 import io.iris.ui.FolderScreen
-import io.iris.ui.HomeDependencies
 import io.iris.ui.HomeScreen
-import io.iris.ui.components.SettingsOverlay
 import io.iris.ui.components.DockTab
 import io.iris.ui.components.MainShell
+import io.iris.ui.components.SettingsOverlay
 import io.iris.ui.theme.IrisTheme
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.unit.dp
 
 object AppDependencies : KoinComponent {
     val router: Router by inject()
@@ -69,6 +68,8 @@ fun App(
                 else -> DockTab.Editor
             }
 
+            var isSearchOpen by remember { mutableStateOf(false) }
+
             MainShell(
                 topBarArea = topBarArea,
                 currentPath = currentPath,
@@ -83,7 +84,7 @@ fun App(
                 onMaximizeWindow = onMaximizeWindow,
                 isMaximized = isMaximized,
                 onOpenSettings = { isSettingsOpen = true },
-                onOpenSearch = { }, // Placeholder for search overlay
+                onOpenSearch = { isSearchOpen = true },
                 onNavigateBack = if (stack.size > 1) { { router.pop() } } else null,
                 onBreadcrumbClick = { path -> router.navigateTo(Screen.Folder(path)) },
                 linkedFolders = settings.linkedFolders
@@ -107,16 +108,11 @@ fun App(
             ) { screen ->
                 when (screen) {
                     is Screen.Home -> HomeScreen(
-                        onNavigateToFolder = { path -> router.navigateTo(Screen.Folder(path)) },
-                        onRemoveFolder = { path -> HomeDependencies.viewModel.removeLinkedFolder(path) },
-                        onOpenSettings = { isSettingsOpen = true }
+                        onNavigateToFolder = { path -> router.navigateTo(Screen.Folder(path)) }
                     )
                     is Screen.Folder -> FolderScreen(
                         path = screen.path,
-                        stack = stack,
-                        onPopTo = { s -> router.popTo(s) },
-                        onNavigateToFolder = { path -> router.navigateTo(Screen.Folder(path)) },
-                        onOpenSettings = { isSettingsOpen = true }
+                        onNavigateToFolder = { path -> router.navigateTo(Screen.Folder(path)) }
                     )
                 }
             }
@@ -130,6 +126,14 @@ fun App(
                 onThemeChange = { settingsRepo.setTheme(it) },
                 globalShowTitles = settings.showTitles,
                 onGlobalShowTitlesChange = { settingsRepo.setShowTitles(it) }
+            )
+
+            // Search Overlay
+            io.iris.ui.components.SearchOverlay(
+                isOpen = isSearchOpen,
+                onClose = { isSearchOpen = false },
+                linkedFolders = settings.linkedFolders,
+                onResultClick = { path -> router.navigateTo(Screen.Folder(path)) }
             )
         }
     }

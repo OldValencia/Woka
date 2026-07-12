@@ -27,6 +27,7 @@ import androidx.compose.ui.window.Dialog
 @Composable
 fun RenameDialog(
     initialName: String,
+    title: String = "Rename",
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit
 ) {
@@ -38,10 +39,10 @@ fun RenameDialog(
                 .width(300.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .background(IrisTheme.colors.surface)
-                .padding(24.dp)
+                .padding(16.dp)
         ) {
             BasicText(
-                text = "Rename",
+                text = title,
                 style = TextStyle(color = IrisTheme.colors.textPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             )
             Spacer(modifier = Modifier.height(16.dp))

@@ -1,5 +1,7 @@
 package io.iris.ui
 
+import androidx.compose.foundation.VerticalScrollbar
+import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
@@ -20,9 +22,7 @@ object HomeDependencies : KoinComponent {
 
 @Composable
 fun HomeScreen(
-    onNavigateToFolder: (String) -> Unit = {},
-    onRemoveFolder: (String) -> Unit = {},
-    onOpenSettings: () -> Unit = {}
+    onNavigateToFolder: (String) -> Unit = {}
 ) {
     val viewModel = remember { HomeDependencies.viewModel }
     val state by viewModel.state.collectAsState()
@@ -51,14 +51,21 @@ fun HomeScreen(
                             FolderCard(
                                 path = path,
                                 onClick = { onNavigateToFolder(path) },
-                                showTitle = state.showTitles
+                                showTitle = state.showTitles,
+                                isSelected = false,
+                                contextMenuContent = { dismiss ->
+                                    io.iris.ui.components.DropdownItem("Open") { dismiss(); onNavigateToFolder(path) }
+                                    io.iris.ui.components.DropdownItem("Pin to Library", textColor = IrisTheme.colors.accentFolders) { dismiss(); viewModel.pinFolder(path) }
+                                    io.iris.ui.components.DropdownItem("Unlink folder", textColor = IrisTheme.colors.danger) { dismiss(); viewModel.removeLinkedFolder(path) }
+                                },
+                                onRemove = { viewModel.removeLinkedFolder(path) }
                             )
                         }
                     }
                     
-                    androidx.compose.foundation.VerticalScrollbar(
+                    VerticalScrollbar(
                         modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight().padding(end = 4.dp, top = 20.dp, bottom = 120.dp),
-                        adapter = androidx.compose.foundation.rememberScrollbarAdapter(gridState)
+                        adapter = rememberScrollbarAdapter(gridState)
                     )
                 }
             }

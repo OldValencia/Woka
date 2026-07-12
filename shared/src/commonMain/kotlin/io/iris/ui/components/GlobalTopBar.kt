@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -150,7 +151,7 @@ private fun WinControls(onClose: () -> Unit, onMinimize: () -> Unit, onMaximize:
         WinBtn(onClick = onMaximize, glyph = {
             if (isMaximized) {
                 val i = size.width * 0.2f
-                val s = androidx.compose.ui.geometry.Size(size.width - i, size.height - i)
+                val s = Size(size.width - i, size.height - i)
                 drawRoundRect(it, topLeft = Offset(i, 0f), size = s, style = Stroke(1.2.dp.toPx()))
                 drawRoundRect(it, topLeft = Offset(0f, i), size = s, style = Stroke(1.2.dp.toPx()))
             } else {

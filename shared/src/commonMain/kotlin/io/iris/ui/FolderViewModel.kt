@@ -1,18 +1,9 @@
 package io.iris.ui
 
-import io.iris.data.LocalMediaRepository
-import io.iris.data.MediaItem
-import io.iris.data.SettingsRepository
-import io.iris.data.ViewLayout
-import io.iris.data.SortType
+import io.iris.data.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 data class FolderState(
@@ -93,24 +84,8 @@ class FolderViewModel(
         }
     }
 
-    fun setLayout(layout: ViewLayout) {
-        settingsRepository.setFolderLayout(path, layout)
-    }
-
     fun setSort(sort: SortType) {
         settingsRepository.setFolderSort(path, sort)
-    }
-
-    fun setShowTitles(show: Boolean) {
-        settingsRepository.setFolderShowTitles(path, show)
-    }
-
-    fun setShowFolders(show: Boolean) {
-        settingsRepository.setShowFolders(show)
-    }
-
-    fun setMediaFilter(filter: String) {
-        settingsRepository.setMediaFilter(filter)
     }
 
     fun toggleSelectMode() {
@@ -126,16 +101,27 @@ class FolderViewModel(
             _isSelectMode.value = true
         }
         val current = _selectedPaths.value.toMutableSet()
-        if (current.contains(path)) current.remove(path) else current.add(path)
+        if (current.contains(path)) {
+            current.remove(path)
+            if (lastSelectedPath == path) {
+                lastSelectedPath = null
+            }
+        } else {
+            current.add(path)
+            lastSelectedPath = path
+        }
         _selectedPaths.value = current
-        lastSelectedPath = path
     }
 
     fun selectRange(toPath: String) {
         if (!_isSelectMode.value) {
             _isSelectMode.value = true
         }
-        val fromPath = lastSelectedPath ?: return toggleSelection(toPath)
+        val fromPath = lastSelectedPath
+        if (fromPath == null) {
+            toggleSelection(toPath)
+            return
+        }
         val currentItems = state.value.items
         val fromIndex = currentItems.indexOfFirst { it.file.absolutePath == fromPath }
         val toIndex = currentItems.indexOfFirst { it.file.absolutePath == toPath }
@@ -146,7 +132,6 @@ class FolderViewModel(
             val current = _selectedPaths.value.toMutableSet()
             current.addAll(rangePaths)
             _selectedPaths.value = current
-            lastSelectedPath = toPath
         }
     }
 
@@ -259,6 +244,13 @@ class FolderViewModel(
                     clearSelection()
                 }
             }
+        }
+    }
+
+    fun pinFolder(path: String) {
+        val file = java.io.File(path)
+        if (file.isDirectory) {
+            settingsRepository.addPinnedSession(PinnedSession(path = path))
         }
     }
 

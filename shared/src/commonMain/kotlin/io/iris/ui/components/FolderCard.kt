@@ -1,5 +1,6 @@
 package io.iris.ui.components
 
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateDpAsState
@@ -41,6 +42,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.iris.ui.theme.IrisTheme
 import java.io.File
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.input.pointer.isAltPressed
+import androidx.compose.ui.input.pointer.isShiftPressed
+import androidx.compose.ui.input.pointer.PointerButton
+import androidx.compose.ui.window.Popup
 
 import kotlin.math.log10
 import kotlin.math.pow
@@ -53,6 +61,7 @@ fun formatFileSize(size: Long): String {
     return "${(value * 10).toInt() / 10.0} ${units[digitGroups]}".replace(".0 ", " ")
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun FolderCard(
     path: String,
@@ -60,7 +69,7 @@ fun FolderCard(
     modifier: Modifier = Modifier,
     showTitle: Boolean = true,
     isSelected: Boolean = false,
-    onContextAction: ((String) -> Unit)? = null,
+    contextMenuContent: (@Composable (dismissMenu: () -> Unit) -> Unit)? = null,
     onRemove: (() -> Unit)? = null,
     onModifierClick: ((Boolean, Boolean) -> Unit)? = null
 ) {
@@ -127,13 +136,39 @@ fun FolderCard(
         file.extension.uppercase().takeIf { it.isNotEmpty() } ?: "FILE"
     }
 
-    Column(
+    var altPressed by remember { mutableStateOf(false) }
+    var shiftPressed by remember { mutableStateOf(false) }
+    var showContextMenu by remember { mutableStateOf(false) }
+    var contextMenuOffset by remember { mutableStateOf(IntOffset.Zero) }
+
+    Box(
         modifier = modifier
             .graphicsLayer { translationY = translateY }
             .pointerHoverIcon(PointerIcon.Hand)
             .hoverable(interactionSource)
-            .clickable(interactionSource = interactionSource, indication = null, onClick = onClick),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+            .onPointerEvent(PointerEventType.Press) { event ->
+                altPressed = event.keyboardModifiers.isAltPressed
+                shiftPressed = event.keyboardModifiers.isShiftPressed
+                if (event.button == PointerButton.Secondary && contextMenuContent != null) {
+                    val change = event.changes.first()
+                    if (!change.isConsumed) {
+                        contextMenuOffset = IntOffset(change.position.x.toInt() + 2, change.position.y.toInt() + 2)
+                        showContextMenu = true
+                        change.consume()
+                    }
+                }
+            }
+            .clickable(interactionSource = interactionSource, indication = null) {
+                if (onModifierClick != null && (altPressed || shiftPressed)) {
+                    onModifierClick(altPressed, shiftPressed)
+                } else {
+                    onClick()
+                }
+            }
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Box(
             modifier = Modifier
@@ -242,6 +277,28 @@ fun FolderCard(
                     )
                 }
             }
+            if (onRemove != null && isHovered) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(6.dp)
+                        .width(38.dp)
+                        .height(24.dp)
+                        .background(IrisTheme.colors.background.copy(alpha = 0.8f), RoundedCornerShape(6.dp))
+                        .border(1.dp, IrisTheme.colors.border, RoundedCornerShape(6.dp))
+                        .pointerHoverIcon(PointerIcon.Hand)
+                        .clickable { onRemove() }
+                        .padding(4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(IrisIcons.Static.Close),
+                        contentDescription = "Remove",
+                        modifier = Modifier.size(12.dp),
+                        colorFilter = ColorFilter.tint(IrisTheme.colors.textPrimary)
+                    )
+                }
+            }
         }
 
         if (showTitle) {
@@ -257,6 +314,26 @@ fun FolderCard(
                     style = TextStyle(color = IrisTheme.colors.textSecondary, fontSize = 12.sp),
                     modifier = Modifier.padding(top = 2.dp)
                 )
+            }
+        }
+        }
+
+        if (showContextMenu && contextMenuContent != null) {
+            Popup(
+                alignment = Alignment.TopStart,
+                offset = contextMenuOffset,
+                onDismissRequest = { showContextMenu = false }
+            ) {
+                Column(
+                    modifier = Modifier
+                        .width(180.dp)
+                        .shadow(12.dp, RoundedCornerShape(10.dp), spotColor = Color.Black.copy(alpha = 0.2f))
+                        .background(IrisTheme.colors.surfaceElevated, RoundedCornerShape(10.dp))
+                        .border(1.dp, IrisTheme.colors.border, RoundedCornerShape(10.dp))
+                        .padding(6.dp)
+                ) {
+                    contextMenuContent { showContextMenu = false }
+                }
             }
         }
     }

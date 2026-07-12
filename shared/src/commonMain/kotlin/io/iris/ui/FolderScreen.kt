@@ -1,58 +1,46 @@
 package io.iris.ui
 
-import androidx.compose.ui.ExperimentalComposeUiApi
-
-import androidx.compose.foundation.background
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsHoveredAsState
-import io.iris.data.MediaItem
-import io.iris.navigation.Screen
-import io.iris.ui.components.FolderCard
-import io.iris.ui.theme.IrisTheme
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.foundation.focusable
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.input.key.*
+import androidx.compose.ui.input.pointer.*
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.foundation.VerticalScrollbar
-import androidx.compose.foundation.rememberScrollbarAdapter
-import androidx.compose.animation.animateColorAsState
 import io.iris.AppDependencies
+import io.iris.data.MediaItem
 import io.iris.data.PinnedSession
-import io.iris.data.ViewLayout
 import io.iris.data.SortType
+import io.iris.data.ViewLayout
+import io.iris.ui.components.DropdownItem
+import io.iris.ui.components.FolderCard
+import io.iris.ui.components.RenameDialog
 import io.iris.ui.icons.IrisIcons
+import io.iris.ui.theme.IrisTheme
+import io.iris.utils.openDirectoryPicker
 import org.jetbrains.compose.resources.painterResource
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.parameter.parametersOf
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.input.pointer.isCtrlPressed
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.isCtrlPressed
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.type
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.Key
-import io.iris.utils.openDirectoryPicker
 
 class FolderDependencies(val path: String) : KoinComponent {
     val viewModel: FolderViewModel by inject { parametersOf(path) }
@@ -62,15 +50,16 @@ class FolderDependencies(val path: String) : KoinComponent {
 @Composable
 fun FolderScreen(
     path: String,
-    stack: List<Screen>,
-    onPopTo: (Screen) -> Unit,
-    onNavigateToFolder: (String) -> Unit,
-    onOpenSettings: () -> Unit = {}
+    onNavigateToFolder: (String) -> Unit
 ) {
     val dependencies = remember(path) { FolderDependencies(path) }
     val viewModel = dependencies.viewModel
     val state by viewModel.state.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    var itemToRename by remember { mutableStateOf<String?>(null) }
+    var showBgContextMenu by remember { mutableStateOf(false) }
+    var bgContextMenuOffset by remember { mutableStateOf(IntOffset.Zero) }
+    var showCreateFolderDialog by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize().background(IrisTheme.colors.background)) {
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -273,7 +262,7 @@ fun FolderScreen(
                                     .clickable { showFilterMenu = !showFilterMenu }
                                     .padding(horizontal = 10.dp, vertical = 9.dp)
                             ) {
-                                androidx.compose.foundation.Image(
+                                Image(
                                     painter = painterResource(IrisIcons.Static.Filter),
                                     contentDescription = "Filter",
                                     modifier = Modifier.width(21.dp).height(12.dp),
@@ -327,6 +316,16 @@ fun FolderScreen(
                     Box(modifier = Modifier.fillMaxWidth().weight(1f)
                         .focusRequester(focusRequester)
                         .focusable()
+                        .onPointerEvent(PointerEventType.Press) { event ->
+                            if (event.button == PointerButton.Secondary) {
+                                val change = event.changes.first()
+                                if (!change.isConsumed) {
+                                    bgContextMenuOffset = IntOffset(change.position.x.toInt() + 2, change.position.y.toInt() + 2)
+                                    showBgContextMenu = true
+                                    change.consume()
+                                }
+                            }
+                        }
                         .onPointerEvent(PointerEventType.Scroll, PointerEventPass.Initial) { event ->
                             if (event.keyboardModifiers.isCtrlPressed) {
                                 val delta = event.changes.firstOrNull()?.scrollDelta?.y ?: 0f
@@ -378,7 +377,37 @@ fun FolderScreen(
                                     path = item.file.absolutePath,
                                     onClick = onClickAction,
                                     showTitle = state.showTitles,
-                                    isSelected = isSelected
+                                    isSelected = isSelected,
+                                    onModifierClick = { isAlt, isShift ->
+                                        if (isShift) {
+                                            viewModel.selectRange(item.file.absolutePath)
+                                        } else if (isAlt) {
+                                            viewModel.toggleSelection(item.file.absolutePath)
+                                        }
+                                    },
+                                    contextMenuContent = { dismiss ->
+                                        if (isDir) {
+                                            DropdownItem("Open") { dismiss(); onNavigateToFolder(item.file.absolutePath) }
+                                            DropdownItem("Pin to Library", textColor = IrisTheme.colors.accentFolders) { dismiss(); viewModel.pinFolder(item.file.absolutePath) }
+                                        } else {
+                                            DropdownItem("Open") { dismiss(); /* Phase 3 Viewer */ }
+                                        }
+                                        DropdownItem("Rename") { dismiss(); itemToRename = item.file.absolutePath }
+                                        DropdownItem("Copy") { 
+                                            dismiss()
+                                            val dest = openDirectoryPicker("Copy to...", path)
+                                            if (dest != null) viewModel.copyFiles(listOf(item.file.absolutePath), dest)
+                                        }
+                                        DropdownItem("Move") { 
+                                            dismiss()
+                                            val dest = openDirectoryPicker("Move to...", path)
+                                            if (dest != null) viewModel.moveFiles(listOf(item.file.absolutePath), dest)
+                                        }
+                                        DropdownItem("Delete", textColor = IrisTheme.colors.danger) { 
+                                            dismiss()
+                                            viewModel.deleteFiles(listOf(item.file.absolutePath))
+                                        }
+                                    }
                                 )
                             }
                         }
@@ -390,25 +419,59 @@ fun FolderScreen(
                     }
                 }
             }
+            
+            itemToRename?.let { renamePath ->
+                val file = java.io.File(renamePath)
+                val ext = if (file.isDirectory || file.nameWithoutExtension.isEmpty()) "" else file.extension
+                val nameWithoutExt = if (ext.isNotEmpty()) file.nameWithoutExtension else file.name
+                RenameDialog(
+                    initialName = nameWithoutExt,
+                    onDismiss = { itemToRename = null },
+                    onConfirm = { newName ->
+                        val finalName = if (ext.isNotEmpty()) "$newName.$ext" else newName
+                        viewModel.renameFile(renamePath, finalName)
+                        itemToRename = null
+                    }
+                )
+            }
+            
+            if (showCreateFolderDialog) {
+                RenameDialog(
+                    initialName = "New Folder",
+                    title = "Create folder",
+                    onDismiss = { showCreateFolderDialog = false },
+                    onConfirm = { newName ->
+                        viewModel.createFolder(newName)
+                        showCreateFolderDialog = false
+                    }
+                )
+            }
+            
+            if (showBgContextMenu) {
+                Popup(
+                    alignment = Alignment.TopStart,
+                    offset = bgContextMenuOffset,
+                    onDismissRequest = { showBgContextMenu = false }
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .width(180.dp)
+                            .shadow(12.dp, RoundedCornerShape(10.dp), spotColor = Color.Black.copy(alpha = 0.2f))
+                            .background(IrisTheme.colors.surfaceElevated, RoundedCornerShape(10.dp))
+                            .border(1.dp, IrisTheme.colors.border, RoundedCornerShape(10.dp))
+                            .padding(6.dp)
+                    ) {
+                        DropdownItem("Create folder") {
+                            showCreateFolderDialog = true
+                            showBgContextMenu = false
+                        }
+                        DropdownItem("Pin to Library", textColor = IrisTheme.colors.accentFolders) {
+                            viewModel.pinFolder(path)
+                            showBgContextMenu = false
+                        }
+                    }
+                }
+            }
         }
-    }
-}
-
-@Composable
-private fun DropdownItem(text: String, enabled: Boolean = true, onClick: () -> Unit) {
-    val src = remember { MutableInteractionSource() }
-    val isHovered by src.collectIsHoveredAsState()
-    val bg by animateColorAsState(if (isHovered && enabled) IrisTheme.colors.surfaceHover else Color.Transparent)
-    val fg = if (enabled) IrisTheme.colors.textPrimary else IrisTheme.colors.textTertiary
-    
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(6.dp))
-            .background(bg)
-            .then(if (enabled) Modifier.clickable(interactionSource = src, indication = null, onClick = onClick) else Modifier)
-            .padding(horizontal = 12.dp, vertical = 8.dp)
-    ) {
-        BasicText(text, style = TextStyle(color = fg, fontSize = 13.sp))
     }
 }

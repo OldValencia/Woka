@@ -44,9 +44,9 @@ This redesign shifts the application from a traditional sidebar layout to a more
 - [ ] **Build Smart Breadcrumbs:** Implement the path state, collapse logic, and the `...` expansion popup.
 - [ ] **Build Top Bar:** Integrate breadcrumbs and window controls.
 - [x] **Build Floating Dock:** Implement the dock, active state coloring, and routing integration.
-- [ ] **Implement Spotlight Search:** Build a centered floating search modal.
-- [ ] **Implement Settings Animation:** Build the settings panel anchored to the dock's settings icon.
-- [ ] **Build Home View:** Implement the linked folders dashboard.
+- [x] **Implement Spotlight Search:** Build a centered floating search modal.
+- [x] **Implement Settings Animation:** Build the settings panel anchored to the dock's settings icon.
+- [x] **Build Home View:** Implement the linked folders dashboard.
 - [x] **Update Theming (`IrisTheme.kt`):** Add the new OLED-friendly palette and dock gradient/blur tokens.
 - [x] **Folder Navigation & Zoom:** Implement discrete Zoom modes (Small, Grid, Big) and Sorting (Name/Date, Asc/Desc) per folder.
 - [x] **Library & Pinned Folders:** Implement the Library dock popup that grows upwards and displays pinned folders, with a glowing badge indicator.
@@ -61,3 +61,9 @@ This redesign shifts the application from a traditional sidebar layout to a more
   - Added thick vibrant orange borders for selected items.
   - Added Delete, Duplicate, Copy, and Move file operations in Select Mode. Integrated AWT `JFileChooser` for picking destination directories.
   - Fixed filter SVG icon aspect ratio so it perfectly aligns with surrounding buttons.
+  - Context menu on elements: Open, Rename, Copy, Move, Delete.
+  - Context menu on empty background: Create folder, Pin to Library (colored yellow).
+- **Home Screen Features:**
+  - Added elegant animated "Add Linked Folder" dock item sliding out from the left of the main Dock.
+  - Custom shaped (16:10 rectangle) remove icon for Home folders to beautifully match the folder aspect ratio.
+  - Disabled Select Mode on Home view entirely for a cleaner UI.
