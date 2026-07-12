@@ -33,6 +33,7 @@ fun FolderGrid(
     gridState: LazyGridState,
     gridColumnSize: Dp,
     path: String,
+    highlightFile: String? = null,
     focusRequester: FocusRequester,
     onNavigateToFolder: (String) -> Unit,
     onShowBgContextMenu: (IntOffset) -> Unit,
@@ -41,6 +42,15 @@ fun FolderGrid(
     onRenameItem: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    androidx.compose.runtime.LaunchedEffect(highlightFile, state.items) {
+        if (highlightFile != null && state.items.isNotEmpty()) {
+            val index = state.items.indexOfFirst { it.file.name == highlightFile }
+            if (index != -1) {
+                gridState.animateScrollToItem(index)
+            }
+        }
+    }
+
     Box(
         modifier = modifier
             .focusRequester(focusRequester)
@@ -105,6 +115,7 @@ fun FolderGrid(
                     onClick = onClickAction,
                     showTitle = state.showTitles,
                     isSelected = isSelected,
+                    isHighlighted = highlightFile == item.file.name,
                     onModifierClick = { isAlt, isShift ->
                         if (isShift) {
                             viewModel.selectRange(item.file.absolutePath)

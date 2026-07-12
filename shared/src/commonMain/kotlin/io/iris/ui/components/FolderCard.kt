@@ -52,6 +52,7 @@ import androidx.compose.ui.window.Popup
 
 import kotlin.math.log10
 import kotlin.math.pow
+import kotlin.time.Duration.Companion.milliseconds
 
 fun formatFileSize(size: Long): String {
     if (size <= 0) return "0 B"
@@ -69,6 +70,7 @@ fun FolderCard(
     modifier: Modifier = Modifier,
     showTitle: Boolean = true,
     isSelected: Boolean = false,
+    isHighlighted: Boolean = false,
     contextMenuContent: (@Composable (dismissMenu: () -> Unit) -> Unit)? = null,
     onRemove: (() -> Unit)? = null,
     onModifierClick: ((Boolean, Boolean) -> Unit)? = null
@@ -91,24 +93,34 @@ fun FolderCard(
         }
     }
     
+    var activeHighlight by remember(isHighlighted) { mutableStateOf(isHighlighted) }
+    LaunchedEffect(isHighlighted) {
+        if (isHighlighted) {
+            activeHighlight = true
+            kotlinx.coroutines.delay(2000.milliseconds)
+            activeHighlight = false
+        }
+    }
+
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
     
-    val translateY by animateFloatAsState(targetValue = if (isHovered) -2f else 0f, animationSpec = tween(200))
+    val translateY by animateFloatAsState(targetValue = if (isHovered || activeHighlight) -2f else 0f, animationSpec = tween(200))
     val borderColor by animateColorAsState(
         targetValue = when {
+            activeHighlight -> IrisTheme.colors.accentFolders
             isSelected -> IrisTheme.colors.accentFolders
             isHovered -> IrisTheme.colors.borderGlow
             else -> IrisTheme.colors.border
         }, 
-        animationSpec = tween(200)
+        animationSpec = tween(if (activeHighlight) 300 else 200)
     )
     val borderWidth by animateDpAsState(
-        targetValue = if (isSelected) 2.dp else 1.dp,
-        animationSpec = tween(200)
+        targetValue = if (isSelected || activeHighlight) 2.dp else 1.dp,
+        animationSpec = tween(if (activeHighlight) 300 else 200)
     )
-    val shadowElev = if (isHovered) 32.dp else 16.dp
-    val titleColor by animateColorAsState(targetValue = if (isHovered || isSelected) IrisTheme.colors.textPrimary else IrisTheme.colors.textSecondary, animationSpec = tween(200))
+    val shadowElev = if (isHovered || activeHighlight) 32.dp else 16.dp
+    val titleColor by animateColorAsState(targetValue = if (isHovered || isSelected || activeHighlight) IrisTheme.colors.textPrimary else IrisTheme.colors.textSecondary, animationSpec = tween(200))
 
     var itemCount by remember(path) { mutableStateOf(0) }
     var previews by remember(path) { mutableStateOf<List<File>>(emptyList()) }

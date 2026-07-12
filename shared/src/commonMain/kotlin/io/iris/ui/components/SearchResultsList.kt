@@ -39,7 +39,7 @@ fun SearchResultsList(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        onResultClick(if (file.isDirectory) file.absolutePath else file.parentFile.absolutePath)
+                        onResultClick(file.absolutePath)
                         onClose()
                     }
                     .padding(horizontal = 20.dp, vertical = 12.dp),

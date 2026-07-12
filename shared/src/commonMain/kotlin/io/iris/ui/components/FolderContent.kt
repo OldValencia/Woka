@@ -17,6 +17,7 @@ import io.iris.utils.openDirectoryPicker
 @Composable
 fun FolderContent(
     path: String,
+    highlightFile: String? = null,
     state: FolderState,
     viewModel: FolderViewModel,
     onNavigateToFolder: (String) -> Unit,
@@ -151,6 +152,7 @@ fun FolderContent(
             gridState = gridState,
             gridColumnSize = gridColumnSize,
             path = path,
+            highlightFile = highlightFile,
             focusRequester = focusRequester,
             onNavigateToFolder = onNavigateToFolder,
             onShowBgContextMenu = { offset ->

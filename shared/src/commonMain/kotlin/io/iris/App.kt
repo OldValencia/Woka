@@ -96,7 +96,12 @@ fun App(
                     val targetDepth = if (targetState is Screen.Folder) (targetState as Screen.Folder).path.length else 0
                     val initialDepth = if (initialState is Screen.Folder) (initialState as Screen.Folder).path.length else 0
     
-                    if (targetDepth > initialDepth) {
+                    val targetFolder = targetState as? Screen.Folder
+                    val initialFolder = initialState as? Screen.Folder
+                    
+                    if (targetFolder != null && initialFolder != null && targetFolder.path == initialFolder.path) {
+                        EnterTransition.None togetherWith ExitTransition.None
+                    } else if (targetDepth > initialDepth) {
                         (slideInHorizontally(animationSpec = tween(220, easing = FastOutSlowInEasing)) { width -> width } + fadeIn(animationSpec = tween(220))).togetherWith(
                             slideOutHorizontally(animationSpec = tween(220, easing = FastOutSlowInEasing)) { width -> -width } + fadeOut(animationSpec = tween(220))
                         )
@@ -113,6 +118,7 @@ fun App(
                     )
                     is Screen.Folder -> FolderScreen(
                         path = screen.path,
+                        highlightFile = screen.highlightFile,
                         onNavigateToFolder = { path -> router.navigateTo(Screen.Folder(path)) }
                     )
                 }
@@ -136,7 +142,21 @@ fun App(
                 isOpen = isSearchOpen,
                 onClose = { isSearchOpen = false },
                 linkedFolders = settings.linkedFolders,
-                onResultClick = { path -> router.navigateTo(Screen.Folder(path)) }
+                onResultClick = { path -> 
+                    val file = java.io.File(path)
+                    val parent = file.parent
+                    if (parent != null) {
+                        val targetScreen = Screen.Folder(parent, highlightFile = file.name)
+                        val current = router.stack.value.lastOrNull() as? Screen.Folder
+                        if (current != null && current.path == parent) {
+                            router.replaceTop(targetScreen)
+                        } else {
+                            router.navigateTo(targetScreen)
+                        }
+                    } else {
+                        router.navigateTo(Screen.Folder(path))
+                    }
+                }
             )
         }
     }

@@ -24,6 +24,7 @@ class FolderDependencies(val path: String) : KoinComponent {
 @Composable
 fun FolderScreen(
     path: String,
+    highlightFile: String? = null,
     onNavigateToFolder: (String) -> Unit
 ) {
     val dependencies = remember(path) { FolderDependencies(path) }
@@ -44,6 +45,7 @@ fun FolderScreen(
             } else {
                 FolderContent(
                     path = path,
+                    highlightFile = highlightFile,
                     state = state,
                     viewModel = viewModel,
                     onNavigateToFolder = onNavigateToFolder,

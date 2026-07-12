@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.update
 
 sealed class Screen {
     data object Home : Screen()
-    data class Folder(val path: String) : Screen()
+    data class Folder(val path: String, val highlightFile: String? = null) : Screen()
 }
 
 class Router {
@@ -18,12 +18,12 @@ class Router {
         _stack.update { it + screen }
     }
 
-    fun pop() {
-        _stack.update { if (it.size > 1) it.dropLast(1) else it }
+    fun replaceTop(screen: Screen) {
+        _stack.update { if (it.isNotEmpty()) it.dropLast(1) + screen else listOf(screen) }
     }
 
-    fun popToRoot() {
-        _stack.update { listOf(Screen.Home) }
+    fun pop() {
+        _stack.update { if (it.size > 1) it.dropLast(1) else it }
     }
 
     fun popTo(screen: Screen) {
