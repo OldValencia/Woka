@@ -41,11 +41,11 @@ This redesign shifts the application from a traditional sidebar layout to a more
 ## Execution Plan
 
 - [x] **Clean up existing UI:** Remove `AppSidebar.kt`, `GlobalTopBar.kt` (or heavily rewrite it), and the current `MainShell` layout.
-- [ ] **Build Smart Breadcrumbs:** Implement the path state, collapse logic, and the `...` expansion popup.
-- [ ] **Build Top Bar:** Integrate breadcrumbs and window controls.
+- [x] **Build Smart Breadcrumbs:** Implement the path state, collapse logic, and the `...` expansion popup.
+- [x] **Build Top Bar:** Integrate breadcrumbs and window controls. Native-like window dragging and snapping.
 - [x] **Build Floating Dock:** Implement the dock, active state coloring, and routing integration.
-- [x] **Implement Spotlight Search:** Build a centered floating search modal.
-- [x] **Implement Settings Animation:** Build the settings panel anchored to the dock's settings icon.
+- [x] **Implement Spotlight Search:** Build a centered floating search modal. Highlight & scroll to items.
+- [x] **Implement Settings Animation:** Build the settings panel anchored to the dock's settings icon. macOS style layout.
 - [x] **Build Home View:** Implement the linked folders dashboard.
 - [x] **Update Theming (`IrisTheme.kt`):** Add the new OLED-friendly palette and dock gradient/blur tokens.
 - [x] **Folder Navigation & Zoom:** Implement discrete Zoom modes (Small, Grid, Big) and Sorting (Name/Date, Asc/Desc) per folder.
@@ -53,17 +53,18 @@ This redesign shifts the application from a traditional sidebar layout to a more
 - [x] **Select Mode & File Operations:** Implement multi-item selection with vibrant borders. Integrate file actions (Delete, Duplicate, Copy, Move) using native Desktop directory pickers.
 
 ## Progress Log (Recent)
-- **Dock Refinements:** Renamed "Navigation" to "Library" and added a glowing badge indicator when pinned items exist. Fixed the hovering logic and upward-growing behavior for the Library popup.
-- **Folder Screen Features:**
-  - Replaced percentage zoom with discrete 3-mode zoom (Small/Grid/Big) persisted per folder.
-  - Implemented Sorting via the filter popup.
-  - Added Select Mode UI and wired it to `FolderViewModel`.
-  - Added thick vibrant orange borders for selected items.
-  - Added Delete, Duplicate, Copy, and Move file operations in Select Mode. Integrated AWT `JFileChooser` for picking destination directories.
-  - Fixed filter SVG icon aspect ratio so it perfectly aligns with surrounding buttons.
-  - Context menu on elements: Open, Rename, Copy, Move, Delete.
-  - Context menu on empty background: Create folder, Pin to Library (colored yellow).
-- **Home Screen Features:**
-  - Added elegant animated "Add Linked Folder" dock item sliding out from the left of the main Dock.
-  - Custom shaped (16:10 rectangle) remove icon for Home folders to beautifully match the folder aspect ratio.
-  - Disabled Select Mode on Home view entirely for a cleaner UI.
+- **Search & Navigation:** 
+  - Clicking on a search result (file or folder) now flawlessly navigates to the parent directory.
+  - Automatically scrolls to the target item in the grid.
+  - Applies a beautiful 2-second glowing highlight to the specific item ("You were searching for me!").
+  - Smart routing: if the user is already in the target folder, the screen seamlessly updates without triggering redundant slide animations.
+- **Window Management & Top Bar:** 
+  - Fixed native window dragging and double-click maximization.
+  - Implemented proper Unmaximize + Snap to Mouse (Floating mode) behavior using Compose `windowState.position` assignment directly before state changes, eliminating visual glitches and "jumping".
+- **Settings Redesign:**
+  - Revamped the Settings screen to follow an elegant macOS style: sidebar on the left (icons + text), content on the right.
+  - Fixed theme-aware colors (dark text on light theme, white text on dark theme) and popup focus blocking.
+  - Added smooth opening/closing animations sliding out from the Dock.
+- **Folder View Enhancements:**
+  - Added toggle to show/hide hidden files (files starting with `.`).
+  - Polished the context menus and interactions.
