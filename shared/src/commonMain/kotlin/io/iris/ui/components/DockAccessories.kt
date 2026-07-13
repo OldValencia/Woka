@@ -7,6 +7,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 
 class DockAccessoriesState {
+    var isVisible by mutableStateOf(true)
+
     private var leftKey by mutableStateOf<String?>(null)
     var leftAccessory by mutableStateOf<(@Composable () -> Unit)?>(null)
         private set

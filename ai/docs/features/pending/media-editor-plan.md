@@ -145,3 +145,8 @@ This feature introduces a minimalistic, iOS-style media editor and viewer. The g
 **Stacktrace Context:** Occurs at `org.jetbrains.compose.resources.JvmResourceReader.read` inside `ImageResourcesKt.svgPainter` (`CustomTitleBar.kt:148`).
 **Why this happens:** This is a known Compose Desktop issue when the underlying `.jar` file containing resources is overwritten/recompiled by Gradle while the app is still running. When the app later tries to lazily load an SVG from the jar, it hits a corrupted/changed ZIP header.
 **Action item:** Not a critical app bug (it's a dev-environment artifact from rebuilding while running), but we should ensure all icons in `CustomTitleBar` are correctly bundled or preloaded to avoid runtime crashes during dev.
+
+### 8. Finalization and Cleanup
+- Add and resolve missing icons in IrisIcons.
+- Adapt logic to domain models.
+- Perform successful test builds and run the application.

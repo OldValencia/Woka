@@ -21,6 +21,7 @@ fun FolderContent(
     state: FolderState,
     viewModel: FolderViewModel,
     onNavigateToFolder: (String) -> Unit,
+    onOpenMedia: (String) -> Unit,
     itemToRename: String?,
     showCreateFolderDialog: Boolean,
     showBgContextMenu: Boolean,
@@ -162,6 +163,7 @@ fun FolderContent(
             onZoomIn = zoomIn,
             onZoomOut = zoomOut,
             onRenameItem = { onRenameItemChange(it) },
+            onOpenMedia = onOpenMedia,
             modifier = Modifier.fillMaxWidth().weight(1f)
         )
     }

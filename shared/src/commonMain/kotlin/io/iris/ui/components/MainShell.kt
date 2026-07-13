@@ -50,45 +50,47 @@ fun MainShell(
                 ) {
                     content()
 
-                    // Protection gradient/shadow behind the dock
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .fillMaxWidth()
-                            .height(240.dp)
-                            .background(
-                                Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color.Transparent,
-                                        IrisTheme.colors.background.copy(alpha = 0.9f)
+                    if (dockAccessories.isVisible) {
+                        // Protection gradient/shadow behind the dock
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .fillMaxWidth()
+                                .height(240.dp)
+                                .background(
+                                    Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color.Transparent,
+                                            IrisTheme.colors.background.copy(alpha = 0.9f)
+                                        )
                                     )
                                 )
-                            )
-                    )
+                        )
 
-                    // Floating Dock + Accessories
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(bottom = 60.dp)
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        // Floating Dock + Accessories
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 60.dp)
                         ) {
-                            dockAccessories.topAccessory?.invoke()
-                            
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                dockAccessories.leftAccessory?.invoke()
-                                FloatingDock(
-                                    activeTab = activeTab,
-                                    onTabSelected = onTabSelected,
-                                    onSearchClick = onOpenSearch,
-                                    onSettingsClick = onOpenSettings
-                                )
+                                dockAccessories.topAccessory?.invoke()
+                                
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    dockAccessories.leftAccessory?.invoke()
+                                    FloatingDock(
+                                        activeTab = activeTab,
+                                        onTabSelected = onTabSelected,
+                                        onSearchClick = onOpenSearch,
+                                        onSettingsClick = onOpenSettings
+                                    )
+                                }
                             }
                         }
                     }

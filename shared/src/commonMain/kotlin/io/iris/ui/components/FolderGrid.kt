@@ -40,6 +40,7 @@ fun FolderGrid(
     onZoomIn: () -> Unit,
     onZoomOut: () -> Unit,
     onRenameItem: (String) -> Unit,
+    onOpenMedia: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     androidx.compose.runtime.LaunchedEffect(highlightFile, state.items) {
@@ -109,8 +110,7 @@ fun FolderGrid(
                         viewModel.toggleSelection(item.file.absolutePath)
                     } else {
                         if (isDir) onNavigateToFolder(item.file.absolutePath)
-                        else { /* Phase 3: Open Viewer */
-                        }
+                        else onOpenMedia(item.file.absolutePath)
                     }
                 }
                 FolderCard(
@@ -134,7 +134,7 @@ fun FolderGrid(
                                 textColor = IrisTheme.colors.accentFolders
                             ) { dismiss(); viewModel.pinFolder(item.file.absolutePath) }
                         } else {
-                            DropdownItem("Open") { dismiss(); /* Phase 3 Viewer */ }
+                            DropdownItem("Open") { dismiss(); onOpenMedia(item.file.absolutePath) }
                         }
                         DropdownItem("Rename") { dismiss(); onRenameItem(item.file.absolutePath) }
                         DropdownItem("Copy") {

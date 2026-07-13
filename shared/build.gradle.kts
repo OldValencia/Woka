@@ -24,6 +24,12 @@ kotlin {
             implementation(libs.coil.compose)
             implementation(libs.filekit.compose)
         }
+        val jvmMain by getting {
+            dependencies {
+                implementation(libs.javacv)
+                implementation(libs.ffmpeg.platform)
+            }
+        }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }

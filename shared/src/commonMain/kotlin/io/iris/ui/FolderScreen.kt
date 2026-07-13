@@ -35,6 +35,12 @@ fun FolderScreen(
     var showBgContextMenu by remember { mutableStateOf(false) }
     var bgContextMenuOffset by remember { mutableStateOf(IntOffset.Zero) }
     var showCreateFolderDialog by remember { mutableStateOf(false) }
+    var viewerMediaId by remember { mutableStateOf<String?>(null) }
+
+    val dockAccessories = io.iris.ui.components.LocalDockAccessories.current
+    LaunchedEffect(viewerMediaId) {
+        dockAccessories.isVisible = viewerMediaId == null
+    }
 
     Column(modifier = Modifier.fillMaxSize().background(IrisTheme.colors.background)) {
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -49,6 +55,7 @@ fun FolderScreen(
                     state = state,
                     viewModel = viewModel,
                     onNavigateToFolder = onNavigateToFolder,
+                    onOpenMedia = { id -> viewerMediaId = id },
                     itemToRename = itemToRename,
                     showCreateFolderDialog = showCreateFolderDialog,
                     showBgContextMenu = showBgContextMenu,
@@ -60,5 +67,13 @@ fun FolderScreen(
                 )
             }
         }
+    }
+    
+    if (viewerMediaId != null) {
+        io.iris.ui.viewer.NativeMediaViewer(
+            initialId = viewerMediaId!!,
+            mediaItems = state.items.filter { it is io.iris.data.MediaItem.Image || it is io.iris.data.MediaItem.Video },
+            onClose = { viewerMediaId = null }
+        )
     }
 }

@@ -271,6 +271,25 @@ fun FolderCard(
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
+                    
+                    val ext = file.extension.lowercase()
+                    if (ext in listOf("mp4", "mkv", "avi", "mov", "webm")) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .size(48.dp)
+                                .clip(androidx.compose.foundation.shape.CircleShape)
+                                .background(Color.Black.copy(alpha = 0.5f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Image(
+                                painter = painterResource(IrisIcons.Static.PlayFill),
+                                contentDescription = "Video",
+                                colorFilter = ColorFilter.tint(Color.White),
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
                 }
             }
 
