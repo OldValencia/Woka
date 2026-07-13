@@ -1,25 +1,25 @@
-# План: Оживление приложения (Анимации и Apple Glass)
+# Plan: App Liveliness (Animations and Apple Glass)
 
-Этот документ содержит идеи и концепты для внедрения современного, "живого" дизайна в стиле Apple HIG.
+This document contains ideas and concepts for implementing a modern, "live" design in the Apple HIG style.
 
 ## 1. Apple Glass (Glassmorphism)
-- [Отменено] **Динамический фон:** Окно рендерит анимированный Mesh Gradient. (Отменено: без градиентов).
-- [x] **Полупрозрачные поверхности:** Заливка панелей полупрозрачным цветом. (Сделано только для Dock и DockAccessories).
-- [x] **Окантовка и блики:** Рамка 1.dp для имитации фаски. (Сделано: сплошная рамка 1.dp без градиента).
-- [x] **Размытие (Frosted Glass):** (Решено за счет увеличения плотности фона до 0.85f для читаемости).
+- [Canceled] **Dynamic Background:** The window renders an animated Mesh Gradient. (Canceled: no gradients).
+- [x] **Translucent Surfaces:** Filling panels with a translucent color. (Done only for the Dock and DockAccessories).
+- [x] **Borders and Highlights:** A 1.dp border to simulate a bevel. (Done: a solid 1.dp border without a gradient).
+- [x] **Blur (Frosted Glass):** (Resolved by increasing the background opacity to 0.85f for better readability).
 
-## 2. Анимированный Футер / Хедер
-- [Отменено] **Футер:** Бесконечная анимация переливания (breathing gradient). (Отменено: без градиентов).
-- [Отменено] **Хедер:** Полупрозрачность. (Отменено: глассморфизм применяем только в Dock).
+## 2. Animated Footer / Header
+- [Canceled] **Footer:** Infinite breathing gradient animation. (Canceled: no gradients).
+- [Canceled] **Header:** Translucency. (Canceled: glassmorphism is only applied to the Dock).
 
-## 3. Микроинтеракции и "Живой" UI
-- [x] **Wiggle-эффект:** Иконки (например, Настройки) при наведении слегка поворачиваются. (Сделано: одинарная анимация как часовой механизм).
-- [Отменено] **Масштаб (Scale Bounce):** При клике/выделении карточки, она пружинисто уменьшается для тактильного отклика. (Отменено).
-- [x] **Плавные выпадающие списки (Dropdowns):** Использование `AnimatedVisibility` с `expandVertically() + fadeIn()` для плавного появления. Также добавление временных иконок для пунктов меню фильтра (Zoom in, Zoom out, сортировка).
-- [x] **Поиск:** Бесшовный переход (морфинг). Инпут должен плавно раскрываться из иконки поиска на текущую позицию.
+## 3. Microinteractions and "Live" UI
+- [x] **Wiggle Effect:** Icons (e.g., Settings) slightly rotate back and forth on hover. (Done: a single-shot clockwork-like animation).
+- [Canceled] **Scale Bounce:** When clicking/selecting a card, it springily scales down for tactile feedback. (Canceled).
+- [x] **Smooth Dropdowns:** Using `AnimatedVisibility` with `expandVertically() + fadeIn()` for smooth appearance. Also added temporary icons for filter menu items (Zoom in, Zoom out, sorting).
+- [x] **Search:** Seamless transition (morphing). The input smoothly expands from the search icon at its current position.
 
-## 4. Комплексные анимации
-- [Отменено] **Экспоненциальный скролл/свайп:** Написание кастомного `FlingBehavior` с `exponentialDecay`. (Отменено из-за плохого UX).
-- [Отменено] **Каскадное появление (Staggered Grid):** Эффект волны при появлении. (Отменено).
-- [Отменено] **Shared Element Transitions:** Бесшовное расширение картинки из сетки на весь экран при двойном клике. (Отменено).
-- [x] **Адаптивный Glow (Тени):** Тень вокруг карточки окрашивается в доминирующий цвет. Будет сделано **только для выделенных элементов**.
+## 4. Complex Animations
+- [Canceled] **Exponential Scroll/Swipe:** Writing custom `FlingBehavior` with `exponentialDecay`. (Canceled due to bad UX).
+- [Canceled] **Staggered Grid:** A wave effect upon item appearance. (Canceled).
+- [Canceled] **Shared Element Transitions:** Seamless expansion of an image from the grid to full screen on double click. (Canceled).
+- [x] **Adaptive Glow (Shadows):** The shadow around a card is tinted with the dominant color. Implemented **only for selected items**.
