@@ -55,7 +55,7 @@ fun MainShell(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .fillMaxWidth()
-                            .height(120.dp)
+                            .height(240.dp)
                             .background(
                                 Brush.verticalGradient(
                                     colors = listOf(

@@ -1,6 +1,7 @@
 package io.iris.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
@@ -46,7 +47,8 @@ fun FloatingDock(
                     spotColor = Color.Black.copy(alpha = 0.5f),
                     ambientColor = Color.Black.copy(alpha = 0.5f)
                 )
-                .background(IrisTheme.colors.surface, RoundedCornerShape(20.dp))
+                .background(IrisTheme.colors.surface.copy(alpha = 0.85f), RoundedCornerShape(20.dp))
+                .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(20.dp))
                 .padding(6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -117,6 +119,7 @@ fun FloatingDock(
         DockSecondaryItem(
             iconRes = IrisIcons.Static.Settings,
             hoverColor = IrisTheme.colors.textSecondary,
+            isWiggle = true,
             onClick = onSettingsClick
         )
     }

@@ -3,10 +3,13 @@ package io.iris.ui
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
@@ -42,6 +45,8 @@ fun HomeScreen(
 
     DisposableEffect(Unit) {
         dockAccessories.setLeft("home") {
+            val interactionSource = remember { MutableInteractionSource() }
+            val isHovered by interactionSource.collectIsHoveredAsState()
             Box(
                 modifier = Modifier
                     .padding(end = 12.dp)
@@ -52,10 +57,11 @@ fun HomeScreen(
                         spotColor = Color.Black.copy(alpha = 0.5f),
                         ambientColor = Color.Black.copy(alpha = 0.5f)
                     )
-                    .background(IrisTheme.colors.surface, RoundedCornerShape(20.dp))
+                    .background(IrisTheme.colors.surface.copy(alpha = 0.85f), RoundedCornerShape(20.dp))
+                    .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(20.dp))
                     .clip(RoundedCornerShape(20.dp))
                     .pointerHoverIcon(PointerIcon.Hand)
-                    .clickable { 
+                    .clickable(interactionSource = interactionSource, indication = null) { 
                         val p = io.iris.utils.openDirectoryPicker("Link folder")
                         if (p != null) io.iris.AppDependencies.settingsRepository.addLinkedFolder(p)
                     },
@@ -65,7 +71,7 @@ fun HomeScreen(
                     painter = painterResource(IrisIcons.Static.Add),
                     contentDescription = "Add Linked Folder",
                     modifier = Modifier.size(20.dp),
-                    colorFilter = ColorFilter.tint(IrisTheme.colors.textPrimary)
+                    colorFilter = ColorFilter.tint(if (isHovered) IrisTheme.colors.textPrimary else IrisTheme.colors.textTertiary)
                 )
             }
         }

@@ -82,10 +82,12 @@ fun FolderGrid(
                             onZoomIn()
                             true
                         }
+
                         Key.Minus, Key.NumPadSubtract -> {
                             onZoomOut()
                             true
                         }
+
                         else -> false
                     }
                 } else false
@@ -107,7 +109,8 @@ fun FolderGrid(
                         viewModel.toggleSelection(item.file.absolutePath)
                     } else {
                         if (isDir) onNavigateToFolder(item.file.absolutePath)
-                        else { /* Phase 3: Open Viewer */ }
+                        else { /* Phase 3: Open Viewer */
+                        }
                     }
                 }
                 FolderCard(
@@ -126,7 +129,10 @@ fun FolderGrid(
                     contextMenuContent = { dismiss ->
                         if (isDir) {
                             DropdownItem("Open") { dismiss(); onNavigateToFolder(item.file.absolutePath) }
-                            DropdownItem("Pin to Library", textColor = IrisTheme.colors.accentFolders) { dismiss(); viewModel.pinFolder(item.file.absolutePath) }
+                            DropdownItem(
+                                "Pin to Library",
+                                textColor = IrisTheme.colors.accentFolders
+                            ) { dismiss(); viewModel.pinFolder(item.file.absolutePath) }
                         } else {
                             DropdownItem("Open") { dismiss(); /* Phase 3 Viewer */ }
                         }
@@ -151,7 +157,8 @@ fun FolderGrid(
         }
 
         VerticalScrollbar(
-            modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight().padding(end = 4.dp, top = 20.dp, bottom = 120.dp),
+            modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight()
+                .padding(end = 4.dp, top = 20.dp, bottom = 120.dp),
             adapter = rememberScrollbarAdapter(gridState)
         )
     }

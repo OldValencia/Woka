@@ -52,10 +52,20 @@ fun SearchOverlay(
         ) {
             AnimatedVisibility(
                 visible = isOpen,
-                enter = fadeIn(tween(240)) + slideInVertically(
-                    animationSpec = spring(dampingRatio = 0.8f, stiffness = 400f)
-                ) { -it / 4 } + scaleIn(initialScale = 0.96f, animationSpec = tween(240)),
-                exit = fadeOut(tween(150)) + scaleOut(targetScale = 0.98f, animationSpec = tween(150))
+                enter = fadeIn(tween(240)) + scaleIn(
+                    initialScale = 0.3f,
+                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 1.2f),
+                    animationSpec = spring(dampingRatio = 0.7f, stiffness = 300f)
+                ) + slideInVertically(
+                    animationSpec = spring(dampingRatio = 0.7f, stiffness = 300f)
+                ) { it / 2 },
+                exit = fadeOut(tween(150)) + scaleOut(
+                    targetScale = 0.3f,
+                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 1.2f),
+                    animationSpec = tween(150)
+                ) + slideOutVertically(
+                    animationSpec = tween(150)
+                ) { it / 2 }
             ) {
                 Box(
                     modifier = Modifier

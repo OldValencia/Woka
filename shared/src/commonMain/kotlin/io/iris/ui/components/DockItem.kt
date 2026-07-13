@@ -1,7 +1,7 @@
 package io.iris.ui.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.TextStyle
@@ -99,6 +100,7 @@ fun DockItem(
 fun DockSecondaryItem(
     iconRes: DrawableResource,
     hoverColor: Color,
+    isWiggle: Boolean = false,
     onClick: () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -113,6 +115,19 @@ fun DockSecondaryItem(
         animationSpec = tween(150)
     )
 
+    val rotation = remember { Animatable(0f) }
+    
+    androidx.compose.runtime.LaunchedEffect(isHovered, isWiggle) {
+        if (isHovered && isWiggle) {
+            rotation.animateTo(15f, animationSpec = tween(80, easing = LinearOutSlowInEasing))
+            rotation.animateTo(-15f, animationSpec = tween(80, easing = LinearOutSlowInEasing))
+            rotation.animateTo(15f, animationSpec = tween(80, easing = LinearOutSlowInEasing))
+            rotation.animateTo(0f, animationSpec = tween(80, easing = LinearOutSlowInEasing))
+        } else {
+            rotation.animateTo(0f, animationSpec = spring(stiffness = Spring.StiffnessMedium))
+        }
+    }
+
     Box(
         modifier = Modifier
             .size(40.dp)
@@ -125,7 +140,11 @@ fun DockSecondaryItem(
         Image(
             painter = painterResource(iconRes),
             contentDescription = null,
-            modifier = Modifier.size(18.dp),
+            modifier = Modifier
+                .size(18.dp)
+                .graphicsLayer {
+                    rotationZ = rotation.value
+                },
             colorFilter = ColorFilter.tint(iconTint)
         )
     }

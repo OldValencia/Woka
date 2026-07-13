@@ -119,7 +119,11 @@ fun FolderCard(
         targetValue = if (isSelected || activeHighlight) 2.dp else 1.dp,
         animationSpec = tween(if (activeHighlight) 300 else 200)
     )
-    val shadowElev = if (isHovered || activeHighlight) 32.dp else 16.dp
+    val shadowElev = if (isHovered || activeHighlight || isSelected) 32.dp else 16.dp
+    val glowColor by animateColorAsState(
+        targetValue = if (isSelected) (if (isDir) IrisTheme.colors.accentFolders else IrisTheme.colors.accent) else Color.Black.copy(alpha = 0.35f),
+        animationSpec = tween(300)
+    )
     val titleColor by animateColorAsState(targetValue = if (isHovered || isSelected || activeHighlight) IrisTheme.colors.textPrimary else IrisTheme.colors.textSecondary, animationSpec = tween(200))
 
     var itemCount by remember(path) { mutableStateOf(0) }
@@ -186,7 +190,12 @@ fun FolderCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(16f / 10f)
-                .shadow(elevation = shadowElev, shape = RoundedCornerShape(10.dp), spotColor = Color.Black.copy(alpha = 0.35f))
+                .shadow(
+                    elevation = shadowElev, 
+                    shape = RoundedCornerShape(10.dp), 
+                    spotColor = glowColor,
+                    ambientColor = if (isSelected) glowColor.copy(alpha = 0.5f) else Color.Black.copy(alpha = 0.1f)
+                )
                 .background(IrisTheme.colors.surfaceElevated, RoundedCornerShape(10.dp))
                 .border(borderWidth, borderColor, RoundedCornerShape(10.dp))
                 .clip(RoundedCornerShape(10.dp))
