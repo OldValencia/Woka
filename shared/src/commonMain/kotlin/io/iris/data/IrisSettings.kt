@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 
 enum class ViewLayout { SmallGrid, Grid, BigGrid }
 enum class SortType { Custom, NameAsc, NameDesc, DateAsc, DateDesc }
+enum class CarouselVisibility { AUTO, ALWAYS_ON, HIDDEN }
 
 @Serializable
 data class PinnedSession(
@@ -23,5 +24,6 @@ data class IrisSettings(
     val showHiddenFiles: Boolean = false,
     val mediaFilter: String = "All", // All, Photos, Videos
     val theme: String = "System",
+    val mediaViewerCarouselMode: CarouselVisibility = CarouselVisibility.AUTO,
     val pinnedSessions: List<PinnedSession> = emptyList()
 )

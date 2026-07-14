@@ -45,7 +45,9 @@ fun SettingsOverlay(
     globalShowTitles: Boolean,
     onGlobalShowTitlesChange: (Boolean) -> Unit,
     showHiddenFiles: Boolean,
-    onShowHiddenFilesChange: (Boolean) -> Unit
+    onShowHiddenFilesChange: (Boolean) -> Unit,
+    carouselMode: io.iris.data.CarouselVisibility,
+    onCarouselModeChange: (io.iris.data.CarouselVisibility) -> Unit
 ) {
     var selectedCategory by remember { androidx.compose.runtime.mutableStateOf("Appearance") }
 
@@ -135,6 +137,13 @@ fun SettingsOverlay(
                                 isSelected = selectedCategory == "Library",
                                 onClick = { selectedCategory = "Library" }
                             )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            SidebarItem(
+                                text = "Media Viewer",
+                                icon = IrisIcons.Static.Eye,
+                                isSelected = selectedCategory == "Media Viewer",
+                                onClick = { selectedCategory = "Media Viewer" }
+                            )
                         }
 
                         Spacer(modifier = Modifier.width(28.dp))
@@ -172,6 +181,24 @@ fun SettingsOverlay(
                                             subtitle = "Display files and folders hidden by the OS",
                                             checked = showHiddenFiles,
                                             onCheckedChange = onShowHiddenFilesChange
+                                        )
+                                    } else if (category == "Media Viewer") {
+                                        SectionLabel("Media Viewer")
+                                        Spacer(modifier = Modifier.height(10.dp))
+                                        SegmentedControl(
+                                            options = listOf("Auto Hide", "Always On", "Hidden"),
+                                            selected = when (carouselMode) {
+                                                io.iris.data.CarouselVisibility.AUTO -> "Auto Hide"
+                                                io.iris.data.CarouselVisibility.ALWAYS_ON -> "Always On"
+                                                io.iris.data.CarouselVisibility.HIDDEN -> "Hidden"
+                                            },
+                                            onSelect = { selectedStr ->
+                                                onCarouselModeChange(when (selectedStr) {
+                                                    "Always On" -> io.iris.data.CarouselVisibility.ALWAYS_ON
+                                                    "Hidden" -> io.iris.data.CarouselVisibility.HIDDEN
+                                                    else -> io.iris.data.CarouselVisibility.AUTO
+                                                })
+                                            }
                                         )
                                     }
                                 }

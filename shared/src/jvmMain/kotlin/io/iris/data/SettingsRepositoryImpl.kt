@@ -109,6 +109,14 @@ class SettingsRepositoryImpl : SettingsRepository {
         }
     }
 
+    override fun setCarouselMode(mode: CarouselVisibility) {
+        _settings.update { current ->
+            val newSettings = current.copy(mediaViewerCarouselMode = mode)
+            saveSettings(newSettings)
+            newSettings
+        }
+    }
+
     override fun addPinnedSession(session: PinnedSession) {
         _settings.update { current ->
             val newSessions = current.pinnedSessions.filter { it.path != session.path } + session

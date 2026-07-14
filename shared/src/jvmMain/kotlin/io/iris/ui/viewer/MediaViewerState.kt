@@ -26,7 +26,6 @@ class MediaViewerState(initialId: String) {
     var isVolumeHoveredRaw by mutableStateOf(false)
     var isVolumeHovered by mutableStateOf(false)
     var volumeTriggerTimer by mutableStateOf(0)
-    
     var isUiVisible by mutableStateOf(true)
     var lastInteractionTime by mutableStateOf(System.currentTimeMillis())
 }

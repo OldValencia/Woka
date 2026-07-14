@@ -12,6 +12,7 @@ interface SettingsRepository {
     fun setShowTitles(show: Boolean)
     fun setShowHiddenFiles(show: Boolean)
     fun setTheme(theme: String)
+    fun setCarouselMode(mode: CarouselVisibility)
     fun addPinnedSession(session: PinnedSession)
     fun removePinnedSession(path: String)
 }

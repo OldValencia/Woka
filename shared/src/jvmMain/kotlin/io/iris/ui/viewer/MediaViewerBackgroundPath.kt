@@ -15,23 +15,11 @@ fun Modifier.mediaViewerBackgroundClip(
     hasCarousel: Boolean,
     isVideo: Boolean
 ): Modifier = this.drawWithContent {
-    val topOffset = -100.dp.toPx() * animationProgress
     val leftOffset = -100.dp.toPx() * animationProgress
     val rightOffset = 100.dp.toPx() * animationProgress
     val bottomOffset = 200.dp.toPx() * animationProgress
     
     val path = Path().apply {
-        // Top Toolbar
-        addRoundRect(
-            RoundRect(
-                left = 16.dp.toPx(),
-                top = 16.dp.toPx() + topOffset,
-                right = size.width - 16.dp.toPx(),
-                bottom = 16.dp.toPx() + 48.dp.toPx() + topOffset,
-                cornerRadius = CornerRadius(24.dp.toPx(), 24.dp.toPx())
-            )
-        )
-        
         // Left Button
         if (hasPrev) {
             addRoundRect(

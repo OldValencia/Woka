@@ -80,5 +80,7 @@ object IrisIcons {
         val Editor = Res.drawable.square_and_pencil
         val Navigation = Res.drawable.photo_on_rectangle_angled
         val ChevronRightMac = Res.drawable.chevron_right
+        val Eye = Res.drawable.eye
+        val EyeSlash = Res.drawable.eye_slash
     }
 }

@@ -46,6 +46,8 @@ fun GlobalTopBar(
     isMaximized: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val topBarAccessories = LocalTopBarAccessories.current
+    
     // Window drag, drag-to-restore and double-click maximize are handled by the
     // platform wrapper around the top bar (see desktop main.kt), not here.
     Box(
@@ -57,13 +59,15 @@ fun GlobalTopBar(
         // Back Button on the left
         if (onNavigateBack != null) {
             Box(modifier = Modifier.align(Alignment.CenterStart)) {
-                BackButton(onClick = onNavigateBack)
+                BackButton(onClick = topBarAccessories.backActionOverride ?: onNavigateBack)
             }
         }
 
-        // Centered Breadcrumbs
-        if (currentPath != null) {
-            Box(modifier = Modifier.align(Alignment.Center)) {
+        // Centered Content (Breadcrumbs or Accessory)
+        Box(modifier = Modifier.align(Alignment.Center)) {
+            if (topBarAccessories.centerAccessory != null) {
+                topBarAccessories.centerAccessory?.invoke()
+            } else if (currentPath != null) {
                 SmartBreadcrumbs(
                     path = currentPath,
                     linkedFolders = linkedFolders,
@@ -72,8 +76,14 @@ fun GlobalTopBar(
             }
         }
 
-        // Win Controls on the right
-        Box(modifier = Modifier.align(Alignment.CenterEnd)) {
+        // Win Controls & Right Accessory on the right
+        Row(
+            modifier = Modifier.align(Alignment.CenterEnd),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            topBarAccessories.rightAccessory?.invoke()
+            
             WinControls(
                 onClose = onClose,
                 onMinimize = onMinimize,

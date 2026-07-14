@@ -134,7 +134,9 @@ fun App(
                 globalShowTitles = settings.showTitles,
                 onGlobalShowTitlesChange = { settingsRepo.setShowTitles(it) },
                 showHiddenFiles = settings.showHiddenFiles,
-                onShowHiddenFilesChange = { settingsRepo.setShowHiddenFiles(it) }
+                onShowHiddenFilesChange = { settingsRepo.setShowHiddenFiles(it) },
+                carouselMode = settings.mediaViewerCarouselMode,
+                onCarouselModeChange = { settingsRepo.setCarouselMode(it) }
             )
 
             // Search Overlay

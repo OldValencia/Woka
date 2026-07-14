@@ -27,15 +27,12 @@ fun MediaViewerToolbar(
     scale: Float,
     offsetX: Float,
     offsetY: Float,
-    onScaleChange: (Float) -> Unit,
-    onOffsetReset: () -> Unit,
-    onClose: () -> Unit,
-    onEdit: () -> Unit,
     onPrev: () -> Unit,
     onNext: () -> Unit,
     onSelectMedia: (String) -> Unit,
     onVolumeHoverChange: (Boolean) -> Unit,
     isVisible: Boolean,
+    isCarouselEnabled: Boolean,
     loadThumbnail: suspend (MediaItem) -> ImageBitmap?,
     mediaVolume: Float,
     onVolumeChange: (Float) -> Unit,
@@ -58,7 +55,7 @@ fun MediaViewerToolbar(
                 animationProgress = animationProgress,
                 hasPrev = hasPrev,
                 hasNext = hasNext,
-                hasCarousel = mediaItems.size > 1,
+                hasCarousel = isCarouselEnabled && mediaItems.size > 1,
                 isVideo = currentItem is MediaItem.Video
             )
             .background(IrisTheme.colors.background.copy(alpha = 0.35f)),
@@ -80,15 +77,7 @@ fun MediaViewerToolbar(
         )
         Box(modifier = Modifier.fillMaxSize().background(IrisTheme.colors.background.copy(alpha = 0.4f)))
 
-        MediaViewerTopBar(
-            animationProgress = animationProgress,
-            scale = scale,
-            onScaleChange = onScaleChange,
-            onOffsetReset = onOffsetReset,
-            onClose = onClose,
-            onEdit = onEdit
-        )
-        
+
         if (hasPrev) {
             MediaViewerPrevButton(
                 animationProgress = animationProgress,
@@ -122,13 +111,15 @@ fun MediaViewerToolbar(
                 )
             }
 
-            MediaViewerCarousel(
-                mediaItems = mediaItems,
-                currentId = currentId,
-                currentIndex = currentIndex,
-                onSelectMedia = onSelectMedia,
-                loadThumbnail = loadThumbnail
-            )
+            if (isCarouselEnabled) {
+                MediaViewerCarousel(
+                    mediaItems = mediaItems,
+                    currentId = currentId,
+                    currentIndex = currentIndex,
+                    onSelectMedia = onSelectMedia,
+                    loadThumbnail = loadThumbnail
+                )
+            }
         }
     }
 }

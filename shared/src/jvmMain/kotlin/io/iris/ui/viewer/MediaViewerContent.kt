@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import io.iris.ui.viewer.player.VideoPlayerState
 
 @Composable
@@ -81,6 +82,7 @@ fun MediaViewerContent(
                 Image(
                     bitmap = frameToDraw,
                     contentDescription = "Image/Video Preview",
+                    contentScale = ContentScale.Inside,
                     modifier = Modifier
                         .fillMaxSize()
                         .graphicsLayer(

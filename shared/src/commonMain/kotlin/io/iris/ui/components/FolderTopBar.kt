@@ -86,6 +86,7 @@ fun LibraryLeftAccessory(
 
             Box(
                 modifier = Modifier
+                    .height(40.dp)
                     .clip(RoundedCornerShape(14.dp))
                     .background(if (showFilterMenu) IrisTheme.colors.surfaceHover else Color.Transparent)
                     .clickable {
@@ -93,8 +94,9 @@ fun LibraryLeftAccessory(
                             showFilterMenu = !showFilterMenu
                         }
                     }
-                    .padding(horizontal = 10.dp, vertical = 9.dp)
-                    .pointerHoverIcon(PointerIcon.Hand)
+                    .padding(horizontal = 14.dp)
+                    .pointerHoverIcon(PointerIcon.Hand),
+                contentAlignment = Alignment.Center
             ) {
                 Image(
                     painter = painterResource(IrisIcons.Static.Filter),
@@ -212,11 +214,11 @@ fun LibraryTopAccessory(
 
         Box(modifier = Modifier.width(1.dp).height(20.dp).background(IrisTheme.colors.border))
 
-        AccessoryPill("Select All", enabled = true, onClick = onSelectAll)
-        AccessoryPill("Duplicate", enabled = selectedCount > 0, onClick = onDuplicate)
-        AccessoryPill("Copy", enabled = selectedCount > 0, onClick = onCopy)
-        AccessoryPill("Move", enabled = selectedCount > 0, onClick = onMove)
-        AccessoryPill("Delete", enabled = selectedCount > 0, onClick = onDelete, isDanger = true)
+        AccessoryPill("Select All", enabled = true, onClick = onSelectAll, isSmall = true)
+        AccessoryPill("Duplicate", enabled = selectedCount > 0, onClick = onDuplicate, isSmall = true)
+        AccessoryPill("Copy", enabled = selectedCount > 0, onClick = onCopy, isSmall = true)
+        AccessoryPill("Move", enabled = selectedCount > 0, onClick = onMove, isSmall = true)
+        AccessoryPill("Delete", enabled = selectedCount > 0, onClick = onDelete, isDanger = true, isSmall = true)
     }
 }
 
@@ -226,18 +228,27 @@ private fun AccessoryPill(
     isActive: Boolean = false,
     enabled: Boolean = true,
     onClick: () -> Unit,
-    isDanger: Boolean = false
+    isDanger: Boolean = false,
+    isSmall: Boolean = false
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
 
+    val baseModifier = Modifier
+        .clip(RoundedCornerShape(14.dp))
+        .background(if (isActive) IrisTheme.colors.surfacePressed else if (isHovered) IrisTheme.colors.surfaceHover else Color.Transparent)
+        .clickable(interactionSource = interactionSource, indication = null, enabled = enabled, onClick = onClick)
+        .pointerHoverIcon(PointerIcon.Hand)
+        
+    val finalModifier = if (isSmall) {
+        baseModifier.padding(horizontal = 12.dp, vertical = 6.dp)
+    } else {
+        Modifier.height(40.dp).then(baseModifier).padding(horizontal = 12.dp)
+    }
+
     Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(14.dp))
-            .background(if (isActive) IrisTheme.colors.surfacePressed else if (isHovered) IrisTheme.colors.surfaceHover else Color.Transparent)
-            .clickable(interactionSource = interactionSource, indication = null, enabled = enabled, onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 6.dp)
-            .pointerHoverIcon(PointerIcon.Hand)
+        modifier = finalModifier,
+        contentAlignment = Alignment.Center
     ) {
         val color =
             if (!enabled) IrisTheme.colors.textSecondary else if (isDanger) IrisTheme.colors.danger else if (isActive) IrisTheme.colors.accentFolders else if (isHovered) IrisTheme.colors.textPrimary else IrisTheme.colors.textTertiary

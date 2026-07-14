@@ -23,6 +23,7 @@ import io.iris.ui.viewer.player.rememberVideoPlayerState
 import kotlinx.coroutines.delay
 import java.io.File
 import kotlin.time.Duration.Companion.milliseconds
+import io.iris.data.CarouselVisibility
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -32,6 +33,9 @@ fun MediaViewerScreen(
     onClose: () -> Unit,
     loadThumbnail: suspend (MediaItem) -> ImageBitmap?
 ) {
+    val settingsRepo = remember { io.iris.AppDependencies.settingsRepository }
+    val settings by settingsRepo.settings.collectAsState()
+
     val state = rememberMediaViewerState(initialMediaId)
     val activeItem = remember(state.currentId, mediaItems) {
         mediaItems.find { it.file.absolutePath == state.currentId }
@@ -63,10 +67,40 @@ fun MediaViewerScreen(
     }
     LaunchedEffect(mediaVolume) { videoState?.updateVolume(mediaVolume) }
     LaunchedEffect(state.lastInteractionTime, videoState?.isPlaying) {
-        if (videoState?.isPlaying == true) { delay(2000.milliseconds); state.isUiVisible = false }
-        else state.isUiVisible = true
+        if (videoState?.isPlaying == false) {
+            state.isUiVisible = true
+        } else {
+            delay(2500.milliseconds)
+            state.isUiVisible = false
+        }
     }
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
+    
+    val topBarAccessories = io.iris.ui.components.LocalTopBarAccessories.current
+    DisposableEffect(Unit) {
+        topBarAccessories.backActionOverride = onClose
+        topBarAccessories.centerAccessory = {
+            MediaViewerGlobalControls(
+                scale = state.scale,
+                onScaleChange = { state.scale = it },
+                onOffsetReset = { state.offsetX = 0f; state.offsetY = 0f; state.scale = 1f },
+                carouselMode = settings.mediaViewerCarouselMode,
+                onToggleCarousel = {
+                    val newMode = when (settings.mediaViewerCarouselMode) {
+                        CarouselVisibility.AUTO -> CarouselVisibility.ALWAYS_ON
+                        CarouselVisibility.ALWAYS_ON -> CarouselVisibility.HIDDEN
+                        CarouselVisibility.HIDDEN -> CarouselVisibility.AUTO
+                    }
+                    settingsRepo.setCarouselMode(newMode)
+                },
+                onEdit = { onClose() }
+            )
+        }
+        onDispose {
+            topBarAccessories.backActionOverride = null
+            topBarAccessories.centerAccessory = null
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -106,10 +140,9 @@ fun MediaViewerScreen(
 
             MediaViewerToolbar(
                 currentId = state.currentId, mediaItems = mediaItems, imageBitmap = state.imageBitmap!!,
-                isVisible = state.isUiVisible, scale = state.scale, offsetX = state.offsetX, offsetY = state.offsetY,
-                onScaleChange = { state.scale = it }, onOffsetReset = { state.offsetX = 0f; state.offsetY = 0f; state.scale = 1f },
-                onClose = onClose,
-                onEdit = { onClose() },
+                isVisible = state.isUiVisible || settings.mediaViewerCarouselMode == CarouselVisibility.ALWAYS_ON,
+                isCarouselEnabled = settings.mediaViewerCarouselMode != CarouselVisibility.HIDDEN,
+                scale = state.scale, offsetX = state.offsetX, offsetY = state.offsetY,
                 onPrev = {
                     val idx = mediaItems.indexOfFirst { it.file.absolutePath == state.currentId }
                     if (idx > 0) { state.animationDirection = -1; state.currentId = mediaItems[idx - 1].file.absolutePath }

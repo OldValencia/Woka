@@ -91,7 +91,7 @@ This feature introduces a minimalistic, iOS-style media editor and viewer. The g
 
 ## Execution Plan
 
-### 1. Media Viewer for Images
+### 1. Media Viewer for Images (Fully Completed & Tested)
 - [x] Create the base modal/overlay UI for media preview (iOS HIG style).
 - [x] Add "Edit Media" context menu action in the clipboard list to launch the viewer.
 - [x] Route double-click on image/video items to the built-in viewer.
