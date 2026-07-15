@@ -1,40 +1,29 @@
 package io.iris.ui.components
 
 import androidx.compose.animation.*
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsHoveredAsState
-import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.iris.data.CarouselVisibility
 import io.iris.ui.icons.IrisIcons
 import io.iris.ui.theme.IrisTheme
-import org.jetbrains.compose.resources.painterResource
 
 @Composable
 fun SettingsOverlay(
@@ -46,11 +35,10 @@ fun SettingsOverlay(
     onGlobalShowTitlesChange: (Boolean) -> Unit,
     showHiddenFiles: Boolean,
     onShowHiddenFilesChange: (Boolean) -> Unit,
-    carouselMode: io.iris.data.CarouselVisibility,
-    onCarouselModeChange: (io.iris.data.CarouselVisibility) -> Unit
+    carouselMode: CarouselVisibility,
+    onCarouselModeChange: (CarouselVisibility) -> Unit
 ) {
-    var selectedCategory by remember { androidx.compose.runtime.mutableStateOf("Appearance") }
-
+    var selectedCategory by remember { mutableStateOf("Appearance") }
     AnimatedVisibility(
         visible = isOpen,
         enter = fadeIn(tween(220)),
@@ -72,14 +60,14 @@ fun SettingsOverlay(
                     .animateEnterExit(
                         enter = fadeIn(tween(240)) + scaleIn(
                             initialScale = 0.3f,
-                            transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.65f, 1.2f),
+                            transformOrigin = TransformOrigin(0.65f, 1.2f),
                             animationSpec = spring(dampingRatio = 0.7f, stiffness = 300f)
                         ) + slideInVertically(
                             animationSpec = spring(dampingRatio = 0.7f, stiffness = 300f)
                         ) { it / 2 },
                         exit = fadeOut(tween(150)) + scaleOut(
                             targetScale = 0.3f,
-                            transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.65f, 1.2f),
+                            transformOrigin = TransformOrigin(0.65f, 1.2f),
                             animationSpec = tween(150)
                         ) + slideOutVertically(
                             animationSpec = tween(150)
@@ -118,9 +106,7 @@ fun SettingsOverlay(
                         Spacer(Modifier.weight(1f))
                         CloseIconButton(onClick = onClose)
                     }
-
                     Spacer(modifier = Modifier.height(28.dp))
-
                     Row(modifier = Modifier.fillMaxSize()) {
                         // Sidebar
                         Column(modifier = Modifier.width(140.dp).fillMaxHeight()) {
@@ -145,9 +131,7 @@ fun SettingsOverlay(
                                 onClick = { selectedCategory = "Media Viewer" }
                             )
                         }
-
                         Spacer(modifier = Modifier.width(28.dp))
-
                         // Content
                         Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
                             AnimatedContent(
@@ -159,47 +143,16 @@ fun SettingsOverlay(
                             ) { category ->
                                 Column(modifier = Modifier.fillMaxSize()) {
                                     if (category == "Appearance") {
-                                        SectionLabel("Appearance")
-                                        Spacer(modifier = Modifier.height(10.dp))
-                                        SegmentedControl(
-                                            options = listOf("System", "Light", "Dark"),
-                                            selected = currentTheme,
-                                            onSelect = onThemeChange
-                                        )
+                                        AppearanceSettingsPanel(currentTheme, onThemeChange)
                                     } else if (category == "Library") {
-                                        SectionLabel("Library")
-                                        Spacer(modifier = Modifier.height(10.dp))
-                                        SettingsToggleRow(
-                                            title = "Show Item Titles",
-                                            subtitle = "Display file names under thumbnails everywhere",
-                                            checked = globalShowTitles,
-                                            onCheckedChange = onGlobalShowTitlesChange
-                                        )
-                                        Spacer(modifier = Modifier.height(12.dp))
-                                        SettingsToggleRow(
-                                            title = "Show Hidden Files",
-                                            subtitle = "Display files and folders hidden by the OS",
-                                            checked = showHiddenFiles,
-                                            onCheckedChange = onShowHiddenFilesChange
+                                        LibrarySettingsPanel(
+                                            globalShowTitles,
+                                            onGlobalShowTitlesChange,
+                                            showHiddenFiles,
+                                            onShowHiddenFilesChange
                                         )
                                     } else if (category == "Media Viewer") {
-                                        SectionLabel("Media Viewer")
-                                        Spacer(modifier = Modifier.height(10.dp))
-                                        SegmentedControl(
-                                            options = listOf("Auto Hide", "Always On", "Hidden"),
-                                            selected = when (carouselMode) {
-                                                io.iris.data.CarouselVisibility.AUTO -> "Auto Hide"
-                                                io.iris.data.CarouselVisibility.ALWAYS_ON -> "Always On"
-                                                io.iris.data.CarouselVisibility.HIDDEN -> "Hidden"
-                                            },
-                                            onSelect = { selectedStr ->
-                                                onCarouselModeChange(when (selectedStr) {
-                                                    "Always On" -> io.iris.data.CarouselVisibility.ALWAYS_ON
-                                                    "Hidden" -> io.iris.data.CarouselVisibility.HIDDEN
-                                                    else -> io.iris.data.CarouselVisibility.AUTO
-                                                })
-                                            }
-                                        )
+                                        MediaViewerSettingsPanel(carouselMode, onCarouselModeChange)
                                     }
                                 }
                             }
@@ -208,111 +161,5 @@ fun SettingsOverlay(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun SidebarItem(
-    text: String,
-    icon: org.jetbrains.compose.resources.DrawableResource,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isHovered by interactionSource.collectIsHoveredAsState()
-    val bgColor by animateColorAsState(
-        targetValue = when {
-            isSelected -> IrisTheme.colors.textPrimary.copy(alpha = 0.12f)
-            isHovered -> IrisTheme.colors.textPrimary.copy(alpha = 0.05f)
-            else -> Color.Transparent
-        },
-        animationSpec = tween(150)
-    )
-    val contentColor = if (isSelected) IrisTheme.colors.textPrimary else IrisTheme.colors.textSecondary
-    
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(32.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(bgColor)
-            .clickable(interactionSource = interactionSource, indication = null, onClick = onClick)
-            .pointerHoverIcon(PointerIcon.Hand),
-        contentAlignment = Alignment.CenterStart
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Image(
-                painter = painterResource(icon),
-                contentDescription = null,
-                colorFilter = ColorFilter.tint(contentColor),
-                modifier = Modifier.size(16.dp)
-            )
-            Spacer(modifier = Modifier.width(10.dp))
-            BasicText(
-                text = text,
-                style = TextStyle(
-                    color = contentColor,
-                    fontSize = 13.sp,
-                    fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
-                )
-            )
-        }
-    }
-}
-
-@Composable
-private fun SectionLabel(text: String) {
-    BasicText(
-        text = text.uppercase(),
-        style = TextStyle(
-            color = IrisTheme.colors.textSecondary,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 0.6.sp
-        )
-    )
-}
-
-
-
-@Composable
-private fun CloseIconButton(onClick: () -> Unit) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isHovered by interactionSource.collectIsHoveredAsState()
-    val isPressed by interactionSource.collectIsPressedAsState()
-
-    val backgroundColor by animateColorAsState(
-        targetValue = if (isHovered) IrisTheme.colors.surfaceHover else Color.Transparent,
-        animationSpec = tween(140)
-    )
-    val rotation by animateFloatAsState(
-        targetValue = if (isHovered) 90f else 0f,
-        animationSpec = spring(dampingRatio = 0.6f, stiffness = 300f)
-    )
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.86f else 1f,
-        animationSpec = spring(dampingRatio = 0.5f, stiffness = 500f)
-    )
-
-    Box(
-        modifier = Modifier
-            .size(28.dp)
-            .graphicsLayer { scaleX = scale; scaleY = scale }
-            .clip(RoundedCornerShape(8.dp))
-            .background(backgroundColor)
-            .hoverable(interactionSource)
-            .pointerHoverIcon(PointerIcon.Hand)
-            .clickable(interactionSource = interactionSource, indication = null, onClick = onClick),
-        contentAlignment = Alignment.Center
-    ) {
-        Image(
-            painter = painterResource(IrisIcons.Static.Close),
-            contentDescription = "Close settings",
-            modifier = Modifier.size(14.dp).graphicsLayer { rotationZ = rotation },
-            colorFilter = ColorFilter.tint(IrisTheme.colors.textSecondary)
-        )
     }
 }

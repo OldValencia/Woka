@@ -10,20 +10,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.foundation.border
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.ImageBitmap
@@ -31,23 +17,14 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import io.iris.AppDependencies
+import io.iris.data.CarouselVisibility
 import io.iris.data.MediaItem
 import io.iris.ui.theme.IrisTheme
 import io.iris.ui.viewer.player.rememberVideoPlayerState
 import kotlinx.coroutines.delay
 import java.io.File
 import kotlin.time.Duration.Companion.milliseconds
-import io.iris.data.CarouselVisibility
-import java.awt.Toolkit
-import java.awt.datatransfer.DataFlavor
-import java.awt.datatransfer.Transferable
-import java.awt.datatransfer.UnsupportedFlavorException
-import androidx.compose.ui.window.Dialog
-import java.text.SimpleDateFormat
-import java.util.Date
-import androidx.compose.foundation.text.selection.SelectionContainer
-import io.iris.AppDependencies
-import io.iris.ui.components.LocalTopBarAccessories
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -59,12 +36,11 @@ fun MediaViewerScreen(
 ) {
     val settingsRepo = remember { AppDependencies.settingsRepository }
     val settings by settingsRepo.settings.collectAsState()
-
     val state = rememberMediaViewerState(initialMediaId)
     val activeItem = remember(state.currentId, mediaItems) {
         mediaItems.find { it.file.absolutePath == state.currentId }
     }
-    
+
     LaunchedEffect(activeItem) {
         if (activeItem != null) {
             state.imageBitmap = loadThumbnail(activeItem)
@@ -74,20 +50,22 @@ fun MediaViewerScreen(
             state.activeItemPath = null
         }
     }
-
     var mediaVolume by remember { mutableStateOf(0.5f) }
     val videoState = if (activeItem is MediaItem.Video && state.activeItemPath != null) {
         rememberVideoPlayerState(File(state.activeItemPath!!), mediaVolume)
     } else null
-    
-    val focusRequester = remember { FocusRequester() }
 
+    val focusRequester = remember { FocusRequester() }
     LaunchedEffect(state.isVolumeHoveredRaw) {
         if (state.isVolumeHoveredRaw) state.isVolumeHovered = true
-        else { delay(300.milliseconds); state.isVolumeHovered = false }
+        else {
+            delay(300.milliseconds); state.isVolumeHovered = false
+        }
     }
     LaunchedEffect(state.volumeTrigger) {
-        if (state.volumeTrigger > 0) { state.volumeTriggerTimer = 1; delay(2000.milliseconds); state.volumeTriggerTimer = 0 }
+        if (state.volumeTrigger > 0) {
+            state.volumeTriggerTimer = 1; delay(2000.milliseconds); state.volumeTriggerTimer = 0
+        }
     }
     LaunchedEffect(mediaVolume) { videoState?.updateVolume(mediaVolume) }
     LaunchedEffect(state.lastInteractionTime, videoState?.isPlaying) {
@@ -99,10 +77,9 @@ fun MediaViewerScreen(
         }
     }
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
-    
+
     var showInfoDialog by remember { mutableStateOf(false) }
     var copyTrigger by remember { mutableStateOf(0L) }
-
     val copyAction = {
         if (activeItem != null) {
             copyFileToClipboard(activeItem.file)
@@ -115,51 +92,35 @@ fun MediaViewerScreen(
     val editAction = {
         onClose(state.currentId)
     }
-    
-    val topBarAccessories = LocalTopBarAccessories.current
-    DisposableEffect(Unit) {
-        topBarAccessories.backActionOverride = { onClose(state.currentId) }
-        topBarAccessories.centerAccessory = {
-            MediaViewerGlobalControls(
-                scale = state.scale,
-                onScaleChange = { state.scale = it },
-                onOffsetReset = { state.offsetX = 0f; state.offsetY = 0f; state.scale = 1f },
-                carouselMode = settings.mediaViewerCarouselMode,
-                onToggleCarousel = {
-                    val newMode = when (settings.mediaViewerCarouselMode) {
-                        CarouselVisibility.AUTO -> CarouselVisibility.ALWAYS_ON
-                        CarouselVisibility.ALWAYS_ON -> CarouselVisibility.HIDDEN
-                        CarouselVisibility.HIDDEN -> CarouselVisibility.AUTO
-                    }
-                    settingsRepo.setCarouselMode(newMode)
-                },
-                onEdit = editAction,
-                onCopy = copyAction,
-                copyTrigger = copyTrigger,
-                onInfo = infoAction,
-                isInfoOpen = showInfoDialog
-            )
-        }
-        onDispose {
-            topBarAccessories.backActionOverride = null
-            topBarAccessories.centerAccessory = null
-        }
-    }
 
+    MediaViewerTopBarSetup(
+        scale = state.scale,
+        onScaleChange = { state.scale = it },
+        onOffsetReset = { state.offsetX = 0f; state.offsetY = 0f; state.scale = 1f },
+        carouselMode = settings.mediaViewerCarouselMode,
+        settingsRepo = settingsRepo,
+        currentId = state.currentId,
+        onClose = onClose,
+        onEdit = editAction,
+        onCopy = copyAction,
+        copyTrigger = copyTrigger,
+        onInfo = infoAction,
+        isInfoOpen = showInfoDialog
+    )
     Box(
         modifier = Modifier
             .fillMaxSize()
             .clipToBounds()
             .background(IrisTheme.colors.background)
-            .onPointerEvent(PointerEventType.Move) { 
+            .onPointerEvent(PointerEventType.Move) {
                 state.lastInteractionTime = System.currentTimeMillis()
                 state.isUiVisible = true
             }
             .focusRequester(focusRequester)
             .focusable()
             .mediaViewerKeyHandler(
-                currentId = state.currentId, 
-                mediaItems = mediaItems, 
+                currentId = state.currentId,
+                mediaItems = mediaItems,
                 videoState = videoState,
                 mediaVolume = mediaVolume,
                 onClose = { onClose(state.currentId) },
@@ -186,7 +147,6 @@ fun MediaViewerScreen(
                 onCopy = copyAction,
                 onInfo = infoAction
             )
-
             MediaViewerToolbar(
                 currentId = state.currentId, mediaItems = mediaItems, imageBitmap = state.imageBitmap!!,
                 isVisible = state.isUiVisible || settings.mediaViewerCarouselMode == CarouselVisibility.ALWAYS_ON,
@@ -194,11 +154,15 @@ fun MediaViewerScreen(
                 scale = state.scale, offsetX = state.offsetX, offsetY = state.offsetY,
                 onPrev = {
                     val idx = mediaItems.indexOfFirst { it.file.absolutePath == state.currentId }
-                    if (idx > 0) { state.animationDirection = -1; state.currentId = mediaItems[idx - 1].file.absolutePath }
+                    if (idx > 0) {
+                        state.animationDirection = -1; state.currentId = mediaItems[idx - 1].file.absolutePath
+                    }
                 },
                 onNext = {
                     val idx = mediaItems.indexOfFirst { it.file.absolutePath == state.currentId }
-                    if (idx in 0 until mediaItems.lastIndex) { state.animationDirection = 1; state.currentId = mediaItems[idx + 1].file.absolutePath }
+                    if (idx in 0 until mediaItems.lastIndex) {
+                        state.animationDirection = 1; state.currentId = mediaItems[idx + 1].file.absolutePath
+                    }
                 },
                 onSelectMedia = { state.animationDirection = 0; state.currentId = it },
                 onVolumeHoverChange = { state.isVolumeHoveredRaw = it },
@@ -210,78 +174,20 @@ fun MediaViewerScreen(
         } else {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         }
-        
+
         PlayPauseOverlay(trigger = state.playPauseTrigger, isPlaying = videoState?.isPlaying == true)
         SkipOverlay(trigger = state.skipTrigger, direction = state.skipDirection)
-
         VolumeVerticalOverlay(
             isVisible = state.isVolumeHovered || state.volumeTriggerTimer > 0,
             volume = mediaVolume,
-            bottomPadding = if (state.isUiVisible) { if (mediaItems.size > 1) 170.dp else 90.dp } else 0.dp,
+            bottomPadding = if (state.isUiVisible) {
+                if (mediaItems.size > 1) 170.dp else 90.dp
+            } else 0.dp,
             alignment = if (state.isUiVisible) Alignment.BottomEnd else Alignment.CenterEnd,
             onVolumeChange = { mediaVolume = it }, onHover = { state.isVolumeHoveredRaw = it }
         )
-
         if (showInfoDialog && activeItem != null) {
             FileInfoDialog(activeItem, onDismiss = { showInfoDialog = false })
-        }
-    }
-}
-
-fun copyFileToClipboard(file: File) {
-    try {
-        val transferable = object : Transferable {
-            override fun getTransferDataFlavors(): Array<DataFlavor> = arrayOf(DataFlavor.javaFileListFlavor)
-            override fun isDataFlavorSupported(flavor: DataFlavor?): Boolean = flavor == DataFlavor.javaFileListFlavor
-            override fun getTransferData(flavor: DataFlavor?): Any {
-                if (flavor == DataFlavor.javaFileListFlavor) {
-                    return listOf(file)
-                }
-                throw UnsupportedFlavorException(flavor)
-            }
-        }
-        Toolkit.getDefaultToolkit().systemClipboard.setContents(transferable, null)
-    } catch (e: Exception) {
-        e.printStackTrace()
-    }
-}
-
-@Composable
-fun FileInfoDialog(item: MediaItem, onDismiss: () -> Unit) {
-    Dialog(onDismissRequest = onDismiss) {
-        Box(
-            modifier = Modifier
-                .shadow(24.dp, RoundedCornerShape(12.dp))
-                .background(IrisTheme.colors.surfaceElevated, RoundedCornerShape(12.dp))
-                .border(1.dp, IrisTheme.colors.border, RoundedCornerShape(12.dp))
-                .padding(24.dp)
-                .width(300.dp)
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("File Information", style = TextStyle(color = IrisTheme.colors.textPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold))
-                
-                SelectionContainer(modifier = Modifier.fillMaxWidth()) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text("Name: ${item.file.name}", modifier = Modifier.fillMaxWidth(), style = TextStyle(color = IrisTheme.colors.textSecondary, fontSize = 13.sp))
-                        Text("Path: ${item.file.absolutePath}", modifier = Modifier.fillMaxWidth(), style = TextStyle(color = IrisTheme.colors.textSecondary, fontSize = 13.sp))
-                        Text("Size: ${item.file.length() / 1024} KB", modifier = Modifier.fillMaxWidth(), style = TextStyle(color = IrisTheme.colors.textSecondary, fontSize = 13.sp))
-                        Text("Created: ${SimpleDateFormat("yyyy-MM-dd HH:mm").format(Date(item.file.lastModified()))}", modifier = Modifier.fillMaxWidth(), style = TextStyle(color = IrisTheme.colors.textSecondary, fontSize = 13.sp))
-                    }
-                }
-                
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.End)
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable { onDismiss() }
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    Text("Close", style = TextStyle(color = IrisTheme.colors.accentFolders, fontSize = 14.sp, fontWeight = FontWeight.Medium))
-                }
-            }
         }
     }
 }
