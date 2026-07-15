@@ -10,6 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -38,6 +40,7 @@ fun SearchResultsList(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .pointerHoverIcon(PointerIcon.Hand)
                     .clickable {
                         onResultClick(file.absolutePath)
                         onClose()

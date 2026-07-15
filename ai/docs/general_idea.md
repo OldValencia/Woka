@@ -14,4 +14,4 @@ It is NOT a full file system explorer. Instead, it operates on a **"Linked Folde
 
 ## Technical Pillars
 - **Desktop First:** No mobile compromises. Full support for right-click context menus, mouse-wheel zoom, drag-and-drop, and hardware-accelerated Skia rendering.
-- **Zero Cloud, Zero DB:** No cloud sync, no heavy SQL databases. Just reading the local file system and storing basic preferences in a simple JSON file in `Documents/Iris`.
+- **Zero Cloud, Zero DB:** No cloud sync, no heavy SQL databases. Just reading the local file system and storing basic preferences in a simple JSON file in `Documents/OldValencia/Iris`.

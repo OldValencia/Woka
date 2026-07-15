@@ -15,7 +15,7 @@ The app entry point (`main()`) routes based on CLI arguments:
 
 ### Phase 1: Home Screen & Linked Folders (Foundation)
 - **UI:** Clean empty state with a prominent `+ Link Folder` button.
-- **Data Storage:** Settings and linked folder paths are stored locally in `user.home/Documents/Iris/` (or similar standard documents directory).
+- **Data Storage:** Settings and linked folder paths are stored locally in `user.home/Documents/OldValencia/Iris/` (or similar standard documents directory).
 - **Logic:** OS Folder Picker dialog to select folders to pin.
 - **Result:** Home Screen displays a grid/list of "Linked Folder" cards (showing name and a cover image or item count).
 

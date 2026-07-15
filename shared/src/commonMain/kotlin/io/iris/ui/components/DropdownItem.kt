@@ -17,6 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,6 +42,7 @@ fun DropdownItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .pointerHoverIcon(if (enabled) PointerIcon.Hand else PointerIcon.Default)
             .clip(RoundedCornerShape(6.dp))
             .background(bg)
             .clickable(

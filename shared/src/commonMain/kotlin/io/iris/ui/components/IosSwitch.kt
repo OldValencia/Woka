@@ -18,6 +18,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
 import io.iris.ui.theme.IrisTheme
 
@@ -35,6 +37,7 @@ fun IosSwitch(
 
     Box(
         modifier = modifier
+            .pointerHoverIcon(PointerIcon.Hand)
             .width(51.dp)
             .height(31.dp)
             .clip(CircleShape)

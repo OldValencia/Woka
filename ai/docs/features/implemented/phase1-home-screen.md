@@ -26,7 +26,7 @@ Since we are building a purely JVM (Desktop) app, the default KMP template might
 ## Step 2: Architecture & Storage (Data Layer)
 1. **Settings Model:** Create `data class IrisSettings(val linkedFolders: List<String> = emptyList())`. Must be `@Serializable`.
 2. **Settings Repository:** Create an interface and its implementation in `jvmMain` (or `commonMain` since it's JVM-only anyway). 
-   - Path: `System.getProperty("user.home") + "/Documents/Iris/settings.json"`.
+   - Path: `System.getProperty("user.home") + "/Documents/OldValencia/Iris/settings.json"`.
    - Functions: `getSettings(): Flow<IrisSettings>`, `addLinkedFolder(path: String)`.
 3. **DI Setup:** Create Koin modules and initialize them in `desktopApp/src/jvmMain/kotlin/main.kt`.
 
@@ -63,6 +63,6 @@ Since we are building a purely JVM (Desktop) app, the default KMP template might
 ## Testing Criteria
 - Running `./gradlew :desktopApp:run` shows the empty state.
 - Clicking "Link Folder" opens the native folder dialog via FileKit.
-- Selecting a folder updates `Documents/Iris/settings.json`.
+- Selecting a folder updates `Documents/OldValencia/Iris/settings.json`.
 - The UI instantly reacts and shows the folder card in the grid.
 - Files strictly adhere to the 100-150 line limit.

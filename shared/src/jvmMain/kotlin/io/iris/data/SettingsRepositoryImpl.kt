@@ -16,7 +16,7 @@ class SettingsRepositoryImpl : SettingsRepository {
     private val _settings = MutableStateFlow(IrisSettings())
     override val settings: StateFlow<IrisSettings> = _settings.asStateFlow()
 
-    private val settingsDir = File(System.getProperty("user.home"), "Documents/Iris")
+    private val settingsDir = File(System.getProperty("user.home"), "Documents/OldValencia/Iris")
     private val settingsFile = File(settingsDir, "settings.json")
 
     private val json = Json { ignoreUnknownKeys = true; prettyPrint = true }

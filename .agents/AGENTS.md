@@ -5,7 +5,7 @@
 - **Targets:** Desktop (JVM) ONLY. No Android, no iOS.
 - **Arch:** MVVM (Model-View-ViewModel).
 - **DI:** Koin (for dependency injection). No direct instantiations.
-- **Data:** Local JSON files for settings (`user.home/Documents/Iris/settings.json`) via `kotlinx.serialization`. No heavy databases like Room.
+- **Data:** Local JSON files for settings (`user.home/Documents/OldValencia/Iris/settings.json`) via `kotlinx.serialization`. No heavy databases like Room.
 - **Vision:** See `ai/docs/general_idea.md`.
 
 ## 2. Core Mandates (STRICT)
