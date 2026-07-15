@@ -9,7 +9,8 @@
 - **Vision:** See `ai/docs/general_idea.md`.
 
 ## 2. Core Mandates (STRICT)
-- **Code:** Max 100-120 lines/file. NO code cramming (one statement/lambda per line). NO fully qualified names of ANY kind (e.g., NO `androidx.compose.ui.text.style.TextAlign.Left`). YOU MUST IMPORT THEM. NO EXCEPTIONS.
+- **Code:** Max 100-120 lines/file. NO code cramming (one statement/lambda per line).
+- **NO FQNs:** NO fully qualified names of ANY kind in Kotlin (e.g., NO `androidx.compose.ui.text.style.TextAlign.Left`). YOU MUST IMPORT THEM. NO EXCEPTIONS. Do NOT use inline FQNs as a shortcut to avoid writing import chunks.
 - **Scope:** ZERO unprompted changes/refactoring. Fix ONLY what is asked. No autonomy.
 - **Builds:** ALWAYS run background build after edits, WAIT for completion. Never report success on failure.
   - Shared: `./gradlew :shared:build` | Desktop run: `./gradlew :desktopApp:run`
@@ -19,6 +20,7 @@
 
 ## 3. Execution & Interaction
 - **Workflow:** Plan -> Summarize -> Wait for explicit permission -> Code -> Build -> Wait for result -> Report -> STOP.
+- **Self-Check (Anti-FQN):** After making ANY edits to a `.kt` file, you MUST mechanically use the `grep_search` tool to search for `androidx.`, `java.`, or `io.iris.` in the file you just edited. If you find inline FQNs that you added, you MUST fix them (move to imports) BEFORE telling the user you are done.
 - **Communication:** NO FILLER, zero intros/apologies. Dry, direct, technical, active voice.
 - **Constraints:** Do NOT modify code without explicit command ("Apply", "Go ahead"). STOP after action/question. If unclear, ASK, don't guess.
 

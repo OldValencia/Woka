@@ -82,5 +82,7 @@ object IrisIcons {
         val ChevronRightMac = Res.drawable.chevron_right
         val Eye = Res.drawable.eye
         val EyeSlash = Res.drawable.eye_slash
+        val InfoCircle = Res.drawable.info_circle
+        val DocumentOnDocument = Res.drawable.document_on_document
     }
 }

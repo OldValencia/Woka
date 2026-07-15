@@ -13,8 +13,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
 import io.iris.ui.icons.IrisIcons
+import io.iris.ui.theme.IrisTheme
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
@@ -30,13 +33,14 @@ fun MediaViewerPrevButton(
             .padding(start = 16.dp)
             .size(48.dp)
             .clip(CircleShape)
+            .pointerHoverIcon(PointerIcon.Hand)
             .clickable { onPrev() },
         contentAlignment = Alignment.Center
     ) {
         Icon(
             painter = painterResource(IrisIcons.Static.ChevronRight),
             contentDescription = "Previous",
-            tint = io.iris.ui.theme.IrisTheme.colors.textPrimary,
+            tint = IrisTheme.colors.textPrimary,
             modifier = Modifier.size(20.dp).rotate(180f)
         )
     }
@@ -55,13 +59,14 @@ fun MediaViewerNextButton(
             .padding(end = 16.dp)
             .size(48.dp)
             .clip(CircleShape)
+            .pointerHoverIcon(PointerIcon.Hand)
             .clickable { onNext() },
         contentAlignment = Alignment.Center
     ) {
         Icon(
             painter = painterResource(IrisIcons.Static.ChevronRight),
             contentDescription = "Next",
-            tint = io.iris.ui.theme.IrisTheme.colors.textPrimary,
+            tint = IrisTheme.colors.textPrimary,
             modifier = Modifier.size(20.dp)
         )
     }

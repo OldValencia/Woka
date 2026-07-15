@@ -11,11 +11,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.IntOffset
+import io.iris.data.MediaItem
 import io.iris.ui.components.FolderContent
+import io.iris.ui.components.LocalDockAccessories
 import io.iris.ui.theme.IrisTheme
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.parameter.parametersOf
+import io.iris.ui.viewer.NativeMediaViewer
 
 class FolderDependencies(val path: String) : KoinComponent {
     val viewModel: FolderViewModel by inject { parametersOf(path) }
@@ -36,8 +39,9 @@ fun FolderScreen(
     var bgContextMenuOffset by remember { mutableStateOf(IntOffset.Zero) }
     var showCreateFolderDialog by remember { mutableStateOf(false) }
     var viewerMediaId by remember { mutableStateOf<String?>(null) }
+    var scrollToMediaId by remember { mutableStateOf<String?>(null) }
 
-    val dockAccessories = io.iris.ui.components.LocalDockAccessories.current
+    val dockAccessories = LocalDockAccessories.current
     LaunchedEffect(viewerMediaId) {
         dockAccessories.isVisible = viewerMediaId == null
     }
@@ -60,20 +64,25 @@ fun FolderScreen(
                     showCreateFolderDialog = showCreateFolderDialog,
                     showBgContextMenu = showBgContextMenu,
                     bgContextMenuOffset = bgContextMenuOffset,
+                    scrollToMediaId = scrollToMediaId,
                     onRenameItemChange = { itemToRename = it },
                     onShowCreateFolderDialogChange = { showCreateFolderDialog = it },
                     onShowBgContextMenuChange = { showBgContextMenu = it },
-                    onBgContextMenuOffsetChange = { bgContextMenuOffset = it }
+                    onBgContextMenuOffsetChange = { bgContextMenuOffset = it },
+                    onScrollToMediaIdConsumed = { scrollToMediaId = null }
                 )
             }
         }
     }
     
     if (viewerMediaId != null) {
-        io.iris.ui.viewer.NativeMediaViewer(
+        NativeMediaViewer(
             initialId = viewerMediaId!!,
-            mediaItems = state.items.filter { it is io.iris.data.MediaItem.Image || it is io.iris.data.MediaItem.Video },
-            onClose = { viewerMediaId = null }
+            mediaItems = state.items.filter { it is MediaItem.Image || it is MediaItem.Video },
+            onClose = { lastMediaId -> 
+                viewerMediaId = null
+                scrollToMediaId = lastMediaId
+            }
         )
     }
 }

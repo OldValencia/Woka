@@ -17,6 +17,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
@@ -87,6 +89,7 @@ fun MediaViewerCarousel(
                 modifier = Modifier
                     .size(if (isSelected) 72.dp else 56.dp)
                     .clip(RoundedCornerShape(8.dp))
+                    .pointerHoverIcon(PointerIcon.Hand)
                     .pointerInput(Unit) {
                         detectTapGestures {
                             val now = System.currentTimeMillis()

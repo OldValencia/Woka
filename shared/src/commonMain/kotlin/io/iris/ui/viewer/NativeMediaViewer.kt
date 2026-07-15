@@ -7,5 +7,5 @@ import io.iris.data.MediaItem
 expect fun NativeMediaViewer(
     initialId: String,
     mediaItems: List<MediaItem>,
-    onClose: () -> Unit
+    onClose: (String) -> Unit
 )

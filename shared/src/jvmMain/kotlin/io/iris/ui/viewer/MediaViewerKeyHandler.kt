@@ -4,6 +4,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isAltPressed
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
@@ -19,7 +21,9 @@ fun Modifier.mediaViewerKeyHandler(
     onSkip: (direction: Int) -> Unit,
     onNavigate: (direction: Int, newId: String) -> Unit,
     onVolumeChange: (Float) -> Unit,
-    onPlayPause: () -> Unit
+    onPlayPause: () -> Unit,
+    onCopy: () -> Unit,
+    onInfo: () -> Unit
 ): Modifier = this.onKeyEvent { event ->
     when (event.key) {
         Key.Escape -> {
@@ -78,6 +82,18 @@ fun Modifier.mediaViewerKeyHandler(
                 onPlayPause()
             }
             true
+        }
+        Key.C -> {
+            if (event.type == KeyEventType.KeyDown && (event.isCtrlPressed || event.isMetaPressed)) {
+                onCopy()
+                true
+            } else false
+        }
+        Key.I -> {
+            if (event.type == KeyEventType.KeyDown && (event.isCtrlPressed || event.isMetaPressed)) {
+                onInfo()
+                true
+            } else false
         }
         else -> false
     }

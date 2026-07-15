@@ -11,7 +11,7 @@ import kotlinx.coroutines.withContext
 actual fun NativeMediaViewer(
     initialId: String,
     mediaItems: List<MediaItem>,
-    onClose: () -> Unit
+    onClose: (String) -> Unit
 ) {
     MediaViewerScreen(
         initialMediaId = initialId,
