@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 
 @Composable
-fun EchoSlider(
+fun MediaSlider(
     value: Float,
     onValueChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
@@ -124,7 +124,7 @@ fun EchoSlider(
 }
 
 @Composable
-fun EchoVerticalSlider(
+fun MediaVerticalSlider(
     value: Float,
     onValueChange: (Float) -> Unit,
     modifier: Modifier = Modifier,

@@ -9,9 +9,9 @@
 - **Vision:** See `ai/docs/general_idea.md`.
 
 ## 2. Core Mandates (STRICT)
-- **Code:** Max 100-120 lines/file. NO code cramming (one statement/lambda per line).
+- **Code:** Max 130-150 lines/file. NO code cramming (one statement/lambda per line). **PROACTIVE REFACTORING REQUIRED**: Before editing ANY file, check its size. If it exceeds 130-150 lines, you MUST stop and proactively offer the user to split/refactor the file into smaller components before making any feature additions.
 - **NO FQNs:** NO fully qualified names of ANY kind in Kotlin (e.g., NO `androidx.compose.ui.text.style.TextAlign.Left`). YOU MUST IMPORT THEM. NO EXCEPTIONS. Do NOT use inline FQNs as a shortcut to avoid writing import chunks.
-- **Scope:** ZERO unprompted changes/refactoring. Fix ONLY what is asked. No autonomy.
+- **Scope:** ZERO unprompted changes/refactoring (except for the file size rule above). Fix ONLY what is asked. No autonomy.
 - **Builds:** ALWAYS run background build after edits, WAIT for completion. Never report success on failure.
   - Shared: `./gradlew :shared:build` | Desktop run: `./gradlew :desktopApp:run`
 - **Tools:** Native tools ONLY (`grep_search`, `view_file`). NO shell commands for file reading. Read files before editing.

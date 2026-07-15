@@ -143,7 +143,7 @@ fun VolumeVerticalOverlay(
                     style = MaterialTheme.typography.labelSmall,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
-                EchoVerticalSlider(
+                MediaVerticalSlider(
                     value = volume,
                     onValueChange = onVolumeChange,
                     modifier = Modifier.width(16.dp).height(80.dp)

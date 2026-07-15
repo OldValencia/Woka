@@ -111,7 +111,7 @@ fun MediaViewerVideoControls(
             }
         }
 
-        EchoSlider(
+        MediaSlider(
             value = if (durationMs > 0) (currentMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f) else 0f,
             onValueChange = {
                 videoState?.pauseForSeek()
