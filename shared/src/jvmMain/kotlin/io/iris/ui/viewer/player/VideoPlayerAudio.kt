@@ -33,6 +33,11 @@ internal fun VideoPlayerState.initAudio(
             var soundLineWasPaused = false
             try {
                 for (byteArray in audioChannel) {
+                    if (byteArray.isEmpty()) {
+                        isPlaying = false
+                        currentPositionMs = durationMs
+                        continue
+                    }
                     while (!isPlaying || isSeeking) {
                         if (!soundLineWasPaused) {
                             soundLine.stop()

@@ -20,6 +20,11 @@ internal fun VideoPlayerState.startPresenterLoop(videoChannel: Channel<Pair<Imag
         var lastPauseTimeMs = 0L
 
         for ((bitmap, frameTsMs) in videoChannel) {
+            if (frameTsMs == -2L) {
+                isPlaying = false
+                currentPositionMs = durationMs
+                continue
+            }
             while (!isPlaying || isSeeking) {
                 if (lastPauseTimeMs == 0L) lastPauseTimeMs = System.currentTimeMillis()
                 delay(50.milliseconds)
@@ -35,20 +40,28 @@ internal fun VideoPlayerState.startPresenterLoop(videoChannel: Channel<Pair<Imag
                 startPlayTimeMs = System.currentTimeMillis()
             }
 
-            val elapsedMs = System.currentTimeMillis() - startPlayTimeMs
-            val targetTimeMs = frameTsMs - firstVideoTsMs
-            
-            if (kotlin.math.abs(targetTimeMs - elapsedMs) > 1000) {
+            var elapsedMs = System.currentTimeMillis() - startPlayTimeMs
+            var targetTimeMs = frameTsMs - firstVideoTsMs
+            var sleepTime = targetTimeMs - elapsedMs
+
+            // Discontinuity detection: if the frame is wildly out of sync (> 1000ms),
+            // it means a seek occurred or the channel contained stale frames.
+            if (kotlin.math.abs(sleepTime) > 1000) {
                 firstVideoTsMs = frameTsMs
                 startPlayTimeMs = System.currentTimeMillis()
+                elapsedMs = 0
+                targetTimeMs = 0
+                sleepTime = 0
             }
-
-            val newElapsedMs = System.currentTimeMillis() - startPlayTimeMs
-            val newTargetTimeMs = frameTsMs - firstVideoTsMs
-            val sleepTime = newTargetTimeMs - newElapsedMs
 
             if (sleepTime > 0) {
                 delay(sleepTime.milliseconds)
+            } else if (sleepTime < -50) {
+                // Frame is more than 50ms late, drop it to catch up with audio
+                if (frameTsMs >= currentPositionMs || kotlin.math.abs(currentPositionMs - frameTsMs) > 1000) {
+                    currentPositionMs = frameTsMs
+                }
+                continue
             }
 
             if (frameTsMs >= currentPositionMs || kotlin.math.abs(currentPositionMs - frameTsMs) > 1000) {

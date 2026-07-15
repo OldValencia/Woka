@@ -7,9 +7,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -18,8 +18,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import io.iris.ui.viewer.player.VideoPlayerState
 import io.iris.ui.icons.IrisIcons
+import io.iris.ui.theme.IrisTheme
 import org.jetbrains.compose.resources.painterResource
-import androidx.compose.ui.ExperimentalComposeUiApi
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -39,7 +39,7 @@ fun MediaViewerVolumeControl(
             .onPointerEvent(PointerEventType.Exit) { 
                 if (videoState?.hasAudio != false) onVolumeHoverChange(false) 
             }
-            .pointerInput(Unit) {
+            .pointerInput(mediaVolume) {
                 awaitPointerEventScope {
                     while (true) {
                         val event = awaitPointerEvent()
@@ -48,7 +48,7 @@ fun MediaViewerVolumeControl(
                                 val delta = event.changes.first().scrollDelta.y
                                 val volDelta = if (delta > 0) -0.05f else 0.05f
                                 onVolumeChange((mediaVolume + volDelta).coerceIn(0f, 1f))
-                                onVolumeHoverChange(true)
+                                onVolumeHoverChange(true) // Keeps slider open
                             }
                             event.changes.forEach { it.consume() }
                         }
@@ -64,7 +64,7 @@ fun MediaViewerVolumeControl(
             mediaVolume <= 0.66f -> IrisIcons.Static.SpeakerWave2Fill
             else -> IrisIcons.Static.SpeakerWave3Fill
         }
-        val speakerTint = if (!hasAudio) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface
+        val speakerTint = if (!hasAudio) IrisTheme.colors.textPrimary.copy(alpha = 0.5f) else IrisTheme.colors.textPrimary
         
         SimpleTooltip(if (!hasAudio) "Audio track unavailable" else if (mediaVolume == 0f) "Unmute" else "Mute") {
             Box(

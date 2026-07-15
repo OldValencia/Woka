@@ -14,6 +14,9 @@ internal fun VideoPlayerState.startDecoderLoop(
     audioChannel: Channel<ByteArray>
 ) {
     grabberJob = scope.launch(Dispatchers.IO) {
+        org.bytedeco.javacv.FFmpegLogCallback.set()
+        org.bytedeco.ffmpeg.global.avutil.av_log_set_level(org.bytedeco.ffmpeg.global.avutil.AV_LOG_QUIET)
+        
         val grabber = FFmpegFrameGrabber(file)
         var soundLine: SourceDataLine? = null
         try {
@@ -41,7 +44,14 @@ internal fun VideoPlayerState.startDecoderLoop(
                     if (isRepeatMode) {
                         seekTargetMs = 0L
                     } else {
-                        isPlaying = false
+                        if (hasAudio) {
+                            audioChannel.send(ByteArray(0))
+                        } else {
+                            videoChannel.send(Pair(ImageBitmap(1, 1), -2L))
+                        }
+                        while (isPlaying && seekTargetMs == -1L && isActive) {
+                            delay(50.milliseconds)
+                        }
                     }
                     continue
                 }

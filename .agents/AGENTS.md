@@ -20,7 +20,8 @@
 
 ## 3. Execution & Interaction
 - **Workflow:** Plan -> Summarize -> Wait for explicit permission -> Code -> Build -> Wait for result -> Report -> STOP.
-- **Self-Check (Anti-FQN):** After making ANY edits to a `.kt` file, you MUST mechanically use the `grep_search` tool to search for `androidx.`, `java.`, or `io.iris.` in the file you just edited. If you find inline FQNs that you added, you MUST fix them (move to imports) BEFORE telling the user you are done.
+- **Self-Check (Anti-FQN):** After making ANY edits to a `.kt` file, you MUST mechanically verify there are no inline FQNs. Since `grep_search` may fail on Windows, use PowerShell: `Select-String -Pattern "(androidx\.|java\.|io\.iris\.)" -Path "..."`. 
+  **MANDATORY:** You MUST NOT tell the user that your edits are complete until you have explicitly executed this command, verified its output, and cleaned up any matched FQNs.
 - **Communication:** NO FILLER, zero intros/apologies. Dry, direct, technical, active voice.
 - **Constraints:** Do NOT modify code without explicit command ("Apply", "Go ahead"). STOP after action/question. If unclear, ASK, don't guess.
 

@@ -50,7 +50,15 @@ fun FileInfoDialog(item: MediaItem, onDismiss: () -> Unit) {
                     ) {
                         Text("Name: ${item.file.name}", modifier = Modifier.fillMaxWidth(), style = TextStyle(color = IrisTheme.colors.textSecondary, fontSize = 13.sp))
                         Text("Path: ${item.file.absolutePath}", modifier = Modifier.fillMaxWidth(), style = TextStyle(color = IrisTheme.colors.textSecondary, fontSize = 13.sp))
-                        Text("Size: ${item.file.length() / 1024} KB", modifier = Modifier.fillMaxWidth(), style = TextStyle(color = IrisTheme.colors.textSecondary, fontSize = 13.sp))
+                        val sizeStr = item.file.length().let { bytes ->
+                            when {
+                                bytes < 1024 -> "$bytes B"
+                                bytes < 1024 * 1024 -> "${bytes / 1024} KB"
+                                bytes < 1024 * 1024 * 1024 -> String.format("%.2f MB", bytes / (1024.0 * 1024.0))
+                                else -> String.format("%.2f GB", bytes / (1024.0 * 1024.0 * 1024.0))
+                            }
+                        }
+                        Text("Size: $sizeStr", modifier = Modifier.fillMaxWidth(), style = TextStyle(color = IrisTheme.colors.textSecondary, fontSize = 13.sp))
                         Text("Created: ${SimpleDateFormat("yyyy-MM-dd HH:mm").format(Date(item.file.lastModified()))}", modifier = Modifier.fillMaxWidth(), style = TextStyle(color = IrisTheme.colors.textSecondary, fontSize = 13.sp))
                     }
                 }

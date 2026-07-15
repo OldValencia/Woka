@@ -10,7 +10,6 @@ import java.nio.ByteBuffer
 import org.jetbrains.skia.Image as SkiaImage
 import javax.sound.sampled.FloatControl
 import javax.sound.sampled.SourceDataLine
-import kotlin.math.log10
 
 internal fun BufferedImage.toComposeBitmap(): ImageBitmap {
     val width = this.width
@@ -37,7 +36,7 @@ internal fun setVolumeInternal(line: SourceDataLine, vol: Float) {
         val min = gainControl.minimum
         val max = gainControl.maximum
         val safeVol = vol.coerceAtLeast(0.0001f).toDouble()
-        val dB = (20.0 * log10(safeVol)).toFloat()
+        val dB = (20.0 * Math.log10(safeVol)).toFloat()
         gainControl.value = dB.coerceIn(min, max)
     }
 }

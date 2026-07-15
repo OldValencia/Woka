@@ -1,16 +1,31 @@
 package io.iris.ui.viewer
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import io.iris.ui.icons.IrisIcons
+import io.iris.ui.theme.IrisTheme
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import io.iris.ui.viewer.player.VideoPlayerState
+import org.jetbrains.compose.resources.painterResource
 
 @Composable
 fun MediaViewerVideoControls(
@@ -25,56 +40,98 @@ fun MediaViewerVideoControls(
             .padding(horizontal = 32.dp, vertical = 8.dp)
             .height(48.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
+            .background(IrisTheme.colors.surfaceElevated.copy(alpha = 0.5f))
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         val isPlaying = videoState?.isPlaying == true
+        
+        val interactionSource = remember { MutableInteractionSource() }
+        val isHovered by interactionSource.collectIsHoveredAsState()
+        val isPressed by interactionSource.collectIsPressedAsState()
+        
+        val iconAlpha by animateFloatAsState(
+            when {
+                isPressed -> 0.5f
+                isHovered -> 0.8f
+                else -> 1f
+            }
+        )
+        
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null
+                ) { videoState?.togglePlayPause() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(if (isPlaying) IrisIcons.Static.Pause else IrisIcons.Static.PlayFill),
+                contentDescription = "Play/Pause",
+                tint = IrisTheme.colors.textPrimary.copy(alpha = iconAlpha),
+                modifier = Modifier
+                    .size(16.dp)
+                    .graphicsLayer { if (isPlaying) scaleX = 0.7f }
+            )
+        }
+        
         val currentMs = videoState?.currentPositionMs ?: 0L
         val durationMs = videoState?.durationMs ?: 0L
-
-        PlayPauseButton(videoState, isPlaying)
-
-        Text(
-            formatTime(currentMs),
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.labelMedium
-        )
-
+        
+        Text(formatTime(currentMs), color = IrisTheme.colors.textPrimary, style = TextStyle(fontSize = 13.sp, color = IrisTheme.colors.textPrimary))
+        
         if (durationMs >= 6000L) {
-            SkipBackwardButton(videoState, currentMs)
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .clickable(enabled = videoState != null) { 
+                        videoState?.seek(kotlin.math.max(0, currentMs - 5000))
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(painterResource(IrisIcons.Static.SkipBackward5), "Skip back 5s", tint = IrisTheme.colors.textPrimary, modifier = Modifier.size(16.dp))
+            }
         }
-
-        MediaSlider(
+        
+        Slider(
+            colors = SliderDefaults.colors(
+                thumbColor = IrisTheme.colors.accent,
+                activeTrackColor = IrisTheme.colors.accent,
+                inactiveTrackColor = IrisTheme.colors.textSecondary
+            ),
             value = if (durationMs > 0) (currentMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f) else 0f,
-            onValueChange = {
+            onValueChange = { 
                 videoState?.pauseForSeek()
                 videoState?.seek((it * durationMs).toLong())
             },
             onValueChangeFinished = {
                 videoState?.resumeAfterSeek()
             },
-            tooltipText = { formatTime((it * durationMs).toLong()) },
-            modifier = Modifier.weight(1f).height(16.dp)
+            modifier = Modifier.weight(1f)
         )
-
+        
         if (durationMs >= 6000L) {
-            SkipForwardButton(videoState, currentMs, durationMs)
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .clickable(enabled = videoState != null) { 
+                        videoState?.seek(kotlin.math.min(durationMs, currentMs + 5000))
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(painterResource(IrisIcons.Static.SkipForward5), "Skip forward 5s", tint = IrisTheme.colors.textPrimary, modifier = Modifier.size(16.dp))
+            }
         }
-
-        Text(
-            formatTime(durationMs),
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.labelMedium
-        )
-
-        Spacer(Modifier.width(8.dp))
-
-        RepeatButton(videoState)
-
+        
+        Text(formatTime(durationMs), color = IrisTheme.colors.textPrimary, style = TextStyle(fontSize = 13.sp, color = IrisTheme.colors.textPrimary))
+        
         Spacer(Modifier.width(4.dp))
-
+        
         MediaViewerVolumeControl(
             videoState = videoState,
             mediaVolume = mediaVolume,
