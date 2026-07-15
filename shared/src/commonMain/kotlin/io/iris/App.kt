@@ -66,7 +66,6 @@ fun App(
             val activeTab = when (currentScreen) {
                 is Screen.Home -> DockTab.Home
                 is Screen.Folder -> DockTab.Navigation
-                else -> DockTab.Editor
             }
 
             var isSearchOpen by remember { mutableStateOf(false) }

@@ -109,30 +109,28 @@ fun MediaViewerContent(
             modifier = Modifier.fillMaxSize()
         ) { targetBitmap ->
             val frameToDraw = if (videoState != null) videoState.currentFrame ?: targetBitmap else targetBitmap
-            if (frameToDraw != null) {
-                ContextMenuArea(
-                    items = {
-                        listOf(
-                            ContextMenuItem("Edit") { onEdit() },
-                            ContextMenuItem("Copy") { onCopy() },
-                            ContextMenuItem("Info") { onInfo() }
-                        )
-                    }
-                ) {
-                    Image(
-                        bitmap = frameToDraw,
-                        contentDescription = "Image/Video Preview",
-                        contentScale = ContentScale.Inside,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer(
-                                scaleX = scale,
-                                scaleY = scale,
-                                translationX = offsetX,
-                                translationY = offsetY
-                            )
+            ContextMenuArea(
+                items = {
+                    listOf(
+                        ContextMenuItem("Edit") { onEdit() },
+                        ContextMenuItem("Copy") { onCopy() },
+                        ContextMenuItem("Info") { onInfo() }
                     )
                 }
+            ) {
+                Image(
+                    bitmap = frameToDraw,
+                    contentDescription = "Image/Video Preview",
+                    contentScale = ContentScale.Inside,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer(
+                            scaleX = scale,
+                            scaleY = scale,
+                            translationX = offsetX,
+                            translationY = offsetY
+                        )
+                )
             }
         }
     }

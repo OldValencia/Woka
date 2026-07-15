@@ -142,17 +142,21 @@ fun SettingsOverlay(
                                 label = "CategoryTransition"
                             ) { category ->
                                 Column(modifier = Modifier.fillMaxSize()) {
-                                    if (category == "Appearance") {
-                                        AppearanceSettingsPanel(currentTheme, onThemeChange)
-                                    } else if (category == "Library") {
-                                        LibrarySettingsPanel(
-                                            globalShowTitles,
-                                            onGlobalShowTitlesChange,
-                                            showHiddenFiles,
-                                            onShowHiddenFilesChange
-                                        )
-                                    } else if (category == "Media Viewer") {
-                                        MediaViewerSettingsPanel(carouselMode, onCarouselModeChange)
+                                    when (category) {
+                                        "Appearance" -> {
+                                            AppearanceSettingsPanel(currentTheme, onThemeChange)
+                                        }
+                                        "Library" -> {
+                                            LibrarySettingsPanel(
+                                                globalShowTitles,
+                                                onGlobalShowTitlesChange,
+                                                showHiddenFiles,
+                                                onShowHiddenFilesChange
+                                            )
+                                        }
+                                        "Media Viewer" -> {
+                                            MediaViewerSettingsPanel(carouselMode, onCarouselModeChange)
+                                        }
                                     }
                                 }
                             }

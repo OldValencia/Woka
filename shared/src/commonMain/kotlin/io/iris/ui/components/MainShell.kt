@@ -1,5 +1,6 @@
 package io.iris.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -88,45 +89,13 @@ fun MainShell(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                val topAccessory = dockAccessories.topAccessory
-                                var savedTopAccessory by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
-                                if (topAccessory != null) savedTopAccessory = topAccessory
-                                
-                                androidx.compose.animation.AnimatedVisibility(
-                                    visible = topAccessory != null,
-                                    enter = slideInVertically(
-                                        animationSpec = tween(150, easing = FastOutSlowInEasing),
-                                        initialOffsetY = { it / 2 }
-                                    ) + fadeIn(animationSpec = tween(150)),
-                                    exit = slideOutVertically(
-                                        animationSpec = tween(250, easing = FastOutLinearInEasing),
-                                        targetOffsetY = { it / 2 }
-                                    ) + fadeOut(animationSpec = tween(250))
-                                ) {
-                                    savedTopAccessory?.invoke()
-                                }
+                                AnimatedAccessory(dockAccessories.topAccessory)
                                 
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.Center
                                 ) {
-                                    val leftAccessory = dockAccessories.leftAccessory
-                                    var savedLeftAccessory by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
-                                    if (leftAccessory != null) savedLeftAccessory = leftAccessory
-
-                                    androidx.compose.animation.AnimatedVisibility(
-                                        visible = leftAccessory != null,
-                                        enter = slideInVertically(
-                                            animationSpec = tween(150, easing = FastOutSlowInEasing),
-                                            initialOffsetY = { it / 2 }
-                                        ) + fadeIn(animationSpec = tween(150)),
-                                        exit = slideOutVertically(
-                                            animationSpec = tween(250, easing = FastOutLinearInEasing),
-                                            targetOffsetY = { it / 2 }
-                                        ) + fadeOut(animationSpec = tween(250))
-                                    ) {
-                                        savedLeftAccessory?.invoke()
-                                    }
+                                    AnimatedAccessory(dockAccessories.leftAccessory)
                                     FloatingDock(
                                         activeTab = activeTab,
                                         onTabSelected = onTabSelected,
@@ -140,5 +109,25 @@ fun MainShell(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun AnimatedAccessory(accessory: (@Composable () -> Unit)?) {
+    var savedAccessory by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
+    if (accessory != null) savedAccessory = accessory
+
+    AnimatedVisibility(
+        visible = accessory != null,
+        enter = slideInVertically(
+            animationSpec = tween(150, easing = FastOutSlowInEasing),
+            initialOffsetY = { it / 2 }
+        ) + fadeIn(animationSpec = tween(150)),
+        exit = slideOutVertically(
+            animationSpec = tween(250, easing = FastOutLinearInEasing),
+            targetOffsetY = { it / 2 }
+        ) + fadeOut(animationSpec = tween(250))
+    ) {
+        savedAccessory?.invoke()
     }
 }

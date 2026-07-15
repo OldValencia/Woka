@@ -21,8 +21,8 @@ internal fun VideoPlayerState.handleSeekIfNeeded(
         if (target == 0L) {
             try { grabber.restart() } catch (_: Exception) {}
             
-            while (videoChannel.tryReceive().isSuccess) {}
-            while (audioChannel.tryReceive().isSuccess) {}
+            while (videoChannel.tryReceive().isSuccess) { /* flush */ }
+            while (audioChannel.tryReceive().isSuccess) { /* flush */ }
             soundLine?.flush()
             
             while (scope.isActive) {
@@ -49,8 +49,8 @@ internal fun VideoPlayerState.handleSeekIfNeeded(
                 try { grabber.restart() } catch (_: Exception) {}
             }
             
-            while (videoChannel.tryReceive().isSuccess) {}
-            while (audioChannel.tryReceive().isSuccess) {}
+            while (videoChannel.tryReceive().isSuccess) { /* flush */ }
+            while (audioChannel.tryReceive().isSuccess) { /* flush */ }
             soundLine?.flush()
             
             var lastGoodFrame: org.bytedeco.javacv.Frame? = null

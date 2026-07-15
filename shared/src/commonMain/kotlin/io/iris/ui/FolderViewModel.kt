@@ -23,7 +23,7 @@ class FolderViewModel(
     private val settingsRepository: SettingsRepository
 ) {
     private val scope = CoroutineScope(Dispatchers.Main)
-    
+
     private val _rawItems = MutableStateFlow<List<MediaItem>>(emptyList())
     private val _isSelectMode = MutableStateFlow(false)
     private val _selectedPaths = MutableStateFlow<Set<String>>(emptySet())
@@ -36,29 +36,41 @@ class FolderViewModel(
         _selectedPaths
     ) { rawItems, settings, isSelectMode, selectedPaths ->
         val layout = settings.folderLayouts[path] ?: ViewLayout.Grid
-        val sort = settings.folderSorts[path].let {
-            if (it == SortType.Custom) SortType.NameAsc else (it ?: SortType.NameAsc)
-        }
-        
+        val sort = settings.folderSorts[path] ?: SortType.NameAsc
+
         val sortedItems = when (sort) {
             SortType.NameAsc, SortType.Custom -> rawItems.sortedBy { it.file.name.lowercase() }
             SortType.NameDesc -> rawItems.sortedByDescending { it.file.name.lowercase() }
             SortType.DateAsc -> rawItems.sortedBy { it.file.lastModified() }
             SortType.DateDesc -> rawItems.sortedByDescending { it.file.lastModified() }
         }
-        
+
         val visibleItems = if (settings.showHiddenFiles) sortedItems else sortedItems.filter { !it.file.isHidden }
-        
+
         // Folders first
-        val filteredItems = if (settings.mediaFilter == "Photos") {
-            visibleItems.filter { it is MediaItem.Folder || it.file.extension.lowercase() in listOf("jpg", "jpeg", "png", "gif", "webp", "bmp", "heic") }
-        } else if (settings.mediaFilter == "Videos") {
-            visibleItems.filter { it is MediaItem.Folder || it.file.extension.lowercase() in listOf("mp4", "mkv", "avi", "mov", "webm") }
-        } else {
-            visibleItems
+        val filteredItems = when (settings.mediaFilter) {
+            "Photos" -> {
+                visibleItems.filter {
+                    it is MediaItem.Folder || it.file.extension.lowercase() in listOf(
+                        "jpg", "jpeg", "png", "gif", "webp", "bmp", "heic"
+                    )
+                }
+            }
+
+            "Videos" -> {
+                visibleItems.filter {
+                    it is MediaItem.Folder || it.file.extension.lowercase() in listOf(
+                        "mp4", "mkv", "avi", "mov", "webm"
+                    )
+                }
+            }
+
+            else -> {
+                visibleItems
+            }
         }
         val foldersFirst = filteredItems.sortedBy { if (it is MediaItem.Folder) 0 else 1 }
-        
+
         FolderState(
             items = foldersFirst,
             layout = layout,
@@ -151,101 +163,40 @@ class FolderViewModel(
     }
 
     fun deleteFiles(paths: List<String>) {
-        scope.launch(Dispatchers.IO) {
-            val desktop = java.awt.Desktop.getDesktop()
-            paths.forEach { path ->
-                val file = java.io.File(path)
-                if (file.exists()) {
-                    if (desktop.isSupported(java.awt.Desktop.Action.MOVE_TO_TRASH)) {
-                        desktop.moveToTrash(file)
-                    } else {
-                        if (file.isDirectory) file.deleteRecursively() else file.delete()
-                    }
-                }
-            }
+        scope.launch {
+            FolderActions.deleteFiles(paths)
             refresh()
             clearSelection()
         }
     }
 
     fun duplicateFiles(paths: List<String>) {
-        scope.launch(Dispatchers.IO) {
-            paths.forEach { path ->
-                val file = java.io.File(path)
-                if (file.exists()) {
-                    val nameWithoutExt = file.nameWithoutExtension
-                    val ext = file.extension
-                    val parent = file.parentFile
-                    var newName = if (ext.isNotEmpty()) "$nameWithoutExt copy.$ext" else "$nameWithoutExt copy"
-                    var newFile = java.io.File(parent, newName)
-                    var counter = 1
-                    while (newFile.exists()) {
-                        newName = if (ext.isNotEmpty()) "$nameWithoutExt copy $counter.$ext" else "$nameWithoutExt copy $counter"
-                        newFile = java.io.File(parent, newName)
-                        counter++
-                    }
-                    if (file.isDirectory) {
-                        file.copyRecursively(newFile)
-                    } else {
-                        file.copyTo(newFile)
-                    }
-                }
-            }
+        scope.launch {
+            FolderActions.duplicateFiles(paths)
             refresh()
         }
     }
 
     fun createFolder(name: String) {
-        scope.launch(Dispatchers.IO) {
-            var folderName = name
-            var newFile = java.io.File(path, folderName)
-            var counter = 1
-            while (newFile.exists()) {
-                folderName = "$name $counter"
-                newFile = java.io.File(path, folderName)
-                counter++
-            }
-            newFile.mkdirs()
+        scope.launch {
+            FolderActions.createFolder(path, name)
             refresh()
         }
     }
 
     fun moveFiles(paths: List<String>, destinationPath: String) {
-        scope.launch(Dispatchers.IO) {
-            val destDir = java.io.File(destinationPath)
-            if (destDir.exists() && destDir.isDirectory) {
-                paths.forEach { path ->
-                    val file = java.io.File(path)
-                    if (file.exists()) {
-                        val newFile = java.io.File(destDir, file.name)
-                        if (!file.renameTo(newFile)) {
-                            if (file.isDirectory) {
-                                file.copyRecursively(newFile)
-                                file.deleteRecursively()
-                            } else {
-                                file.copyTo(newFile)
-                                file.delete()
-                            }
-                        }
-                    }
-                }
-                refresh()
-                clearSelection()
-            }
+        scope.launch {
+            FolderActions.moveFiles(paths, destinationPath)
+            refresh()
+            clearSelection()
         }
     }
 
     fun renameFile(path: String, newName: String) {
-        scope.launch(Dispatchers.IO) {
-            val file = java.io.File(path)
-            if (file.exists()) {
-                val newFile = java.io.File(file.parentFile, newName)
-                if (!newFile.exists()) {
-                    file.renameTo(newFile)
-                    refresh()
-                    clearSelection()
-                }
-            }
+        scope.launch {
+            FolderActions.renameFile(path, newName)
+            refresh()
+            clearSelection()
         }
     }
 
@@ -256,25 +207,11 @@ class FolderViewModel(
         }
     }
 
-
     fun copyFiles(paths: List<String>, destinationPath: String) {
-        scope.launch(Dispatchers.IO) {
-            val destDir = java.io.File(destinationPath)
-            if (destDir.exists() && destDir.isDirectory) {
-                paths.forEach { path ->
-                    val file = java.io.File(path)
-                    if (file.exists()) {
-                        val newFile = java.io.File(destDir, file.name)
-                        if (file.isDirectory) {
-                            file.copyRecursively(newFile, overwrite = true)
-                        } else {
-                            file.copyTo(newFile, overwrite = true)
-                        }
-                    }
-                }
-                refresh()
-                clearSelection()
-            }
+        scope.launch {
+            FolderActions.copyFiles(paths, destinationPath)
+            refresh()
+            clearSelection()
         }
     }
 }
