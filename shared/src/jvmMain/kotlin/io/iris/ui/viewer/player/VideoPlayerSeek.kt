@@ -4,12 +4,11 @@ import androidx.compose.ui.graphics.ImageBitmap
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.isActive
 import org.bytedeco.javacv.FFmpegFrameGrabber
-import org.bytedeco.javacv.Java2DFrameConverter
 import javax.sound.sampled.SourceDataLine
+import kotlin.math.max
 
 internal fun VideoPlayerState.handleSeekIfNeeded(
     grabber: FFmpegFrameGrabber,
-    converter: Java2DFrameConverter,
     videoChannel: Channel<Pair<ImageBitmap, Long>>,
     audioChannel: Channel<ByteArray>,
     soundLine: SourceDataLine?
@@ -28,8 +27,7 @@ internal fun VideoPlayerState.handleSeekIfNeeded(
             while (scope.isActive) {
                 val frame = grabber.grabFrame() ?: break
                 if (frame.image != null) {
-                    val bufferedImage = converter.getBufferedImage(frame)
-                    currentFrame = bufferedImage.toComposeBitmap()
+                    currentFrame = frame.toComposeBitmap()
                     break
                 }
             }
@@ -41,7 +39,7 @@ internal fun VideoPlayerState.handleSeekIfNeeded(
                 if (grabber.timestamp <= target * 1000L + 100000L) { // Allow 100ms tolerance
                     break
                 } else {
-                    seekTime = kotlin.math.max(0L, seekTime - 2000000L)
+                    seekTime = max(0L, seekTime - 2000000L)
                     attempt++
                 }
             }
@@ -64,8 +62,7 @@ internal fun VideoPlayerState.handleSeekIfNeeded(
                 }
             }
             if (lastGoodFrame != null && lastGoodFrame.image != null) {
-                val bufferedImage = converter.getBufferedImage(lastGoodFrame)
-                currentFrame = bufferedImage.toComposeBitmap()
+                currentFrame = lastGoodFrame.toComposeBitmap()
                 lastGoodFrame.close()
             }
         }

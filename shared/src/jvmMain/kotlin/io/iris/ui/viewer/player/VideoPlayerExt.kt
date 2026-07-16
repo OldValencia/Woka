@@ -2,31 +2,24 @@ package io.iris.ui.viewer.player
 
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
+import org.bytedeco.javacv.Frame
 import org.jetbrains.skia.ColorAlphaType
 import org.jetbrains.skia.ColorType
 import org.jetbrains.skia.ImageInfo
-import java.awt.image.BufferedImage
 import java.nio.ByteBuffer
-import org.jetbrains.skia.Image as SkiaImage
 import javax.sound.sampled.FloatControl
 import javax.sound.sampled.SourceDataLine
+import org.jetbrains.skia.Image as SkiaImage
 
-internal fun BufferedImage.toComposeBitmap(): ImageBitmap {
-    val width = this.width
-    val height = this.height
-    val argbPixels = IntArray(width * height)
-    this.getRGB(0, 0, width, height, argbPixels, 0, width)
+internal fun Frame.toComposeBitmap(): ImageBitmap {
+    val buffer = this.image[0] as ByteBuffer
+    val bytes = ByteArray(this.imageStride * this.imageHeight)
+    buffer.rewind()
+    buffer.get(bytes)
+    buffer.rewind()
     
-    val byteBuffer = ByteBuffer.allocate(width * height * 4)
-    for (pixel in argbPixels) {
-        byteBuffer.put(((pixel shr 16) and 0xFF).toByte()) // R
-        byteBuffer.put(((pixel shr 8) and 0xFF).toByte())  // G
-        byteBuffer.put((pixel and 0xFF).toByte())          // B
-        byteBuffer.put(((pixel shr 24) and 0xFF).toByte()) // A
-    }
-    
-    val imageInfo = ImageInfo(width, height, ColorType.RGBA_8888, ColorAlphaType.UNPREMUL)
-    val image = SkiaImage.makeRaster(imageInfo, byteBuffer.array(), width * 4)
+    val imageInfo = ImageInfo(this.imageWidth, this.imageHeight, ColorType.RGBA_8888, ColorAlphaType.UNPREMUL)
+    val image = SkiaImage.makeRaster(imageInfo, bytes, this.imageStride)
     return image.toComposeImageBitmap()
 }
 

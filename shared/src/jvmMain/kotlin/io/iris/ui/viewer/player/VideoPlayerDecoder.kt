@@ -4,7 +4,10 @@ import androidx.compose.ui.graphics.ImageBitmap
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import org.bytedeco.javacv.FFmpegFrameGrabber
-import org.bytedeco.javacv.Java2DFrameConverter
+import org.bytedeco.javacv.FFmpegLogCallback
+import org.bytedeco.ffmpeg.global.avutil.av_log_set_level
+import org.bytedeco.ffmpeg.global.avutil.AV_LOG_QUIET
+import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_RGBA
 import java.nio.ShortBuffer
 import javax.sound.sampled.SourceDataLine
 import kotlin.time.Duration.Companion.milliseconds
@@ -14,16 +17,17 @@ internal fun VideoPlayerState.startDecoderLoop(
     audioChannel: Channel<ByteArray>
 ) {
     grabberJob = scope.launch(Dispatchers.IO) {
-        org.bytedeco.javacv.FFmpegLogCallback.set()
-        org.bytedeco.ffmpeg.global.avutil.av_log_set_level(org.bytedeco.ffmpeg.global.avutil.AV_LOG_QUIET)
+        FFmpegLogCallback.set()
+        av_log_set_level(AV_LOG_QUIET)
         
         val grabber = FFmpegFrameGrabber(file)
         var soundLine: SourceDataLine? = null
         try {
+            grabber.setVideoOption("hwaccel", "auto")
+            grabber.pixelFormat = AV_PIX_FMT_RGBA
             grabber.start()
             durationMs = grabber.lengthInTime / 1000L
 
-            val converter = Java2DFrameConverter()
             val channels = grabber.audioChannels
             hasAudio = channels > 0
             
@@ -32,7 +36,7 @@ internal fun VideoPlayerState.startDecoderLoop(
             }
 
             while (isActive) {
-                handleSeekIfNeeded(grabber, converter, videoChannel, audioChannel, soundLine)
+                handleSeekIfNeeded(grabber, videoChannel, audioChannel, soundLine)
 
                 if (!isPlaying || isSeeking) {
                     delay(50.milliseconds)
@@ -58,8 +62,7 @@ internal fun VideoPlayerState.startDecoderLoop(
                 val frameTsMs = grabber.timestamp / 1000L
 
                 if (frame.image != null) {
-                    val bufferedImage = converter.getBufferedImage(frame)
-                    val bitmap = bufferedImage.toComposeBitmap()
+                    val bitmap = frame.toComposeBitmap()
                     videoChannel.send(Pair(bitmap, frameTsMs))
                 } else if (frame.samples != null && soundLine != null) {
                     val channelSamples = frame.samples[0] as ShortBuffer
