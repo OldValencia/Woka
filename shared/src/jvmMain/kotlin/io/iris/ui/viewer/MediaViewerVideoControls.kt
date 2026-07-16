@@ -26,6 +26,8 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import io.iris.ui.viewer.player.VideoPlayerState
 import org.jetbrains.compose.resources.painterResource
+import kotlin.math.max
+import kotlin.math.min
 
 @Composable
 fun MediaViewerVideoControls(
@@ -81,54 +83,58 @@ fun MediaViewerVideoControls(
         val currentMs = videoState?.currentPositionMs ?: 0L
         val durationMs = videoState?.durationMs ?: 0L
         
-        Text(formatTime(currentMs), color = IrisTheme.colors.textPrimary, style = TextStyle(fontSize = 13.sp, color = IrisTheme.colors.textPrimary))
-        
-        if (durationMs >= 6000L) {
-            Box(
-                modifier = Modifier
-                    .size(24.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .clickable(enabled = videoState != null) { 
-                        videoState?.seek(kotlin.math.max(0, currentMs - 5000))
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(painterResource(IrisIcons.Static.SkipBackward5), "Skip back 5s", tint = IrisTheme.colors.textPrimary, modifier = Modifier.size(16.dp))
+        if (durationMs > 0L) {
+            Text(formatTime(currentMs), color = IrisTheme.colors.textPrimary, style = TextStyle(fontSize = 13.sp, color = IrisTheme.colors.textPrimary))
+            
+            if (durationMs >= 6000L) {
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .clickable(enabled = videoState != null) { 
+                            videoState?.seek(max(0, currentMs - 5000))
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(painterResource(IrisIcons.Static.SkipBackward5), "Skip back 5s", tint = IrisTheme.colors.textPrimary, modifier = Modifier.size(16.dp))
+                }
             }
-        }
-        
-        Slider(
-            colors = SliderDefaults.colors(
-                thumbColor = IrisTheme.colors.accent,
-                activeTrackColor = IrisTheme.colors.accent,
-                inactiveTrackColor = IrisTheme.colors.textSecondary
-            ),
-            value = if (durationMs > 0) (currentMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f) else 0f,
-            onValueChange = { 
-                videoState?.pauseForSeek()
-                videoState?.seek((it * durationMs).toLong())
-            },
-            onValueChangeFinished = {
-                videoState?.resumeAfterSeek()
-            },
-            modifier = Modifier.weight(1f)
-        )
-        
-        if (durationMs >= 6000L) {
-            Box(
-                modifier = Modifier
-                    .size(24.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .clickable(enabled = videoState != null) { 
-                        videoState?.seek(kotlin.math.min(durationMs, currentMs + 5000))
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(painterResource(IrisIcons.Static.SkipForward5), "Skip forward 5s", tint = IrisTheme.colors.textPrimary, modifier = Modifier.size(16.dp))
+            
+            Slider(
+                colors = SliderDefaults.colors(
+                    thumbColor = IrisTheme.colors.accent,
+                    activeTrackColor = IrisTheme.colors.accent,
+                    inactiveTrackColor = IrisTheme.colors.textSecondary
+                ),
+                value = if (durationMs > 0) (currentMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f) else 0f,
+                onValueChange = { 
+                    videoState?.pauseForSeek()
+                    videoState?.seek((it * durationMs).toLong())
+                },
+                onValueChangeFinished = {
+                    videoState?.resumeAfterSeek()
+                },
+                modifier = Modifier.weight(1f)
+            )
+            
+            if (durationMs >= 6000L) {
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .clickable(enabled = videoState != null) { 
+                            videoState?.seek(min(durationMs, currentMs + 5000))
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(painterResource(IrisIcons.Static.SkipForward5), "Skip forward 5s", tint = IrisTheme.colors.textPrimary, modifier = Modifier.size(16.dp))
+                }
             }
+            
+            Text(formatTime(durationMs), color = IrisTheme.colors.textPrimary, style = TextStyle(fontSize = 13.sp, color = IrisTheme.colors.textPrimary))
+        } else {
+            Spacer(Modifier.weight(1f))
         }
-        
-        Text(formatTime(durationMs), color = IrisTheme.colors.textPrimary, style = TextStyle(fontSize = 13.sp, color = IrisTheme.colors.textPrimary))
         
         Spacer(Modifier.width(4.dp))
         
