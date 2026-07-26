@@ -18,7 +18,25 @@ import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
-fun MediaViewerGlobalControls(
+fun MediaViewerControlsContainer(
+    modifier: Modifier = Modifier,
+    content: @Composable RowScope.() -> Unit
+) {
+    Row(
+        modifier = modifier
+            .shadow(12.dp, RoundedCornerShape(30.dp), spotColor = Color.Black.copy(alpha = 0.1f))
+            .background(IrisTheme.colors.surface, RoundedCornerShape(30.dp))
+            .border(1.dp, IrisTheme.colors.border, RoundedCornerShape(30.dp))
+            .padding(horizontal = 6.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        content()
+    }
+}
+
+@Composable
+fun MediaViewerNormalControls(
     scale: Float,
     onScaleChange: (Float) -> Unit,
     onOffsetReset: () -> Unit,
@@ -44,15 +62,7 @@ fun MediaViewerGlobalControls(
         animationSpec = tween(durationMillis = 200)
     )
 
-    Row(
-        modifier = modifier
-            .shadow(12.dp, RoundedCornerShape(30.dp), spotColor = Color.Black.copy(alpha = 0.1f))
-            .background(IrisTheme.colors.surface, RoundedCornerShape(30.dp))
-            .border(1.dp, IrisTheme.colors.border, RoundedCornerShape(30.dp))
-            .padding(horizontal = 6.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+    MediaViewerControlsContainer(modifier) {
         ZoomOutButton(scale, onScaleChange)
         ResetZoomButton(scale, onScaleChange, onOffsetReset)
         ZoomInButton(scale, onScaleChange)
@@ -61,6 +71,35 @@ fun MediaViewerGlobalControls(
 
         InfoButton(isInfoOpen, onInfo)
         CopyButton(copyTint, onCopy)
+        ToggleCarouselButton(carouselMode, onToggleCarousel)
+
+        Box(modifier = Modifier.height(16.dp).width(1.dp).background(IrisTheme.colors.border))
+
+        EditButton(onEdit)
+    }
+}
+
+@Composable
+fun MediaViewerFullscreenControls(
+    scale: Float,
+    onScaleChange: (Float) -> Unit,
+    onOffsetReset: () -> Unit,
+    carouselMode: CarouselVisibility,
+    onToggleCarousel: () -> Unit,
+    onEdit: () -> Unit,
+    onInfo: () -> Unit,
+    isInfoOpen: Boolean,
+    modifier: Modifier = Modifier
+) {
+    MediaViewerControlsContainer(modifier) {
+        ZoomOutButton(scale, onScaleChange)
+        ResetZoomButton(scale, onScaleChange, onOffsetReset)
+        ZoomInButton(scale, onScaleChange)
+
+        Box(modifier = Modifier.height(16.dp).width(1.dp).background(IrisTheme.colors.border))
+
+        InfoButton(isInfoOpen, onInfo)
+        MagicWandButton()
         ToggleCarouselButton(carouselMode, onToggleCarousel)
 
         Box(modifier = Modifier.height(16.dp).width(1.dp).background(IrisTheme.colors.border))

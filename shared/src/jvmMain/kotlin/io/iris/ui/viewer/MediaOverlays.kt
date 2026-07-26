@@ -117,7 +117,7 @@ fun VolumeVerticalOverlay(
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
-                    .padding(end = 43.dp, bottom = bottomPadding)
+                    .padding(end = 96.dp, bottom = bottomPadding)
                     .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
                     .padding(vertical = 12.dp, horizontal = 8.dp)
                     .onPointerEvent(PointerEventType.Enter) { onHover(true) }

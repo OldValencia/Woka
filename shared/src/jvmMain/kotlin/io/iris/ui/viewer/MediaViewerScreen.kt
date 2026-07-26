@@ -1,29 +1,14 @@
 package io.iris.ui.viewer
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.focusable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.dp
 import io.iris.AppDependencies
-import io.iris.data.CarouselVisibility
 import io.iris.data.MediaItem
-import io.iris.ui.theme.IrisTheme
-import io.iris.ui.viewer.player.rememberVideoPlayerState
+import io.iris.ui.viewer.pip.PipManager
 import kotlinx.coroutines.delay
-import java.io.File
 import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -40,20 +25,61 @@ fun MediaViewerScreen(
     val activeItem = remember(state.currentId, mediaItems) {
         mediaItems.find { it.file.absolutePath == state.currentId }
     }
+    var isFullscreen by remember { mutableStateOf(false) }
+
+    var showConflictDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(activeItem) {
-        if (activeItem != null) {
-            state.imageBitmap = loadThumbnail(activeItem)
-            state.activeItemPath = activeItem.file.absolutePath
-            state.scale = 1f; state.offsetX = 0f; state.offsetY = 0f
+        if (PipManager.isPipActive && activeItem != null && activeItem?.file?.absolutePath != PipManager.activeItem?.file?.absolutePath) {
+            showConflictDialog = true
         } else {
-            state.activeItemPath = null
+            if (activeItem != null) {
+                state.imageBitmap = loadThumbnail(activeItem)
+                state.activeItemPath = activeItem.file.absolutePath
+                state.scale = 1f; state.offsetX = 0f; state.offsetY = 0f
+            } else {
+                state.activeItemPath = null
+            }
         }
     }
+
+    if (showConflictDialog) {
+        VideoAlreadyOpenedDialog(
+            onConfirm = {
+                PipManager.closePip()
+                showConflictDialog = false
+                if (activeItem != null) {
+                    state.activeItemPath = activeItem.file.absolutePath
+                    state.scale = 1f; state.offsetX = 0f; state.offsetY = 0f
+                }
+            },
+            onDismiss = {
+                showConflictDialog = false
+                onClose(state.currentId)
+            }
+        )
+    }
+
+    // Load thumbnail lazily if confirmed, for now we skip loading
+    LaunchedEffect(activeItem, showConflictDialog) {
+        if (!showConflictDialog && activeItem != null) {
+            state.imageBitmap = loadThumbnail(activeItem)
+        }
+    }
+
     var mediaVolume by remember { mutableStateOf(0.5f) }
-    val videoState = if (activeItem is MediaItem.Video && state.activeItemPath != null) {
-        rememberVideoPlayerState(File(state.activeItemPath!!), mediaVolume)
-    } else null
+    
+    val videoState = remember(activeItem, state.activeItemPath) {
+        if (activeItem is MediaItem.Video && state.activeItemPath != null) {
+            PipManager.createOrGetState(activeItem, mediaVolume)
+        } else null
+    }
+
+    DisposableEffect(videoState) {
+        onDispose {
+            PipManager.releaseState(videoState)
+        }
+    }
 
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(state.isVolumeHoveredRaw) {
@@ -93,7 +119,47 @@ fun MediaViewerScreen(
         onClose(state.currentId)
     }
 
-    MediaViewerTopBarSetup(
+    val playerModifier = Modifier.mediaViewerPlayerModifier(
+        state = state,
+        videoState = videoState,
+        mediaItems = mediaItems,
+        mediaVolume = mediaVolume,
+        isFullscreen = isFullscreen,
+        focusRequester = focusRequester,
+        onClose = onClose,
+        copyAction = copyAction,
+        infoAction = infoAction,
+        onVolumeChange = { vol -> mediaVolume = vol; state.volumeTrigger = System.currentTimeMillis() }
+    )
+
+    val playerContent = @Composable {
+        MediaViewerPlayer(
+            modifier = playerModifier,
+            state = state,
+            videoState = videoState,
+            mediaItems = mediaItems,
+            activeItem = activeItem,
+            mediaVolume = mediaVolume,
+            carouselMode = settings.mediaViewerCarouselMode,
+            isFullscreen = isFullscreen,
+            showInfoDialog = showInfoDialog,
+            onShowInfoDialogChange = { showInfoDialog = it },
+            onVolumeChange = { mediaVolume = it },
+            onToggleFullscreen = { 
+                if (videoState != null && activeItem != null) {
+                    PipManager.openPip(activeItem, videoState)
+                    onClose(state.currentId)
+                }
+            },
+            loadThumbnail = loadThumbnail,
+            editAction = editAction,
+            copyAction = copyAction,
+            infoAction = infoAction
+        )
+    }
+
+    MediaViewerLayoutWrapper(
+        isVisible = state.isUiVisible,
         scale = state.scale,
         onScaleChange = { state.scale = it },
         onOffsetReset = { state.offsetX = 0f; state.offsetY = 0f; state.scale = 1f },
@@ -105,89 +171,8 @@ fun MediaViewerScreen(
         onCopy = copyAction,
         copyTrigger = copyTrigger,
         onInfo = infoAction,
-        isInfoOpen = showInfoDialog
+        isInfoOpen = showInfoDialog,
+        playerContent = playerContent
     )
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .clipToBounds()
-            .background(IrisTheme.colors.background)
-            .onPointerEvent(PointerEventType.Move) {
-                state.lastInteractionTime = System.currentTimeMillis()
-                state.isUiVisible = true
-            }
-            .focusRequester(focusRequester)
-            .focusable()
-            .mediaViewerKeyHandler(
-                currentId = state.currentId,
-                mediaItems = mediaItems,
-                videoState = videoState,
-                mediaVolume = mediaVolume,
-                onClose = { onClose(state.currentId) },
-                onSkip = { dir -> state.skipDirection = dir; state.skipTrigger = System.currentTimeMillis() },
-                onNavigate = { dir, newId -> state.animationDirection = dir; state.currentId = newId },
-                onVolumeChange = { vol -> mediaVolume = vol; state.volumeTrigger = System.currentTimeMillis() },
-                onPlayPause = { state.playPauseTrigger = System.currentTimeMillis() },
-                onCopy = copyAction,
-                onInfo = infoAction
-            )
-            .pointerInput(Unit) {
-                awaitPointerEventScope {
-                    while (true) if (awaitPointerEvent().type == PointerEventType.Press) focusRequester.requestFocus()
-                }
-            }
-    ) {
-        if (state.imageBitmap != null) {
-            MediaViewerContent(
-                imageBitmap = state.imageBitmap!!, animationDirection = state.animationDirection,
-                scale = state.scale, offsetX = state.offsetX, offsetY = state.offsetY, videoState = videoState,
-                onScaleChange = { state.scale = it }, onOffsetChange = { x, y -> state.offsetX = x; state.offsetY = y },
-                onPlayPause = { state.playPauseTrigger = System.currentTimeMillis() },
-                onEdit = editAction,
-                onCopy = copyAction,
-                onInfo = infoAction
-            )
-            MediaViewerToolbar(
-                currentId = state.currentId, mediaItems = mediaItems, imageBitmap = state.imageBitmap!!,
-                isVisible = state.isUiVisible || settings.mediaViewerCarouselMode == CarouselVisibility.ALWAYS_ON,
-                isCarouselEnabled = settings.mediaViewerCarouselMode != CarouselVisibility.HIDDEN,
-                scale = state.scale, offsetX = state.offsetX, offsetY = state.offsetY,
-                onPrev = {
-                    val idx = mediaItems.indexOfFirst { it.file.absolutePath == state.currentId }
-                    if (idx > 0) {
-                        state.animationDirection = -1; state.currentId = mediaItems[idx - 1].file.absolutePath
-                    }
-                },
-                onNext = {
-                    val idx = mediaItems.indexOfFirst { it.file.absolutePath == state.currentId }
-                    if (idx in 0 until mediaItems.lastIndex) {
-                        state.animationDirection = 1; state.currentId = mediaItems[idx + 1].file.absolutePath
-                    }
-                },
-                onSelectMedia = { state.animationDirection = 0; state.currentId = it },
-                onVolumeHoverChange = { state.isVolumeHoveredRaw = it },
-                loadThumbnail = loadThumbnail,
-                mediaVolume = mediaVolume,
-                onVolumeChange = { mediaVolume = it },
-                videoState = videoState
-            )
-        } else {
-            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-        }
 
-        PlayPauseOverlay(trigger = state.playPauseTrigger, isPlaying = videoState?.isPlaying == true)
-        SkipOverlay(trigger = state.skipTrigger, direction = state.skipDirection)
-        VolumeVerticalOverlay(
-            isVisible = state.isVolumeHovered || state.volumeTriggerTimer > 0,
-            volume = mediaVolume,
-            bottomPadding = if (state.isUiVisible) {
-                if (mediaItems.size > 1) 170.dp else 90.dp
-            } else 0.dp,
-            alignment = if (state.isUiVisible) Alignment.BottomEnd else Alignment.CenterEnd,
-            onVolumeChange = { mediaVolume = it }, onHover = { state.isVolumeHoveredRaw = it }
-        )
-        if (showInfoDialog && activeItem != null) {
-            FileInfoDialog(activeItem, onDismiss = { showInfoDialog = false })
-        }
-    }
 }

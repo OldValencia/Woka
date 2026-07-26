@@ -36,7 +36,9 @@ fun MediaViewerToolbar(
     loadThumbnail: suspend (MediaItem) -> ImageBitmap?,
     mediaVolume: Float,
     onVolumeChange: (Float) -> Unit,
-    videoState: VideoPlayerState?
+    videoState: VideoPlayerState?,
+    isFullscreen: Boolean,
+    onToggleFullscreen: () -> Unit
 ) {
     val currentItem = mediaItems.find { it.file.absolutePath == currentId }
     val currentIndex = mediaItems.indexOfFirst { it.file.absolutePath == currentId }
@@ -55,7 +57,7 @@ fun MediaViewerToolbar(
                 animationProgress = animationProgress,
                 hasPrev = hasPrev,
                 hasNext = hasNext,
-                hasCarousel = isCarouselEnabled && mediaItems.size > 1,
+                hasCarousel = isCarouselEnabled && mediaItems.size > 1 && !isFullscreen,
                 isVideo = currentItem is MediaItem.Video
             )
             .background(IrisTheme.colors.background.copy(alpha = 0.35f)),
@@ -107,11 +109,13 @@ fun MediaViewerToolbar(
                     videoState = videoState,
                     mediaVolume = mediaVolume,
                     onVolumeChange = onVolumeChange,
-                    onVolumeHoverChange = onVolumeHoverChange
+                    onVolumeHoverChange = onVolumeHoverChange,
+                    isFullscreen = isFullscreen,
+                    onToggleFullscreen = onToggleFullscreen
                 )
             }
 
-            if (isCarouselEnabled) {
+            if (isCarouselEnabled && !isFullscreen) {
                 MediaViewerCarousel(
                     mediaItems = mediaItems,
                     currentId = currentId,

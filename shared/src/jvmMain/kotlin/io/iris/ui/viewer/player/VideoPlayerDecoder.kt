@@ -3,17 +3,14 @@ package io.iris.ui.viewer.player
 import androidx.compose.ui.graphics.ImageBitmap
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import org.bytedeco.ffmpeg.global.avutil.*
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.FFmpegLogCallback
-import org.bytedeco.ffmpeg.global.avutil.av_log_set_level
-import org.bytedeco.ffmpeg.global.avutil.AV_LOG_QUIET
-import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_RGBA
 import java.nio.ShortBuffer
-import javax.sound.sampled.SourceDataLine
 import kotlin.time.Duration.Companion.milliseconds
 
 internal fun VideoPlayerState.startDecoderLoop(
-    videoChannel: Channel<Pair<ImageBitmap, Long>>,
+    videoChannel: Channel<VideoFrame>,
     audioChannel: Channel<ByteArray>
 ) {
     grabberJob = scope.launch(Dispatchers.IO) {
@@ -21,22 +18,26 @@ internal fun VideoPlayerState.startDecoderLoop(
         av_log_set_level(AV_LOG_QUIET)
         
         val grabber = FFmpegFrameGrabber(file)
-        var soundLine: SourceDataLine? = null
         try {
             grabber.setVideoOption("hwaccel", "auto")
             grabber.pixelFormat = AV_PIX_FMT_RGBA
             grabber.start()
             durationMs = grabber.lengthInTime / 1000L
 
-            val channels = grabber.audioChannels
-            hasAudio = channels > 0
-            
-            if (hasAudio) {
-                soundLine = initAudio(grabber, audioChannel)
+            if (grabber.audioChannels > 0) {
+                hasAudio = true
+                initAudio(grabber, audioChannel)
             }
 
+            // Tag every frame with the seek generation it was decoded under. It
+            // only advances once a pending seek has actually been processed, so
+            // frames grabbed before the seek keep the old generation and get
+            // discarded by the presenter.
+            var frameGeneration = seekGeneration
+
             while (isActive) {
-                handleSeekIfNeeded(grabber, videoChannel, audioChannel, soundLine)
+                val seekedGeneration = handleSeekIfNeeded(grabber, videoChannel, audioChannel)
+                if (seekedGeneration != -1) frameGeneration = seekedGeneration
 
                 if (!isPlaying || isSeeking) {
                     delay(50.milliseconds)
@@ -51,7 +52,7 @@ internal fun VideoPlayerState.startDecoderLoop(
                         if (hasAudio) {
                             audioChannel.send(ByteArray(0))
                         } else {
-                            videoChannel.send(Pair(ImageBitmap(1, 1), -2L))
+                            videoChannel.send(VideoFrame(ImageBitmap(1, 1), -2L, frameGeneration))
                         }
                         while (isPlaying && seekTargetMs == -1L && isActive) {
                             delay(50.milliseconds)
@@ -63,9 +64,14 @@ internal fun VideoPlayerState.startDecoderLoop(
 
                 if (frame.image != null) {
                     val bitmap = frame.toComposeBitmap()
-                    videoChannel.send(Pair(bitmap, frameTsMs))
-                } else if (frame.samples != null && soundLine != null) {
-                    val channelSamples = frame.samples[0] as ShortBuffer
+                    videoChannel.send(VideoFrame(bitmap, frameTsMs, frameGeneration))
+                } else if (frame.samples != null) {
+                    if (soundLineInstance == null) {
+                        hasAudio = true
+                        initAudio(grabber, audioChannel)
+                    }
+                    if (soundLineInstance != null) {
+                        val channelSamples = frame.samples[0] as ShortBuffer
                     val shortArray = ShortArray(channelSamples.capacity())
                     channelSamples.get(shortArray)
                     
@@ -76,8 +82,9 @@ internal fun VideoPlayerState.startDecoderLoop(
                     }
                     
                     audioChannel.send(byteArray)
+                    }
                 }
-            }
+            } // Close while (isActive)
             
             videoChannel.close()
             audioChannel.close()
@@ -87,9 +94,10 @@ internal fun VideoPlayerState.startDecoderLoop(
         } catch (e: Exception) {
             e.printStackTrace()
         } finally {
-            soundLine?.stop()
-            soundLine?.flush()
-            soundLine?.close()
+            soundLineInstance?.stop()
+            soundLineInstance?.flush()
+            soundLineInstance?.close()
+            soundLineInstance = null
             try { 
                 grabber.stop()
                 grabber.release() 

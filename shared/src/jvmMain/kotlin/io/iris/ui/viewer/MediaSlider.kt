@@ -1,5 +1,6 @@
 package io.iris.ui.viewer
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -17,11 +18,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 
+/**
+ * A slim, YouTube-style horizontal slider: a thin track with a small dot that
+ * grows while being dragged. The tap/drag hit area is kept generously tall
+ * ([hitAreaHeight]) even though the visuals are compact.
+ */
 @Composable
 fun MediaSlider(
     value: Float,
@@ -31,10 +38,15 @@ fun MediaSlider(
     tooltipText: ((Float) -> String)? = null,
     activeColor: Color = MaterialTheme.colorScheme.onSurface,
     inactiveColor: Color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
-    thumbColor: Color = Color.White
+    thumbColor: Color = Color.White,
+    trackHeight: Dp = 3.dp,
+    thumbSize: Dp = 8.dp,
+    thumbSizeDragged: Dp = 15.dp,
+    hitAreaHeight: Dp = 24.dp
 ) {
     var dragX by remember { mutableStateOf<Float?>(null) }
     var width by remember { mutableStateOf(0f) }
+    val isDragging = dragX != null
 
     val currentOnValueChange by rememberUpdatedState(onValueChange)
     val currentOnValueChangeFinished by rememberUpdatedState(onValueChangeFinished)
@@ -44,8 +56,11 @@ fun MediaSlider(
         dragX?.let { (it / width).coerceIn(0f, 1f) } ?: safeValue
     } else safeValue
 
+    val animatedThumbSize by animateDpAsState(if (isDragging) thumbSizeDragged else thumbSize)
+
     Box(
         modifier = modifier
+            .height(hitAreaHeight)
             .onSizeChanged { width = it.width.toFloat() }
             .pointerInput(Unit) {
                 detectDragGestures(
@@ -80,7 +95,7 @@ fun MediaSlider(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(4.dp)
+                .height(trackHeight)
                 .clip(CircleShape)
                 .background(inactiveColor)
         )
@@ -88,19 +103,19 @@ fun MediaSlider(
         Box(
             modifier = Modifier
                 .fillMaxWidth(displayValue)
-                .height(4.dp)
+                .height(trackHeight)
                 .clip(CircleShape)
                 .background(activeColor)
         )
         // Thumb
         Box(
             modifier = Modifier
-                .offset { IntOffset((displayValue * width - 6.dp.toPx()).toInt(), 0) }
-                .size(12.dp)
+                .offset { IntOffset((displayValue * width - animatedThumbSize.toPx() / 2f).toInt(), 0) }
+                .size(animatedThumbSize)
                 .shadow(2.dp, CircleShape)
                 .background(thumbColor, CircleShape)
         )
-        
+
         if (tooltipText != null && dragX != null) {
             Popup(
                 alignment = Alignment.TopCenter,

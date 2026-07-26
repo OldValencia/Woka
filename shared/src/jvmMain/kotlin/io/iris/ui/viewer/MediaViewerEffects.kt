@@ -25,7 +25,7 @@ fun MediaViewerTopBarSetup(
     DisposableEffect(scale, carouselMode, currentId, copyTrigger, isInfoOpen) {
         topBarAccessories.backActionOverride = { onClose(currentId) }
         topBarAccessories.centerAccessory = {
-            MediaViewerGlobalControls(
+            MediaViewerNormalControls(
                 scale = scale,
                 onScaleChange = onScaleChange,
                 onOffsetReset = onOffsetReset,

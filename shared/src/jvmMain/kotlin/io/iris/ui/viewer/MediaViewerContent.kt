@@ -12,14 +12,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.isCtrlPressed
+import androidx.compose.ui.input.pointer.isMetaPressed
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
@@ -38,7 +41,8 @@ fun MediaViewerContent(
     onPlayPause: () -> Unit,
     onEdit: () -> Unit,
     onCopy: () -> Unit,
-    onInfo: () -> Unit
+    onInfo: () -> Unit,
+    onToggleFullscreen: () -> Unit
 ) {
     val currentScale by rememberUpdatedState(scale)
     val currentOffsetX by rememberUpdatedState(offsetX)
@@ -46,44 +50,100 @@ fun MediaViewerContent(
     
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
 
+    var dragWithCtrl by remember { mutableStateOf(false) }
+
+    var renderScale by remember { mutableStateOf(scale) }
+    var renderOffsetX by remember { mutableStateOf(offsetX) }
+    var renderOffsetY by remember { mutableStateOf(offsetY) }
+    var isUserDragging by remember { mutableStateOf(false) }
+
+    LaunchedEffect(scale) { if (!isUserDragging) renderScale = scale }
+    LaunchedEffect(offsetX, offsetY) {
+        if (!isUserDragging) {
+            renderOffsetX = offsetX
+            renderOffsetY = offsetY
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .onSizeChanged { containerSize = it }
             .pointerInput(Unit) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    onScaleChange((currentScale * zoom).coerceIn(0.5f, 5f))
-                    onOffsetChange(currentOffsetX + pan.x, currentOffsetY + pan.y)
-                }
-            }
-            .pointerInput(Unit) {
                 awaitPointerEventScope {
                     while (true) {
                         val event = awaitPointerEvent()
-                        if (event.type == PointerEventType.Scroll) {
-                            val delta = event.changes.first().scrollDelta.y
-                            val zoomFactor = if (delta > 0) 0.9f else 1.1f
-                            onScaleChange((currentScale * zoomFactor).coerceIn(0.1f, 10f))
-                            event.changes.forEach { it.consume() }
+                        if (event.type == PointerEventType.Press) {
+                            val isCtrl = event.keyboardModifiers.isCtrlPressed || event.keyboardModifiers.isMetaPressed
+                            dragWithCtrl = isCtrl
                         }
+                        
+                        if (event.type == PointerEventType.Scroll) {
+                            val isCtrl = event.keyboardModifiers.isCtrlPressed || event.keyboardModifiers.isMetaPressed
+                            if (isCtrl) {
+                                val delta = event.changes.first().scrollDelta.y
+                                val zoomFactor = if (delta > 0) 0.9f else 1.1f
+                                renderScale = (renderScale * zoomFactor).coerceIn(0.1f, 10f)
+                                onScaleChange(renderScale)
+                                event.changes.forEach { it.consume() }
+                            }
+                        }
+
+                        if (event.type == PointerEventType.Release) {
+                            dragWithCtrl = false
+                            isUserDragging = false
+                        }
+                    }
+                }
+            }
+            .pointerInput(Unit) {
+                var initialized = false
+                
+                detectTransformGestures { _, pan, zoom, _ ->
+                    if (dragWithCtrl) {
+                        isUserDragging = true
+                        if (!initialized) {
+                            renderScale = currentScale
+                            renderOffsetX = currentOffsetX
+                            renderOffsetY = currentOffsetY
+                            initialized = true
+                        }
+                        
+                        renderScale = (renderScale * zoom).coerceIn(0.1f, 10f)
+                        renderOffsetX += pan.x
+                        renderOffsetY += pan.y
+                        
+                        onScaleChange(renderScale)
+                        onOffsetChange(renderOffsetX, renderOffsetY)
+                    } else {
+                        initialized = false
                     }
                 }
             }
             .pointerInput(videoState) {
                 detectTapGestures(
                     onDoubleTap = { offset ->
-                        if (currentScale == 1f) {
-                            onScaleChange(2f)
-                            if (containerSize != IntSize.Zero) {
-                                val centerX = containerSize.width / 2f
-                                val centerY = containerSize.height / 2f
-                                onOffsetChange(centerX - offset.x, centerY - offset.y)
-                            } else {
-                                onOffsetChange(0f, 0f)
-                            }
+                        if (videoState != null) {
+                            onToggleFullscreen()
                         } else {
-                            onScaleChange(1f)
-                            onOffsetChange(0f, 0f)
+                            if (currentScale == 1f) {
+                                renderScale = 2f
+                                if (containerSize != IntSize.Zero) {
+                                    val centerX = containerSize.width / 2f
+                                    val centerY = containerSize.height / 2f
+                                    renderOffsetX = centerX - offset.x
+                                    renderOffsetY = centerY - offset.y
+                                } else {
+                                    renderOffsetX = 0f
+                                    renderOffsetY = 0f
+                                }
+                            } else {
+                                renderScale = 1f
+                                renderOffsetX = 0f
+                                renderOffsetY = 0f
+                            }
+                            onScaleChange(renderScale)
+                            onOffsetChange(renderOffsetX, renderOffsetY)
                         }
                     },
                     onTap = {
@@ -121,14 +181,14 @@ fun MediaViewerContent(
                 Image(
                     bitmap = frameToDraw,
                     contentDescription = "Image/Video Preview",
-                    contentScale = ContentScale.Inside,
+                    contentScale = ContentScale.Fit,
                     modifier = Modifier
                         .fillMaxSize()
                         .graphicsLayer(
-                            scaleX = scale,
-                            scaleY = scale,
-                            translationX = offsetX,
-                            translationY = offsetY
+                            scaleX = renderScale,
+                            scaleY = renderScale,
+                            translationX = renderOffsetX,
+                            translationY = renderOffsetY
                         )
                 )
             }

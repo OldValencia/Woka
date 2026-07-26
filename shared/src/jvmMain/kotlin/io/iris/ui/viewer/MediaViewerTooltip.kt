@@ -13,6 +13,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.TooltipPlacement
+import androidx.compose.ui.unit.DpOffset
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -27,6 +29,9 @@ fun SimpleTooltip(text: String, content: @Composable () -> Unit) {
                 Text(text, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
             }
         },
-        delayMillis = 300
+        delayMillis = 300,
+        tooltipPlacement = TooltipPlacement.CursorPoint(
+            offset = DpOffset(0.dp, (-40).dp)
+        )
     ) { content() }
 }

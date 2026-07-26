@@ -25,6 +25,7 @@ import io.iris.ui.components.SettingsOverlay
 import io.iris.ui.theme.IrisTheme
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import io.iris.ui.viewer.GlobalPipWindow
 
 object AppDependencies : KoinComponent {
     val router: Router by inject()
@@ -115,11 +116,14 @@ fun App(
                     is Screen.Home -> HomeScreen(
                         onNavigateToFolder = { path -> router.navigateTo(Screen.Folder(path)) }
                     )
-                    is Screen.Folder -> FolderScreen(
-                        path = screen.path,
-                        highlightFile = screen.highlightFile,
-                        onNavigateToFolder = { path -> router.navigateTo(Screen.Folder(path)) }
-                    )
+                    is Screen.Folder -> {
+                        FolderScreen(
+                            path = screen.path,
+                            highlightFile = screen.highlightFile,
+                            openViewerForId = screen.openViewerForId,
+                            onNavigateToFolder = { path -> router.navigateTo(Screen.Folder(path)) }
+                        )
+                    }
                 }
             }
             }
@@ -159,6 +163,8 @@ fun App(
                     }
                 }
             )
+            // Global PIP Player Window
+            GlobalPipWindow(settingsRepo = settingsRepo)
         }
     }
 }

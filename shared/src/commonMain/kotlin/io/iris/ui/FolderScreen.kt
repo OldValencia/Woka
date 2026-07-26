@@ -28,6 +28,7 @@ class FolderDependencies(val path: String) : KoinComponent {
 fun FolderScreen(
     path: String,
     highlightFile: String? = null,
+    openViewerForId: String? = null,
     onNavigateToFolder: (String) -> Unit
 ) {
     val dependencies = remember(path) { FolderDependencies(path) }
@@ -38,8 +39,14 @@ fun FolderScreen(
     var showBgContextMenu by remember { mutableStateOf(false) }
     var bgContextMenuOffset by remember { mutableStateOf(IntOffset.Zero) }
     var showCreateFolderDialog by remember { mutableStateOf(false) }
-    var viewerMediaId by remember { mutableStateOf<String?>(null) }
+    var viewerMediaId by remember { mutableStateOf<String?>(openViewerForId) }
     var scrollToMediaId by remember { mutableStateOf<String?>(null) }
+    
+    LaunchedEffect(openViewerForId) {
+        if (openViewerForId != null) {
+            viewerMediaId = openViewerForId
+        }
+    }
 
     val dockAccessories = LocalDockAccessories.current
     LaunchedEffect(viewerMediaId) {

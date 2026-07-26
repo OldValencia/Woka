@@ -184,3 +184,24 @@ fun EditButton(onEdit: () -> Unit) {
         )
     }
 }
+
+@Composable
+fun MagicWandButton() {
+    ViewerTooltip("Magic Wand") {
+        Box(
+            modifier = Modifier.size(24.dp).clip(CircleShape).pointerHoverIcon(PointerIcon.Hand).clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = { /* Placeholder */ }
+            ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(IrisIcons.Static.MagicWand),
+                contentDescription = "Magic Wand",
+                tint = IrisTheme.colors.textPrimary,
+                modifier = Modifier.size(16.dp)
+            )
+        }
+    }
+}

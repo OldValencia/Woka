@@ -9,7 +9,6 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -18,23 +17,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import io.iris.ui.icons.IrisIcons
 import io.iris.ui.theme.IrisTheme
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import io.iris.ui.viewer.player.VideoPlayerState
 import org.jetbrains.compose.resources.painterResource
-import kotlin.math.max
-import kotlin.math.min
 
 @Composable
 fun MediaViewerVideoControls(
     videoState: VideoPlayerState?,
     mediaVolume: Float,
     onVolumeChange: (Float) -> Unit,
-    onVolumeHoverChange: (Boolean) -> Unit
+    onVolumeHoverChange: (Boolean) -> Unit,
+    isFullscreen: Boolean,
+    onToggleFullscreen: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -84,54 +79,12 @@ fun MediaViewerVideoControls(
         val durationMs = videoState?.durationMs ?: 0L
         
         if (durationMs > 0L) {
-            Text(formatTime(currentMs), color = IrisTheme.colors.textPrimary, style = TextStyle(fontSize = 13.sp, color = IrisTheme.colors.textPrimary))
-            
-            if (durationMs >= 6000L) {
-                Box(
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .clickable(enabled = videoState != null) { 
-                            videoState?.seek(max(0, currentMs - 5000))
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(painterResource(IrisIcons.Static.SkipBackward5), "Skip back 5s", tint = IrisTheme.colors.textPrimary, modifier = Modifier.size(16.dp))
-                }
-            }
-            
-            Slider(
-                colors = SliderDefaults.colors(
-                    thumbColor = IrisTheme.colors.accent,
-                    activeTrackColor = IrisTheme.colors.accent,
-                    inactiveTrackColor = IrisTheme.colors.textSecondary
-                ),
-                value = if (durationMs > 0) (currentMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f) else 0f,
-                onValueChange = { 
-                    videoState?.pauseForSeek()
-                    videoState?.seek((it * durationMs).toLong())
-                },
-                onValueChangeFinished = {
-                    videoState?.resumeAfterSeek()
-                },
+            MediaViewerTimeSlider(
+                videoState = videoState,
+                currentMs = currentMs,
+                durationMs = durationMs,
                 modifier = Modifier.weight(1f)
             )
-            
-            if (durationMs >= 6000L) {
-                Box(
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .clickable(enabled = videoState != null) { 
-                            videoState?.seek(min(durationMs, currentMs + 5000))
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(painterResource(IrisIcons.Static.SkipForward5), "Skip forward 5s", tint = IrisTheme.colors.textPrimary, modifier = Modifier.size(16.dp))
-                }
-            }
-            
-            Text(formatTime(durationMs), color = IrisTheme.colors.textPrimary, style = TextStyle(fontSize = 13.sp, color = IrisTheme.colors.textPrimary))
         } else {
             Spacer(Modifier.weight(1f))
         }
@@ -144,12 +97,22 @@ fun MediaViewerVideoControls(
             onVolumeChange = onVolumeChange,
             onVolumeHoverChange = onVolumeHoverChange
         )
+        
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) { onToggleFullscreen() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(if (isFullscreen) IrisIcons.Static.Collapse else IrisIcons.Static.Expand),
+                contentDescription = "Fullscreen",
+                tint = IrisTheme.colors.textPrimary.copy(alpha = iconAlpha),
+                modifier = Modifier.size(16.dp)
+            )
+        }
     }
-}
-
-internal fun formatTime(ms: Long): String {
-    val totalSeconds = ms / 1000
-    val minutes = totalSeconds / 60
-    val seconds = totalSeconds % 60
-    return "${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}"
 }

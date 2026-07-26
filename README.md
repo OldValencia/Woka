@@ -1,4 +1,4 @@
-# Iris
+# Wokka
 
 A minimalist, fast, and aesthetic desktop media viewer and editor built with Kotlin Multiplatform (Compose for Desktop).
 

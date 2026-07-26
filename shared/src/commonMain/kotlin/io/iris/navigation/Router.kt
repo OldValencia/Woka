@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.update
 
 sealed class Screen {
     data object Home : Screen()
-    data class Folder(val path: String, val highlightFile: String? = null) : Screen()
+    data class Folder(val path: String, val highlightFile: String? = null, val openViewerForId: String? = null, val nonce: Long = 0L) : Screen()
 }
 
 class Router {

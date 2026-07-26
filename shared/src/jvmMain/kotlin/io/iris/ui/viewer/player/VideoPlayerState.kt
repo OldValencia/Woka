@@ -1,6 +1,9 @@
 package io.iris.ui.viewer.player
 
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ImageBitmap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -32,6 +35,12 @@ class VideoPlayerState(
     @Volatile
     internal var seekTargetMs: Long = -1L
 
+    // Incremented on every seek. Frames carry the generation they were decoded
+    // under; the presenter discards any frame whose generation is stale, so a
+    // seek issued while playing can't be overwritten by buffered old frames.
+    @Volatile
+    internal var seekGeneration: Int = 0
+
     init {
         startPlayback()
     }
@@ -45,8 +54,21 @@ class VideoPlayerState(
 
     fun seek(progressMs: Long) {
         val safeProgress = progressMs.coerceIn(0L, durationMs)
+        seekGeneration++
         seekTargetMs = safeProgress
         currentPositionMs = safeProgress
+
+        // Seeking to (or past) the very end is treated as reaching the end:
+        // pin the play head there and pause, instead of relying on the decoder
+        // to play through to EOF (which is racy and lets the position bounce
+        // back on stale frames). The decoder still runs handleSeekIfNeeded and
+        // decodes the last frame for display. The next Play then restarts from
+        // the beginning (see togglePlayPause).
+        if (durationMs > 0 && safeProgress >= durationMs - END_THRESHOLD_MS) {
+            currentPositionMs = durationMs
+            isPlayingBeforeSeek = false
+            isPlaying = false
+        }
     }
     
     fun pauseForSeek() {
@@ -67,7 +89,7 @@ class VideoPlayerState(
     }
 
     fun togglePlayPause() {
-        if (!isPlaying && durationMs > 0 && currentPositionMs >= durationMs - 200) {
+        if (!isPlaying && durationMs > 0 && currentPositionMs >= durationMs - END_THRESHOLD_MS) {
             seek(0)
         }
         isPlaying = !isPlaying
@@ -78,16 +100,9 @@ class VideoPlayerState(
         presenterJob?.cancel()
         audioJob?.cancel()
     }
-}
 
-@Composable
-fun rememberVideoPlayerState(file: File, initialVolume: Float): VideoPlayerState {
-    val scope = rememberCoroutineScope()
-    val state = remember(file) { VideoPlayerState(scope, file, initialVolume) }
-    
-    DisposableEffect(state) {
-        onDispose { state.dispose() }
+    private companion object {
+        // How close to the end counts as "at the end".
+        const val END_THRESHOLD_MS = 200L
     }
-    
-    return state
 }
