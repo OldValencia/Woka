@@ -7,6 +7,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.ImageBitmap
 import io.iris.AppDependencies
 import io.iris.data.MediaItem
+import io.iris.ui.components.LocalGlobalShortcuts
 import io.iris.ui.viewer.pip.PipManager
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
@@ -30,7 +31,7 @@ fun MediaViewerScreen(
     var showConflictDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(activeItem) {
-        if (PipManager.isPipActive && activeItem != null && activeItem?.file?.absolutePath != PipManager.activeItem?.file?.absolutePath) {
+        if (PipManager.isPipActive && activeItem != null && activeItem.file.absolutePath != PipManager.activeItem?.file?.absolutePath) {
             showConflictDialog = true
         } else {
             if (activeItem != null) {
@@ -68,7 +69,7 @@ fun MediaViewerScreen(
     }
 
     var mediaVolume by remember { mutableStateOf(0.5f) }
-    
+
     val videoState = remember(activeItem, state.activeItemPath) {
         if (activeItem is MediaItem.Video && state.activeItemPath != null) {
             PipManager.createOrGetState(activeItem, mediaVolume)
@@ -119,6 +120,37 @@ fun MediaViewerScreen(
         onClose(state.currentId)
     }
 
+    // Register the viewer shortcuts app-wide so they fire in the key-event
+    // preview phase — before any focused button gets the key. This makes Space,
+    // arrows, Esc, etc. work no matter what currently holds focus (e.g. after
+    // clicking a toolbar/window button) and stops those keys from also
+    // activating the focused button. Fresh values are read via rememberUpdatedState.
+    val globalShortcuts = LocalGlobalShortcuts.current
+    val curVideoState by rememberUpdatedState(videoState)
+    val curMediaItems by rememberUpdatedState(mediaItems)
+    val curVolume by rememberUpdatedState(mediaVolume)
+    val curCopy by rememberUpdatedState(copyAction)
+    val curInfo by rememberUpdatedState(infoAction)
+    DisposableEffect(globalShortcuts) {
+        globalShortcuts.onPreviewKey = { event ->
+            handleMediaViewerKeyEvent(
+                event = event,
+                currentId = state.currentId,
+                mediaItems = curMediaItems,
+                videoState = curVideoState,
+                mediaVolume = curVolume,
+                onClose = { onClose(state.currentId) },
+                onSkip = { dir -> state.skipDirection = dir; state.skipTrigger = System.currentTimeMillis() },
+                onNavigate = { dir, newId -> state.animationDirection = dir; state.currentId = newId },
+                onVolumeChange = { vol -> mediaVolume = vol; state.volumeTrigger = System.currentTimeMillis() },
+                onPlayPause = { state.playPauseTrigger = System.currentTimeMillis() },
+                onCopy = { curCopy() },
+                onInfo = { curInfo() }
+            )
+        }
+        onDispose { globalShortcuts.onPreviewKey = null }
+    }
+
     val playerModifier = Modifier.mediaViewerPlayerModifier(
         state = state,
         videoState = videoState,
@@ -145,7 +177,7 @@ fun MediaViewerScreen(
             showInfoDialog = showInfoDialog,
             onShowInfoDialogChange = { showInfoDialog = it },
             onVolumeChange = { mediaVolume = it },
-            onToggleFullscreen = { 
+            onToggleFullscreen = {
                 if (videoState != null && activeItem != null) {
                     PipManager.openPip(activeItem, videoState)
                     onClose(state.currentId)

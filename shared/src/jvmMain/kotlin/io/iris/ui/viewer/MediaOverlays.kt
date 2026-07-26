@@ -90,7 +90,7 @@ fun SkipOverlay(trigger: Long, direction: Int) {
                     painter = painterResource(if (direction == 1) IrisIcons.Static.SkipForward5 else IrisIcons.Static.SkipBackward5),
                     contentDescription = null,
                     tint = Color.White,
-                    modifier = Modifier.width(25.dp).height(25.dp)
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }

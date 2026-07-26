@@ -2,6 +2,7 @@ package io.iris.ui.viewer
 
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isAltPressed
 import androidx.compose.ui.input.key.isCtrlPressed
@@ -25,7 +26,33 @@ fun Modifier.mediaViewerKeyHandler(
     onCopy: () -> Unit,
     onInfo: () -> Unit
 ): Modifier = this.onKeyEvent { event ->
-    when (event.key) {
+    handleMediaViewerKeyEvent(
+        event, currentId, mediaItems, videoState, mediaVolume,
+        onClose, onSkip, onNavigate, onVolumeChange, onPlayPause, onCopy, onInfo
+    )
+}
+
+/**
+ * Shared media-viewer shortcut logic. Used both by [mediaViewerKeyHandler] (on
+ * the focused player) and by the global preview hook in the shell, so shortcuts
+ * work regardless of which element currently holds focus. Returns true when the
+ * event is handled/consumed.
+ */
+fun handleMediaViewerKeyEvent(
+    event: KeyEvent,
+    currentId: String,
+    mediaItems: List<MediaItem>,
+    videoState: VideoPlayerState?,
+    mediaVolume: Float,
+    onClose: () -> Unit,
+    onSkip: (direction: Int) -> Unit,
+    onNavigate: (direction: Int, newId: String) -> Unit,
+    onVolumeChange: (Float) -> Unit,
+    onPlayPause: () -> Unit,
+    onCopy: () -> Unit,
+    onInfo: () -> Unit
+): Boolean {
+    return when (event.key) {
         Key.Escape -> {
             if (event.type == KeyEventType.KeyDown) {
                 onClose()

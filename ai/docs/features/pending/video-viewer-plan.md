@@ -64,3 +64,48 @@
 
 6. **Очистка памяти (Lifecycle):**
    - При принудительном закрытии окна PIP (крестик, Alt+F4 или программное закрытие) глобальный менеджер обязан вызвать `.dispose()` у экземпляра `VideoPlayerState`, чтобы избежать утечек памяти (освободить ресурсы VLC).
+
+---
+
+## Архитектура движка воспроизведения (справка)
+
+Плеер построен на **JavaCV / FFmpeg** (`FFmpegFrameGrabber`), не на VLC. Весь код в `shared/src/jvmMain/kotlin/io/iris/ui/viewer/player/`.
+
+### Файлы и ответственность
+- **`VideoPlayerState.kt`** — состояние плеера + публичный API (`seek`, `pauseForSeek`/`resumeAfterSeek`, `togglePlayPause`, `updateVolume`, `dispose`). Compose-состояние (`isPlaying`, `currentPositionMs`, `durationMs`, `currentFrame`, `volume`, `hasAudio`, `isRepeatMode`). Запускает воспроизведение в `init`.
+- **`VideoPlayerPresenter.kt`** — создаёт каналы и два цикла; **цикл-презентер** тайминга кадров. Определяет `data class VideoFrame(bitmap, tsMs, generation)`.
+- **`VideoPlayerDecoder.kt`** — **цикл-декодер**: грабит кадры из FFmpeg, шлёт в каналы, обрабатывает EOF/repeat.
+- **`VideoPlayerSeek.kt`** — `handleSeekIfNeeded()`: собственно перемотка грабера.
+- **`VideoPlayerAudio.kt`** — инициализация `SourceDataLine` и **аудио-джоб** (проигрывание PCM).
+- **`VideoPlayerExt.kt`** — утилиты (`toComposeBitmap` и т.п.).
+
+### Потоки и поток данных
+```
+[Декодер: Dispatchers.IO]  --videoChannel(cap 60)-->  [Презентер: Dispatchers.Default] --> currentFrame / currentPositionMs
+        |                  --audioChannel(cap 500)--> [Аудио-джоб: Dispatchers.IO]      --> SourceDataLine
+        grabFrame()
+```
+- Декодер — единственный, кто читает грабер. Презентер отвечает за тайминг видео (сон до `frameTsMs`) и обновление `currentFrame`/`currentPositionMs`. Аудио-джоб пишет PCM в звуковую линию.
+- Все три цикла кооперативно «паркуются» на `while (!isPlaying || isSeeking) { delay(50) }`.
+- EOF: без аудио декодер шлёт маркер-кадр `tsMs == -2L`; с аудио — пустой `ByteArray(0)` в аудио-канал. Получатель ставит `isPlaying=false`, `currentPositionMs=durationMs`.
+
+### Перемотка — три механизма (важно, легко сломать)
+1. **Seek generation (`seekGeneration`).** Каждый `seek()` инкрементирует счётчик. Кадры тегируются поколением (`VideoFrame.generation`), которое декодер сдвигает **только после** обработки перемотки в `handleSeekIfNeeded`. Презентер **отбрасывает устаревшие кадры** — и при получении из канала, и **повторно перед записью `currentPositionMs`** (после `delay`/парковки). Без второй проверки был баг: во время воспроизведения кадр проходил проверку до перемотки, а позицию писал после сна → откат play head назад. Это чинит гонку «скип во время игры».
+2. **Детерминированный конец.** Если цель `seek()` ≥ `durationMs - END_THRESHOLD_MS` (200мс) — сразу `currentPositionMs=durationMs`, `isPlayingBeforeSeek=false`, `isPlaying=false` (не полагаемся на доигрывание до EOF, которое было racy). Декодер всё равно прогоняет `handleSeekIfNeeded` (он до проверки `isPlaying`) и рисует последний кадр. Следующий Play рестартит с нуля (`togglePlayPause` видит позицию в конце → `seek(0)`).
+3. **Near-end backoff** (`handleSeekIfNeeded`). При перемотке к самому концу `setTimestamp(durationMs)` часто встаёт за последним кадром → `grabFrame()==null` → превью не обновлялось. Поэтому старт декодирования сдвигается на ~1000мс раньше; цикл всё равно проматывает вперёд и удерживает последний реальный кадр в `lastGoodFrame`.
+
+### Пауза для драга слайдера
+`MediaViewerTimeSlider` → `pauseForSeek()` (сохраняет `isPlayingBeforeSeek`, ставит `isSeeking=true`, паузит) на время драга; `resumeAfterSeek()` восстанавливает воспроизведение. Кнопки Skip и Alt+стрелки зовут `seek()` напрямую (без pause) — корректность держится на seek-generation. Детерминированный конец сбрасывает `isPlayingBeforeSeek`, чтобы `resumeAfterSeek` не «оживил» видео на конце.
+
+### Инварианты (не нарушать)
+- `seek()` вызывается только из UI-потока (single-writer для `seekGeneration`/`seekTargetMs`).
+- `seekTargetMs = -1L` означает «нет ожидающей перемотки»; repeat-режим переиспользует это, выставляя `seekTargetMs = 0L` на EOF.
+- Любая запись `currentPositionMs` из презентера должна быть под проверкой актуального `generation`.
+
+<!-- Ниже добавляй найденные при тестировании баги -->
+### Баги (из тестирования)
+
+- [x] **PiP-окно не перетаскивается после ресайза.** Drag был завязан на `windowState.placement == Floating`, но при ресайзе undecorated-окна за углы это свойство не обновляется. Фикс (`MediaViewerFullscreenWindow.kt`): считаем окно развёрнутым только если `extendedState & MAXIMIZED_BOTH` **и** окно занимает всю рабочую область (`graphicsConfiguration.bounds` минус `screenInsets`); иначе — разрешаем перетаскивание.
+- [x] **Нет фокуса/шорткатов у открытого видео.** Полноэкранное окно создавалось, пока активно главное окно, и не имело обработчика клавиш. Фикс: `Window(onPreviewKeyEvent = handlePipKeyEvent(...))` (Space, ←/→ ±5с, ↑/↓ громкость, Esc → возврат в main) + `window.toFront()` / `window.requestFocus()` в `LaunchedEffect` при появлении.
+- [x] **После клика по кнопке (max/min окна и др.) фокус остаётся на ней и Space её «нажимает».** `clickable` по умолчанию фокусируем и реагирует на Space/Enter; кнопки чрома/тулбара лежат вне поддерева плеера (инжектятся через `LocalTopBarAccessories`), поэтому шорткаты плеера до них не долетали. Фикс: глобальный перехват в `MainShell` через `onPreviewKeyEvent` (фаза туннелирования от корня — до любой сфокусированной кнопки). `MediaViewerScreen` регистрирует обработчик в `GlobalShortcutState` (`LocalGlobalShortcuts`), пока открыт; обработанные клавиши «съедаются» → кнопка их не получает, а шорткаты работают при любом фокусе. Логика вынесена в `handleMediaViewerKeyEvent(...)` (общая для плеера и глобального хука).
+

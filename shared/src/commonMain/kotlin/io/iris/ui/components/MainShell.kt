@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.unit.dp
 import io.iris.ui.theme.IrisTheme
 
@@ -37,12 +38,22 @@ fun MainShell(
 ) {
     val dockAccessories = remember { DockAccessoriesState() }
     val topBarAccessories = remember { TopBarAccessoriesState() }
+    val globalShortcuts = remember { GlobalShortcutState() }
 
     CompositionLocalProvider(
         LocalDockAccessories provides dockAccessories,
-        LocalTopBarAccessories provides topBarAccessories
+        LocalTopBarAccessories provides topBarAccessories,
+        LocalGlobalShortcuts provides globalShortcuts
     ) {
-        Box(modifier = Modifier.fillMaxSize().background(IrisTheme.colors.background)) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(IrisTheme.colors.background)
+                // Runs in the preview (tunneling) phase from the root, so a
+                // registered screen shortcut sees keys before any focused button
+                // and can consume them (see GlobalShortcutState).
+                .onPreviewKeyEvent { globalShortcuts.onPreviewKey?.invoke(it) ?: false }
+        ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 topBarArea {
                     GlobalTopBar(

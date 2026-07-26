@@ -5,6 +5,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.input.key.KeyEvent
 
 class TopBarAccessoriesState {
     var centerAccessory by mutableStateOf<(@Composable () -> Unit)?>(null)
@@ -13,3 +14,16 @@ class TopBarAccessoriesState {
 }
 
 val LocalTopBarAccessories = compositionLocalOf { TopBarAccessoriesState() }
+
+/**
+ * App-wide keyboard shortcut hook. A screen (e.g. the media viewer) registers a
+ * handler here; the shell invokes it in the key-event *preview* (tunneling)
+ * phase at the very root, so shortcuts fire before any focused button and win
+ * regardless of what currently holds focus. Returning true consumes the event,
+ * which is what stops Space/arrows from also activating a focused button.
+ */
+class GlobalShortcutState {
+    var onPreviewKey by mutableStateOf<((KeyEvent) -> Boolean)?>(null)
+}
+
+val LocalGlobalShortcuts = compositionLocalOf { GlobalShortcutState() }
