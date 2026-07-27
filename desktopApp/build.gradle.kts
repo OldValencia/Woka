@@ -18,11 +18,11 @@ dependencies {
 
 compose.desktop {
     application {
-        mainClass = "io.iris.MainKt"
+        mainClass = "com.woka.MainKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "io.iris"
+            packageName = "com.woka"
             packageVersion = "1.0.0"
         }
     }

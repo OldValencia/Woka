@@ -147,6 +147,6 @@ This feature introduces a minimalistic, iOS-style media editor and viewer. The g
 **Action item:** Not a critical app bug (it's a dev-environment artifact from rebuilding while running), but we should ensure all icons in `CustomTitleBar` are correctly bundled or preloaded to avoid runtime crashes during dev.
 
 ### 8. Finalization and Cleanup
-- Add and resolve missing icons in IrisIcons.
+- Add and resolve missing icons in Icons.kt
 - Adapt logic to domain models.
 - Perform successful test builds and run the application.

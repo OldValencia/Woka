@@ -1,12 +1,12 @@
 # Phase 2: Folder View & Subfolder Navigation
 
-This document is a strict, step-by-step tutorial for the AI to develop Phase 2 of Iris.
+This document is a strict, step-by-step tutorial for the AI to develop Phase 2 of Woka.
 
 ## 🚨 Core Developer Rules
 - **File Size Limit:** Files MUST strictly aim to be under 100-150 lines. Break down UI components and logic to stay within this limit.
 - **No Fully Qualified Names:** Always use imports.
 - **Pure Desktop:** No Android/iOS dependencies.
-- **Theming:** No hardcoded colors. We must implement Light/Dark mode via `isSystemInDarkTheme()`. (We will set up a basic `IrisTheme` before starting UI work).
+- **Theming:** No hardcoded colors. We must implement Light/Dark mode via `isSystemInDarkTheme()`. (We will set up a basic `WokaTheme` before starting UI work).
 
 ## Goal
 Implement navigation from the Home Screen to a specific linked folder. Inside this folder, display a grid of subfolders and media files (`.jpg`, `.png`, `.mp4`). Provide breadcrumb navigation to go back to Home or parent folders.
@@ -15,8 +15,8 @@ Implement navigation from the Home Screen to a specific linked folder. Inside th
 
 ## Step 1: Basic Theming & Primitive Updates
 Before building new UI, we need to finalize the theming rule we discussed.
-1. Create `IrisTheme.kt` with a simple composition local or object holding colors (Background, Surface, TextPrimary).
-2. Update `IrisButton`, `HomeScreen`, and `FolderCard` to use these semantic colors instead of hardcoded `Color.White` or `Color(0xFFF2F2F7)`.
+1. Create `WokaTheme.kt` with a simple composition local or object holding colors (Background, Surface, TextPrimary).
+2. Update `WokaButton`, `HomeScreen`, and `FolderCard` to use these semantic colors instead of hardcoded `Color.White` or `Color(0xFFF2F2F7)`.
 
 ## Step 2: Simple Navigation System
 Since we want to avoid heavy Android-like Navigation libraries (like Jetpack Navigation), we will build a simple stack-based router in pure Compose.

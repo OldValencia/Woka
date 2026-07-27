@@ -1,4 +1,4 @@
-rootProject.name = "Iris"
+rootProject.name = "Woka"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 @Suppress("UnstableApiUsage")

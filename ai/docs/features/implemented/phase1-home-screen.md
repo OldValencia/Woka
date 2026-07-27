@@ -1,6 +1,6 @@
 # Phase 1: Foundation & Home Screen
 
-This document is a strict, step-by-step tutorial for the AI to develop Phase 1 of Iris without getting lost.
+This document is a strict, step-by-step tutorial for the AI to develop Phase 1 of Woka without getting lost.
 
 ## 🚨 Core Developer Rules
 - **File Size Limit:** Files MUST strictly aim to be under 100-150 lines. If a file grows larger, break it down (e.g., extract UI components into their own files, or split ViewModel logic). This is a critical rule to maintain a clean, understandable codebase.
@@ -24,10 +24,10 @@ Since we are building a purely JVM (Desktop) app, the default KMP template might
    - **FileKit (`io.github.vinceglb:filekit-compose`):** A modern, native file/folder picker for Compose Multiplatform. This eliminates the need to write legacy, bug-prone AWT/Swing (`JFileChooser`) dialog wrappers.
 
 ## Step 2: Architecture & Storage (Data Layer)
-1. **Settings Model:** Create `data class IrisSettings(val linkedFolders: List<String> = emptyList())`. Must be `@Serializable`.
+1. **Settings Model:** Create `data class WokaSettings(val linkedFolders: List<String> = emptyList())`. Must be `@Serializable`.
 2. **Settings Repository:** Create an interface and its implementation in `jvmMain` (or `commonMain` since it's JVM-only anyway). 
-   - Path: `System.getProperty("user.home") + "/Documents/OldValencia/Iris/settings.json"`.
-   - Functions: `getSettings(): Flow<IrisSettings>`, `addLinkedFolder(path: String)`.
+   - Path: `System.getProperty("user.home") + "/Documents/OldValencia/Woka/settings.json"`.
+   - Functions: `getSettings(): Flow<WokaSettings>`, `addLinkedFolder(path: String)`.
 3. **DI Setup:** Create Koin modules and initialize them in `desktopApp/src/jvmMain/kotlin/main.kt`.
 
 ## Step 3: ViewModels (Presentation Layer)
@@ -43,17 +43,17 @@ Since we are building a purely JVM (Desktop) app, the default KMP template might
 ## Step 5: Theming (Light/Dark Mode)
 - **Requirement:** The application MUST natively support both Light and Dark themes.
 - **Implementation:** Rely on `isSystemInDarkTheme()` to dynamically detect the OS preference.
-- **Design Impact:** All custom UI primitives (like `IrisButton`, `IrisSurface`, `IrisText`) must be built with theme-awareness. Never hardcode static hex values directly into Composables; instead, use a simple custom Theme object or check the boolean flag to provide the correct color (e.g., `#F2F2F7` for light background, `#1E1E1E` for dark).
+- **Design Impact:** All custom UI primitives (like `WokaButton`, `WokaSurface`, `WokaText`) must be built with theme-awareness. Never hardcode static hex values directly into Composables; instead, use a simple custom Theme object or check the boolean flag to provide the correct color (e.g., `#F2F2F7` for light background, `#1E1E1E` for dark).
 
 ## Step 6: UI Implementation & Design Rules (Apple HIG Style)
 1. **No UI Frameworks:** DO NOT use Material 3. DO NOT use heavy frameworks like Jewel. Material ripples, shadows, and huge app bars contradict the Apple HIG minimalist aesthetic.
-2. **Custom Primitives:** Build our own simple, reusable components (`IrisButton`, `IrisSurface`, `IrisText`) using pure Compose foundations (`Box`, `Row`, `BasicText`, `clickable` without ripple, or subtle alpha-fade click effects).
+2. **Custom Primitives:** Build our own simple, reusable components (`WokaButton`, `WokaSurface`, `WokaText`) using pure Compose foundations (`Box`, `Row`, `BasicText`, `clickable` without ripple, or subtle alpha-fade click effects).
 3. **Theme:** 
    - Typography: Clean sans-serif (Inter/Roboto) with varied font weights.
    - Geometry: 1.dp borders (subtle gray/translucent), 8.dp or 12.dp rounded corners (`RoundedCornerShape`).
    - Backgrounds: Solid `#F2F2F7` (Light) or `#1E1E1E` (Dark), avoiding pitch black or pure white unless for cards.
 4. **HomeScreen Composable:**
-   - **If empty:** Show a beautifully centered, minimalist column with a subtle icon, text "No folders linked", and a glassmorphic/rounded `IrisButton` "+ Link Folder".
+   - **If empty:** Show a beautifully centered, minimalist column with a subtle icon, text "No folders linked", and a glassmorphic/rounded `WokaButton` "+ Link Folder".
    - **If populated:** Show a `LazyVerticalGrid`. Each item is a `FolderCard`.
 5. **FolderCard Composable:**
    - Aspect ratio 1:1 or 4:3.
@@ -63,6 +63,6 @@ Since we are building a purely JVM (Desktop) app, the default KMP template might
 ## Testing Criteria
 - Running `./gradlew :desktopApp:run` shows the empty state.
 - Clicking "Link Folder" opens the native folder dialog via FileKit.
-- Selecting a folder updates `Documents/OldValencia/Iris/settings.json`.
+- Selecting a folder updates `Documents/OldValencia/Woka/settings.json`.
 - The UI instantly reacts and shows the folder card in the grid.
 - Files strictly adhere to the 100-150 line limit.

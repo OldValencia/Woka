@@ -47,7 +47,7 @@ This redesign shifts the application from a traditional sidebar layout to a more
 - [x] **Implement Spotlight Search:** Build a centered floating search modal. Highlight & scroll to items.
 - [x] **Implement Settings Animation:** Build the settings panel anchored to the dock's settings icon. macOS style layout.
 - [x] **Build Home View:** Implement the linked folders dashboard.
-- [x] **Update Theming (`IrisTheme.kt`):** Add the new OLED-friendly palette and dock gradient/blur tokens.
+- [x] **Update Theming (`Theme.kt`):** Add the new OLED-friendly palette and dock gradient/blur tokens.
 - [x] **Folder Navigation & Zoom:** Implement discrete Zoom modes (Small, Grid, Big) and Sorting (Name/Date, Asc/Desc) per folder.
 - [x] **Library & Pinned Folders:** Implement the Library dock popup that grows upwards and displays pinned folders, with a glowing badge indicator.
 - [x] **Select Mode & File Operations:** Implement multi-item selection with vibrant borders. Integrate file actions (Delete, Duplicate, Copy, Move) using native Desktop directory pickers.

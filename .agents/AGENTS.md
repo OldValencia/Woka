@@ -1,11 +1,11 @@
-# Iris Project Guidelines
+# Woka Project Guidelines
 
 ## 1. Context & Architecture
-- **App:** Iris (Compose Multiplatform Desktop media viewer and editor).
+- **App:** Woka (Compose Multiplatform Desktop media viewer and editor).
 - **Targets:** Desktop (JVM) ONLY. No Android, no iOS.
 - **Arch:** MVVM (Model-View-ViewModel).
 - **DI:** Koin (for dependency injection). No direct instantiations.
-- **Data:** Local JSON files for settings (`user.home/Documents/OldValencia/Iris/settings.json`) via `kotlinx.serialization`. No heavy databases like Room.
+- **Data:** Local JSON files for settings (`user.home/Documents/OldValencia/Woka/settings.json`) via `kotlinx.serialization`. No heavy databases like Room.
 - **Vision:** See `ai/docs/general_idea.md`.
 
 ## 2. Core Mandates (STRICT)
@@ -20,7 +20,7 @@
 
 ## 3. Execution & Interaction
 - **Workflow:** Plan -> Summarize -> Wait for explicit permission -> Code -> Build -> Wait for result -> Report -> STOP.
-- **Self-Check (Anti-FQN):** After making ANY edits to a `.kt` file, you MUST mechanically verify there are no inline FQNs. Since `grep_search` may fail on Windows, use PowerShell: `Select-String -Pattern "(androidx\.|java\.|io\.iris\.)" -Path "..."`. 
+- **Self-Check (Anti-FQN):** After making ANY edits to a `.kt` file, you MUST mechanically verify there are no inline FQNs. Since `grep_search` may fail on Windows, use PowerShell: `Select-String -Pattern "(androidx\.|java\.|io\.woka\.)" -Path "..."`. 
   **MANDATORY:** You MUST NOT tell the user that your edits are complete until you have explicitly executed this command, verified its output, and cleaned up any matched FQNs.
 - **Communication:** NO FILLER, zero intros/apologies. Dry, direct, technical, active voice.
 - **Constraints:** Do NOT modify code without explicit command ("Apply", "Go ahead"). STOP after action/question. If unclear, ASK, don't guess.

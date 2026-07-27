@@ -1,4 +1,6 @@
-# Wokka
+<p align="center">
+<img src="./logo/woka-logo.svg" alt="Woka Icon" width="512px"/>
+</p>
 
 A minimalist, fast, and aesthetic desktop media viewer and editor built with Kotlin Multiplatform (Compose for Desktop).
 
