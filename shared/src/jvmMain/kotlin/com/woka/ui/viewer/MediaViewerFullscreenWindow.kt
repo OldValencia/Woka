@@ -10,6 +10,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
@@ -19,7 +21,9 @@ import com.woka.data.MediaItem
 import com.woka.data.SettingsRepository
 import com.woka.ui.viewer.pip.PipManager
 import com.woka.ui.viewer.player.VideoPlayerState
+import androidx.compose.ui.ExperimentalComposeUiApi
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun MediaViewerFullscreenWindow(
     item: MediaItem,
@@ -48,14 +52,30 @@ fun MediaViewerFullscreenWindow(
             window.requestFocus()
         }
 
-        val isVisible = true
+        var isUiVisible by remember { mutableStateOf(true) }
+        var lastInteractionTime by remember { mutableStateOf(System.currentTimeMillis()) }
+
+        LaunchedEffect(lastInteractionTime, videoState?.isPlaying) {
+            if (videoState?.isPlaying == false) {
+                isUiVisible = true
+            } else {
+                kotlinx.coroutines.delay(2500)
+                isUiVisible = false
+            }
+        }
 
         AnimatedVisibility(
             visible = appear,
             enter = fadeIn(tween(250)) + scaleIn(tween(250), initialScale = 0.95f),
             exit = fadeOut(tween(250)) + scaleOut(tween(250), targetScale = 0.95f)
         ) {
-            Box(Modifier.fillMaxSize().background(Color.Black)) {
+            Box(
+                Modifier.fillMaxSize().background(Color.Black)
+                    .onPointerEvent(PointerEventType.Move) {
+                        lastInteractionTime = System.currentTimeMillis()
+                        isUiVisible = true
+                    }
+            ) {
 
                 Box(
                     Modifier.fillMaxSize()
@@ -86,7 +106,12 @@ fun MediaViewerFullscreenWindow(
 
                 var showVolumeSlider by remember { mutableStateOf(false) }
 
-                Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
+                AnimatedVisibility(
+                    visible = isUiVisible,
+                    enter = fadeIn() + slideInVertically { it },
+                    exit = fadeOut() + slideOutVertically { it },
+                    modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                ) {
                     if (videoState != null) {
                         MediaViewerVideoControls(
                             videoState = videoState,
@@ -100,7 +125,7 @@ fun MediaViewerFullscreenWindow(
                 }
 
                 AnimatedVisibility(
-                    visible = isVisible,
+                    visible = isUiVisible,
                     enter = fadeIn() + slideInVertically { -it },
                     exit = fadeOut() + slideOutVertically { -it },
                     modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)

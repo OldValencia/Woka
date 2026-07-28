@@ -131,22 +131,35 @@ fun CopyButton(copyTint: Color, onCopy: () -> Unit) {
 }
 
 @Composable
-fun ToggleCarouselButton(carouselMode: CarouselVisibility, onToggleCarousel: () -> Unit) {
-    ViewerTooltip("Toggle Carousel") {
+fun ToggleCarouselButton(
+    carouselMode: CarouselVisibility,
+    onToggleCarousel: () -> Unit,
+    isFullscreen: Boolean = false
+) {
+    ViewerTooltip(if (isFullscreen) "Авто скрытие в фуллскрин режиме" else "Toggle Carousel") {
         Box(
-            modifier = Modifier.size(24.dp).clip(CircleShape).pointerHoverIcon(PointerIcon.Hand)
-                .clickable { onToggleCarousel() },
+            modifier = Modifier
+                .size(24.dp)
+                .clip(CircleShape)
+                .then(
+                    if (isFullscreen) Modifier
+                    else Modifier
+                        .pointerHoverIcon(PointerIcon.Hand)
+                        .clickable { onToggleCarousel() }
+                ),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 painter = painterResource(
-                    when (carouselMode) {
+                    if (isFullscreen) Icons.Static.EyeSlash
+                    else when (carouselMode) {
                         CarouselVisibility.HIDDEN -> Icons.Static.EyeSlash
                         else -> Icons.Static.Eye
                     }
                 ),
                 contentDescription = "Toggle Carousel",
-                tint = when (carouselMode) {
+                tint = if (isFullscreen) Theme.colors.textSecondary
+                else when (carouselMode) {
                     CarouselVisibility.ALWAYS_ON -> Theme.colors.accentFolders
                     else -> Theme.colors.textPrimary
                 },

@@ -100,7 +100,7 @@ fun MediaViewerFullscreenControls(
 
         InfoButton(isInfoOpen, onInfo)
         MagicWandButton()
-        ToggleCarouselButton(carouselMode, onToggleCarousel)
+        ToggleCarouselButton(carouselMode, onToggleCarousel, isFullscreen = true)
 
         Box(modifier = Modifier.height(16.dp).width(1.dp).background(Theme.colors.border))
 
