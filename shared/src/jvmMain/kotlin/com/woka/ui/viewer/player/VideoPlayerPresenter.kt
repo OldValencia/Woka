@@ -4,9 +4,10 @@ import androidx.compose.ui.graphics.ImageBitmap
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.math.abs
 
 /** A decoded video frame tagged with the seek generation it was produced under. */
-internal data class VideoFrame(val bitmap: ImageBitmap, val tsMs: Long, val generation: Int)
+internal data class VideoFrame(val bitmap: ImageBitmap, val tsMs: Long, val generation: Int, val hdrInfo: HdrInfo? = null)
 
 internal fun VideoPlayerState.startPlayback() {
     val videoChannel = Channel<VideoFrame>(capacity = 60)
@@ -22,7 +23,7 @@ internal fun VideoPlayerState.startPresenterLoop(videoChannel: Channel<VideoFram
         var firstVideoTsMs = -1L
         var lastPauseTimeMs = 0L
 
-        for ((bitmap, frameTsMs, generation) in videoChannel) {
+        for ((bitmap, frameTsMs, generation, hdrInfo) in videoChannel) {
             // Drop frames decoded before the latest seek so they can't overwrite
             // the post-seek position/frame with stale data.
             if (generation != seekGeneration) continue
@@ -53,7 +54,7 @@ internal fun VideoPlayerState.startPresenterLoop(videoChannel: Channel<VideoFram
 
             // Discontinuity detection: if the frame is wildly out of sync (> 1000ms),
             // it means a seek occurred or the channel contained stale frames.
-            if (kotlin.math.abs(sleepTime) > 1000) {
+            if (abs(sleepTime) > 1000) {
                 firstVideoTsMs = frameTsMs
                 startPlayTimeMs = System.nanoTime() / 1_000_000L
                 elapsedMs = 0
@@ -66,7 +67,7 @@ internal fun VideoPlayerState.startPresenterLoop(videoChannel: Channel<VideoFram
             } else if (sleepTime < -50) {
                 // Frame is more than 50ms late, drop it to catch up with audio
                 if (generation != seekGeneration) continue
-                if (frameTsMs >= currentPositionMs || kotlin.math.abs(currentPositionMs - frameTsMs) > 1000) {
+                if (frameTsMs >= currentPositionMs || abs(currentPositionMs - frameTsMs) > 1000) {
                     currentPositionMs = frameTsMs
                 }
                 continue
@@ -78,11 +79,12 @@ internal fun VideoPlayerState.startPresenterLoop(videoChannel: Channel<VideoFram
             // playing, when the presenter is mid-sleep rather than parked).
             if (generation != seekGeneration) continue
 
-            if (frameTsMs >= currentPositionMs || kotlin.math.abs(currentPositionMs - frameTsMs) > 1000) {
+            if (frameTsMs >= currentPositionMs || abs(currentPositionMs - frameTsMs) > 1000) {
                 currentPositionMs = frameTsMs
             }
 
             currentFrame = bitmap
+            currentFrameHdrInfo = hdrInfo
         }
     }
 }

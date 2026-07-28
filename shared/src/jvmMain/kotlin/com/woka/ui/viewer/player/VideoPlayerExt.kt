@@ -11,14 +11,14 @@ import javax.sound.sampled.FloatControl
 import javax.sound.sampled.SourceDataLine
 import org.jetbrains.skia.Image as SkiaImage
 
-internal fun Frame.toComposeBitmap(): ImageBitmap {
+internal fun Frame.toComposeBitmap(hdrInfo: HdrInfo? = null): ImageBitmap {
     val buffer = this.image[0] as ByteBuffer
     val bytes = ByteArray(this.imageStride * this.imageHeight)
     buffer.rewind()
     buffer.get(bytes)
     buffer.rewind()
     
-    val imageInfo = ImageInfo(this.imageWidth, this.imageHeight, ColorType.RGBA_8888, ColorAlphaType.UNPREMUL)
+    val imageInfo = ImageInfo(this.imageWidth, this.imageHeight, ColorType.BGRA_8888, ColorAlphaType.UNPREMUL)
     val image = SkiaImage.makeRaster(imageInfo, bytes, this.imageStride)
     return image.toComposeImageBitmap()
 }

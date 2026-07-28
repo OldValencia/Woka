@@ -64,7 +64,7 @@ fun MediaViewerToolbar(
         contentAlignment = Alignment.TopCenter
     ) {
         Image(
-            bitmap = imageBitmap,
+            bitmap = videoState?.currentFrame ?: imageBitmap,
             contentDescription = null,
             colorFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(1.4f) }),
             modifier = Modifier

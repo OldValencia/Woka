@@ -21,6 +21,7 @@ class VideoPlayerState(
     var durationMs by mutableStateOf(0L)
     var volume by mutableStateOf(initialVolume)
     var currentFrame by mutableStateOf<ImageBitmap?>(null)
+    var currentFrameHdrInfo by mutableStateOf<HdrInfo?>(null)
     var hasAudio by mutableStateOf(false)
     var isRepeatMode by mutableStateOf(false)
     

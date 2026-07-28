@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.isCtrlPressed
@@ -169,6 +170,14 @@ fun MediaViewerContent(
             modifier = Modifier.fillMaxSize()
         ) { targetBitmap ->
             val frameToDraw = if (videoState != null) videoState.currentFrame ?: targetBitmap else targetBitmap
+            val hdrInfo = if (videoState != null && frameToDraw === videoState.currentFrame) videoState.currentFrameHdrInfo else null
+            
+            val painter = if (hdrInfo?.needsToneMap == true) {
+                remember(frameToDraw) { HdrImagePainter(frameToDraw) }
+            } else {
+                remember(frameToDraw) { BitmapPainter(frameToDraw) }
+            }
+            
             ContextMenuArea(
                 items = {
                     listOf(
@@ -179,7 +188,7 @@ fun MediaViewerContent(
                 }
             ) {
                 Image(
-                    bitmap = frameToDraw,
+                    painter = painter,
                     contentDescription = "Image/Video Preview",
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
