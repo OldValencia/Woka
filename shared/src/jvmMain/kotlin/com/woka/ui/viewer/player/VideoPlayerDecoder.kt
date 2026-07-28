@@ -22,17 +22,13 @@ internal fun VideoPlayerState.startDecoderLoop(
             grabber.setVideoOption("threads", "auto") // Use multi-threaded software decoding to bypass D3D11VA half-frame scaling bugs
             grabber.audioChannels = 2 // Downmix 5.1/7.1 audio to Stereo to avoid Java AudioSystem crashes
             grabber.sampleFormat = AV_SAMPLE_FMT_S16 // Ensure 16-bit PCM output
-            grabber.pixelFormat = AV_PIX_FMT_BGRA // Use 8-bit BGRA for stability and speed, avoid 16-bit Skiko crashes
+            grabber.pixelFormat = AV_PIX_FMT_RGBA // Use 8-bit RGBA consistently for all formats
             grabber.start()
             
             val fc = grabber.formatContext
             val vs = fc.streams(grabber.videoStream)
             val codecpar = vs.codecpar()
             val hdrInfo = readHdrInfo(codecpar.color_trc(), codecpar.color_primaries())
-            
-            if (!hdrInfo.needsToneMap) {
-                grabber.pixelFormat = AV_PIX_FMT_RGBA // Safely switch to smaller format (4 bytes)
-            }
             
             durationMs = grabber.lengthInTime / 1000L
 

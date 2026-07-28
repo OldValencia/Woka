@@ -17,8 +17,8 @@ internal fun Frame.toComposeBitmap(hdrInfo: HdrInfo? = null): ImageBitmap {
     buffer.rewind()
     buffer.get(bytes)
     buffer.rewind()
-    
-    val imageInfo = ImageInfo(this.imageWidth, this.imageHeight, ColorType.BGRA_8888, ColorAlphaType.UNPREMUL)
+
+    val imageInfo = ImageInfo(this.imageWidth, this.imageHeight, ColorType.RGBA_8888, ColorAlphaType.UNPREMUL)
     val image = SkiaImage.makeRaster(imageInfo, bytes, this.imageStride)
     return image.toComposeImageBitmap()
 }

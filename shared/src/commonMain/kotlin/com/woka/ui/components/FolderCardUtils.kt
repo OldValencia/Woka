@@ -32,8 +32,17 @@ suspend fun fetchFolderStateData(file: File): FolderStateData {
             val ext = f.extension.lowercase()
             f.isDirectory || ext in listOf("jpg", "jpeg", "png", "webp", "gif", "heic", "mp4", "mkv", "avi", "mov", "webm")
         }
-        val previews = allFiles.filter { f ->
-            f.isFile && f.extension.lowercase() in listOf("jpg", "jpeg", "png", "webp", "gif", "heic")
+        val previews = allFiles.mapNotNull { f ->
+            if (!f.isFile) return@mapNotNull null
+            val ext = f.extension.lowercase()
+            if (ext in listOf("jpg", "jpeg", "png", "webp", "gif", "heic")) {
+                f
+            } else if (ext in listOf("mp4", "mkv", "avi", "mov", "webm")) {
+                val previewFile = File(System.getProperty("user.home"), "Documents/OldValencia/Woka/.thumbnails/${f.name.hashCode()}.png")
+                if (previewFile.exists()) previewFile else null
+            } else {
+                null
+            }
         }.take(3)
         FolderStateData(count, previews)
     }
