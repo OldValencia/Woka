@@ -1,24 +1,28 @@
 # Video Player Enhancements
 
-## 1. Zoom & Auto Size Control (UI/UX)
-- **Smart Scaling Modes:** The system operates in one of two modes: **Zoom Mode** (percentage-based) or **Preset Mode** (Fit / Fill / Original).
-  - *Note on Shortcuts:* In Preset Mode, the `Ctrl + Scroll` shortcut for zooming is strictly disabled, as manual scaling contradicts preset behavior.
-- **Main Panel Indicator & Click Behavior:** The player panel displays the current state. Clicking the central text follows a strict logical flow:
-  - **In Zoom Mode (e.g., `115%`):**
-    - If zoom is not 100%, clicking **resets** the zoom to 100% and centers the video.
-    - If zoom is exactly 100%, clicking **switches the mode** to Preset Mode.
-  - **In Preset Mode (e.g., `< Fill >`):**
-    - The panel directly shows the preset with arrows (e.g., `< Fill >`) to switch between Fit, Fill, and Original inline.
-    - If the preset is not Original, clicking the central text **resets** the state to Original (and centers the video).
-    - If the preset is already Original, clicking the text **switches the mode** to Zoom Mode.
-- **Hover Popover (Zoom Mode Only):** The frosted glass popover slides out gracefully *below* the main panel indicator when hovered in Zoom Mode. It contains two control views:
-  - **Layout:** `[<] [ Control Area ] [>]`. The left/right arrows switch the control area between:
-    1. **Slider View:** A smooth slider (`----[]----`) for visual zooming.
-    2. **Manual Input View:** Displays just the number (e.g., `115`) alongside `-` and `+` buttons for ±1 stepping, plus the ability to manually type the `Int` value.
-      - *UX Polish:* Pressing `Enter` applies the value and immediately closes the popover (regardless of mouse position). If the user types a value but moves the mouse away, the popover auto-applies the value and closes gracefully.
-  - **Persistence:** The user's preferred view in the popover (Slider vs. Input) is saved globally in `settings.json`.
+## 1. Zoom & Auto Size Control (UI/UX) — ✅ Implemented
+- **Smart Scaling Modes:** The system operates in one of two modes: **Zoom Mode** (percentage-based) or **Preset Mode** (Fit / Fill / Actual).
+  - *Definitions:* **Fit** = scale to fit entirely inside the panel, preserving aspect ratio (contain, no cropping); this is the neutral **100%** baseline, the default preset, and the "nil" crossover point into Zoom Mode. **Fill** = scale to fill the whole panel, preserving aspect ratio, cropping the overflow (cover). **Actual** = native 1:1 pixels (may exceed the panel — pannable). Presets cycle Fit → Fill → Actual.
+  - *Zoom Range:* The percentage is relative to the **fitted** size (100% = fits the panel, never larger). It is bounded to **`[10%, 1000%]`**; the base/default value is **100%** (== Fit). Zoom 100% and Preset Fit render identically.
+  - *Note on Shortcuts:* In Preset Mode, the `Ctrl + Scroll` zoom shortcut is disabled. Instead of scaling, it surfaces a tooltip ("Scaling is disabled in preset mode") so the gesture is not silently ignored. The mode is **never** switched automatically by a gesture.
+- **Zoom Step (Unified):** Both `Ctrl + Scroll` and the indicator's `-` / `+` buttons use the **same step of ±1 percentage point** and always produce **whole integers** (e.g. `114 → 115 → 116`). Values are clamped to `[10%, 1000%]`.
+- **Panning:** When the media is larger than the panel (zoom > 100%, or the Fill / Actual presets when they overflow), the frame can be moved with **`Ctrl` + hold Right Mouse Button + drag**.
+- **Main Panel Indicator:** The player panel displays the current state. Behaviour differs per mode:
+  - **In Zoom Mode (`- 115% +`):** the `-` / `+` buttons step the zoom by ±1%. The percentage itself is a **passive label** and a **hover trigger** for the popover — it is *not* clickable. (Making it clickable caused a click/hover conflict that made the popover blink, so the reset / mode-switch action was moved into the popover instead.)
+  - **In Preset Mode (`< ◱ Fill >`):** the preset shows as **icon + text** flanked by arrows that cycle Fit → Fill → Actual inline. Clicking the central text is state-dependent (with a hover tooltip):
+    - If the preset is not Fit → **resets** to Fit and centers the video. *(Tooltip: "Reset to Fit".)*
+    - If the preset is already Fit → **switches** to Zoom Mode. *(Tooltip: "Switch to zoom".)*
+- **Hover Popover (Zoom Mode Only):** A frosted popover slides out *below* the indicator on hover, with a **fixed width** so switching views never drops the cursor. It contains:
+  - **Layout:** `[<] [ Control Area ] [>]` with a clickable action line beneath. The arrows (`chevron.left` / `chevron.right`) switch the control area between:
+    1. **Slider View:** a smooth slider; dragging applies the value live.
+    2. **Manual Input View:** a bordered numeric field with a `%` suffix (styled so it clearly reads as editable — no `-`/`+` steppers, since Ctrl+Scroll already steps by 1). Type an integer directly; valid values apply live.
+      - *Input Validation:* only positive integers within `[10, 1000]`. Empty / `0` / negative / non-numeric reverts to the current zoom value.
+  - **Mode action (moved off the label):** a clickable line at the bottom — **"Reset to 100%"** when zoom ≠ 100%, or **"Switch to presets"** when at 100%. This is where the reset / mode-switch lives now.
+  - **Closing:** both views close when the cursor leaves the popover (a short grace bridges the gap between indicator and popover). The popover is **non-focusable** (a focusable popup intercepts scene pointer input and makes hover blink); manual typing is instead captured on the indicator while the Input view is open. `Enter` / `Esc` also close it.
+  - **Persistence:** the chosen view (Slider vs. Input) is saved in `settings.json`.
+- **Icons (macOS / SF Symbols):** `chevron.left` (popover left arrow; the right arrow reuses the existing `ChevronRightMac`), `rectangle.arrowtriangle.2.inward` (Fit), `rectangle.arrowtriangle.2.outward` (Fill), `aspectratio` (Actual — enum `ScalePreset.Original`, labelled "Actual" in the UI). Registered in `Icons.kt` under `Icons.Static`.
 - **Animations:** All mode switches and view transitions (both on the Main Panel and inside the Popover) must feature Apple-like sliding animations. For example, clicking the right arrow makes the current text slide out to the left while the new text slides in from the right.
-- **Settings Persistence:** Global presets (Fit, Fill, Original) and the popover view preference are saved in `settings.json`. Any custom percentage zoom applies **only to the current video** and resets upon opening a new file.
+- **Settings Persistence:** The popover view preference (Slider/Input) is always saved in `settings.json`. The **default size state** applied when a video opens is configurable in Settings → Media Viewer: a mode (Preset or Zoom) plus its value (Fit/Fill/Actual, or a percentage), and a **"Remember zoom & size"** toggle. When the toggle is **off**, videos always open at that configured default (default = Fit) and in-video zoom/preset changes are ephemeral. When **on**, any zoom/preset the user sets *inside a video* is written back as the new default and restored next time. Toggling fullscreen ⇄ windowed always preserves the current state (same file).
 
 ## 2. Stream Selection (Video, Audio, Subtitles)
 - **Audio Track Selection (Volume Integration):**

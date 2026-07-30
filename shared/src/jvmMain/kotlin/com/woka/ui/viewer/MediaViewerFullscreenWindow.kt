@@ -22,6 +22,7 @@ import com.woka.data.SettingsRepository
 import com.woka.ui.viewer.pip.PipManager
 import com.woka.ui.viewer.player.VideoPlayerState
 import androidx.compose.ui.ExperimentalComposeUiApi
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -55,11 +56,18 @@ fun MediaViewerFullscreenWindow(
         var isUiVisible by remember { mutableStateOf(true) }
         var lastInteractionTime by remember { mutableStateOf(System.currentTimeMillis()) }
 
+        val fsSettings by settingsRepo.settings.collectAsState()
+        var fsScalingDisabled by remember { mutableStateOf(0L) }
+        val onFsSizeModeChange: (SizeMode) -> Unit = { mode ->
+            PipManager.sizeMode = mode
+            if (fsSettings.rememberSizeState) persistSizeState(settingsRepo, mode)
+        }
+
         LaunchedEffect(lastInteractionTime, videoState?.isPlaying) {
             if (videoState?.isPlaying == false) {
                 isUiVisible = true
             } else {
-                kotlinx.coroutines.delay(2500)
+                kotlinx.coroutines.delay(2500.milliseconds)
                 isUiVisible = false
             }
         }
@@ -85,15 +93,17 @@ fun MediaViewerFullscreenWindow(
                     MediaViewerContent(
                         imageBitmap = dummyBitmap,
                         animationDirection = 0,
-                        scale = PipManager.scale,
+                        sizeMode = PipManager.sizeMode,
                         offsetX = PipManager.offsetX,
                         offsetY = PipManager.offsetY,
                         videoState = videoState,
-                        onScaleChange = { PipManager.scale = it },
+                        onSizeModeChange = onFsSizeModeChange,
                         onOffsetChange = { x, y ->
                             PipManager.offsetX = x
                             PipManager.offsetY = y
                         },
+                        onEffectiveScaleChange = { PipManager.scale = it },
+                        onScalingDisabledAttempt = { fsScalingDisabled = System.currentTimeMillis() },
                         onPlayPause = { },
                         onEdit = { },
                         onCopy = { },
@@ -103,6 +113,8 @@ fun MediaViewerFullscreenWindow(
                 }
 
                 PipCornerFlash()
+
+                ScalingDisabledOverlay(trigger = fsScalingDisabled)
 
                 var showVolumeSlider by remember { mutableStateOf(false) }
 
@@ -136,13 +148,15 @@ fun MediaViewerFullscreenWindow(
                             .padding(4.dp)
                     ) {
                         MediaViewerFullscreenControls(
-                            scale = PipManager.scale,
-                            onScaleChange = { PipManager.scale = it },
+                            sizeMode = PipManager.sizeMode,
+                            savedPreset = fsSettings.scalePreset,
+                            popoverView = fsSettings.zoomPopoverView,
+                            onSizeModeChange = onFsSizeModeChange,
                             onOffsetReset = {
                                 PipManager.offsetX = 0f
                                 PipManager.offsetY = 0f
-                                PipManager.scale = 1f
                             },
+                            onPopoverViewChange = { settingsRepo.setZoomPopoverView(it) },
                             carouselMode = CarouselVisibility.HIDDEN,
                             onToggleCarousel = { },
                             onEdit = { },

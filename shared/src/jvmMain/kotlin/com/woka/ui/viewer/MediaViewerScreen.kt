@@ -37,7 +37,17 @@ fun MediaViewerScreen(
             if (activeItem != null) {
                 state.imageBitmap = loadThumbnail(activeItem)
                 state.activeItemPath = activeItem.file.absolutePath
-                state.scale = 1f; state.offsetX = 0f; state.offsetY = 0f
+                // Returning from fullscreen (PiP) is the same file: carry the size
+                // state back instead of resetting it to the global preset.
+                val fromPip = PipManager.isTransitioningToMain &&
+                    PipManager.activeItem?.file?.absolutePath == activeItem.file.absolutePath
+                if (fromPip) {
+                    state.sizeMode = PipManager.sizeMode
+                    state.offsetX = PipManager.offsetX; state.offsetY = PipManager.offsetY
+                } else {
+                    state.sizeMode = startSizeMode(settings)
+                    state.offsetX = 0f; state.offsetY = 0f
+                }
             } else {
                 state.activeItemPath = null
             }
@@ -51,7 +61,7 @@ fun MediaViewerScreen(
                 showConflictDialog = false
                 if (activeItem != null) {
                     state.activeItemPath = activeItem.file.absolutePath
-                    state.scale = 1f; state.offsetX = 0f; state.offsetY = 0f
+                    state.sizeMode = startSizeMode(settings); state.offsetX = 0f; state.offsetY = 0f
                 }
             },
             onDismiss = {
@@ -119,6 +129,10 @@ fun MediaViewerScreen(
     val editAction = {
         onClose(state.currentId)
     }
+    val onSizeModeChange: (SizeMode) -> Unit = { mode ->
+        state.sizeMode = mode
+        if (settings.rememberSizeState) persistSizeState(settingsRepo, mode)
+    }
 
     // Register the viewer shortcuts app-wide so they fire in the key-event
     // preview phase — before any focused button gets the key. This makes Space,
@@ -177,9 +191,10 @@ fun MediaViewerScreen(
             showInfoDialog = showInfoDialog,
             onShowInfoDialogChange = { showInfoDialog = it },
             onVolumeChange = { mediaVolume = it },
+            onSizeModeChange = onSizeModeChange,
             onToggleFullscreen = {
                 if (videoState != null && activeItem != null) {
-                    PipManager.openPip(activeItem, videoState)
+                    PipManager.openPip(activeItem, videoState, state.sizeMode, state.offsetX, state.offsetY)
                     onClose(state.currentId)
                 }
             },
@@ -192,9 +207,12 @@ fun MediaViewerScreen(
 
     MediaViewerLayoutWrapper(
         isVisible = state.isUiVisible,
-        scale = state.scale,
-        onScaleChange = { state.scale = it },
-        onOffsetReset = { state.offsetX = 0f; state.offsetY = 0f; state.scale = 1f },
+        sizeMode = state.sizeMode,
+        savedPreset = settings.scalePreset,
+        popoverView = settings.zoomPopoverView,
+        onSizeModeChange = onSizeModeChange,
+        onOffsetReset = { state.offsetX = 0f; state.offsetY = 0f },
+        onPopoverViewChange = { settingsRepo.setZoomPopoverView(it) },
         carouselMode = settings.mediaViewerCarouselMode,
         settingsRepo = settingsRepo,
         currentId = state.currentId,

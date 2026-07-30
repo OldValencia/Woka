@@ -2,15 +2,22 @@ package com.woka.ui.viewer
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import com.woka.data.CarouselVisibility
+import com.woka.data.ScalePreset
 import com.woka.data.SettingsRepository
+import com.woka.data.ZoomPopoverView
 import com.woka.ui.components.LocalTopBarAccessories
 
 @Composable
 fun MediaViewerTopBarSetup(
-    scale: Float,
-    onScaleChange: (Float) -> Unit,
+    sizeMode: SizeMode,
+    savedPreset: ScalePreset,
+    popoverView: ZoomPopoverView,
+    onSizeModeChange: (SizeMode) -> Unit,
     onOffsetReset: () -> Unit,
+    onPopoverViewChange: (ZoomPopoverView) -> Unit,
     carouselMode: CarouselVisibility,
     settingsRepo: SettingsRepository,
     currentId: String,
@@ -22,27 +29,50 @@ fun MediaViewerTopBarSetup(
     isInfoOpen: Boolean
 ) {
     val topBarAccessories = LocalTopBarAccessories.current
-    DisposableEffect(scale, carouselMode, currentId, copyTrigger, isInfoOpen) {
-        topBarAccessories.backActionOverride = { onClose(currentId) }
+
+    // The accessory is registered ONCE and reads live values via rememberUpdatedState.
+    // Re-registering on every sizeMode change (as a DisposableEffect key) would tear
+    // down and recreate the indicator on each zoom step, making the hover popover
+    // flicker and the reset click hard to land.
+    val curSizeMode by rememberUpdatedState(sizeMode)
+    val curSavedPreset by rememberUpdatedState(savedPreset)
+    val curPopoverView by rememberUpdatedState(popoverView)
+    val curCarousel by rememberUpdatedState(carouselMode)
+    val curCurrentId by rememberUpdatedState(currentId)
+    val curCopyTrigger by rememberUpdatedState(copyTrigger)
+    val curIsInfoOpen by rememberUpdatedState(isInfoOpen)
+    val curOnSizeModeChange by rememberUpdatedState(onSizeModeChange)
+    val curOnOffsetReset by rememberUpdatedState(onOffsetReset)
+    val curOnPopoverViewChange by rememberUpdatedState(onPopoverViewChange)
+    val curOnClose by rememberUpdatedState(onClose)
+    val curOnEdit by rememberUpdatedState(onEdit)
+    val curOnCopy by rememberUpdatedState(onCopy)
+    val curOnInfo by rememberUpdatedState(onInfo)
+
+    DisposableEffect(Unit) {
+        topBarAccessories.backActionOverride = { curOnClose(curCurrentId) }
         topBarAccessories.centerAccessory = {
             MediaViewerNormalControls(
-                scale = scale,
-                onScaleChange = onScaleChange,
-                onOffsetReset = onOffsetReset,
-                carouselMode = carouselMode,
+                sizeMode = curSizeMode,
+                savedPreset = curSavedPreset,
+                popoverView = curPopoverView,
+                onSizeModeChange = { curOnSizeModeChange(it) },
+                onOffsetReset = { curOnOffsetReset() },
+                onPopoverViewChange = { curOnPopoverViewChange(it) },
+                carouselMode = curCarousel,
                 onToggleCarousel = {
-                    val newMode = when (carouselMode) {
+                    val newMode = when (curCarousel) {
                         CarouselVisibility.AUTO -> CarouselVisibility.ALWAYS_ON
                         CarouselVisibility.ALWAYS_ON -> CarouselVisibility.HIDDEN
                         CarouselVisibility.HIDDEN -> CarouselVisibility.AUTO
                     }
                     settingsRepo.setCarouselMode(newMode)
                 },
-                onEdit = onEdit,
-                onCopy = onCopy,
-                copyTrigger = copyTrigger,
-                onInfo = onInfo,
-                isInfoOpen = isInfoOpen
+                onEdit = { curOnEdit() },
+                onCopy = { curOnCopy() },
+                copyTrigger = curCopyTrigger,
+                onInfo = { curOnInfo() },
+                isInfoOpen = curIsInfoOpen
             )
         }
         onDispose {

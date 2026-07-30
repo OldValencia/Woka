@@ -36,6 +36,7 @@ fun MediaViewerPlayer(
     showInfoDialog: Boolean,
     onShowInfoDialogChange: (Boolean) -> Unit,
     onVolumeChange: (Float) -> Unit,
+    onSizeModeChange: (SizeMode) -> Unit,
     onToggleFullscreen: () -> Unit,
     loadThumbnail: suspend (MediaItem) -> ImageBitmap?,
     editAction: () -> Unit,
@@ -46,8 +47,11 @@ fun MediaViewerPlayer(
         if (state.imageBitmap != null) {
             MediaViewerContent(
                 imageBitmap = state.imageBitmap!!, animationDirection = state.animationDirection,
-                scale = state.scale, offsetX = state.offsetX, offsetY = state.offsetY, videoState = videoState,
-                onScaleChange = { state.scale = it }, onOffsetChange = { x, y -> state.offsetX = x; state.offsetY = y },
+                sizeMode = state.sizeMode, offsetX = state.offsetX, offsetY = state.offsetY, videoState = videoState,
+                onSizeModeChange = onSizeModeChange,
+                onOffsetChange = { x, y -> state.offsetX = x; state.offsetY = y },
+                onEffectiveScaleChange = { state.scale = it },
+                onScalingDisabledAttempt = { state.scalingDisabledTrigger = System.currentTimeMillis() },
                 onPlayPause = { state.playPauseTrigger = System.currentTimeMillis() },
                 onEdit = editAction,
                 onCopy = copyAction,
@@ -86,6 +90,7 @@ fun MediaViewerPlayer(
 
         PlayPauseOverlay(trigger = state.playPauseTrigger, isPlaying = videoState?.isPlaying == true)
         SkipOverlay(trigger = state.skipTrigger, direction = state.skipDirection)
+        ScalingDisabledOverlay(trigger = state.scalingDisabledTrigger)
         VolumeVerticalOverlay(
             isVisible = state.isVolumeHovered || state.volumeTriggerTimer > 0,
             volume = mediaVolume,

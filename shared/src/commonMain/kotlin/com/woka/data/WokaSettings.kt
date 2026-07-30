@@ -5,6 +5,8 @@ import kotlinx.serialization.Serializable
 enum class ViewLayout { SmallGrid, Grid, BigGrid }
 enum class SortType { Custom, NameAsc, NameDesc, DateAsc, DateDesc }
 enum class CarouselVisibility { AUTO, ALWAYS_ON, HIDDEN }
+enum class ScalePreset { Fit, Fill, Original }
+enum class ZoomPopoverView { Slider, Input }
 
 @Serializable
 data class PinnedSession(
@@ -25,5 +27,12 @@ data class WokaSettings(
     val mediaFilter: String = "All", // All, Photos, Videos
     val theme: String = "System",
     val mediaViewerCarouselMode: CarouselVisibility = CarouselVisibility.AUTO,
-    val pinnedSessions: List<PinnedSession> = emptyList()
+    val pinnedSessions: List<PinnedSession> = emptyList(),
+    val scalePreset: ScalePreset = ScalePreset.Fit,
+    val zoomPopoverView: ZoomPopoverView = ZoomPopoverView.Slider,
+    // Default size state applied when a video opens. If [rememberSizeState] is on,
+    // adjusting zoom/preset inside a video writes back into these fields.
+    val rememberSizeState: Boolean = false,
+    val defaultUseZoom: Boolean = false,
+    val defaultZoomPercent: Int = 100
 )

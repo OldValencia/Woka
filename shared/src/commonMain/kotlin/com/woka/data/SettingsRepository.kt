@@ -13,6 +13,11 @@ interface SettingsRepository {
     fun setShowHiddenFiles(show: Boolean)
     fun setTheme(theme: String)
     fun setCarouselMode(mode: CarouselVisibility)
+    fun setScalePreset(preset: ScalePreset)
+    fun setZoomPopoverView(view: ZoomPopoverView)
+    fun setRememberSizeState(remember: Boolean)
+    fun setDefaultUseZoom(useZoom: Boolean)
+    fun setDefaultZoomPercent(percent: Int)
     fun addPinnedSession(session: PinnedSession)
     fun removePinnedSession(path: String)
 }

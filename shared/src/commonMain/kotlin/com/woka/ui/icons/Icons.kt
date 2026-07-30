@@ -85,5 +85,14 @@ object Icons {
         val EyeSlash = Res.drawable.eye_slash
         val InfoCircle = Res.drawable.info_circle
         val DocumentOnDocument = Res.drawable.document_on_document
+
+        // Zoom & scaling controls (video player enhancements)
+        val ChevronLeft = Res.drawable.chevron_left
+        val ScaleFit = Res.drawable.rectangle_arrowtriangle_2_inward
+        val ScaleFill = Res.drawable.rectangle_arrowtriangle_2_outward
+        val ScaleOriginal = Res.drawable.aspectratio
+
+        // Stream selection (subtitles) — wiring only, used in a later phase
+        val Subtitles = Res.drawable.captions_bubble
     }
 }

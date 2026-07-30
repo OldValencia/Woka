@@ -1,29 +1,29 @@
 package com.woka.ui.viewer
 
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ContextMenuArea
 import androidx.compose.foundation.ContextMenuItem
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.BitmapPainter
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.isCtrlPressed
-import androidx.compose.ui.input.pointer.isMetaPressed
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
@@ -33,128 +33,47 @@ import com.woka.ui.viewer.player.VideoPlayerState
 fun MediaViewerContent(
     imageBitmap: ImageBitmap,
     animationDirection: Int,
-    scale: Float,
+    sizeMode: SizeMode,
     offsetX: Float,
     offsetY: Float,
     videoState: VideoPlayerState?,
-    onScaleChange: (Float) -> Unit,
+    onSizeModeChange: (SizeMode) -> Unit,
     onOffsetChange: (Float, Float) -> Unit,
+    onEffectiveScaleChange: (Float) -> Unit,
+    onScalingDisabledAttempt: () -> Unit,
     onPlayPause: () -> Unit,
     onEdit: () -> Unit,
     onCopy: () -> Unit,
     onInfo: () -> Unit,
     onToggleFullscreen: () -> Unit
 ) {
-    val currentScale by rememberUpdatedState(scale)
-    val currentOffsetX by rememberUpdatedState(offsetX)
-    val currentOffsetY by rememberUpdatedState(offsetY)
-    
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
 
-    var dragWithCtrl by remember { mutableStateOf(false) }
+    val sourceBitmap = if (videoState != null) videoState.currentFrame ?: imageBitmap else imageBitmap
+    val nativeSize = IntSize(sourceBitmap.width, sourceBitmap.height)
 
-    var renderScale by remember { mutableStateOf(scale) }
-    var renderOffsetX by remember { mutableStateOf(offsetX) }
-    var renderOffsetY by remember { mutableStateOf(offsetY) }
-    var isUserDragging by remember { mutableStateOf(false) }
+    val targetScale = computeGraphicsScale(sizeMode, containerSize, nativeSize)
+    val renderScale by animateFloatAsState(targetScale, animationSpec = tween(200))
 
-    LaunchedEffect(scale) { if (!isUserDragging) renderScale = scale }
-    LaunchedEffect(offsetX, offsetY) {
-        if (!isUserDragging) {
-            renderOffsetX = offsetX
-            renderOffsetY = offsetY
-        }
-    }
+    LaunchedEffect(targetScale) { onEffectiveScaleChange(targetScale) }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .onSizeChanged { containerSize = it }
-            .pointerInput(Unit) {
-                awaitPointerEventScope {
-                    while (true) {
-                        val event = awaitPointerEvent()
-                        if (event.type == PointerEventType.Press) {
-                            val isCtrl = event.keyboardModifiers.isCtrlPressed || event.keyboardModifiers.isMetaPressed
-                            dragWithCtrl = isCtrl
-                        }
-                        
-                        if (event.type == PointerEventType.Scroll) {
-                            val isCtrl = event.keyboardModifiers.isCtrlPressed || event.keyboardModifiers.isMetaPressed
-                            if (isCtrl) {
-                                val delta = event.changes.first().scrollDelta.y
-                                val zoomFactor = if (delta > 0) 0.9f else 1.1f
-                                renderScale = (renderScale * zoomFactor).coerceIn(0.1f, 10f)
-                                onScaleChange(renderScale)
-                                event.changes.forEach { it.consume() }
-                            }
-                        }
-
-                        if (event.type == PointerEventType.Release) {
-                            dragWithCtrl = false
-                            isUserDragging = false
-                        }
-                    }
-                }
-            }
-            .pointerInput(Unit) {
-                var initialized = false
-                
-                detectTransformGestures { _, pan, zoom, _ ->
-                    if (dragWithCtrl) {
-                        isUserDragging = true
-                        if (!initialized) {
-                            renderScale = currentScale
-                            renderOffsetX = currentOffsetX
-                            renderOffsetY = currentOffsetY
-                            initialized = true
-                        }
-                        
-                        renderScale = (renderScale * zoom).coerceIn(0.1f, 10f)
-                        renderOffsetX += pan.x
-                        renderOffsetY += pan.y
-                        
-                        onScaleChange(renderScale)
-                        onOffsetChange(renderOffsetX, renderOffsetY)
-                    } else {
-                        initialized = false
-                    }
-                }
-            }
-            .pointerInput(videoState) {
-                detectTapGestures(
-                    onDoubleTap = { offset ->
-                        if (videoState != null) {
-                            onToggleFullscreen()
-                        } else {
-                            if (currentScale == 1f) {
-                                renderScale = 2f
-                                if (containerSize != IntSize.Zero) {
-                                    val centerX = containerSize.width / 2f
-                                    val centerY = containerSize.height / 2f
-                                    renderOffsetX = centerX - offset.x
-                                    renderOffsetY = centerY - offset.y
-                                } else {
-                                    renderOffsetX = 0f
-                                    renderOffsetY = 0f
-                                }
-                            } else {
-                                renderScale = 1f
-                                renderOffsetX = 0f
-                                renderOffsetY = 0f
-                            }
-                            onScaleChange(renderScale)
-                            onOffsetChange(renderOffsetX, renderOffsetY)
-                        }
-                    },
-                    onTap = {
-                        if (videoState != null) {
-                            videoState.togglePlayPause()
-                            onPlayPause()
-                        }
-                    }
-                )
-            },
+            .mediaViewerGestures(
+                sizeMode = sizeMode,
+                offsetX = offsetX,
+                offsetY = offsetY,
+                containerSize = containerSize,
+                nativeSize = nativeSize,
+                videoState = videoState,
+                onSizeModeChange = onSizeModeChange,
+                onOffsetChange = onOffsetChange,
+                onScalingDisabledAttempt = onScalingDisabledAttempt,
+                onPlayPause = onPlayPause,
+                onToggleFullscreen = onToggleFullscreen
+            ),
         contentAlignment = Alignment.Center
     ) {
         AnimatedContent(
@@ -171,13 +90,13 @@ fun MediaViewerContent(
         ) { targetBitmap ->
             val frameToDraw = if (videoState != null) videoState.currentFrame ?: targetBitmap else targetBitmap
             val hdrInfo = if (videoState != null && frameToDraw === videoState.currentFrame) videoState.currentFrameHdrInfo else null
-            
+
             val painter = if (hdrInfo?.needsToneMap == true) {
                 remember(frameToDraw) { HdrImagePainter(frameToDraw) }
             } else {
                 remember(frameToDraw) { BitmapPainter(frameToDraw) }
             }
-            
+
             ContextMenuArea(
                 items = {
                     listOf(
@@ -196,8 +115,8 @@ fun MediaViewerContent(
                         .graphicsLayer(
                             scaleX = renderScale,
                             scaleY = renderScale,
-                            translationX = renderOffsetX,
-                            translationY = renderOffsetY
+                            translationX = offsetX,
+                            translationY = offsetY
                         )
                 )
             }

@@ -139,7 +139,15 @@ fun App(
                 showHiddenFiles = settings.showHiddenFiles,
                 onShowHiddenFilesChange = { settingsRepo.setShowHiddenFiles(it) },
                 carouselMode = settings.mediaViewerCarouselMode,
-                onCarouselModeChange = { settingsRepo.setCarouselMode(it) }
+                onCarouselModeChange = { settingsRepo.setCarouselMode(it) },
+                rememberSizeState = settings.rememberSizeState,
+                onRememberSizeStateChange = { settingsRepo.setRememberSizeState(it) },
+                defaultUseZoom = settings.defaultUseZoom,
+                onDefaultUseZoomChange = { settingsRepo.setDefaultUseZoom(it) },
+                defaultPreset = settings.scalePreset,
+                onDefaultPresetChange = { settingsRepo.setScalePreset(it) },
+                defaultZoomPercent = settings.defaultZoomPercent,
+                onDefaultZoomPercentChange = { settingsRepo.setDefaultZoomPercent(it) }
             )
 
             // Search Overlay

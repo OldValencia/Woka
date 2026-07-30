@@ -13,6 +13,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.woka.data.CarouselVisibility
+import com.woka.data.ScalePreset
+import com.woka.data.ZoomPopoverView
 import com.woka.ui.theme.Theme
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
@@ -37,9 +39,12 @@ fun MediaViewerControlsContainer(
 
 @Composable
 fun MediaViewerNormalControls(
-    scale: Float,
-    onScaleChange: (Float) -> Unit,
+    sizeMode: SizeMode,
+    savedPreset: ScalePreset,
+    popoverView: ZoomPopoverView,
+    onSizeModeChange: (SizeMode) -> Unit,
     onOffsetReset: () -> Unit,
+    onPopoverViewChange: (ZoomPopoverView) -> Unit,
     carouselMode: CarouselVisibility,
     onToggleCarousel: () -> Unit,
     onEdit: () -> Unit,
@@ -63,9 +68,7 @@ fun MediaViewerNormalControls(
     )
 
     MediaViewerControlsContainer(modifier) {
-        ZoomOutButton(scale, onScaleChange)
-        ResetZoomButton(scale, onScaleChange, onOffsetReset)
-        ZoomInButton(scale, onScaleChange)
+        SizeControl(sizeMode, savedPreset, popoverView, onSizeModeChange, onOffsetReset, onPopoverViewChange)
 
         Box(modifier = Modifier.height(16.dp).width(1.dp).background(Theme.colors.border))
 
@@ -81,9 +84,12 @@ fun MediaViewerNormalControls(
 
 @Composable
 fun MediaViewerFullscreenControls(
-    scale: Float,
-    onScaleChange: (Float) -> Unit,
+    sizeMode: SizeMode,
+    savedPreset: ScalePreset,
+    popoverView: ZoomPopoverView,
+    onSizeModeChange: (SizeMode) -> Unit,
     onOffsetReset: () -> Unit,
+    onPopoverViewChange: (ZoomPopoverView) -> Unit,
     carouselMode: CarouselVisibility,
     onToggleCarousel: () -> Unit,
     onEdit: () -> Unit,
@@ -92,9 +98,7 @@ fun MediaViewerFullscreenControls(
     modifier: Modifier = Modifier
 ) {
     MediaViewerControlsContainer(modifier) {
-        ZoomOutButton(scale, onScaleChange)
-        ResetZoomButton(scale, onScaleChange, onOffsetReset)
-        ZoomInButton(scale, onScaleChange)
+        SizeControl(sizeMode, savedPreset, popoverView, onSizeModeChange, onOffsetReset, onPopoverViewChange)
 
         Box(modifier = Modifier.height(16.dp).width(1.dp).background(Theme.colors.border))
 

@@ -97,6 +97,47 @@ fun SkipOverlay(trigger: Long, direction: Int) {
     }
 }
 
+@Composable
+fun ScalingDisabledOverlay(trigger: Long) {
+    if (trigger == 0L) return
+    var visible by remember(trigger) { mutableStateOf(true) }
+
+    LaunchedEffect(trigger) {
+        visible = true
+        delay(1200.milliseconds)
+        visible = false
+    }
+
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(tween(150)),
+        exit = fadeOut(tween(250)),
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Row(
+                modifier = Modifier
+                    .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    painter = painterResource(Icons.Static.NoSign),
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(16.dp)
+                )
+                Text(
+                    text = "Scaling is disabled in preset mode",
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelMedium
+                )
+            }
+        }
+    }
+}
+
 @OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
 fun VolumeVerticalOverlay(

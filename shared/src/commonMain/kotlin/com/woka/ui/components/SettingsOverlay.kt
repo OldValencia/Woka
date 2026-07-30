@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.woka.data.CarouselVisibility
+import com.woka.data.ScalePreset
 import com.woka.ui.icons.Icons
 import com.woka.ui.theme.Theme
 
@@ -36,7 +37,15 @@ fun SettingsOverlay(
     showHiddenFiles: Boolean,
     onShowHiddenFilesChange: (Boolean) -> Unit,
     carouselMode: CarouselVisibility,
-    onCarouselModeChange: (CarouselVisibility) -> Unit
+    onCarouselModeChange: (CarouselVisibility) -> Unit,
+    rememberSizeState: Boolean,
+    onRememberSizeStateChange: (Boolean) -> Unit,
+    defaultUseZoom: Boolean,
+    onDefaultUseZoomChange: (Boolean) -> Unit,
+    defaultPreset: ScalePreset,
+    onDefaultPresetChange: (ScalePreset) -> Unit,
+    defaultZoomPercent: Int,
+    onDefaultZoomPercentChange: (Int) -> Unit
 ) {
     var selectedCategory by remember { mutableStateOf("Appearance") }
     AnimatedVisibility(
@@ -155,7 +164,13 @@ fun SettingsOverlay(
                                             )
                                         }
                                         "Media Viewer" -> {
-                                            MediaViewerSettingsPanel(carouselMode, onCarouselModeChange)
+                                            MediaViewerSettingsPanel(
+                                                carouselMode, onCarouselModeChange,
+                                                rememberSizeState, onRememberSizeStateChange,
+                                                defaultUseZoom, onDefaultUseZoomChange,
+                                                defaultPreset, onDefaultPresetChange,
+                                                defaultZoomPercent, onDefaultZoomPercentChange
+                                            )
                                         }
                                     }
                                 }

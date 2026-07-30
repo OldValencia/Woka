@@ -2,14 +2,20 @@ package com.woka.data
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 class SettingsRepositoryImpl : SettingsRepository {
     private val scope = CoroutineScope(Dispatchers.IO)
@@ -21,8 +27,24 @@ class SettingsRepositoryImpl : SettingsRepository {
 
     private val json = Json { ignoreUnknownKeys = true; prettyPrint = true }
 
+    // Rapid setting changes (e.g. zoom steps while "remember" is on) are coalesced
+    // into a single debounced write, collected on ONE coroutine so writes never run
+    // concurrently — concurrent writes previously corrupted settings.json.
+    private val saveRequests = MutableSharedFlow<Unit>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+
+    private val writeLock = Any()
+
     init {
         loadSettings()
+        scope.launch {
+            saveRequests.collectLatest {
+                delay(150)
+                writeToDisk(_settings.value)
+            }
+        }
+        // Guarantee a pending (debounced) change is flushed if the app is closed
+        // before the 150ms debounce fires.
+        Runtime.getRuntime().addShutdownHook(Thread { writeToDisk(_settings.value) })
     }
 
     private fun loadSettings() {
@@ -117,6 +139,46 @@ class SettingsRepositoryImpl : SettingsRepository {
         }
     }
 
+    override fun setScalePreset(preset: ScalePreset) {
+        _settings.update { current ->
+            val newSettings = current.copy(scalePreset = preset)
+            saveSettings(newSettings)
+            newSettings
+        }
+    }
+
+    override fun setZoomPopoverView(view: ZoomPopoverView) {
+        _settings.update { current ->
+            val newSettings = current.copy(zoomPopoverView = view)
+            saveSettings(newSettings)
+            newSettings
+        }
+    }
+
+    override fun setRememberSizeState(remember: Boolean) {
+        _settings.update { current ->
+            val newSettings = current.copy(rememberSizeState = remember)
+            saveSettings(newSettings)
+            newSettings
+        }
+    }
+
+    override fun setDefaultUseZoom(useZoom: Boolean) {
+        _settings.update { current ->
+            val newSettings = current.copy(defaultUseZoom = useZoom)
+            saveSettings(newSettings)
+            newSettings
+        }
+    }
+
+    override fun setDefaultZoomPercent(percent: Int) {
+        _settings.update { current ->
+            val newSettings = current.copy(defaultZoomPercent = percent.coerceIn(10, 1000))
+            saveSettings(newSettings)
+            newSettings
+        }
+    }
+
     override fun addPinnedSession(session: PinnedSession) {
         _settings.update { current ->
             val newSessions = current.pinnedSessions.filter { it.path != session.path } + session
@@ -135,16 +197,33 @@ class SettingsRepositoryImpl : SettingsRepository {
         }
     }
 
+    // Coalesces writes; the debounced collector writes the latest snapshot.
     private fun saveSettings(newSettings: WokaSettings) {
-        scope.launch {
+        saveRequests.tryEmit(Unit)
+    }
+
+    private fun writeToDisk(current: WokaSettings) = synchronized(writeLock) {
+        try {
+            if (!settingsDir.exists()) settingsDir.mkdirs()
+            val text = json.encodeToString(current)
+            // Write to a temp file then atomically replace, so a reader (or a crash
+            // mid-write) can never see a half-written / duplicated file.
+            val tmp = File(settingsDir, "settings.json.tmp")
+            tmp.writeText(text)
             try {
-                if (!settingsDir.exists()) {
-                    settingsDir.mkdirs()
-                }
-                settingsFile.writeText(json.encodeToString(newSettings))
+                Files.move(
+                    tmp.toPath(),
+                    settingsFile.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE
+                )
             } catch (e: Exception) {
-                e.printStackTrace()
+                // Fallback if atomic move is unsupported; still serialized, so safe.
+                settingsFile.writeText(text)
+                tmp.delete()
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 }
