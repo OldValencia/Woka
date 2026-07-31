@@ -95,14 +95,17 @@ The player runs on JavaCV `FFmpegFrameGrabber` (`VideoPlayerDecoder.kt`), which 
 ### 2.7 Implementation Order (Base Phase — 95%)
 Ordered so each step builds on the previous and the **one real risk** (switching a stream inside `FFmpegFrameGrabber`) is retired early. Facts at time of writing: `VideoPlayerState.kt` = 109 lines (little headroom — track fields must be split out per §2 file-size mandate), `FileInfoDialog.kt` already exists, the Copy button lives in the global controls. Test corpus: `Avatar.The.Last.Airbender.S02` 2160p NF (multiple audio + subtitle tracks).
 
-- **Step 0 — Foundation: stream enumeration + track model (§2.0).**
-  - New (commonMain): `MediaTrack` (data class — index/type/codec/language/title/isDefault/isForced + audio channels/layout + subtitle isTextBased), `MediaTracks` (audio/subtitle/video lists). Pure Kotlin so UI can observe.
+- **Step 0 — Foundation: stream enumeration + track model (§2.0). — ✅ Done**
+  - New (commonMain): `MediaTrack` (data class — index/number/type/codec/language/title/isDefault/isForced + audio channels/layout + subtitle isTextBased; `label`, `identity` tuple), `MediaTracks` (video/audio/subtitle lists + `hasSubtitle`/`hasMultiple*`). Pure Kotlin so UI can observe.
   - New (jvmMain): `MediaTrackProbe.kt` — reads `grabber.formatContext.streams()` on open, builds `MediaTracks`; label `title ?: language ?: "Track {n}"`.
-  - Edit: `VideoPlayerState` — add `hasSubtitle`, `mediaTracks`, selected ids. **⚠ 109 lines** → split track fields/logic into `VideoPlayerTracks.kt` (or a delegate); do not bloat the state.
-  - Risk: low. Verify: build + log tracks on an Avatar `.mkv` (see >1 audio and subtitles).
-- **Step 1 — File Info: stream sections (§2.5).** First visible result, read-only, validates Step 0.
-  - Edit: `FileInfoDialog.kt` — General / Video / Audio / Subtitles cards (Apple HIG) from `MediaTracks`.
-  - Risk: minimal. Verify: 'i' on an Avatar file shows tracks + codecs.
+  - New (jvmMain): `VideoPlayerTracks.kt` — track state holder split out of `VideoPlayerState` (mediaTracks/hasSubtitle/selected indices) per the file-size mandate.
+  - Edit: `VideoPlayerState` — add `tracks` holder + `hasSubtitle` passthrough. Edit: `VideoPlayerDecoder` — probe on open + verification log.
+  - Verified: Avatar S02 `.mkv` logs 1 video / 8 audio (rus+eng, ac3/eac3/aac, 5.1/stereo) / 3 subrip subtitles; channel-layout garbage fixed (read only `av_channel_layout_describe`'s returned length).
+- **Step 1 — File Info: stream sections (§2.5). — ✅ Done**
+  - Model: `MediaTrack` gained video-only `width`/`height`/`frameRate`/`bitRate`; `MediaTrackProbe` populates them (codecpar + `avg_frame_rate`).
+  - New (jvmMain): `FileInfoStreamCards.kt` (Apple HIG General/Video/Audio/Subtitles cards from `MediaTracks`) + `FileInfoFormat.kt` (duration/fps/bitrate/subtitle-format helpers) — split out per the file-size mandate.
+  - Edit: `FileInfoDialog.kt` — new `mediaTracks`/`durationMs` params, renders sections (wider dialog) when present; images unchanged. Wire: `MediaViewerPlayer` passes `videoState?.tracks?.mediaTracks` + `durationMs`.
+  - Verify: 'i' on an Avatar file shows tracks + codecs.
 - **Step 2 — Audio tracks + RETIRE THE MAIN RISK (§2.1).** First stream switch + the reference popover/marquee style reused by subtitles.
   - **⚠ Spike first:** switching audio track in `FFmpegFrameGrabber` (no clean "set audio stream" API). Approach: **reconfigure/re-open the grabber on the chosen index + seek to `currentPositionMs`** for A/V continuity. Do not proceed until the spike is proven.
   - New: volume-popover side "Extension" list, reusable `Marquee.kt` (back-and-forth). Edit: `MediaViewerVolumeControl.kt` (92 lines — headroom exists, but watch it).

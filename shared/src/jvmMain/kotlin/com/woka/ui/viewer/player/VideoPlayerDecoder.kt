@@ -29,8 +29,15 @@ internal fun VideoPlayerState.startDecoderLoop(
             val vs = fc.streams(grabber.videoStream)
             val codecpar = vs.codecpar()
             val hdrInfo = readHdrInfo(codecpar.color_trc(), codecpar.color_primaries())
-            
+
             durationMs = grabber.lengthInTime / 1000L
+
+            try {
+                tracks.apply(probeMediaTracks(grabber))
+                logMediaTracks(tracks.mediaTracks)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
 
             if (grabber.audioChannels > 0) {
                 hasAudio = true

@@ -24,6 +24,9 @@ class VideoPlayerState(
     var currentFrameHdrInfo by mutableStateOf<HdrInfo?>(null)
     var hasAudio by mutableStateOf(false)
     var isRepeatMode by mutableStateOf(false)
+
+    val tracks = VideoPlayerTracks()
+    val hasSubtitle: Boolean get() = tracks.hasSubtitle
     
     internal var soundLineInstance: SourceDataLine? = null
     internal var isPlayingBeforeSeek = false

@@ -101,7 +101,12 @@ fun MediaViewerPlayer(
             onVolumeChange = onVolumeChange, onHover = { state.isVolumeHoveredRaw = it }
         )
         if (showInfoDialog && activeItem != null) {
-            FileInfoDialog(activeItem, onDismiss = { onShowInfoDialogChange(false) })
+            FileInfoDialog(
+                activeItem,
+                onDismiss = { onShowInfoDialogChange(false) },
+                mediaTracks = videoState?.tracks?.mediaTracks,
+                durationMs = videoState?.durationMs
+            )
         }
     }
 }
