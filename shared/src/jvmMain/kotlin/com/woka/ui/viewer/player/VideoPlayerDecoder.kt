@@ -3,33 +3,29 @@ package com.woka.ui.viewer.player
 import androidx.compose.ui.graphics.ImageBitmap
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import org.bytedeco.ffmpeg.global.avutil.*
-import org.bytedeco.javacv.FFmpegFrameGrabber
+import org.bytedeco.ffmpeg.global.avutil.AV_LOG_QUIET
+import org.bytedeco.ffmpeg.global.avutil.av_log_set_level
 import org.bytedeco.javacv.FFmpegLogCallback
-import java.nio.ShortBuffer
 import kotlin.time.Duration.Companion.milliseconds
 
-internal fun VideoPlayerState.startDecoderLoop(
-    videoChannel: Channel<VideoFrame>,
-    audioChannel: Channel<ByteArray>
-) {
+/**
+ * Decodes ONLY the video stream (audio runs on its own grabber, see
+ * [startAudioDecodeLoop]). This is the master timeline: the presenter derives
+ * currentPositionMs from these frames and the audio loop follows it.
+ */
+internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>) {
     grabberJob = scope.launch(Dispatchers.IO) {
         FFmpegLogCallback.set()
         av_log_set_level(AV_LOG_QUIET)
-        
-        val grabber = FFmpegFrameGrabber(file)
+
+        val grabber = openVideoGrabber()
         try {
-            grabber.setVideoOption("threads", "auto") // Use multi-threaded software decoding to bypass D3D11VA half-frame scaling bugs
-            grabber.audioChannels = 2 // Downmix 5.1/7.1 audio to Stereo to avoid Java AudioSystem crashes
-            grabber.sampleFormat = AV_SAMPLE_FMT_S16 // Ensure 16-bit PCM output
-            grabber.pixelFormat = AV_PIX_FMT_RGBA // Use 8-bit RGBA consistently for all formats
             grabber.start()
-            
+
             val fc = grabber.formatContext
             val vs = fc.streams(grabber.videoStream)
             val codecpar = vs.codecpar()
             val hdrInfo = readHdrInfo(codecpar.color_trc(), codecpar.color_primaries())
-
             durationMs = grabber.lengthInTime / 1000L
 
             try {
@@ -38,86 +34,71 @@ internal fun VideoPlayerState.startDecoderLoop(
             } catch (e: Exception) {
                 e.printStackTrace()
             }
+            // hasAudio comes from the authoritative full probe, not the audio
+            // grabber's transient channel count. Then release the audio loop.
+            hasAudio = tracks.mediaTracks.audio.isNotEmpty()
+            tracksProbed = true
 
-            if (grabber.audioChannels > 0) {
-                hasAudio = true
-                initAudio(grabber, audioChannel)
-            }
-
-            // Tag every frame with the seek generation it was decoded under. It
-            // only advances once a pending seek has actually been processed, so
-            // frames grabbed before the seek keep the old generation and get
-            // discarded by the presenter.
+            // Frames carry the generation they were decoded under; the presenter
+            // discards stale ones. videoSeekGen tracks the last seek we applied.
             var frameGeneration = seekGeneration
+            var videoSeekGen = seekGeneration
+            var durationChecked = durationMs > 0L
 
             while (isActive) {
-                val seekedGeneration = handleSeekIfNeeded(grabber, videoChannel, audioChannel)
-                if (seekedGeneration != -1) frameGeneration = seekedGeneration
+                if (videoSeekGen != seekGeneration) {
+                    videoSeekGen = seekGeneration
+                    videoSeekTo(grabber, seekTargetMs, videoChannel)
+                    frameGeneration = seekGeneration
+                    videoReadyGen = videoSeekGen // frame has landed; audio may resume
+                    continue
+                }
 
                 if (!isPlaying || isSeeking) {
                     delay(50.milliseconds)
                     continue
                 }
 
-                val frame = grabber.grabFrame()
+                val frame = grabber.grabFrame(false, true, true, false, false)
                 if (frame == null) {
                     if (isRepeatMode) {
                         seekTargetMs = 0L
+                        seekGeneration++ // both loops restart from the beginning
                     } else {
-                        if (hasAudio) {
-                            audioChannel.send(ByteArray(0))
-                        } else {
-                            videoChannel.send(VideoFrame(ImageBitmap(1, 1), -2L, frameGeneration))
-                        }
-                        while (isPlaying && seekTargetMs == -1L && isActive) {
+                        videoChannel.send(VideoFrame(ImageBitmap(1, 1), -2L, frameGeneration))
+                        val gen = seekGeneration
+                        while (isPlaying && seekGeneration == gen && isActive) {
                             delay(50.milliseconds)
                         }
                     }
                     continue
                 }
-                val frameTsMs = grabber.timestamp / 1000L
 
                 if (frame.image != null) {
+                    // Duration is occasionally 0 straight after start(); it's known
+                    // once packets have been read, so re-read it on the first frame.
+                    if (!durationChecked) {
+                        if (durationMs <= 0L) durationMs = grabber.lengthInTime / 1000L
+                        durationChecked = true
+                    }
+                    val frameTsMs = grabber.timestamp / 1000L
                     val bitmap = frame.toComposeBitmap(hdrInfo)
                     videoChannel.send(VideoFrame(bitmap, frameTsMs, frameGeneration, hdrInfo))
-                } else if (frame.samples != null) {
-                    if (soundLineInstance == null) {
-                        hasAudio = true
-                        initAudio(grabber, audioChannel)
-                    }
-                    if (soundLineInstance != null) {
-                        val channelSamples = frame.samples[0] as ShortBuffer
-                    val shortArray = ShortArray(channelSamples.capacity())
-                    channelSamples.get(shortArray)
-                    
-                    val byteArray = ByteArray(shortArray.size * 2)
-                    for (i in shortArray.indices) {
-                        byteArray[i * 2] = shortArray[i].toByte()
-                        byteArray[i * 2 + 1] = (shortArray[i].toInt() shr 8).toByte()
-                    }
-                    
-                    audioChannel.send(byteArray)
-                    }
                 }
-            } // Close while (isActive)
-            
+            }
+
             videoChannel.close()
-            audioChannel.close()
-            audioJob?.cancel()
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             e.printStackTrace()
         } finally {
-            soundLineInstance?.stop()
-            soundLineInstance?.flush()
-            soundLineInstance?.close()
-            soundLineInstance = null
-            try { 
+            tracksProbed = true // never leave the audio loop waiting if start() failed
+            try {
                 grabber.stop()
-                grabber.release() 
+                grabber.release()
             } catch (_: Exception) {}
-            
+
             if (isActive) isPlaying = false
         }
     }

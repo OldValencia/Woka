@@ -15,9 +15,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.woka.ui.icons.Icons
 import kotlinx.coroutines.delay
@@ -132,62 +129,6 @@ fun ScalingDisabledOverlay(trigger: Long) {
                     text = "Scaling is disabled in preset mode",
                     color = Color.White,
                     style = MaterialTheme.typography.labelMedium
-                )
-            }
-        }
-    }
-}
-
-@OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
-@Composable
-fun VolumeVerticalOverlay(
-    isVisible: Boolean,
-    volume: Float,
-    bottomPadding: androidx.compose.ui.unit.Dp,
-    alignment: Alignment = Alignment.BottomEnd,
-    onVolumeChange: (Float) -> Unit,
-    onHover: (Boolean) -> Unit
-) {
-    AnimatedVisibility(
-        visible = isVisible,
-        enter = slideInVertically(initialOffsetY = { 50 }) + fadeIn(),
-        exit = slideOutVertically(targetOffsetY = { 50 }) + fadeOut(),
-        modifier = Modifier.fillMaxSize()
-    ) {
-        Box(contentAlignment = alignment) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .padding(end = 96.dp, bottom = bottomPadding)
-                    .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
-                    .padding(vertical = 12.dp, horizontal = 8.dp)
-                    .onPointerEvent(PointerEventType.Enter) { onHover(true) }
-                    .onPointerEvent(PointerEventType.Exit) { onHover(false) }
-                    .pointerInput(Unit) {
-                        awaitPointerEventScope {
-                            while (true) {
-                                val event = awaitPointerEvent()
-                                if (event.type == PointerEventType.Scroll) {
-                                    val delta = event.changes.first().scrollDelta.y
-                                    val volDelta = if (delta > 0) -0.05f else 0.05f
-                                    onVolumeChange((volume + volDelta).coerceIn(0f, 1f))
-                                    onHover(true) // reset hover/timer
-                                    event.changes.forEach { it.consume() }
-                                }
-                            }
-                        }
-                    }
-            ) {
-                Text(
-                    text = "${(volume * 100).toInt()}%",
-                    color = Color.White,
-                    style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                MediaVerticalSlider(
-                    value = volume,
-                    onValueChange = onVolumeChange,
-                    modifier = Modifier.width(16.dp).height(80.dp)
                 )
             }
         }

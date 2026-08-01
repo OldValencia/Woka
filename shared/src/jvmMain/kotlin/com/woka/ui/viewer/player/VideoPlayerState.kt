@@ -31,13 +31,34 @@ class VideoPlayerState(
     internal var soundLineInstance: SourceDataLine? = null
     internal var isPlayingBeforeSeek = false
 
-    internal var grabberJob: Job? = null
+    internal var grabberJob: Job? = null       // video decode loop
+    internal var audioDecodeJob: Job? = null   // audio decode loop (separate grabber)
     internal var presenterJob: Job? = null
-    internal var audioJob: Job? = null
+    internal var audioJob: Job? = null          // sound-line writer
     internal var isSeeking = false
-    
+
+    // Authoritative seek target; both decode loops seek their grabber to it when
+    // seekGeneration changes. Never -1 (the loops trigger on generation, not this).
     @Volatile
-    internal var seekTargetMs: Long = -1L
+    internal var seekTargetMs: Long = 0L
+
+    // Set by selectAudioTrack; the audio loop reopens its grabber on this absolute
+    // stream index and clears it (§2.1). Video is untouched, so it never freezes.
+    @Volatile
+    internal var pendingAudioReopenIndex: Int? = null
+
+    // The generation the VIDEO loop has finished seeking to. The audio loop gates
+    // playback on this so, after a seek, audio never starts before the frame has
+    // actually landed on the target (no audio-before-video on slider scrubs).
+    @Volatile
+    internal var videoReadyGen: Int = 0
+
+    // Set once the video grabber has started and enumerated tracks. The audio loop
+    // waits for this before opening its own grabber, so the two grabbers never do
+    // a concurrent first-open of the same file (which intermittently returned
+    // incomplete stream info — no duration / no audio channels).
+    @Volatile
+    internal var tracksProbed: Boolean = false
 
     // Incremented on every seek. Frames carry the generation they were decoded
     // under; the presenter discards any frame whose generation is stale, so a
@@ -65,9 +86,9 @@ class VideoPlayerState(
         // Seeking to (or past) the very end is treated as reaching the end:
         // pin the play head there and pause, instead of relying on the decoder
         // to play through to EOF (which is racy and lets the position bounce
-        // back on stale frames). The decoder still runs handleSeekIfNeeded and
-        // decodes the last frame for display. The next Play then restarts from
-        // the beginning (see togglePlayPause).
+        // back on stale frames). The decoder still seeks and decodes the last
+        // frame for display. The next Play then restarts from the beginning
+        // (see togglePlayPause).
         if (durationMs > 0 && safeProgress >= durationMs - END_THRESHOLD_MS) {
             currentPositionMs = durationMs
             isPlayingBeforeSeek = false
@@ -101,6 +122,7 @@ class VideoPlayerState(
 
     fun dispose() {
         grabberJob?.cancel()
+        audioDecodeJob?.cancel()
         presenterJob?.cancel()
         audioJob?.cancel()
     }

@@ -90,6 +90,15 @@ The player runs on JavaCV `FFmpegFrameGrabber` (`VideoPlayerDecoder.kt`), which 
   - Match by **`language` → then `title` → then `codec`, never by `index`** (indices differ per episode).
   - Net effect: *"turned on English subs on E01 → E02 auto-selects English subs"* — without assuming identical structure, and still defaulting to **Off** when that language isn't present.
 
+**Chosen approach (decided this session, audio — to apply the same way to every folder / track type):**
+- **Two layers, resolved per-file → per-folder → default:** on open, use `audioTrackPerFile[path]` if present (authoritative — an explicit per-episode choice sticks); else match `audioTrackPerFolder[folderPath]`; else fall back to the **default disposition / track 0**. Every manual switch writes **both** records.
+- **Match by the full identity tuple, NOT language-first.** Priority: exact `(title == && language == && codec ==)` → `title` → `language` → default. *(Language-first — as originally written above — fails the Avatar case where 7 of 8 audio tracks are `rus`; the `title` is the real discriminator.)*
+- **Scope = folder** (a season lives in one folder). Fingerprint-of-track-set grouping is a possible future upgrade but not needed for the common case.
+- **Cleanup (must be handled to avoid stale `settings.json`):**
+  - On **folder unlink** (`removeLinkedFolder`): drop `audioTrackPerFolder[path]` **and** every `audioTrackPerFile` entry whose path is under that folder.
+  - On **video deletion** (in-app delete): drop that file's `audioTrackPerFile` entry.
+  - Bloat is otherwise a non-issue (each record is a path + tuple; the file stays tiny), so no aggressive global pruning is needed.
+
 > **External subtitle files** (loading sidecar `.srt` / `.ass` from the same folder) are **out of scope for §2** — they are handled in §3 and will later merge into the §2.2 list.
 
 ### 2.7 Implementation Order (Base Phase — 95%)
@@ -106,10 +115,11 @@ Ordered so each step builds on the previous and the **one real risk** (switching
   - New (jvmMain): `FileInfoStreamCards.kt` (Apple HIG General/Video/Audio/Subtitles cards from `MediaTracks`) + `FileInfoFormat.kt` (duration/fps/bitrate/subtitle-format helpers) — split out per the file-size mandate.
   - Edit: `FileInfoDialog.kt` — new `mediaTracks`/`durationMs` params, renders sections (wider dialog) when present; images unchanged. Wire: `MediaViewerPlayer` passes `videoState?.tracks?.mediaTracks` + `durationMs`.
   - Verify: 'i' on an Avatar file shows tracks + codecs.
-- **Step 2 — Audio tracks + RETIRE THE MAIN RISK (§2.1).** First stream switch + the reference popover/marquee style reused by subtitles.
-  - **⚠ Spike first:** switching audio track in `FFmpegFrameGrabber` (no clean "set audio stream" API). Approach: **reconfigure/re-open the grabber on the chosen index + seek to `currentPositionMs`** for A/V continuity. Do not proceed until the spike is proven.
-  - New: volume-popover side "Extension" list, reusable `Marquee.kt` (back-and-forth). Edit: `MediaViewerVolumeControl.kt` (92 lines — headroom exists, but watch it).
-  - Risk: high (spike). Verify: switch eng↔other language live without desync.
+- **Step 2 — Audio tracks + RETIRE THE MAIN RISK (§2.1). — ✅ Done**
+  - **Engine (risk retired):** the spike proved `reconfigure+reopen` worked but lagged (4K HEVC re-decode on `setTimestamp`). Chose the **separate-decode-context** path: video and audio run on **two independent grabbers** (`VideoPlayerDecoder` = video-only master clock; `VideoPlayerAudioDecoder` = audio-only). Switching audio re-opens ONLY the audio grabber → video never freezes; the audio grabber has video disabled (`videoStream = Int.MAX_VALUE`) so its seeks don't decode HEVC. Audio stays locked to `currentPositionMs` (generation re-seek + lead throttle + lag-resync), and a `videoReadyGen` gate stops audio starting before the frame lands on slider seeks. `openGrabber`/`reopenAudioGrabber`/`selectAudioTrack` in `VideoPlayerGrabber.kt`. Fixed a concurrent-first-open race (audio loop waits on `tracksProbed`; `hasAudio` from probe).
+  - **UI:** reusable `Marquee.kt` (commonMain, back-and-forth). `MediaViewerAudioExtension.kt` (track list docked to the volume popover, selected = accent, long names marquee). `MediaViewerVolumeOverlay.kt` (`VolumeVerticalOverlay` extracted here per §2 size mandate + extension hook). File Info highlights the active audio track (`accentFolders`, §2.5).
+  - Verified: live eng↔rus switch, no desync, no video freeze; slider seek keeps A/V in sync.
+  - **⏳ Remaining:** track persistence (§2.6 / Step 5) — per-file + per-folder by identity tuple (audio only for now). Deferred to a later session.
 - **Step 3 — Subtitles: decode + overlay (§2.2, text + bitmap).** Largest new subsystem; reuses Step 2 style.
   - New (jvmMain): `SubtitleDecoder.kt` — separate `AVFormatContext`, `avcodec_decode_subtitle2`, pre-parse **all text** tracks on open into `Cue` lists; bitmap (PGS) on-demand to `ImageBitmap`.
   - New (commonMain): `Cue` (startMs/endMs/text|bitmap). State: `activeSubtitleTrack`, derived `activeCue` from `currentPositionMs`.

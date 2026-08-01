@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.dp
 import com.woka.data.CarouselVisibility
 import com.woka.data.MediaItem
 import com.woka.ui.viewer.player.VideoPlayerState
+import com.woka.ui.viewer.player.selectAudioTrack
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
@@ -95,9 +96,16 @@ fun MediaViewerPlayer(
             isVisible = state.isVolumeHovered || state.volumeTriggerTimer > 0,
             volume = mediaVolume,
             bottomPadding = if (state.isUiVisible) {
-                if (mediaItems.size > 1) 170.dp else 90.dp
+                // Sit just above the volume button. Match the EXACT carousel
+                // visibility condition the toolbar uses (mode + item count +
+                // windowed) so the popover never reserves space for a carousel
+                // that isn't shown (single video in a folder) or vice-versa.
+                if (carouselMode != CarouselVisibility.HIDDEN && mediaItems.size > 1 && !isFullscreen) 170.dp else 90.dp
             } else 0.dp,
             alignment = if (state.isUiVisible) Alignment.BottomEnd else Alignment.CenterEnd,
+            audioTracks = videoState?.tracks?.mediaTracks?.audio ?: emptyList(),
+            selectedAudioIndex = videoState?.tracks?.selectedAudioIndex,
+            onSelectAudio = { index -> videoState?.selectAudioTrack(index) },
             onVolumeChange = onVolumeChange, onHover = { state.isVolumeHoveredRaw = it }
         )
         if (showInfoDialog && activeItem != null) {
@@ -105,7 +113,8 @@ fun MediaViewerPlayer(
                 activeItem,
                 onDismiss = { onShowInfoDialogChange(false) },
                 mediaTracks = videoState?.tracks?.mediaTracks,
-                durationMs = videoState?.durationMs
+                durationMs = videoState?.durationMs,
+                selectedAudioIndex = videoState?.tracks?.selectedAudioIndex
             )
         }
     }

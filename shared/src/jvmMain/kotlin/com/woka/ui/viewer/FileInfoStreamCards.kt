@@ -21,7 +21,7 @@ import com.woka.ui.viewer.player.MediaTracks
 
 /** Stream sections for the File Info dialog (§2.5): General / Video / Audio / Subtitles. */
 @Composable
-fun StreamInfoSections(tracks: MediaTracks, durationMs: Long?) {
+fun StreamInfoSections(tracks: MediaTracks, durationMs: Long?, selectedAudioIndex: Int? = null) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -43,7 +43,9 @@ fun StreamInfoSections(tracks: MediaTracks, durationMs: Long?) {
             }
         }
         if (tracks.audio.isNotEmpty()) InfoSection("Audio") {
-            tracks.audio.forEach { a -> InfoRow(a.label, audioDetail(a)) }
+            tracks.audio.forEach { a ->
+                InfoRow(a.label, audioDetail(a), highlight = a.index == selectedAudioIndex)
+            }
         }
         if (tracks.subtitle.isNotEmpty()) InfoSection("Subtitles") {
             tracks.subtitle.forEach { s -> InfoRow(s.label, subtitleDetail(s)) }
@@ -84,7 +86,10 @@ private fun InfoSubheader(text: String, topGap: Boolean) {
 }
 
 @Composable
-private fun InfoRow(label: String, value: String) {
+private fun InfoRow(label: String, value: String, highlight: Boolean = false) {
+    // Active audio track is tinted with the carousel-eye accent (§2.5).
+    val labelColor = if (highlight) Theme.colors.accentFolders else Theme.colors.textSecondary
+    val valueColor = if (highlight) Theme.colors.accentFolders else Theme.colors.textPrimary
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -92,12 +97,12 @@ private fun InfoRow(label: String, value: String) {
         Text(
             label,
             modifier = Modifier.weight(1f),
-            style = TextStyle(color = Theme.colors.textSecondary, fontSize = 12.sp)
+            style = TextStyle(color = labelColor, fontSize = 12.sp)
         )
         Text(
             value,
             modifier = Modifier.weight(1f),
-            style = TextStyle(color = Theme.colors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Medium),
+            style = TextStyle(color = valueColor, fontSize = 12.sp, fontWeight = FontWeight.Medium),
             textAlign = TextAlign.End
         )
     }

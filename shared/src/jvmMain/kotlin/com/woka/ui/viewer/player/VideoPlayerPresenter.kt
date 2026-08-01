@@ -14,7 +14,8 @@ internal fun VideoPlayerState.startPlayback() {
     val audioChannel = Channel<ByteArray>(capacity = 500)
 
     startPresenterLoop(videoChannel)
-    startDecoderLoop(videoChannel, audioChannel)
+    startDecoderLoop(videoChannel)
+    startAudioDecodeLoop(audioChannel)
 }
 
 internal fun VideoPlayerState.startPresenterLoop(videoChannel: Channel<VideoFrame>) {

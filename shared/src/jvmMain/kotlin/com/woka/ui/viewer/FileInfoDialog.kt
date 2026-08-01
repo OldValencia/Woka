@@ -36,14 +36,15 @@ fun FileInfoDialog(
     item: MediaItem,
     onDismiss: () -> Unit,
     mediaTracks: MediaTracks? = null,
-    durationMs: Long? = null
+    durationMs: Long? = null,
+    selectedAudioIndex: Int? = null
 ) {
     AbstractDialog(onDismissRequest = onDismiss, width = if (mediaTracks != null) 340.dp else 300.dp) {
         DialogTitle(text = "File Information", color = Theme.colors.textPrimary)
         if (mediaTracks == null) {
             FileMetaBlock(item)
         } else {
-            ScrollableInfo(item, mediaTracks, durationMs)
+            ScrollableInfo(item, mediaTracks, durationMs, selectedAudioIndex)
         }
         Row(
             modifier = Modifier.align(Alignment.End),
@@ -65,7 +66,12 @@ private fun copyToClipboard(text: String) {
 }
 
 @Composable
-private fun ScrollableInfo(item: MediaItem, mediaTracks: MediaTracks, durationMs: Long?) {
+private fun ScrollableInfo(
+    item: MediaItem,
+    mediaTracks: MediaTracks,
+    durationMs: Long?,
+    selectedAudioIndex: Int?
+) {
     val scrollState = rememberScrollState()
     // The outer Box hugs the (height-capped) content column; the scrollbar sits
     // in a matchParentSize overlay so its fillMaxHeight matches the content
@@ -80,7 +86,7 @@ private fun ScrollableInfo(item: MediaItem, mediaTracks: MediaTracks, durationMs
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             FileMetaBlock(item)
-            StreamInfoSections(mediaTracks, durationMs)
+            StreamInfoSections(mediaTracks, durationMs, selectedAudioIndex)
         }
         Box(modifier = Modifier.matchParentSize()) {
             VerticalScrollbar(

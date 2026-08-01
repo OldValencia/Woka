@@ -105,8 +105,11 @@ fun MediaViewerScreen(
         }
     }
     LaunchedEffect(mediaVolume) { videoState?.updateVolume(mediaVolume) }
-    LaunchedEffect(state.lastInteractionTime, videoState?.isPlaying) {
-        if (videoState?.isPlaying == false) {
+    LaunchedEffect(state.lastInteractionTime, videoState?.isPlaying, state.isVolumeHoveredRaw) {
+        // Keep the UI up while the cursor is on the volume/audio popover; otherwise
+        // the auto-hide fires under a stationary cursor, the popover jumps position
+        // and blinks.
+        if (videoState?.isPlaying == false || state.isVolumeHoveredRaw) {
             state.isUiVisible = true
         } else {
             delay(2500.milliseconds)
