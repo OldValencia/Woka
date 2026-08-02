@@ -4,9 +4,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
@@ -17,7 +15,6 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.rememberWindowState
 import kotlinx.coroutines.delay
-import com.woka.data.CarouselVisibility
 import com.woka.data.MediaItem
 import com.woka.data.SettingsRepository
 import com.woka.ui.viewer.pip.PipManager
@@ -124,75 +121,22 @@ fun MediaViewerFullscreenWindow(
                 val hover = remember { PopoverHoverState() }
                 PopoverHoverEffect(hover)
 
-                if (videoState != null) {
-                    VolumeVerticalOverlay(
-                        isVisible = hover.visibleTarget == HoverTarget.Volume,
-                        volume = videoState.volume,
-                        bottomPadding = fsBottomOverlayPadding,
-                        alignment = if (isUiVisible) Alignment.BottomEnd else Alignment.CenterEnd,
-                        audioTracks = videoState.tracks.mediaTracks.audio,
-                        selectedAudioIndex = videoState.tracks.selectedAudioIndex,
-                        onSelectAudio = { index -> videoState.tracks.selectedAudioIndex = index },
-                        onVolumeChange = { videoState.updateVolume(it); settingsRepo.setMediaVolume(it) },
-                        onHover = { hover.setHovered(HoverTarget.Volume, it) }
-                    )
-                    SubtitleVerticalOverlay(
-                        isVisible = hover.visibleTarget == HoverTarget.Subtitle,
-                        bottomPadding = fsBottomOverlayPadding,
-                        alignment = if (isUiVisible) Alignment.BottomEnd else Alignment.CenterEnd,
-                        videoState = videoState,
-                        onHover = { hover.setHovered(HoverTarget.Subtitle, it) }
-                    )
-                }
+                MediaViewerFullscreenOverlays(
+                    videoState = videoState,
+                    hover = hover,
+                    isUiVisible = isUiVisible,
+                    bottomPadding = fsBottomOverlayPadding,
+                    settingsRepo = settingsRepo,
+                    onExitFullscreen = { PipManager.closePip(returnToMain = true) }
+                )
 
-                AnimatedVisibility(
-                    visible = isUiVisible,
-                    enter = fadeIn() + slideInVertically { it },
-                    exit = fadeOut() + slideOutVertically { it },
-                    modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-                ) {
-                    if (videoState != null) {
-                        MediaViewerVideoControls(
-                            videoState = videoState,
-                            mediaVolume = videoState.volume,
-                            onVolumeChange = { videoState.updateVolume(it); settingsRepo.setMediaVolume(it) },
-                            onVolumeHoverChange = { hover.setHovered(HoverTarget.Volume, it) },
-                            onSubtitlesHoverChange = { hover.setHovered(HoverTarget.Subtitle, it) },
-                            isFullscreen = true,
-                            onToggleFullscreen = { PipManager.closePip(returnToMain = true) }
-                        )
-                    }
-                }
-
-                AnimatedVisibility(
-                    visible = isUiVisible,
-                    enter = fadeIn() + slideInVertically { -it },
-                    exit = fadeOut() + slideOutVertically { -it },
-                    modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .background(Color.Black.copy(alpha = 0.5f), shape = RoundedCornerShape(8.dp))
-                            .padding(4.dp)
-                    ) {
-                        MediaViewerFullscreenControls(
-                            sizeMode = PipManager.sizeMode,
-                            savedPreset = fsSettings.scalePreset,
-                            popoverView = fsSettings.zoomPopoverView,
-                            onSizeModeChange = onFsSizeModeChange,
-                            onOffsetReset = {
-                                PipManager.offsetX = 0f
-                                PipManager.offsetY = 0f
-                            },
-                            onPopoverViewChange = { settingsRepo.setZoomPopoverView(it) },
-                            carouselMode = CarouselVisibility.HIDDEN,
-                            onToggleCarousel = { },
-                            onEdit = { },
-                            onInfo = { },
-                            isInfoOpen = false
-                        )
-                    }
-                }
+                MediaViewerFullscreenTopControls(
+                    isUiVisible = isUiVisible,
+                    savedPreset = fsSettings.scalePreset,
+                    popoverView = fsSettings.zoomPopoverView,
+                    onSizeModeChange = onFsSizeModeChange,
+                    onPopoverViewChange = { settingsRepo.setZoomPopoverView(it) }
+                )
             }
         }
     }

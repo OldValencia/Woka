@@ -10,6 +10,8 @@ import androidx.compose.ui.unit.dp
 import com.woka.data.CarouselVisibility
 import com.woka.data.MediaItem
 import com.woka.ui.viewer.player.VideoPlayerState
+import com.woka.ui.viewer.player.selectAudioTrack
+import com.woka.ui.viewer.player.selectVideoTrack
 
 @Composable
 fun MediaViewerPlayer(
@@ -76,6 +78,7 @@ fun MediaViewerPlayer(
                 onSelectMedia = { state.animationDirection = 0; state.currentId = it },
                 onVolumeHoverChange = { state.hover.setHovered(HoverTarget.Volume, it) },
                 onSubtitlesHoverChange = { state.hover.setHovered(HoverTarget.Subtitle, it) },
+                onSettingsHoverChange = { state.hover.setHovered(HoverTarget.Settings, it) },
                 loadThumbnail = loadThumbnail,
                 mediaVolume = mediaVolume,
                 onVolumeChange = onVolumeChange,
@@ -97,7 +100,7 @@ fun MediaViewerPlayer(
             alignment = if (state.isUiVisible) Alignment.BottomEnd else Alignment.CenterEnd,
             audioTracks = videoState?.tracks?.mediaTracks?.audio ?: emptyList(),
             selectedAudioIndex = videoState?.tracks?.selectedAudioIndex,
-            onSelectAudio = { index -> videoState?.tracks?.selectedAudioIndex = index },
+            onSelectAudio = { index -> videoState?.selectAudioTrack(index) },
             onVolumeChange = onVolumeChange,
             onHover = { state.hover.setHovered(HoverTarget.Volume, it) }
         )
@@ -107,6 +110,15 @@ fun MediaViewerPlayer(
             alignment = if (state.isUiVisible) Alignment.BottomEnd else Alignment.CenterEnd,
             videoState = videoState,
             onHover = { state.hover.setHovered(HoverTarget.Subtitle, it) }
+        )
+        PlayerSettingsOverlay(
+            isVisible = state.hover.visibleTarget == HoverTarget.Settings,
+            bottomPadding = bottomOverlayPadding,
+            alignment = if (state.isUiVisible) Alignment.BottomEnd else Alignment.CenterEnd,
+            videoTracks = videoState?.tracks?.mediaTracks?.video ?: emptyList(),
+            selectedVideoIndex = videoState?.tracks?.selectedVideoIndex,
+            onSelectVideo = { index -> videoState?.selectVideoTrack(index) },
+            onHover = { state.hover.setHovered(HoverTarget.Settings, it) }
         )
         if (showInfoDialog && activeItem != null) {
             FileInfoDialog(

@@ -28,6 +28,7 @@ fun MediaViewerVideoControls(
     onVolumeChange: (Float) -> Unit,
     onVolumeHoverChange: (Boolean) -> Unit,
     onSubtitlesHoverChange: (Boolean) -> Unit = {},
+    onSettingsHoverChange: (Boolean) -> Unit = {},
     isFullscreen: Boolean,
     onToggleFullscreen: () -> Unit
 ) {
@@ -105,7 +106,7 @@ fun MediaViewerVideoControls(
                 onVolumeChange = onVolumeChange,
                 onVolumeHoverChange = onVolumeHoverChange
             )
-            PlayerSettingsControl()
+            PlayerSettingsControl(onHoverChange = onSettingsHoverChange)
             SimpleTooltip(if (isFullscreen) "Exit Fullscreen" else "Fullscreen") {
                 Box(
                     modifier = Modifier

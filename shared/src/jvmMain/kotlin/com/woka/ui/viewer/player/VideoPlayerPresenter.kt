@@ -44,6 +44,15 @@ internal fun VideoPlayerState.startPresenterLoop(videoChannel: Channel<VideoFram
                 lastPauseTimeMs = 0L
             }
 
+            // A video-track swap restarted the decoder under us (§2.3). The time it
+            // took is not playback time, so rebase rather than bill it to these
+            // frames as lateness — otherwise they get dropped to "catch up" and the
+            // picture stalls until the decoder claws the gap back at ~1.07x.
+            if (rebasePresenterClock) {
+                rebasePresenterClock = false
+                firstVideoTsMs = -1L
+            }
+
             if (firstVideoTsMs == -1L) {
                 firstVideoTsMs = frameTsMs
                 startPlayTimeMs = System.nanoTime() / 1_000_000L

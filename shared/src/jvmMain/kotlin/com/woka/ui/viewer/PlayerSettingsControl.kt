@@ -1,31 +1,41 @@
 package com.woka.ui.viewer
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.unit.dp
 import com.woka.ui.icons.Icons
 import com.woka.ui.theme.Theme
 import org.jetbrains.compose.resources.painterResource
 
 /**
- * Settings toggle icon placeholder in the toolbar (§2.4).
- * Positions between Volume and Fullscreen controls.
+ * Settings ⚙ toolbar icon (§2.4), between Volume and Fullscreen. Always visible,
+ * even when the file offers nothing to configure, because the menu keeps gaining
+ * entries (§6). Hovering opens [PlayerSettingsOverlay] — matching the Volume and
+ * Subtitle controls rather than the click in §2.4, so all three toolbar popovers
+ * share one hover FSM and cannot fight each other.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun PlayerSettingsControl(modifier: Modifier = Modifier) {
+fun PlayerSettingsControl(
+    onHoverChange: (Boolean) -> Unit = {},
+    modifier: Modifier = Modifier
+) {
     SimpleTooltip("Settings") {
         Box(
             modifier = modifier
                 .size(32.dp)
                 .clip(RoundedCornerShape(6.dp))
-                .clickable { },
+                .onPointerEvent(PointerEventType.Enter) { onHoverChange(true) }
+                .onPointerEvent(PointerEventType.Exit) { onHoverChange(false) },
             contentAlignment = Alignment.Center
         ) {
             Icon(

@@ -14,14 +14,15 @@ import kotlin.math.max
 internal fun VideoPlayerState.videoSeekTo(
     grabber: FFmpegFrameGrabber,
     targetMs: Long,
-    videoChannel: Channel<VideoFrame>
+    videoChannel: Channel<VideoFrame>,
+    hdrInfo: HdrInfo? = null
 ) {
     while (videoChannel.tryReceive().isSuccess) {}
     if (targetMs <= 0L) {
         try { grabber.restart() } catch (_: Exception) {}
         while (scope.isActive) {
             val frame = grabber.grabFrame(false, true, true, false, false) ?: break
-            if (frame.image != null) { currentFrame = frame.toComposeBitmap(); break }
+            if (frame.image != null) { publishFrame(frame.toComposeBitmap(), hdrInfo); break }
         }
         return
     }
@@ -50,7 +51,7 @@ internal fun VideoPlayerState.videoSeekTo(
         }
     }
     lastGoodFrame?.let {
-        if (it.image != null) currentFrame = it.toComposeBitmap()
+        if (it.image != null) publishFrame(it.toComposeBitmap(), hdrInfo)
         it.close()
     }
 }

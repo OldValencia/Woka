@@ -25,6 +25,13 @@ class VideoPlayerState(
     var hasAudio by mutableStateOf(false)
     var isRepeatMode by mutableStateOf(false)
 
+    // True while the video grabber is being swapped onto another track (§2.3).
+    // Re-opening a 4K HEVC stream and decoding back to the play head takes
+    // seconds, so the UI shows a spinner over the last frame and the audio loop
+    // parks — otherwise sound would run on while the picture is still catching up.
+    var isReloadingVideo by mutableStateOf(false)
+        internal set
+
     val tracks = VideoPlayerTracks()
     val hasSubtitle: Boolean get() = tracks.hasSubtitle
     val activeCue: Cue? get() = tracks.activeCue
@@ -47,6 +54,20 @@ class VideoPlayerState(
     // stream index and clears it (§2.1). Video is untouched, so it never freezes.
     @Volatile
     internal var pendingAudioReopenIndex: Int? = null
+
+    // Set by selectVideoTrack; the video loop swaps its own grabber onto this
+    // absolute stream index and clears it (§2.3). Rare, so an in-place re-open is
+    // accepted here rather than a permanently running second video decoder.
+    @Volatile
+    internal var pendingVideoReopenIndex: Int? = null
+
+    // Set when the decode pipeline restarts underneath the presenter (§2.3). The
+    // wall clock spent swapping is not playback time: measured against the old
+    // baseline every incoming frame looks ~1s late, which is under the 1000ms
+    // discontinuity threshold, so the presenter took the drop-to-catch-up path
+    // and froze the picture for seconds while the decoder slowly made the gap up.
+    @Volatile
+    internal var rebasePresenterClock: Boolean = false
 
     // The generation the VIDEO loop has finished seeking to. The audio loop gates
     // playback on this so, after a seek, audio never starts before the frame has

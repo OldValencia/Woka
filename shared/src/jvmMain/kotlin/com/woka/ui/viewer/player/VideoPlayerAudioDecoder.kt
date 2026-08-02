@@ -47,7 +47,10 @@ internal fun VideoPlayerState.startAudioDecodeLoop(audioChannel: Channel<ByteArr
                     audioTsMs = seekTargetMs
                     continue
                 }
-                if (!isPlaying || isSeeking || !hasAudio) {
+                // isReloadingVideo: a video-track swap re-decodes for seconds (§2.3).
+                // Park instead of playing on, so sound doesn't run away from the
+                // frozen picture and then need a resync once the picture returns.
+                if (!isPlaying || isSeeking || isReloadingVideo || !hasAudio) {
                     delay(20.milliseconds)
                     continue
                 }

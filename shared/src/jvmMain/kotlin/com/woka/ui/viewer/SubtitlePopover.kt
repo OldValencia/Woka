@@ -49,13 +49,13 @@ internal fun SubtitlePopoverList(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            SubtitleTrackRow(
+            PopoverListRow(
                 label = "Off",
                 selected = selectedIndex == null,
                 onClick = { onSelect(null) }
             )
             tracks.forEach { track ->
-                SubtitleTrackRow(
+                PopoverListRow(
                     label = track.label,
                     selected = track.index == selectedIndex,
                     onClick = { onSelect(track.index) }
@@ -70,42 +70,11 @@ internal fun SubtitlePopoverList(
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
-@Composable
-private fun SubtitleTrackRow(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    var hovered by remember { mutableStateOf(false) }
-    val background = when {
-        selected -> Theme.colors.accent.copy(alpha = 0.30f)
-        hovered -> Color.White.copy(alpha = 0.10f)
-        else -> Color.Transparent
-    }
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(6.dp))
-            .background(background)
-            .pointerHoverIcon(PointerIcon.Hand)
-            .onPointerEvent(PointerEventType.Enter) { hovered = true }
-            .onPointerEvent(PointerEventType.Exit) { hovered = false }
-            .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 5.dp)
-    ) {
-        Marquee(
-            text = label,
-            style = TextStyle(
-                color = Color.White.copy(alpha = if (selected) 1f else 0.72f),
-                fontSize = 12.sp
-            ),
-            animate = hovered || selected,
-            modifier = Modifier.fillMaxWidth()
-        )
-    }
-}
-
+/**
+ * Accent-coloured action row at the foot of the list. Kept separate from
+ * [PopoverListRow]: it is an action, never a selection, so it has no selected
+ * state and always renders in the accent colour.
+ */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun SubtitleCustomizeRow(onClick: () -> Unit) {

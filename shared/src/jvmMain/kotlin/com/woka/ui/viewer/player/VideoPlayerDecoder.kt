@@ -18,19 +18,26 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
         FFmpegLogCallback.set()
         av_log_set_level(AV_LOG_QUIET)
 
-        val grabber = openVideoGrabber()
+        // Reassigned when the user switches video track (§2.3); `finally` always
+        // tears down whichever grabber is current.
+        var grabber = openVideoGrabber()
         try {
             grabber.start()
 
-            val fc = grabber.formatContext
-            val vs = fc.streams(grabber.videoStream)
-            val codecpar = vs.codecpar()
-            val hdrInfo = readHdrInfo(codecpar.color_trc(), codecpar.color_primaries())
+            var hdrInfo = grabber.readStreamHdrInfo()
             durationMs = grabber.lengthInTime / 1000L
 
             try {
                 tracks.apply(probeMediaTracks(grabber))
                 logMediaTracks(tracks.mediaTracks)
+                // FFmpeg's own pick for the default video stream is not necessarily
+                // the one flagged AV_DISPOSITION_DEFAULT, so on a multi-video
+                // container the picture could come up on a different track than the
+                // menu reports as selected. Swap onto the track we resolved (§2.3);
+                // the play head is still 0, so this costs an open and no re-decode.
+                tracks.selectedVideoIndex
+                    ?.takeIf { it != grabber.videoStream }
+                    ?.let { pendingVideoReopenIndex = it }
                 startSubtitleDecoderLoop()
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -47,9 +54,22 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
             var durationChecked = durationMs > 0L
 
             while (isActive) {
+                val reopenIndex = pendingVideoReopenIndex
+                if (reopenIndex != null) {
+                    pendingVideoReopenIndex = null
+                    grabber = reopenVideoGrabber(grabber, reopenIndex, videoChannel)
+                    hdrInfo = grabber.readStreamHdrInfo()
+                    // The play head did not move, so no generation bump: the frame
+                    // reopenVideoGrabber landed stays current and audio — parked on
+                    // isReloadingVideo meanwhile — picks up from the same position.
+                    frameGeneration = seekGeneration
+                    rebasePresenterClock = true
+                    isReloadingVideo = false
+                    continue
+                }
                 if (videoSeekGen != seekGeneration) {
                     videoSeekGen = seekGeneration
-                    videoSeekTo(grabber, seekTargetMs, videoChannel)
+                    videoSeekTo(grabber, seekTargetMs, videoChannel, hdrInfo)
                     frameGeneration = seekGeneration
                     videoReadyGen = videoSeekGen // frame has landed; audio may resume
                     continue
@@ -95,6 +115,7 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
             e.printStackTrace()
         } finally {
             tracksProbed = true // never leave the audio loop waiting if start() failed
+            isReloadingVideo = false // a failed swap must not leave a stuck spinner
             try {
                 grabber.stop()
                 grabber.release()

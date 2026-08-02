@@ -5,11 +5,17 @@ import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_RGBA
 import org.bytedeco.ffmpeg.global.avutil.AV_SAMPLE_FMT_S16
 import org.bytedeco.javacv.FFmpegFrameGrabber
 
-/** Opens a video-only grabber (audio is decoded on its own grabber, §2.1). */
-internal fun VideoPlayerState.openVideoGrabber(): FFmpegFrameGrabber {
+/**
+ * Opens a video-only grabber (audio is decoded on its own grabber, §2.1) on
+ * [videoStreamIndex] — the absolute container index, matching [MediaTrack.index];
+ * -1 leaves the container default in place (used for the first open, before the
+ * probe has run).
+ */
+internal fun VideoPlayerState.openVideoGrabber(videoStreamIndex: Int = -1): FFmpegFrameGrabber {
     val grabber = FFmpegFrameGrabber(file)
     grabber.setVideoOption("threads", "auto") // SW decode: dodge D3D11VA half-frame scaling bugs
     grabber.pixelFormat = AV_PIX_FMT_RGBA
+    if (videoStreamIndex >= 0) grabber.videoStream = videoStreamIndex
     return grabber
 }
 

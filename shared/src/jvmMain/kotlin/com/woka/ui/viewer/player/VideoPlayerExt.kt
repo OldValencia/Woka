@@ -1,5 +1,6 @@
 package com.woka.ui.viewer.player
 
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import org.bytedeco.javacv.Frame
@@ -21,6 +22,23 @@ internal fun Frame.toComposeBitmap(hdrInfo: HdrInfo? = null): ImageBitmap {
     val imageInfo = ImageInfo(this.imageWidth, this.imageHeight, ColorType.RGBA_8888, ColorAlphaType.UNPREMUL)
     val image = SkiaImage.makeRaster(imageInfo, bytes, this.imageStride)
     return image.toComposeImageBitmap()
+}
+
+/**
+ * Publishes a decoded frame together with the HDR metadata it was decoded under,
+ * in one snapshot.
+ *
+ * The bitmap itself is always plain RGBA — tone mapping is a UI decision driven by
+ * [VideoPlayerState.currentFrameHdrInfo] picking `HdrImagePainter`. Writing the two
+ * separately lets the UI recompose in between and draw a frame against the *other*
+ * track's transfer function, which is what made a switch back to an HDR track flash
+ * an untonemapped picture before correcting itself (§2.3).
+ */
+internal fun VideoPlayerState.publishFrame(bitmap: ImageBitmap, hdrInfo: HdrInfo?) {
+    Snapshot.withMutableSnapshot {
+        currentFrame = bitmap
+        currentFrameHdrInfo = hdrInfo
+    }
 }
 
 internal fun setVolumeInternal(line: SourceDataLine, vol: Float) {

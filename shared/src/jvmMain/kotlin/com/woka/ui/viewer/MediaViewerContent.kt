@@ -130,6 +130,7 @@ fun MediaViewerContent(
         }
         if (videoState != null) {
             SubtitleOverlay(cue = videoState.activeCue, bottomPadding = bottomPadding)
+            VideoReloadOverlay(isVisible = videoState.isReloadingVideo)
         }
     }
 }

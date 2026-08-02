@@ -10,10 +10,10 @@ import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
 /** Which toolbar hover popover the pointer is engaging. */
-enum class HoverTarget { None, Volume, Subtitle }
+enum class HoverTarget { None, Volume, Subtitle, Settings }
 
 /**
- * Single source of truth for the Volume and Subtitle hover popovers.
+ * Single source of truth for the Volume, Subtitle and Settings hover popovers.
  *
  * Replaces the previous pair of mutually-resetting raw booleans: each one's
  * effect cleared the other's state, so crossing the icon boundary (where Compose
