@@ -1,91 +1,66 @@
 # Woka — Claude Code Entry Point
 
-Minimalist, fast, Apple-HIG-styled **Desktop** media viewer and editor.
-Kotlin Multiplatform / Compose for Desktop (JVM only).
+Compose Multiplatform **Desktop** (JVM only) media viewer/editor. Apple HIG, minimalist.
+Working mandates — code style, workflow, verification: @./.claude/AGENTS.md
 
-Working mandates (how you edit, verify and report) are imported from here — read them as part of
-this file: @./.claude/AGENTS.md
+## Hard rules
 
----
+**Git: only on an explicit instruction.** No commit/add/push/branch/checkout/reset/stash/rm/mv/tag on
+your own initiative. An approved plan that *mentions* a commit is not permission to commit — it
+describes what the user will do. Finish the work, say what's ready and what a commit would contain,
+stop. Read-only `status`/`log`/`diff` only when the task needs it. Unsure → ask.
 
-## 1. Where the knowledge lives (`ai/`)
+**Don't guess.** Unknown cause, ambiguous requirement, or unclear whether an action is wanted → add
+logging, ask, or both. By the second unconfirmed hypothesis stop theorising: instrument the suspects,
+hand over the log lines, state which reading means what. Mark diagnostics `TEMPORARY (§ref)`; remove
+them once the cause is known and grep to prove it. Check your own test fixtures before blaming code.
 
-The `ai/` folder is the project's design brain. **Read the relevant doc before planning or
-implementing a feature** — do not invent product behaviour that contradicts it.
+## `ai/` — design source of truth
 
-| Path | What it holds | When to read it |
-| --- | --- | --- |
-| `ai/docs/general_idea.md` | Product vision, core philosophy, "Linked Folders" paradigm, use cases, technical pillars | Before any feature/UX decision |
-| `ai/docs/roadmap.md` | Phase-by-phase development plan, CLI routing (`Woka.exe [path]`), what ships when | Before starting new work; to know what phase we're in |
-| `ai/docs/features/pending/` | Approved plans **not yet implemented** | Pick up work from here; new plans are written here |
-| `ai/docs/features/implemented/` | Plans for features already shipped, with assets | Reference for how an existing subsystem was built |
-| `ai/mockups/design/` | HTML design mockups (`FINAL_design_mockup.html`) | Source of truth for visual style |
-| `ai/mockups/logos/` | Logo iterations (`v3`–`v5`, `final`) | Branding/icon work |
+Read the relevant doc before planning or implementing; never invent behaviour that contradicts it.
 
-Rules for `ai/`:
-- New feature plans go to `ai/docs/features/pending/<feature-name>.md` — format defined by the
-  `plan-creation` skill (`.claude/skills/plan-creation/SKILL.md`).
-- When a plan is fully implemented, **move** the file `pending/` → `implemented/` (do not copy).
-- Update `ai/docs/roadmap.md` when a phase changes state.
-- Screenshots/renders belong in the sibling `assets/` folder of the doc that uses them.
+- `docs/general_idea.md` — vision, "Linked Folders" paradigm, use cases
+- `docs/roadmap.md` — phases, CLI routing (`Woka.exe [path]`)
+- `docs/features/pending/` — approved but unshipped plans; **work comes from here**
+- `docs/features/implemented/` — shipped plans (+ sibling `assets/`)
+- `mockups/design/FINAL_design_mockup.html` — visual truth · `mockups/logos/` — branding
 
-## 2. Where the rules live
+New plan → `pending/<name>.md`, format per `.claude/skills/plan-creation/SKILL.md`. Fully shipped →
+**move** to `implemented/`. Phase state change → update `roadmap.md`.
 
-| Path | Purpose |
-| --- | --- |
-| `CLAUDE.md` (this file) | Auto-loaded map: docs, repo layout, commands |
-| `.claude/AGENTS.md` | Full working mandates (code style, workflow, Compose rules) — imported above |
-| `.claude/skills/plan-creation/SKILL.md` | How to write a feature plan |
-| `.claude/settings.local.json` | Local permission allowlist |
-
-## 3. Repo layout
+## Layout — package root `com.woka`
 
 ```
-shared/                     ← all app code lives here
-  src/commonMain/kotlin/com/woka/
-    App.kt                  ← composable root
-    navigation/Router.kt    ← screen routing (Home / Folder / Viewer)
-    di/Koin.kt              ← DI module wiring
-    data/                   ← SettingsRepository, LocalMediaRepository, WokaSettings
-    ui/                     ← HomeScreen/HomeViewModel, FolderScreen/FolderViewModel
-    ui/components/          ← reusable HIG widgets (dock, cards, top bar, overlays)
-    ui/theme/Theme.kt       ← colors, shapes, typography
-    ui/icons/Icons.kt       ← vector icons
-    ui/viewer/              ← common viewer surface + player models
-    utils/                  ← DesktopUtils, VideoThumbnail (expect)
-  src/jvmMain/kotlin/com/woka/
-    di/PlatformModule.kt    ← JVM-side DI (actual impls)
-    data/SettingsRepositoryImpl.kt
-    ui/viewer/              ← the real viewer: MediaViewer*, Subtitle*, Zoom*, Pip*, Hdr*
-    ui/viewer/player/       ← JavaCV/FFmpeg decode, audio, seek, tracks, subtitles
-    ui/components/dialogs/  ← AWT FileDialog wrappers
-  src/commonTest, src/jvmTest
-desktopApp/                 ← thin launcher module (main(), window, CLI args)
-ai/                         ← docs & mockups (see §1)
-logo/                       ← shipped app logo assets
+shared/src/commonMain/kotlin/com/woka/
+  App.kt · navigation/Router.kt · di/Koin.kt
+  data/           SettingsRepository, WokaSettings, LocalMediaRepository
+  ui/             Home/Folder screens + ViewModels
+  ui/components/  HIG widgets: dock, cards, top bar, overlays, Marquee
+  ui/theme/ · ui/icons/ · ui/viewer/ (surface + player models) · utils/
+shared/src/jvmMain/kotlin/com/woka/
+  di/PlatformModule.kt · data/SettingsRepositoryImpl.kt + SettingsStore.kt
+  ui/viewer/         MediaViewer* Subtitle* Zoom* Pip* Hdr* PlayerSettings* Popover*
+  ui/viewer/player/  JavaCV decode, audio, seek, tracks, subtitles
+  ui/components/dialogs/   AWT FileDialog
+desktopApp/   launcher: main(), window, CLI args
 ```
 
-Package root is `com.woka`. `expect`/`actual` split: declare in `commonMain`, implement in
-`jvmMain` (e.g. `VideoThumbnail.kt` / `VideoThumbnail.jvm.kt`).
+`expect` in `commonMain`, `actual` in `jvmMain` (`VideoThumbnail.kt` / `VideoThumbnail.jvm.kt`).
 
-## 4. Stack
+## Stack
 
-- **UI:** Compose Multiplatform (Desktop), Skia rendering
-- **Arch:** MVVM — `ViewModel` exposes `StateFlow`, UI observes. No Compose types in ViewModels.
-- **DI:** Koin. Resolve dependencies, never `new` them inline.
-- **Media:** JavaCV / Bytedeco FFmpeg for video decode, audio, probing, subtitles
-- **Persistence:** `kotlinx.serialization` JSON at
-  `user.home/Documents/OldValencia/Woka/settings.json`. No Room, no SQL, no cloud.
-- **Targets:** JVM Desktop only — no Android, no iOS, no web.
+Compose Desktop + Skia · MVVM: ViewModels expose `StateFlow`, no `androidx.compose.*` inside them ·
+Koin DI, never instantiate inline · JavaCV/FFmpeg for video/audio/probing · `kotlinx.serialization`
+JSON at `user.home/Documents/OldValencia/Woka/settings.json` — no DB, no cloud · JVM desktop only.
 
-## 5. Commands
+## Commands
 
 ```powershell
-./gradlew.bat :shared:compileKotlinJvm -q   # fastest correctness check after edits
-./gradlew.bat :shared:build                 # full shared module build + tests
-./gradlew.bat :desktopApp:run               # run the app
-./gradlew.bat :desktopApp:hotRun --auto     # run with hot reload
+./gradlew.bat :shared:compileKotlinJvm -q   # fast check after edits
+./gradlew.bat :shared:build                 # + tests
+./gradlew.bat :desktopApp:run               # hotRun --auto for hot reload
 ```
 
-Run builds via the PowerShell tool with `run_in_background: true`, then **wait for the result**
-before reporting anything. A failed build is reported as a failed build.
+Run via the PowerShell tool with `run_in_background: true`, then **wait** for the result. A failed
+build is reported as a failed build. Measure file length with `wc -l` — PowerShell `Measure-Object
+-Line` under-reports.
