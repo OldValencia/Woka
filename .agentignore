@@ -1,5 +1,0 @@
-**/build/
-!src/**/build/
-.idea
-node_modules/
-build
