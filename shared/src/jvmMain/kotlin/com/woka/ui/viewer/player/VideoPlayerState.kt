@@ -27,6 +27,7 @@ class VideoPlayerState(
 
     val tracks = VideoPlayerTracks()
     val hasSubtitle: Boolean get() = tracks.hasSubtitle
+    val activeCue: Cue? get() = tracks.activeCue
     
     internal var soundLineInstance: SourceDataLine? = null
     internal var isPlayingBeforeSeek = false

@@ -25,6 +25,7 @@ class VideoPlayerTracks {
 
     // null == subtitles Off, which is the default on first open (§2.2).
     var selectedSubtitleIndex by mutableStateOf<Int?>(null)
+    var activeCue by mutableStateOf<Cue?>(null)
 
     fun apply(tracks: MediaTracks) {
         mediaTracks = tracks

@@ -78,7 +78,10 @@ fun MediaViewerScreen(
         }
     }
 
-    var mediaVolume by remember { mutableStateOf(0.5f) }
+    // Restored from settings and written back on change, so the chosen volume
+    // survives switching files and app restarts.
+    var mediaVolume by remember { mutableStateOf(settings.mediaVolume) }
+    LaunchedEffect(mediaVolume) { settingsRepo.setMediaVolume(mediaVolume) }
 
     val videoState = remember(activeItem, state.activeItemPath) {
         if (activeItem is MediaItem.Video && state.activeItemPath != null) {
@@ -93,23 +96,15 @@ fun MediaViewerScreen(
     }
 
     val focusRequester = remember { FocusRequester() }
-    LaunchedEffect(state.isVolumeHoveredRaw) {
-        if (state.isVolumeHoveredRaw) state.isVolumeHovered = true
-        else {
-            delay(300.milliseconds); state.isVolumeHovered = false
-        }
-    }
+    PopoverHoverEffect(state.hover)
     LaunchedEffect(state.volumeTrigger) {
         if (state.volumeTrigger > 0) {
             state.volumeTriggerTimer = 1; delay(2000.milliseconds); state.volumeTriggerTimer = 0
         }
     }
     LaunchedEffect(mediaVolume) { videoState?.updateVolume(mediaVolume) }
-    LaunchedEffect(state.lastInteractionTime, videoState?.isPlaying, state.isVolumeHoveredRaw) {
-        // Keep the UI up while the cursor is on the volume/audio popover; otherwise
-        // the auto-hide fires under a stationary cursor, the popover jumps position
-        // and blinks.
-        if (videoState?.isPlaying == false || state.isVolumeHoveredRaw) {
+    LaunchedEffect(state.lastInteractionTime, videoState?.isPlaying, state.hover.rawTarget) {
+        if (videoState?.isPlaying == false || state.hover.rawTarget != HoverTarget.None) {
             state.isUiVisible = true
         } else {
             delay(2500.milliseconds)

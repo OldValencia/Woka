@@ -31,6 +31,7 @@ fun MediaViewerToolbar(
     onNext: () -> Unit,
     onSelectMedia: (String) -> Unit,
     onVolumeHoverChange: (Boolean) -> Unit,
+    onSubtitlesHoverChange: (Boolean) -> Unit = {},
     isVisible: Boolean,
     isCarouselEnabled: Boolean,
     loadThumbnail: suspend (MediaItem) -> ImageBitmap?,
@@ -110,6 +111,7 @@ fun MediaViewerToolbar(
                     mediaVolume = mediaVolume,
                     onVolumeChange = onVolumeChange,
                     onVolumeHoverChange = onVolumeHoverChange,
+                    onSubtitlesHoverChange = onSubtitlesHoverChange,
                     isFullscreen = isFullscreen,
                     onToggleFullscreen = onToggleFullscreen
                 )

@@ -30,9 +30,11 @@ class MediaViewerState(initialId: String) {
     var skipDirection by mutableStateOf(1)
     
     var volumeTrigger by mutableStateOf(0L)
-    var isVolumeHoveredRaw by mutableStateOf(false)
-    var isVolumeHovered by mutableStateOf(false)
     var volumeTriggerTimer by mutableStateOf(0)
+    // Single source of truth for the Volume/Subtitle hover popovers (see
+    // PopoverHoverState) — replaces the four separate hover booleans that used to
+    // reset each other and caused the popover flicker loop.
+    val hover = PopoverHoverState()
     var isUiVisible by mutableStateOf(true)
     var lastInteractionTime by mutableStateOf(System.currentTimeMillis())
 }

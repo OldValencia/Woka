@@ -10,19 +10,6 @@ import androidx.compose.ui.unit.dp
 import com.woka.data.CarouselVisibility
 import com.woka.data.MediaItem
 import com.woka.ui.viewer.player.VideoPlayerState
-import com.woka.ui.viewer.player.selectAudioTrack
-import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.background
-import androidx.compose.foundation.focusable
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
-import com.woka.ui.theme.Theme
 
 @Composable
 fun MediaViewerPlayer(
@@ -45,10 +32,20 @@ fun MediaViewerPlayer(
     infoAction: () -> Unit
 ) {
     Box(modifier = modifier) {
+        val bottomOverlayPadding = if (state.isUiVisible) {
+            if (carouselMode != CarouselVisibility.HIDDEN && mediaItems.size > 1 && !isFullscreen) 170.dp else 90.dp
+        } else 0.dp
+        // Subtitles sit low near the bottom; they only lift enough to clear the
+        // control bar (or carousel) while the UI is showing.
+        val subtitleBottomPadding = if (state.isUiVisible) {
+            if (carouselMode != CarouselVisibility.HIDDEN && mediaItems.size > 1 && !isFullscreen) 180.dp else 100.dp
+        } else 40.dp
+
         if (state.imageBitmap != null) {
             MediaViewerContent(
                 imageBitmap = state.imageBitmap!!, animationDirection = state.animationDirection,
                 sizeMode = state.sizeMode, offsetX = state.offsetX, offsetY = state.offsetY, videoState = videoState,
+                bottomPadding = subtitleBottomPadding,
                 onSizeModeChange = onSizeModeChange,
                 onOffsetChange = { x, y -> state.offsetX = x; state.offsetY = y },
                 onEffectiveScaleChange = { state.scale = it },
@@ -77,7 +74,8 @@ fun MediaViewerPlayer(
                     }
                 },
                 onSelectMedia = { state.animationDirection = 0; state.currentId = it },
-                onVolumeHoverChange = { state.isVolumeHoveredRaw = it },
+                onVolumeHoverChange = { state.hover.setHovered(HoverTarget.Volume, it) },
+                onSubtitlesHoverChange = { state.hover.setHovered(HoverTarget.Subtitle, it) },
                 loadThumbnail = loadThumbnail,
                 mediaVolume = mediaVolume,
                 onVolumeChange = onVolumeChange,
@@ -93,20 +91,22 @@ fun MediaViewerPlayer(
         SkipOverlay(trigger = state.skipTrigger, direction = state.skipDirection)
         ScalingDisabledOverlay(trigger = state.scalingDisabledTrigger)
         VolumeVerticalOverlay(
-            isVisible = state.isVolumeHovered || state.volumeTriggerTimer > 0,
+            isVisible = state.hover.visibleTarget == HoverTarget.Volume || state.volumeTriggerTimer > 0,
             volume = mediaVolume,
-            bottomPadding = if (state.isUiVisible) {
-                // Sit just above the volume button. Match the EXACT carousel
-                // visibility condition the toolbar uses (mode + item count +
-                // windowed) so the popover never reserves space for a carousel
-                // that isn't shown (single video in a folder) or vice-versa.
-                if (carouselMode != CarouselVisibility.HIDDEN && mediaItems.size > 1 && !isFullscreen) 170.dp else 90.dp
-            } else 0.dp,
+            bottomPadding = bottomOverlayPadding,
             alignment = if (state.isUiVisible) Alignment.BottomEnd else Alignment.CenterEnd,
             audioTracks = videoState?.tracks?.mediaTracks?.audio ?: emptyList(),
             selectedAudioIndex = videoState?.tracks?.selectedAudioIndex,
-            onSelectAudio = { index -> videoState?.selectAudioTrack(index) },
-            onVolumeChange = onVolumeChange, onHover = { state.isVolumeHoveredRaw = it }
+            onSelectAudio = { index -> videoState?.tracks?.selectedAudioIndex = index },
+            onVolumeChange = onVolumeChange,
+            onHover = { state.hover.setHovered(HoverTarget.Volume, it) }
+        )
+        SubtitleVerticalOverlay(
+            isVisible = state.hover.visibleTarget == HoverTarget.Subtitle,
+            bottomPadding = bottomOverlayPadding,
+            alignment = if (state.isUiVisible) Alignment.BottomEnd else Alignment.CenterEnd,
+            videoState = videoState,
+            onHover = { state.hover.setHovered(HoverTarget.Subtitle, it) }
         )
         if (showInfoDialog && activeItem != null) {
             FileInfoDialog(
@@ -119,45 +119,3 @@ fun MediaViewerPlayer(
         }
     }
 }
-
-@OptIn(ExperimentalComposeUiApi::class)
-@Composable
-internal fun Modifier.mediaViewerPlayerModifier(
-    state: MediaViewerState,
-    videoState: VideoPlayerState?,
-    mediaItems: List<MediaItem>,
-    mediaVolume: Float,
-    isFullscreen: Boolean,
-    focusRequester: FocusRequester,
-    onClose: (String) -> Unit,
-    copyAction: () -> Unit,
-    infoAction: () -> Unit,
-    onVolumeChange: (Float) -> Unit
-): Modifier = this
-    .fillMaxSize()
-    .clipToBounds()
-    .background(if (isFullscreen) Color.Black else Theme.colors.background)
-    .onPointerEvent(PointerEventType.Move) {
-        state.lastInteractionTime = System.currentTimeMillis()
-        state.isUiVisible = true
-    }
-    .focusRequester(focusRequester)
-    .focusable()
-    .mediaViewerKeyHandler(
-        currentId = state.currentId,
-        mediaItems = mediaItems,
-        videoState = videoState,
-        mediaVolume = mediaVolume,
-        onClose = { onClose(state.currentId) },
-        onSkip = { dir -> state.skipDirection = dir; state.skipTrigger = System.currentTimeMillis() },
-        onNavigate = { dir, newId -> state.animationDirection = dir; state.currentId = newId },
-        onVolumeChange = onVolumeChange,
-        onPlayPause = { state.playPauseTrigger = System.currentTimeMillis() },
-        onCopy = copyAction,
-        onInfo = infoAction
-    )
-    .pointerInput(Unit) {
-        awaitPointerEventScope {
-            while (true) if (awaitPointerEvent().type == PointerEventType.Press) focusRequester.requestFocus()
-        }
-    }

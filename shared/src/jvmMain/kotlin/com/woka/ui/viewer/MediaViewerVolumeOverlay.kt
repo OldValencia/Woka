@@ -3,8 +3,6 @@ package com.woka.ui.viewer
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,10 +40,12 @@ fun VolumeVerticalOverlay(
     onVolumeChange: (Float) -> Unit,
     onHover: (Boolean) -> Unit
 ) {
+    // Fade only — a vertical slide made the popover briefly overlap the toolbar
+    // icons during the transition, which re-fired Enter/Exit and flickered it.
     AnimatedVisibility(
         visible = isVisible,
-        enter = slideInVertically(initialOffsetY = { 50 }) + fadeIn(),
-        exit = slideOutVertically(targetOffsetY = { 50 }) + fadeOut(),
+        enter = fadeIn(),
+        exit = fadeOut(),
         modifier = Modifier.fillMaxSize()
     ) {
         Box(contentAlignment = alignment) {

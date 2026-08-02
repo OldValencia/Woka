@@ -92,7 +92,8 @@ object Icons {
         val ScaleFill = Res.drawable.rectangle_arrowtriangle_2_outward
         val ScaleOriginal = Res.drawable.aspectratio
 
-        // Stream selection (subtitles) — wiring only, used in a later phase
+        // Stream selection (subtitles)
         val Subtitles = Res.drawable.captions_bubble
+        val SubtitlesOff = Res.drawable.captions_bubble_slash
     }
 }

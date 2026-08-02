@@ -15,7 +15,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import com.woka.ui.icons.Icons
 import com.woka.ui.theme.Theme
@@ -28,6 +27,7 @@ fun MediaViewerVideoControls(
     mediaVolume: Float,
     onVolumeChange: (Float) -> Unit,
     onVolumeHoverChange: (Boolean) -> Unit,
+    onSubtitlesHoverChange: (Boolean) -> Unit = {},
     isFullscreen: Boolean,
     onToggleFullscreen: () -> Unit
 ) {
@@ -69,9 +69,7 @@ fun MediaViewerVideoControls(
                 painter = painterResource(if (isPlaying) Icons.Static.Pause else Icons.Static.PlayFill),
                 contentDescription = "Play/Pause",
                 tint = Theme.colors.textPrimary.copy(alpha = iconAlpha),
-                modifier = Modifier
-                    .size(16.dp)
-                    .graphicsLayer { if (isPlaying) scaleX = 0.7f }
+                modifier = Modifier.size(20.dp)
             )
         }
         
@@ -89,30 +87,44 @@ fun MediaViewerVideoControls(
             Spacer(Modifier.weight(1f))
         }
         
-        Spacer(Modifier.width(4.dp))
-        
-        MediaViewerVolumeControl(
-            videoState = videoState,
-            mediaVolume = mediaVolume,
-            onVolumeChange = onVolumeChange,
-            onVolumeHoverChange = onVolumeHoverChange
-        )
-        
-        Box(
-            modifier = Modifier
-                .size(32.dp)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null
-                ) { onToggleFullscreen() },
-            contentAlignment = Alignment.Center
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                painter = painterResource(if (isFullscreen) Icons.Static.Collapse else Icons.Static.Expand),
-                contentDescription = "Fullscreen",
-                tint = Theme.colors.textPrimary.copy(alpha = iconAlpha),
-                modifier = Modifier.size(16.dp)
+            // Hidden entirely when the file has no subtitle tracks (§2.2); the time
+            // slider (weight 1f) reclaims the freed space, no empty gap left behind.
+            if (videoState != null && videoState.hasSubtitle) {
+                SubtitleControl(
+                    videoState = videoState,
+                    onHoverChange = onSubtitlesHoverChange
+                )
+            }
+            MediaViewerVolumeControl(
+                videoState = videoState,
+                mediaVolume = mediaVolume,
+                onVolumeChange = onVolumeChange,
+                onVolumeHoverChange = onVolumeHoverChange
             )
+            PlayerSettingsControl()
+            SimpleTooltip(if (isFullscreen) "Exit Fullscreen" else "Fullscreen") {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { onToggleFullscreen() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(if (isFullscreen) Icons.Static.Collapse else Icons.Static.Expand),
+                        contentDescription = "Fullscreen",
+                        tint = Theme.colors.textPrimary.copy(alpha = iconAlpha),
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
         }
     }
 }

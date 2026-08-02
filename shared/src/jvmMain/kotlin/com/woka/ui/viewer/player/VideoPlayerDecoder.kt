@@ -31,6 +31,7 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
             try {
                 tracks.apply(probeMediaTracks(grabber))
                 logMediaTracks(tracks.mediaTracks)
+                startSubtitleDecoderLoop()
             } catch (e: Exception) {
                 e.printStackTrace()
             }

@@ -56,7 +56,7 @@ The player runs on JavaCV `FFmpegFrameGrabber` (`VideoPlayerDecoder.kt`), which 
 - **Off state:** when subtitles are explicitly **Off**, the icon swaps to a crossed-out `Icons.Static.SubtitlesOff` (asset `captions_bubble_slash`, **custom-drawn — SF Pro has no crossed-out captions glyph**), tinted at ~0.5 alpha, mirroring the muted-speaker treatment in `MediaViewerVolumeControl.kt`.
 - **Popover:** clicking reveals a popover list, **visually identical in style to the audio extension (§2.1)** — same card, same **back-and-forth marquee for long names**. It is a *standalone* popover anchored to the subtitle icon (not attached to the volume popover).
 - The list always includes an explicit **"Off"** entry to disable subtitles.
-- A **"Customize Subtitles"** button sits at the bottom of the list; it opens the subtitle-appearance settings (§3). *(Behaviour deferred to that phase.)*
+- A **"Customize Subtitles"** button sits at the bottom of the list; it opens the subtitle-appearance settings (§3). *(✅ Done in Step 3 — opens an inline Customize view within this popover.)*
 - **Default & persistence:** subtitles default to **Off** on first open of a file. The chosen track (or Off) is persisted **per file** and restored on next open (see §2.6).
 - **Rendering note (engine):** subtitles render as a **Compose overlay** over the clean video frame (never burned in — keeps §1 zoom/pan intact), synced to `currentPositionMs`. Three paths:
   - **Text (SRT / ASS-as-plain-text):** styled `Text`, restylable by §3.
@@ -120,12 +120,20 @@ Ordered so each step builds on the previous and the **one real risk** (switching
   - **UI:** reusable `Marquee.kt` (commonMain, back-and-forth). `MediaViewerAudioExtension.kt` (track list docked to the volume popover, selected = accent, long names marquee). `MediaViewerVolumeOverlay.kt` (`VolumeVerticalOverlay` extracted here per §2 size mandate + extension hook). File Info highlights the active audio track (`accentFolders`, §2.5).
   - Verified: live eng↔rus switch, no desync, no video freeze; slider seek keeps A/V in sync.
   - **⏳ Remaining:** track persistence (§2.6 / Step 5) — per-file + per-folder by identity tuple (audio only for now). Deferred to a later session.
-- **Step 3 — Subtitles: decode + overlay (§2.2, text + bitmap).** Largest new subsystem; reuses Step 2 style.
-  - New (jvmMain): `SubtitleDecoder.kt` — separate `AVFormatContext`, `avcodec_decode_subtitle2`, pre-parse **all text** tracks on open into `Cue` lists; bitmap (PGS) on-demand to `ImageBitmap`.
-  - New (commonMain): `Cue` (startMs/endMs/text|bitmap). State: `activeSubtitleTrack`, derived `activeCue` from `currentPositionMs`.
-  - New (UI): `SubtitleOverlay.kt` (overlay over the clean frame), `SubtitleControl.kt` (icon left of Volume + popover in §2.1 style, "Off" + "Customize Subtitles").
-  - Edit: `Icons.kt` — register `SubtitlesOff = Res.drawable.captions_bubble_slash` (asset already created).
-  - Risk: medium. Verify: on/off/switch, sync on seek/pause, crossed-out icon when Off.
+- **Step 3 — Subtitles: decode + overlay (§2.2) + appearance customization (§3). — ✅ Done**
+  - **Decode engine:** `SubtitleDecoder.kt` (separate `AVFormatContext`, `avcodec_decode_subtitle2`, pre-parses **all text** tracks on open into `Cue` lists, synced to `currentPositionMs` on a 50 ms loop, launched after the probe so there is no first-open race) + `SubtitleParser.kt` (SRT/ASS/SSA text cleanup — strips `Dialogue:` prefixes and `{…}` override tags, normalizes `\N`/`\h`, PTS→ms). New (commonMain): `Cue` (startMs/endMs/text|bitmap). State: `selectedSubtitleIndex` + derived `activeCue` on `VideoPlayerTracks`.
+  - **Overlay:** `SubtitleOverlay.kt` renders over the clean frame (keeps §1 zoom/pan intact). Text cues styled from §3; bitmap path stubbed (PGS still text-only — deferred). Full ASS shows as basic styled text.
+  - **Popover & icon:** `SubtitleControl.kt` (icon left of Volume, crossed-out `SubtitlesOff` at 0.5 alpha when Off), `SubtitleVerticalOverlay.kt` + `SubtitlePopover.kt` — standalone popover in §2.1 style (same card, marquee, accent selection), "Off" entry + "Customize Subtitles". Edit: `Icons.kt` — `SubtitlesOff` registered.
+  - **Hidden when absent (§2.2):** `SubtitleControl` is only composed when the file has ≥1 subtitle track; the time slider (`weight 1f`) reclaims the freed space — no empty gap. Settings ⚙ stays always visible.
+  - **Appearance customization (§3, brought forward from Step 6):** "Customize Subtitles" now opens an **inline** panel inside the popover (List ↔ Customize views, horizontal slide + back chevron, fixed 210 dp width so the cursor never drops), `SubtitleCustomizePanel.kt` + `SubtitleCustomizeControls.kt` (dark pill groups / colour swatches / opacity stepper) + `SubtitleStyle.kt` (resolve). Controls: **Size** (`Auto` + S/M/L/XL), **Font** (System/Serif/Mono), **Colour** (swatches), **Background** box opacity, **Outline** (black stroke pass under the fill), and a **Reset to defaults** row. Every change applies live and persists.
+  - **Auto size:** the font size is always relative to the video-panel height (`BoxWithConstraints.maxHeight`, clamp `[16sp, 52sp]`); `Auto` is the neutral base, S/M/L/XL are fixed multipliers of it. A window/fullscreen resize keeps the user's step proportional instead of resetting it.
+  - **Settings (§3 / Step 5 groundwork):** `WokaSettings` gained `subtitleSize` / `subtitleFont` / `subtitleColorArgb` / `subtitleBoxOpacity` / `subtitleOutline` (+ `resetSubtitleAppearance()`), all persisted globally in `settings.json`.
+  - **Fixes this session:**
+    - **Popover flicker loop (Volume ⇄ Subtitles):** consolidated the two mutually-resetting hover booleans into a single `PopoverHoverState` FSM (`None/Volume/Subtitle`, one grace timer; Exit only clears the target that still owns the pointer), de-duplicated across `MediaViewerScreen` and `MediaViewerFullscreenWindow`. **Root cause of the residual loop:** the `slideInVertically(initialOffsetY = { 50 })` enter/exit made the popover briefly slide down **over the toolbar icons** mid-animation, re-firing Enter/Exit → both popovers oscillated. Fixed by dropping the vertical slide (fade only) on both the Volume and Subtitle overlays.
+    - **Fullscreen subtitle position:** was too high (115 dp); lowered to sit near the bottom and only lift to clear the control bar (fullscreen 72 dp; windowed 100 dp / 180 dp with carousel).
+    - **Volume not persisted between videos:** `mediaVolume` lived in a local `remember`; now stored in `WokaSettings.mediaVolume` (+ `setMediaVolume`), restored on open and written on change (windowed + fullscreen). Survives file switches and restarts.
+  - Verify: on/off/switch, sync on seek/pause, crossed-out icon when Off, no hover loop, live customization + Reset, auto-size on resize, volume restored on reopen.
+  - **⏳ Remaining (deferred):** bitmap PGS/VobSub rendering; per-file/-folder subtitle persistence (§2.6 / Step 5); external `.srt`/`.ass` and delay/advance sync (§3 / Step 6).
 - **Step 4 — Settings ⚙ + Video track (§2.3 / §2.4).** Settings-menu scaffold (base for §6) + video-stream selection.
   - New: `PlayerSettingsMenu.kt` — icon right of Volume, **always visible**, popover. "Video Track" entry only when >1 video stream (same switch mechanism as Step 2).
   - Edit: toolbar row → `[Subtitles?] [Volume] [Settings⚙] [Fullscreen]`.
@@ -133,9 +141,9 @@ Ordered so each step builds on the previous and the **one real risk** (switching
 - **Step 5 — Track persistence (§2.6).** Cross-cutting memory over the finished selectors.
   - Edit: `settings.json` model (`SettingsRepositoryImpl`) — per-file records (path + size/mtime hash) by **stable-identity tuple** + subtitle Off; folder-level "last language" heuristic. Load on open, write on change.
   - Risk: medium (series heuristic). Verify: subs on E01 → E02 auto-picks same language; re-opening same file restores exactly.
-- **Step 6 — §3 base scope.** External subs + customization + sync.
+- **Step 6 — §3 base scope.** External subs + sync (customization already shipped in Step 3).
   - External `.srt/.ass` (auto-match by name + manual pick) → same `Cue` model, merged into §2.2 list.
-  - Text-sub customization UI (font/size/color/bg/outline) behind "Customize Subtitles".
+  - ~~Text-sub customization UI (font/size/color/bg/outline) behind "Customize Subtitles".~~ **✅ Done in Step 3** (inline panel: size/font/colour/box/outline + auto-size + Reset).
   - Delay/advance — offset `currentPositionMs − delayMs` (subs + audio), no re-decode.
   - Risk: low. Verify: external srt loads; style applies to text; offset fixes desync.
 - **Step 7 — UI Cleanup (§7).** Remove Copy button from the global controls. Trivial, any time.

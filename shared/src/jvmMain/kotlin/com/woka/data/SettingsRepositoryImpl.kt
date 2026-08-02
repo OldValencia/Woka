@@ -16,6 +16,7 @@ import kotlinx.serialization.json.Json
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
+import kotlin.time.Duration.Companion.milliseconds
 
 class SettingsRepositoryImpl : SettingsRepository {
     private val scope = CoroutineScope(Dispatchers.IO)
@@ -38,7 +39,7 @@ class SettingsRepositoryImpl : SettingsRepository {
         loadSettings()
         scope.launch {
             saveRequests.collectLatest {
-                delay(150)
+                delay(150.milliseconds)
                 writeToDisk(_settings.value)
             }
         }
@@ -174,6 +175,42 @@ class SettingsRepositoryImpl : SettingsRepository {
     override fun setDefaultZoomPercent(percent: Int) {
         _settings.update { current ->
             val newSettings = current.copy(defaultZoomPercent = percent.coerceIn(10, 1000))
+            saveSettings(newSettings)
+            newSettings
+        }
+    }
+
+    override fun setSubtitleSize(size: SubtitleSize) = update { it.copy(subtitleSize = size) }
+
+    override fun setSubtitleFont(font: SubtitleFont) = update { it.copy(subtitleFont = font) }
+
+    override fun setSubtitleColor(argb: Long) = update { it.copy(subtitleColorArgb = argb) }
+
+    override fun setSubtitleBoxOpacity(opacity: Float) =
+        update { it.copy(subtitleBoxOpacity = opacity.coerceIn(0f, 1f)) }
+
+    override fun setSubtitleOutline(outline: Boolean) = update { it.copy(subtitleOutline = outline) }
+
+    override fun resetSubtitleAppearance() {
+        val d = WokaSettings()
+        update {
+            it.copy(
+                subtitleSize = d.subtitleSize,
+                subtitleFont = d.subtitleFont,
+                subtitleColorArgb = d.subtitleColorArgb,
+                subtitleBoxOpacity = d.subtitleBoxOpacity,
+                subtitleOutline = d.subtitleOutline
+            )
+        }
+    }
+
+    override fun setMediaVolume(volume: Float) =
+        update { it.copy(mediaVolume = volume.coerceIn(0f, 1f)) }
+
+    // Compact wrapper around the update-copy-save pattern used throughout.
+    private inline fun update(transform: (WokaSettings) -> WokaSettings) {
+        _settings.update { current ->
+            val newSettings = transform(current)
             saveSettings(newSettings)
             newSettings
         }

@@ -7,6 +7,11 @@ enum class SortType { Custom, NameAsc, NameDesc, DateAsc, DateDesc }
 enum class CarouselVisibility { AUTO, ALWAYS_ON, HIDDEN }
 enum class ScalePreset { Fit, Fill, Original }
 enum class ZoomPopoverView { Slider, Input }
+// Subtitle appearance (§3). Auto scales the size from the video-panel height; the
+// other steps are fixed multipliers of that same relative base, so the user's
+// choice stays proportional on window resize instead of being reset.
+enum class SubtitleSize { Auto, Small, Medium, Large, ExtraLarge }
+enum class SubtitleFont { System, Serif, Monospace }
 
 @Serializable
 data class PinnedSession(
@@ -34,5 +39,13 @@ data class WokaSettings(
     // adjusting zoom/preset inside a video writes back into these fields.
     val rememberSizeState: Boolean = false,
     val defaultUseZoom: Boolean = false,
-    val defaultZoomPercent: Int = 100
+    val defaultZoomPercent: Int = 100,
+    // Last media-viewer volume (0f–1f), restored across files and app restarts.
+    val mediaVolume: Float = 0.5f,
+    // Subtitle appearance (§3), applied to text subtitles. Persisted globally.
+    val subtitleSize: SubtitleSize = SubtitleSize.Auto,
+    val subtitleFont: SubtitleFont = SubtitleFont.System,
+    val subtitleColorArgb: Long = 0xFFFFFFFFL,
+    val subtitleBoxOpacity: Float = 0.75f,
+    val subtitleOutline: Boolean = true
 )

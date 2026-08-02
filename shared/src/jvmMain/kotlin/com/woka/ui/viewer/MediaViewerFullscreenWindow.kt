@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.rememberWindowState
+import kotlinx.coroutines.delay
 import com.woka.data.CarouselVisibility
 import com.woka.data.MediaItem
 import com.woka.data.SettingsRepository
@@ -67,7 +68,7 @@ fun MediaViewerFullscreenWindow(
             if (videoState?.isPlaying == false) {
                 isUiVisible = true
             } else {
-                kotlinx.coroutines.delay(2500.milliseconds)
+                delay(2500.milliseconds)
                 isUiVisible = false
             }
         }
@@ -85,6 +86,9 @@ fun MediaViewerFullscreenWindow(
                     }
             ) {
 
+                val fsBottomOverlayPadding = if (isUiVisible) 90.dp else 0.dp
+                val fsSubtitleBottomPadding = if (isUiVisible) 72.dp else 40.dp
+
                 Box(
                     Modifier.fillMaxSize()
                         .pipWindowDraggable(window)
@@ -97,6 +101,7 @@ fun MediaViewerFullscreenWindow(
                         offsetX = PipManager.offsetX,
                         offsetY = PipManager.offsetY,
                         videoState = videoState,
+                        bottomPadding = fsSubtitleBottomPadding,
                         onSizeModeChange = onFsSizeModeChange,
                         onOffsetChange = { x, y ->
                             PipManager.offsetX = x
@@ -116,7 +121,29 @@ fun MediaViewerFullscreenWindow(
 
                 ScalingDisabledOverlay(trigger = fsScalingDisabled)
 
-                var showVolumeSlider by remember { mutableStateOf(false) }
+                val hover = remember { PopoverHoverState() }
+                PopoverHoverEffect(hover)
+
+                if (videoState != null) {
+                    VolumeVerticalOverlay(
+                        isVisible = hover.visibleTarget == HoverTarget.Volume,
+                        volume = videoState.volume,
+                        bottomPadding = fsBottomOverlayPadding,
+                        alignment = if (isUiVisible) Alignment.BottomEnd else Alignment.CenterEnd,
+                        audioTracks = videoState.tracks.mediaTracks.audio,
+                        selectedAudioIndex = videoState.tracks.selectedAudioIndex,
+                        onSelectAudio = { index -> videoState.tracks.selectedAudioIndex = index },
+                        onVolumeChange = { videoState.updateVolume(it); settingsRepo.setMediaVolume(it) },
+                        onHover = { hover.setHovered(HoverTarget.Volume, it) }
+                    )
+                    SubtitleVerticalOverlay(
+                        isVisible = hover.visibleTarget == HoverTarget.Subtitle,
+                        bottomPadding = fsBottomOverlayPadding,
+                        alignment = if (isUiVisible) Alignment.BottomEnd else Alignment.CenterEnd,
+                        videoState = videoState,
+                        onHover = { hover.setHovered(HoverTarget.Subtitle, it) }
+                    )
+                }
 
                 AnimatedVisibility(
                     visible = isUiVisible,
@@ -128,8 +155,9 @@ fun MediaViewerFullscreenWindow(
                         MediaViewerVideoControls(
                             videoState = videoState,
                             mediaVolume = videoState.volume,
-                            onVolumeChange = { videoState.updateVolume(it) },
-                            onVolumeHoverChange = { showVolumeSlider = it },
+                            onVolumeChange = { videoState.updateVolume(it); settingsRepo.setMediaVolume(it) },
+                            onVolumeHoverChange = { hover.setHovered(HoverTarget.Volume, it) },
+                            onSubtitlesHoverChange = { hover.setHovered(HoverTarget.Subtitle, it) },
                             isFullscreen = true,
                             onToggleFullscreen = { PipManager.closePip(returnToMain = true) }
                         )

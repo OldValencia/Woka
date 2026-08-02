@@ -26,7 +26,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 import com.woka.ui.viewer.player.VideoPlayerState
 
 @Composable
@@ -37,6 +39,7 @@ fun MediaViewerContent(
     offsetX: Float,
     offsetY: Float,
     videoState: VideoPlayerState?,
+    bottomPadding: Dp = 40.dp,
     onSizeModeChange: (SizeMode) -> Unit,
     onOffsetChange: (Float, Float) -> Unit,
     onEffectiveScaleChange: (Float) -> Unit,
@@ -106,10 +109,7 @@ fun MediaViewerContent(
                     )
                 }
             ) {
-                Image(
-                    painter = painter,
-                    contentDescription = "Image/Video Preview",
-                    contentScale = ContentScale.Fit,
+                Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .graphicsLayer(
@@ -118,8 +118,18 @@ fun MediaViewerContent(
                             translationX = offsetX,
                             translationY = offsetY
                         )
-                )
+                ) {
+                    Image(
+                        painter = painter,
+                        contentDescription = "Image/Video Preview",
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
+        }
+        if (videoState != null) {
+            SubtitleOverlay(cue = videoState.activeCue, bottomPadding = bottomPadding)
         }
     }
 }

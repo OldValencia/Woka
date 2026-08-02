@@ -18,6 +18,13 @@ interface SettingsRepository {
     fun setRememberSizeState(remember: Boolean)
     fun setDefaultUseZoom(useZoom: Boolean)
     fun setDefaultZoomPercent(percent: Int)
+    fun setSubtitleSize(size: SubtitleSize)
+    fun setSubtitleFont(font: SubtitleFont)
+    fun setSubtitleColor(argb: Long)
+    fun setSubtitleBoxOpacity(opacity: Float)
+    fun setSubtitleOutline(outline: Boolean)
+    fun resetSubtitleAppearance()
+    fun setMediaVolume(volume: Float)
     fun addPinnedSession(session: PinnedSession)
     fun removePinnedSession(path: String)
 }
