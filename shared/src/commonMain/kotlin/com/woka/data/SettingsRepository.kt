@@ -27,4 +27,6 @@ interface SettingsRepository {
     fun setMediaVolume(volume: Float)
     fun addPinnedSession(session: PinnedSession)
     fun removePinnedSession(path: String)
+    fun setTrackPrefs(filePath: String, folderPath: String, prefs: TrackPrefs)
+    fun clearTrackPrefsForFile(filePath: String)
 }

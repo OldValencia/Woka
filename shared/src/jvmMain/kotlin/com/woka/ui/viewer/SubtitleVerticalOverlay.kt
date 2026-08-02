@@ -28,6 +28,7 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.woka.ui.viewer.player.VideoPlayerState
+import com.woka.ui.viewer.player.selectSubtitleTrack
 
 /**
  * Standalone vertical subtitle popover overlay that docks above the toolbar icon (§2.2),
@@ -88,7 +89,7 @@ fun SubtitleVerticalOverlay(
                         SubtitlePopoverList(
                             tracks = tracks,
                             selectedIndex = selectedIndex,
-                            onSelect = { index -> videoState.tracks.selectedSubtitleIndex = index },
+                            onSelect = { index -> videoState.selectSubtitleTrack(index) },
                             onCustomize = { showCustomize = true }
                         )
                     }

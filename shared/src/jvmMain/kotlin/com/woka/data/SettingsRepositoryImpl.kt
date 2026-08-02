@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import java.io.File
 
 class SettingsRepositoryImpl : SettingsRepository {
     private val scope = CoroutineScope(Dispatchers.IO)
@@ -30,8 +31,17 @@ class SettingsRepositoryImpl : SettingsRepository {
         }
     }
 
-    override fun removeLinkedFolder(path: String) =
-        update { it.copy(linkedFolders = it.linkedFolders - path) }
+    override fun removeLinkedFolder(path: String) = update { current ->
+        // Unlinking must leave no stale track records behind (§2.6 cleanup): drop
+        // the folder's own record plus every per-file record under it.
+        val prefix = path.trimEnd(File.separatorChar) + File.separatorChar
+        current.copy(
+            linkedFolders = current.linkedFolders - path,
+            trackPrefsPerFile = current.trackPrefsPerFile.filterKeys { !it.startsWith(prefix) },
+            trackPrefsPerFolder = current.trackPrefsPerFolder
+                .filterKeys { it != path && !it.startsWith(prefix) }
+        )
+    }
 
     override fun setFolderLayout(path: String, layout: ViewLayout) =
         update { it.copy(folderLayouts = it.folderLayouts + (path to layout)) }
@@ -100,6 +110,20 @@ class SettingsRepositoryImpl : SettingsRepository {
     override fun removePinnedSession(path: String) = update { current ->
         current.copy(pinnedSessions = current.pinnedSessions.filter { it.path != path })
     }
+
+    override fun setTrackPrefs(filePath: String, folderPath: String, prefs: TrackPrefs) =
+        update { current ->
+            current.copy(
+                trackPrefsPerFile = current.trackPrefsPerFile + (filePath to prefs),
+                // The folder layer never carries video (§2.6): another episode's
+                // second video stream is a different encode, not the same track.
+                trackPrefsPerFolder = current.trackPrefsPerFolder +
+                    (folderPath to prefs.copy(video = null))
+            )
+        }
+
+    override fun clearTrackPrefsForFile(filePath: String) =
+        update { it.copy(trackPrefsPerFile = it.trackPrefsPerFile - filePath) }
 
     // The update-copy-save pattern every setter goes through.
     private inline fun update(transform: (WokaSettings) -> WokaSettings) {

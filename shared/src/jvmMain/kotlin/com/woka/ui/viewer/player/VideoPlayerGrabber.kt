@@ -77,4 +77,5 @@ fun VideoPlayerState.selectAudioTrack(index: Int) {
     if (tracks.selectedAudioIndex == index) return
     tracks.selectedAudioIndex = index
     pendingAudioReopenIndex = index
+    persistTrackPrefs()
 }

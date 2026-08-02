@@ -1,28 +1,33 @@
 package com.woka.ui
 
-import com.woka.data.*
+import com.woka.data.LocalMediaRepository
+import com.woka.data.MediaItem
+import com.woka.data.PinnedSession
+import com.woka.data.SettingsRepository
+import com.woka.data.SortType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.io.File
 
-data class FolderState(
-    val items: List<MediaItem> = emptyList(),
-    val layout: ViewLayout = ViewLayout.Grid,
-    val sort: SortType = SortType.NameAsc,
-    val showTitles: Boolean = true,
-    val showFolders: Boolean = true,
-    val mediaFilter: String = "All",
-    val isSelectMode: Boolean = false,
-    val selectedPaths: Set<String> = emptySet()
-)
-
+/**
+ * Folder screen ViewModel: listing, sorting and multi-selection. State derivation
+ * lives in `FolderStateMapper`, filesystem operations in `FolderFileOperations`
+ * (§2 file-size mandate) — both need [scope] / [settingsRepository], hence the
+ * `internal` visibility.
+ */
 class FolderViewModel(
     val path: String,
     private val repository: LocalMediaRepository,
-    private val settingsRepository: SettingsRepository
+    internal val settingsRepository: SettingsRepository
 ) {
-    private val scope = CoroutineScope(Dispatchers.Main)
+    internal val scope = CoroutineScope(Dispatchers.Main)
 
     private val _rawItems = MutableStateFlow<List<MediaItem>>(emptyList())
     private val _isSelectMode = MutableStateFlow(false)
@@ -35,52 +40,7 @@ class FolderViewModel(
         _isSelectMode,
         _selectedPaths
     ) { rawItems, settings, isSelectMode, selectedPaths ->
-        val layout = settings.folderLayouts[path] ?: ViewLayout.Grid
-        val sort = settings.folderSorts[path] ?: SortType.NameAsc
-
-        val sortedItems = when (sort) {
-            SortType.NameAsc, SortType.Custom -> rawItems.sortedBy { it.file.name.lowercase() }
-            SortType.NameDesc -> rawItems.sortedByDescending { it.file.name.lowercase() }
-            SortType.DateAsc -> rawItems.sortedBy { it.file.lastModified() }
-            SortType.DateDesc -> rawItems.sortedByDescending { it.file.lastModified() }
-        }
-
-        val visibleItems = if (settings.showHiddenFiles) sortedItems else sortedItems.filter { !it.file.isHidden }
-
-        // Folders first
-        val filteredItems = when (settings.mediaFilter) {
-            "Photos" -> {
-                visibleItems.filter {
-                    it is MediaItem.Folder || it.file.extension.lowercase() in listOf(
-                        "jpg", "jpeg", "png", "gif", "webp", "bmp", "heic"
-                    )
-                }
-            }
-
-            "Videos" -> {
-                visibleItems.filter {
-                    it is MediaItem.Folder || it.file.extension.lowercase() in listOf(
-                        "mp4", "mkv", "avi", "mov", "webm"
-                    )
-                }
-            }
-
-            else -> {
-                visibleItems
-            }
-        }
-        val foldersFirst = filteredItems.sortedBy { if (it is MediaItem.Folder) 0 else 1 }
-
-        FolderState(
-            items = foldersFirst,
-            layout = layout,
-            sort = sort,
-            showTitles = settings.folderShowTitles[path] ?: settings.showTitles,
-            showFolders = settings.showFolders,
-            mediaFilter = settings.mediaFilter,
-            isSelectMode = isSelectMode,
-            selectedPaths = selectedPaths
-        )
+        buildFolderState(path, rawItems, settings, isSelectMode, selectedPaths)
     }.stateIn(scope, SharingStarted.WhileSubscribed(5000), FolderState())
 
     private val _isLoading = MutableStateFlow(true)
@@ -162,56 +122,10 @@ class FolderViewModel(
         loadItems()
     }
 
-    fun deleteFiles(paths: List<String>) {
-        scope.launch {
-            FolderActions.deleteFiles(paths)
-            refresh()
-            clearSelection()
-        }
-    }
-
-    fun duplicateFiles(paths: List<String>) {
-        scope.launch {
-            FolderActions.duplicateFiles(paths)
-            refresh()
-        }
-    }
-
-    fun createFolder(name: String) {
-        scope.launch {
-            FolderActions.createFolder(path, name)
-            refresh()
-        }
-    }
-
-    fun moveFiles(paths: List<String>, destinationPath: String) {
-        scope.launch {
-            FolderActions.moveFiles(paths, destinationPath)
-            refresh()
-            clearSelection()
-        }
-    }
-
-    fun renameFile(path: String, newName: String) {
-        scope.launch {
-            FolderActions.renameFile(path, newName)
-            refresh()
-            clearSelection()
-        }
-    }
-
     fun pinFolder(path: String) {
-        val file = java.io.File(path)
+        val file = File(path)
         if (file.isDirectory) {
             settingsRepository.addPinnedSession(PinnedSession(path = path))
-        }
-    }
-
-    fun copyFiles(paths: List<String>, destinationPath: String) {
-        scope.launch {
-            FolderActions.copyFiles(paths, destinationPath)
-            refresh()
-            clearSelection()
         }
     }
 }

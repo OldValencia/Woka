@@ -7,6 +7,10 @@ import com.woka.data.SettingsRepository
 import com.woka.data.ViewLayout
 import com.woka.ui.FolderState
 import com.woka.ui.FolderViewModel
+import com.woka.ui.copyFiles
+import com.woka.ui.deleteFiles
+import com.woka.ui.duplicateFiles
+import com.woka.ui.moveFiles
 import com.woka.utils.openDirectoryPicker
 
 @Composable

@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -22,6 +23,9 @@ import androidx.compose.ui.unit.dp
 import com.woka.data.MediaItem
 import com.woka.ui.FolderState
 import com.woka.ui.FolderViewModel
+import com.woka.ui.copyFiles
+import com.woka.ui.deleteFiles
+import com.woka.ui.moveFiles
 import com.woka.ui.theme.Theme
 import com.woka.utils.openDirectoryPicker
 
@@ -43,7 +47,7 @@ fun FolderGrid(
     onOpenMedia: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    androidx.compose.runtime.LaunchedEffect(highlightFile, state.items) {
+    LaunchedEffect(highlightFile, state.items) {
         if (highlightFile != null && state.items.isNotEmpty()) {
             val index = state.items.indexOfFirst { it.file.name == highlightFile }
             if (index != -1) {

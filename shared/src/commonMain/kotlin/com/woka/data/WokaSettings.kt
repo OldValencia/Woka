@@ -47,5 +47,11 @@ data class WokaSettings(
     val subtitleFont: SubtitleFont = SubtitleFont.System,
     val subtitleColorArgb: Long = 0xFFFFFFFFL,
     val subtitleBoxOpacity: Float = 0.75f,
-    val subtitleOutline: Boolean = true
+    val subtitleOutline: Boolean = true,
+    // Remembered track choices (§2.6). Per absolute file path is authoritative;
+    // the per-folder layer seeds the next episode of a series (audio + subtitles
+    // only — a second video stream in another file is a different angle, not the
+    // same track).
+    val trackPrefsPerFile: Map<String, TrackPrefs> = emptyMap(),
+    val trackPrefsPerFolder: Map<String, TrackPrefs> = emptyMap()
 )

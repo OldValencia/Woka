@@ -14,6 +14,8 @@ import com.woka.data.PinnedSession
 import com.woka.data.ViewLayout
 import com.woka.ui.FolderState
 import com.woka.ui.FolderViewModel
+import com.woka.ui.createFolder
+import com.woka.ui.renameFile
 
 @Composable
 fun FolderContent(
