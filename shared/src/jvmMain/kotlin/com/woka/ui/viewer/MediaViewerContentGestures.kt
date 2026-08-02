@@ -14,6 +14,7 @@ import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntSize
 import com.woka.ui.viewer.player.VideoPlayerState
+import com.woka.ui.viewer.player.togglePlayPause
 import kotlin.math.abs
 import kotlin.math.roundToInt
 

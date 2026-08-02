@@ -17,6 +17,9 @@ import androidx.compose.ui.unit.sp
 import com.woka.ui.icons.Icons
 import com.woka.ui.theme.Theme
 import com.woka.ui.viewer.player.VideoPlayerState
+import com.woka.ui.viewer.player.pauseForSeek
+import com.woka.ui.viewer.player.resumeAfterSeek
+import com.woka.ui.viewer.player.seek
 import org.jetbrains.compose.resources.painterResource
 import kotlin.math.max
 import kotlin.math.min

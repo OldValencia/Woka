@@ -1,0 +1,90 @@
+package com.woka.data
+
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+import kotlin.time.Duration.Companion.milliseconds
+
+/**
+ * Disk layer behind [SettingsRepositoryImpl]: where `settings.json` lives, how it
+ * is parsed, and how writes are coalesced and made atomic. Split out per the §2
+ * file-size mandate, leaving the repository holding only the setters.
+ */
+internal class SettingsStore(private val scope: CoroutineScope) {
+    private val settingsDir = File(System.getProperty("user.home"), "Documents/OldValencia/Woka")
+    private val settingsFile = File(settingsDir, "settings.json")
+
+    private val json = Json { ignoreUnknownKeys = true; prettyPrint = true }
+
+    // Rapid setting changes (e.g. zoom steps while "remember" is on) are coalesced
+    // into a single debounced write, collected on ONE coroutine so writes never run
+    // concurrently — concurrent writes previously corrupted settings.json.
+    private val saveRequests = MutableSharedFlow<Unit>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+
+    private val writeLock = Any()
+
+    /** Reads the persisted settings, or null when absent / unreadable. */
+    fun load(): WokaSettings? {
+        if (!settingsFile.exists()) return null
+        return try {
+            json.decodeFromString<WokaSettings>(settingsFile.readText())
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    /** Starts the debounced writer; [snapshot] supplies the latest state to write. */
+    fun start(snapshot: () -> WokaSettings) {
+        scope.launch {
+            saveRequests.collectLatest {
+                delay(150.milliseconds)
+                writeToDisk(snapshot())
+            }
+        }
+        // Guarantee a pending (debounced) change is flushed if the app is closed
+        // before the 150ms debounce fires.
+        Runtime.getRuntime().addShutdownHook(Thread { writeToDisk(snapshot()) })
+    }
+
+    /** Requests a save; writes are coalesced, the collector persists the latest. */
+    fun requestSave() {
+        saveRequests.tryEmit(Unit)
+    }
+
+    private fun writeToDisk(current: WokaSettings) = synchronized(writeLock) {
+        try {
+            if (!settingsDir.exists()) settingsDir.mkdirs()
+            val text = json.encodeToString(current)
+            // Write to a temp file then atomically replace, so a reader (or a crash
+            // mid-write) can never see a half-written / duplicated file.
+            val tmp = File(settingsDir, "settings.json.tmp")
+            tmp.writeText(text)
+            try {
+                Files.move(
+                    tmp.toPath(),
+                    settingsFile.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE
+                )
+            } catch (e: Exception) {
+                // Fallback if atomic move is unsupported; still serialized, so safe.
+                settingsFile.writeText(text)
+                tmp.delete()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+}

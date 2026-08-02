@@ -3,6 +3,8 @@ package com.woka.ui.viewer
 import androidx.compose.ui.input.key.*
 import com.woka.ui.viewer.pip.PipManager
 import com.woka.ui.viewer.player.VideoPlayerState
+import com.woka.ui.viewer.player.seek
+import com.woka.ui.viewer.player.togglePlayPause
 
 /**
  * Keyboard shortcuts for the fullscreen / PiP window. Wired via the `Window`'s

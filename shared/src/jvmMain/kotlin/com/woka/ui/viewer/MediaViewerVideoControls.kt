@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import com.woka.ui.icons.Icons
 import com.woka.ui.theme.Theme
 import com.woka.ui.viewer.player.VideoPlayerState
+import com.woka.ui.viewer.player.togglePlayPause
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
