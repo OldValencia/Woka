@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.unit.IntSize
 import com.woka.data.ScalePreset
 
 @Stable
@@ -21,8 +22,12 @@ class MediaViewerState(initialId: String) {
     var scale by mutableStateOf(1f)
     var offsetX by mutableStateOf(0f)
     var offsetY by mutableStateOf(0f)
-    // Bumped whenever the user attempts Ctrl+Scroll zoom while in Preset Mode.
-    var scalingDisabledTrigger by mutableStateOf(0L)
+    // Panel and media geometry, published by MediaViewerContent. The size control
+    // lives in the top bar and needs them to resolve a preset into a percentage.
+    var containerSize by mutableStateOf(IntSize.Zero)
+    var nativeSize by mutableStateOf(IntSize.Zero)
+    // Bumped when the wheel or the keyboard changes the zoom, to flash the HUD.
+    var zoomHudTrigger by mutableStateOf(0L)
     var activeItemPath by mutableStateOf<String?>(null)
     
     var playPauseTrigger by mutableStateOf(0L)

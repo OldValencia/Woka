@@ -14,7 +14,6 @@ interface SettingsRepository {
     fun setTheme(theme: String)
     fun setCarouselMode(mode: CarouselVisibility)
     fun setScalePreset(preset: ScalePreset)
-    fun setZoomPopoverView(view: ZoomPopoverView)
     fun setRememberSizeState(remember: Boolean)
     fun setDefaultUseZoom(useZoom: Boolean)
     fun setDefaultZoomPercent(percent: Int)

@@ -76,7 +76,8 @@ fun MediaViewerScreen(
         onClose = onClose,
         onVolumeChange = { mediaVolume = it },
         onCopy = { copyAction() },
-        onInfo = { infoAction() }
+        onInfo = { infoAction() },
+        onSizeModeChange = onSizeModeChange
     )
 
     val playerModifier = Modifier.mediaViewerPlayerModifier(
@@ -89,6 +90,7 @@ fun MediaViewerScreen(
         onClose = onClose,
         copyAction = copyAction,
         infoAction = infoAction,
+        onSizeModeChange = onSizeModeChange,
         onVolumeChange = { vol -> mediaVolume = vol; state.volumeTrigger = System.currentTimeMillis() }
     )
 
@@ -122,11 +124,10 @@ fun MediaViewerScreen(
     MediaViewerLayoutWrapper(
         isVisible = state.isUiVisible,
         sizeMode = state.sizeMode,
-        savedPreset = settings.scalePreset,
-        popoverView = settings.zoomPopoverView,
+        containerSize = state.containerSize,
+        nativeSize = state.nativeSize,
         onSizeModeChange = onSizeModeChange,
         onOffsetReset = { state.offsetX = 0f; state.offsetY = 0f },
-        onPopoverViewChange = { settingsRepo.setZoomPopoverView(it) },
         carouselMode = settings.mediaViewerCarouselMode,
         settingsRepo = settingsRepo,
         currentId = state.currentId,

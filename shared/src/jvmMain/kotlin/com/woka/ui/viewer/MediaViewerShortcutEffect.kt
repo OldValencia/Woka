@@ -24,7 +24,8 @@ internal fun MediaViewerShortcutEffect(
     onClose: (String) -> Unit,
     onVolumeChange: (Float) -> Unit,
     onCopy: () -> Unit,
-    onInfo: () -> Unit
+    onInfo: () -> Unit,
+    onSizeModeChange: (SizeMode) -> Unit
 ) {
     val curVideoState by rememberUpdatedState(videoState)
     val curMediaItems by rememberUpdatedState(mediaItems)
@@ -32,6 +33,7 @@ internal fun MediaViewerShortcutEffect(
     val curCopy by rememberUpdatedState(onCopy)
     val curInfo by rememberUpdatedState(onInfo)
     val curVolumeChange by rememberUpdatedState(onVolumeChange)
+    val curSizeModeChange by rememberUpdatedState(onSizeModeChange)
 
     DisposableEffect(globalShortcuts) {
         globalShortcuts.onPreviewKey = { event ->
@@ -56,7 +58,8 @@ internal fun MediaViewerShortcutEffect(
                 },
                 onPlayPause = { state.playPauseTrigger = System.currentTimeMillis() },
                 onCopy = { curCopy() },
-                onInfo = { curInfo() }
+                onInfo = { curInfo() },
+                onZoom = { key -> state.applyZoomKey(key) { curSizeModeChange(it) } }
             )
         }
         onDispose { globalShortcuts.onPreviewKey = null }

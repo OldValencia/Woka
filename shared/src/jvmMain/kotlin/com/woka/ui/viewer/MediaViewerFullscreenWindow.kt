@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.unit.dp
@@ -31,6 +30,15 @@ fun MediaViewerFullscreenWindow(
 ) {
     val windowState = rememberWindowState(placement = WindowPlacement.Maximized)
 
+    // Declared outside the window content: the key preview runs as a Window
+    // parameter, so anything it touches has to exist before the content lambda.
+    val fsSettings by settingsRepo.settings.collectAsState()
+    var fsZoomHud by remember { mutableStateOf(0L) }
+    val onFsSizeModeChange: (SizeMode) -> Unit = { mode ->
+        PipManager.sizeMode = mode
+        if (fsSettings.rememberSizeState) persistSizeState(settingsRepo, mode)
+    }
+
     Window(
         onCloseRequest = { PipManager.closePip() },
         undecorated = true,
@@ -39,7 +47,14 @@ fun MediaViewerFullscreenWindow(
         title = item.file.name,
         // Preview phase so shortcuts fire before any focused button in the
         // window gets the key (and consume it), matching the main window.
-        onPreviewKeyEvent = { handlePipKeyEvent(it, videoState) }
+        onPreviewKeyEvent = {
+            handlePipKeyEvent(
+                event = it,
+                videoState = videoState,
+                onSizeModeChange = { mode -> onFsSizeModeChange(mode) },
+                onZoomHud = { fsZoomHud = System.currentTimeMillis() }
+            )
+        }
     ) {
         var appear by remember { mutableStateOf(false) }
         // Grab OS focus when the window opens; it is created while the main
@@ -53,13 +68,6 @@ fun MediaViewerFullscreenWindow(
 
         var isUiVisible by remember { mutableStateOf(true) }
         var lastInteractionTime by remember { mutableStateOf(System.currentTimeMillis()) }
-
-        val fsSettings by settingsRepo.settings.collectAsState()
-        var fsScalingDisabled by remember { mutableStateOf(0L) }
-        val onFsSizeModeChange: (SizeMode) -> Unit = { mode ->
-            PipManager.sizeMode = mode
-            if (fsSettings.rememberSizeState) persistSizeState(settingsRepo, mode)
-        }
 
         LaunchedEffect(lastInteractionTime, videoState?.isPlaying) {
             if (videoState?.isPlaying == false) {
@@ -86,37 +94,23 @@ fun MediaViewerFullscreenWindow(
                 val fsBottomOverlayPadding = if (isUiVisible) 90.dp else 0.dp
                 val fsSubtitleBottomPadding = if (isUiVisible) 72.dp else 40.dp
 
-                Box(
-                    Modifier.fillMaxSize()
-                        .pipWindowDraggable(window)
-                ) {
-                    val dummyBitmap = remember { ImageBitmap(1, 1) }
-                    MediaViewerContent(
-                        imageBitmap = dummyBitmap,
-                        animationDirection = 0,
-                        sizeMode = PipManager.sizeMode,
-                        offsetX = PipManager.offsetX,
-                        offsetY = PipManager.offsetY,
-                        videoState = videoState,
-                        bottomPadding = fsSubtitleBottomPadding,
-                        onSizeModeChange = onFsSizeModeChange,
-                        onOffsetChange = { x, y ->
-                            PipManager.offsetX = x
-                            PipManager.offsetY = y
-                        },
-                        onEffectiveScaleChange = { PipManager.scale = it },
-                        onScalingDisabledAttempt = { fsScalingDisabled = System.currentTimeMillis() },
-                        onPlayPause = { },
-                        onEdit = { },
-                        onCopy = { },
-                        onInfo = { },
-                        onToggleFullscreen = { PipManager.closePip(returnToMain = true) }
-                    )
-                }
+                MediaViewerFullscreenSurface(
+                    modifier = Modifier.fillMaxSize().pipWindowDraggable(window),
+                    videoState = videoState,
+                    subtitleBottomPadding = fsSubtitleBottomPadding,
+                    onSizeModeChange = onFsSizeModeChange,
+                    onZoomHud = { fsZoomHud = System.currentTimeMillis() }
+                )
 
                 PipCornerFlash()
 
-                ScalingDisabledOverlay(trigger = fsScalingDisabled)
+                ZoomHudOverlay(
+                    trigger = fsZoomHud,
+                    label = "${PipManager.sizeMode.percentIn(
+                        PipManager.containerSize,
+                        PipManager.nativeSize
+                    )}%"
+                )
 
                 val hover = remember { PopoverHoverState() }
                 PopoverHoverEffect(hover)
@@ -132,10 +126,7 @@ fun MediaViewerFullscreenWindow(
 
                 MediaViewerFullscreenTopControls(
                     isUiVisible = isUiVisible,
-                    savedPreset = fsSettings.scalePreset,
-                    popoverView = fsSettings.zoomPopoverView,
-                    onSizeModeChange = onFsSizeModeChange,
-                    onPopoverViewChange = { settingsRepo.setZoomPopoverView(it) }
+                    onSizeModeChange = onFsSizeModeChange
                 )
             }
         }

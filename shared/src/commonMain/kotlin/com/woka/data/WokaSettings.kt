@@ -6,7 +6,6 @@ enum class ViewLayout { SmallGrid, Grid, BigGrid }
 enum class SortType { Custom, NameAsc, NameDesc, DateAsc, DateDesc }
 enum class CarouselVisibility { AUTO, ALWAYS_ON, HIDDEN }
 enum class ScalePreset { Fit, Fill, Original }
-enum class ZoomPopoverView { Slider, Input }
 // Subtitle appearance (§3). Auto scales the size from the video-panel height; the
 // other steps are fixed multipliers of that same relative base, so the user's
 // choice stays proportional on window resize instead of being reset.
@@ -34,12 +33,16 @@ data class WokaSettings(
     val mediaViewerCarouselMode: CarouselVisibility = CarouselVisibility.AUTO,
     val pinnedSessions: List<PinnedSession> = emptyList(),
     val scalePreset: ScalePreset = ScalePreset.Fit,
-    val zoomPopoverView: ZoomPopoverView = ZoomPopoverView.Slider,
     // Default size state applied when a video opens. If [rememberSizeState] is on,
     // adjusting zoom/preset inside a video writes back into these fields.
+    // [defaultZoomPercent] is a percentage of native 1:1 pixels (Step 8b);
+    // [sizeSchemaVersion] guards the one-off reset of records written under the
+    // old percent-of-fitted base, which cannot be converted (the fitted size
+    // depends on a panel that is not known when settings are read).
     val rememberSizeState: Boolean = false,
     val defaultUseZoom: Boolean = false,
     val defaultZoomPercent: Int = 100,
+    val sizeSchemaVersion: Int = 0,
     // Last media-viewer volume (0f–1f), restored across files and app restarts.
     val mediaVolume: Float = 0.5f,
     // Subtitle appearance (§3), applied to text subtitles. Persisted globally.

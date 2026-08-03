@@ -38,11 +38,27 @@ internal class SettingsStore(private val scope: CoroutineScope) {
     fun load(): WokaSettings? {
         if (!settingsFile.exists()) return null
         return try {
-            json.decodeFromString<WokaSettings>(settingsFile.readText())
+            migrateSizeSchema(json.decodeFromString<WokaSettings>(settingsFile.readText()))
         } catch (e: Exception) {
             e.printStackTrace()
             null
         }
+    }
+
+    /**
+     * Step 8b re-based the zoom percentage on native 1:1 pixels; records written
+     * under the old percent-of-fitted base mean a different size and cannot be
+     * converted (the fitted size depends on a panel that does not exist at load
+     * time). Reset the default once and move on.
+     */
+    private fun migrateSizeSchema(loaded: WokaSettings): WokaSettings {
+        if (loaded.sizeSchemaVersion >= 1) return loaded
+        return loaded.copy(
+            defaultUseZoom = false,
+            scalePreset = ScalePreset.Fit,
+            defaultZoomPercent = 100,
+            sizeSchemaVersion = 1
+        )
     }
 
     /** Starts the debounced writer; [snapshot] supplies the latest state to write. */

@@ -63,16 +63,13 @@ class SettingsRepositoryImpl : SettingsRepository {
 
     override fun setScalePreset(preset: ScalePreset) = update { it.copy(scalePreset = preset) }
 
-    override fun setZoomPopoverView(view: ZoomPopoverView) =
-        update { it.copy(zoomPopoverView = view) }
-
     override fun setRememberSizeState(remember: Boolean) =
         update { it.copy(rememberSizeState = remember) }
 
     override fun setDefaultUseZoom(useZoom: Boolean) = update { it.copy(defaultUseZoom = useZoom) }
 
     override fun setDefaultZoomPercent(percent: Int) =
-        update { it.copy(defaultZoomPercent = percent.coerceIn(10, 1000)) }
+        update { it.copy(defaultZoomPercent = percent.coerceIn(10, 1600)) }
 
     override fun setSubtitleSize(size: SubtitleSize) = update { it.copy(subtitleSize = size) }
 

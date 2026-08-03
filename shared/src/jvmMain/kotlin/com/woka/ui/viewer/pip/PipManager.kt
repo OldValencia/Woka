@@ -3,6 +3,7 @@ package com.woka.ui.viewer.pip
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.unit.IntSize
 import com.woka.AppDependencies
 import com.woka.data.MediaItem
 import com.woka.data.ScalePreset
@@ -30,6 +31,10 @@ object PipManager {
     var scale by mutableStateOf(1f)
     var offsetX by mutableStateOf(0f)
     var offsetY by mutableStateOf(0f)
+    // Panel and media geometry, published by MediaViewerContent — the fullscreen
+    // size control resolves presets into percentages from these.
+    var containerSize by mutableStateOf(IntSize.Zero)
+    var nativeSize by mutableStateOf(IntSize.Zero)
 
     var isTransitioningToMain = false
 

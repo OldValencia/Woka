@@ -4,20 +4,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.unit.IntSize
 import com.woka.data.CarouselVisibility
-import com.woka.data.ScalePreset
 import com.woka.data.SettingsRepository
-import com.woka.data.ZoomPopoverView
 import com.woka.ui.components.LocalTopBarAccessories
 
 @Composable
 fun MediaViewerTopBarSetup(
     sizeMode: SizeMode,
-    savedPreset: ScalePreset,
-    popoverView: ZoomPopoverView,
+    containerSize: IntSize,
+    nativeSize: IntSize,
     onSizeModeChange: (SizeMode) -> Unit,
     onOffsetReset: () -> Unit,
-    onPopoverViewChange: (ZoomPopoverView) -> Unit,
     carouselMode: CarouselVisibility,
     settingsRepo: SettingsRepository,
     currentId: String,
@@ -33,14 +31,13 @@ fun MediaViewerTopBarSetup(
     // down and recreate the indicator on each zoom step, making the hover popover
     // flicker and the reset click hard to land.
     val curSizeMode by rememberUpdatedState(sizeMode)
-    val curSavedPreset by rememberUpdatedState(savedPreset)
-    val curPopoverView by rememberUpdatedState(popoverView)
+    val curContainerSize by rememberUpdatedState(containerSize)
+    val curNativeSize by rememberUpdatedState(nativeSize)
     val curCarousel by rememberUpdatedState(carouselMode)
     val curCurrentId by rememberUpdatedState(currentId)
     val curIsInfoOpen by rememberUpdatedState(isInfoOpen)
     val curOnSizeModeChange by rememberUpdatedState(onSizeModeChange)
     val curOnOffsetReset by rememberUpdatedState(onOffsetReset)
-    val curOnPopoverViewChange by rememberUpdatedState(onPopoverViewChange)
     val curOnClose by rememberUpdatedState(onClose)
     val curOnEdit by rememberUpdatedState(onEdit)
     val curOnInfo by rememberUpdatedState(onInfo)
@@ -50,11 +47,10 @@ fun MediaViewerTopBarSetup(
         topBarAccessories.centerAccessory = {
             MediaViewerNormalControls(
                 sizeMode = curSizeMode,
-                savedPreset = curSavedPreset,
-                popoverView = curPopoverView,
+                containerSize = curContainerSize,
+                nativeSize = curNativeSize,
                 onSizeModeChange = { curOnSizeModeChange(it) },
                 onOffsetReset = { curOnOffsetReset() },
-                onPopoverViewChange = { curOnPopoverViewChange(it) },
                 carouselMode = curCarousel,
                 onToggleCarousel = {
                     val newMode = when (curCarousel) {

@@ -94,14 +94,19 @@ fun SkipOverlay(trigger: Long, direction: Int) {
     }
 }
 
+/**
+ * Current zoom, shown over the media while the wheel or keyboard changes it — the
+ * indicator lives in the top bar, and you are looking at the cursor, not at it.
+ * Not raised by the menu, where the value is already on screen.
+ */
 @Composable
-fun ScalingDisabledOverlay(trigger: Long) {
+fun ZoomHudOverlay(trigger: Long, label: String) {
     if (trigger == 0L) return
     var visible by remember(trigger) { mutableStateOf(true) }
 
     LaunchedEffect(trigger) {
         visible = true
-        delay(1200.milliseconds)
+        delay(900.milliseconds)
         visible = false
     }
 
@@ -112,23 +117,15 @@ fun ScalingDisabledOverlay(trigger: Long) {
         modifier = Modifier.fillMaxSize()
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Row(
+            Box(
                 modifier = Modifier
                     .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(horizontal = 16.dp, vertical = 10.dp)
             ) {
-                Icon(
-                    painter = painterResource(Icons.Static.NoSign),
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(16.dp)
-                )
                 Text(
-                    text = "Scaling is disabled in preset mode",
+                    text = label,
                     color = Color.White,
-                    style = MaterialTheme.typography.labelMedium
+                    style = MaterialTheme.typography.titleSmall
                 )
             }
         }

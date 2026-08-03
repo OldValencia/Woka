@@ -1,16 +1,17 @@
 package com.woka.ui.viewer
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.ContextMenuArea
-import androidx.compose.foundation.ContextMenuItem
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -22,9 +23,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.painter.BitmapPainter
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
@@ -43,7 +41,8 @@ fun MediaViewerContent(
     onSizeModeChange: (SizeMode) -> Unit,
     onOffsetChange: (Float, Float) -> Unit,
     onEffectiveScaleChange: (Float) -> Unit,
-    onScalingDisabledAttempt: () -> Unit,
+    onMetricsChange: (IntSize, IntSize) -> Unit,
+    onZoomHud: () -> Unit,
     onPlayPause: () -> Unit,
     onEdit: () -> Unit,
     onCopy: () -> Unit,
@@ -67,7 +66,17 @@ fun MediaViewerContent(
     val targetScale = computeGraphicsScale(sizeMode, containerSize, nativeSize)
     val renderScale by animateFloatAsState(targetScale, animationSpec = tween(200))
 
+    // While a drag is live the frame must track the pointer exactly; the spring is
+    // only for what happens when it is let go — the rubber band settling back to
+    // the edge, or the frame re-centring once it no longer overflows.
+    var isPanning by remember { mutableStateOf(false) }
+    val offsetSpec: AnimationSpec<Float> =
+        if (isPanning) snap() else spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow)
+    val drawnOffsetX by animateFloatAsState(offsetX, animationSpec = offsetSpec)
+    val drawnOffsetY by animateFloatAsState(offsetY, animationSpec = offsetSpec)
+
     LaunchedEffect(targetScale) { onEffectiveScaleChange(targetScale) }
+    LaunchedEffect(containerSize, nativeSize) { onMetricsChange(containerSize, nativeSize) }
     LaunchedEffect(containerSize, videoState) {
         videoState?.renderScale?.setSurface(containerSize.width, containerSize.height)
     }
@@ -85,7 +94,8 @@ fun MediaViewerContent(
                 videoState = videoState,
                 onSizeModeChange = onSizeModeChange,
                 onOffsetChange = onOffsetChange,
-                onScalingDisabledAttempt = onScalingDisabledAttempt,
+                onPanActiveChange = { isPanning = it },
+                onZoomHud = onZoomHud,
                 onPlayPause = onPlayPause,
                 onToggleFullscreen = onToggleFullscreen
             ),
@@ -103,42 +113,16 @@ fun MediaViewerContent(
             },
             modifier = Modifier.fillMaxSize()
         ) { targetBitmap ->
-            val frameToDraw = if (videoState != null) videoState.currentFrame ?: targetBitmap else targetBitmap
-            val hdrInfo = if (videoState != null && frameToDraw === videoState.currentFrame) videoState.currentFrameHdrInfo else null
-
-            val painter = if (hdrInfo?.needsToneMap == true) {
-                remember(frameToDraw) { HdrImagePainter(frameToDraw) }
-            } else {
-                remember(frameToDraw) { BitmapPainter(frameToDraw) }
-            }
-
-            ContextMenuArea(
-                items = {
-                    listOf(
-                        ContextMenuItem("Edit") { onEdit() },
-                        ContextMenuItem("Copy") { onCopy() },
-                        ContextMenuItem("Info") { onInfo() }
-                    )
-                }
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer(
-                            scaleX = renderScale,
-                            scaleY = renderScale,
-                            translationX = offsetX,
-                            translationY = offsetY
-                        )
-                ) {
-                    Image(
-                        painter = painter,
-                        contentDescription = "Image/Video Preview",
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-            }
+            MediaViewerFrame(
+                targetBitmap = targetBitmap,
+                videoState = videoState,
+                renderScale = renderScale,
+                offsetX = drawnOffsetX,
+                offsetY = drawnOffsetY,
+                onEdit = onEdit,
+                onCopy = onCopy,
+                onInfo = onInfo
+            )
         }
         if (videoState != null) {
             SubtitleOverlay(cue = videoState.activeCue, bottomPadding = bottomPadding)

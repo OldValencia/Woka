@@ -29,6 +29,7 @@ internal fun Modifier.mediaViewerPlayerModifier(
     onClose: (String) -> Unit,
     copyAction: () -> Unit,
     infoAction: () -> Unit,
+    onSizeModeChange: (SizeMode) -> Unit,
     onVolumeChange: (Float) -> Unit
 ): Modifier = this
     .fillMaxSize()
@@ -51,7 +52,8 @@ internal fun Modifier.mediaViewerPlayerModifier(
         onVolumeChange = onVolumeChange,
         onPlayPause = { state.playPauseTrigger = System.currentTimeMillis() },
         onCopy = copyAction,
-        onInfo = infoAction
+        onInfo = infoAction,
+        onZoom = { key -> state.applyZoomKey(key, onSizeModeChange) }
     )
     .pointerInput(Unit) {
         awaitPointerEventScope {

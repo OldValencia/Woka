@@ -50,7 +50,11 @@ fun MediaViewerPlayer(
                 onSizeModeChange = onSizeModeChange,
                 onOffsetChange = { x, y -> state.offsetX = x; state.offsetY = y },
                 onEffectiveScaleChange = { state.scale = it },
-                onScalingDisabledAttempt = { state.scalingDisabledTrigger = System.currentTimeMillis() },
+                onMetricsChange = { container, native ->
+                    state.containerSize = container
+                    state.nativeSize = native
+                },
+                onZoomHud = { state.zoomHudTrigger = System.currentTimeMillis() },
                 onPlayPause = { state.playPauseTrigger = System.currentTimeMillis() },
                 onEdit = editAction,
                 onCopy = copyAction,
@@ -91,7 +95,10 @@ fun MediaViewerPlayer(
 
         PlayPauseOverlay(trigger = state.playPauseTrigger, isPlaying = videoState?.isPlaying == true)
         SkipOverlay(trigger = state.skipTrigger, direction = state.skipDirection)
-        ScalingDisabledOverlay(trigger = state.scalingDisabledTrigger)
+        ZoomHudOverlay(
+            trigger = state.zoomHudTrigger,
+            label = "${state.sizeMode.percentIn(state.containerSize, state.nativeSize)}%"
+        )
         VolumeVerticalOverlay(
             isVisible = state.hover.visibleTarget == HoverTarget.Volume || state.volumeTriggerTimer > 0,
             volume = mediaVolume,

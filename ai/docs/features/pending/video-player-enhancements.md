@@ -1,28 +1,65 @@
 # Video Player Enhancements
 
-## 1. Zoom & Auto Size Control (UI/UX) — ✅ Implemented
-- **Smart Scaling Modes:** The system operates in one of two modes: **Zoom Mode** (percentage-based) or **Preset Mode** (Fit / Fill / Actual).
-  - *Definitions:* **Fit** = scale to fit entirely inside the panel, preserving aspect ratio (contain, no cropping); this is the neutral **100%** baseline, the default preset, and the "nil" crossover point into Zoom Mode. **Fill** = scale to fill the whole panel, preserving aspect ratio, cropping the overflow (cover). **Actual** = native 1:1 pixels (may exceed the panel — pannable). Presets cycle Fit → Fill → Actual.
-  - *Zoom Range:* The percentage is relative to the **fitted** size (100% = fits the panel, never larger). It is bounded to **`[10%, 1000%]`**; the base/default value is **100%** (== Fit). Zoom 100% and Preset Fit render identically.
-  - *Note on Shortcuts:* In Preset Mode, the `Ctrl + Scroll` zoom shortcut is disabled. Instead of scaling, it surfaces a tooltip ("Scaling is disabled in preset mode") so the gesture is not silently ignored. The mode is **never** switched automatically by a gesture.
-- **Zoom Step (Unified):** Both `Ctrl + Scroll` and the indicator's `-` / `+` buttons use the **same step of ±1 percentage point** and always produce **whole integers** (e.g. `114 → 115 → 116`). Values are clamped to `[10%, 1000%]`.
-- **Panning:** When the media is larger than the panel (zoom > 100%, or the Fill / Actual presets when they overflow), the frame can be moved with **`Ctrl` + hold Right Mouse Button + drag**.
-- **Main Panel Indicator:** The player panel displays the current state. Behaviour differs per mode:
-  - **In Zoom Mode (`- 115% +`):** the `-` / `+` buttons step the zoom by ±1%. The percentage itself is a **passive label** and a **hover trigger** for the popover — it is *not* clickable. (Making it clickable caused a click/hover conflict that made the popover blink, so the reset / mode-switch action was moved into the popover instead.)
-  - **In Preset Mode (`< ◱ Fill >`):** the preset shows as **icon + text** flanked by arrows that cycle Fit → Fill → Actual inline. Clicking the central text is state-dependent (with a hover tooltip):
-    - If the preset is not Fit → **resets** to Fit and centers the video. *(Tooltip: "Reset to Fit".)*
-    - If the preset is already Fit → **switches** to Zoom Mode. *(Tooltip: "Switch to zoom".)*
-- **Hover Popover (Zoom Mode Only):** A frosted popover slides out *below* the indicator on hover, with a **fixed width** so switching views never drops the cursor. It contains:
-  - **Layout:** `[<] [ Control Area ] [>]` with a clickable action line beneath. The arrows (`chevron.left` / `chevron.right`) switch the control area between:
-    1. **Slider View:** a smooth slider; dragging applies the value live.
-    2. **Manual Input View:** a bordered numeric field with a `%` suffix (styled so it clearly reads as editable — no `-`/`+` steppers, since Ctrl+Scroll already steps by 1). Type an integer directly; valid values apply live.
-      - *Input Validation:* only positive integers within `[10, 1000]`. Empty / `0` / negative / non-numeric reverts to the current zoom value.
-  - **Mode action (moved off the label):** a clickable line at the bottom — **"Reset to 100%"** when zoom ≠ 100%, or **"Switch to presets"** when at 100%. This is where the reset / mode-switch lives now.
-  - **Closing:** both views close when the cursor leaves the popover (a short grace bridges the gap between indicator and popover). The popover is **non-focusable** (a focusable popup intercepts scene pointer input and makes hover blink); manual typing is instead captured on the indicator while the Input view is open. `Enter` / `Esc` also close it.
-  - **Persistence:** the chosen view (Slider vs. Input) is saved in `settings.json`.
-- **Icons (macOS / SF Symbols):** `chevron.left` (popover left arrow; the right arrow reuses the existing `ChevronRightMac`), `rectangle.arrowtriangle.2.inward` (Fit), `rectangle.arrowtriangle.2.outward` (Fill), `aspectratio` (Actual — enum `ScalePreset.Original`, labelled "Actual" in the UI). Registered in `Icons.kt` under `Icons.Static`.
-- **Animations:** All mode switches and view transitions (both on the Main Panel and inside the Popover) must feature Apple-like sliding animations. For example, clicking the right arrow makes the current text slide out to the left while the new text slides in from the right.
-- **Settings Persistence:** The popover view preference (Slider/Input) is always saved in `settings.json`. The **default size state** applied when a video opens is configurable in Settings → Media Viewer: a mode (Preset or Zoom) plus its value (Fit/Fill/Actual, or a percentage), and a **"Remember zoom & size"** toggle. When the toggle is **off**, videos always open at that configured default (default = Fit) and in-video zoom/preset changes are ephemeral. When **on**, any zoom/preset the user sets *inside a video* is written back as the new default and restored next time. Toggling fullscreen ⇄ windowed always preserves the current state (same file).
+## 1. Zoom & Size Control (UI/UX) — ✅ Implemented
+*Rewritten in **Step 8b**; the design record, the diagnosis of what the first version got wrong and the
+implementation notes live in `implemented/zoom-size-control-redesign.md`. What follows is the shipped
+behaviour.*
+
+- **One scale, no modes.** The zoom percentage is measured from **native 1:1 pixels** — the base macOS
+  Preview and every other viewer use — so **100% == Actual**. Fit / Fill / Actual are not a separate
+  mode: each is a specific percentage on that same scale, and the state merely *sticks* to one of them.
+  - *Definitions:* **Fit** = scaled to sit entirely inside the panel, aspect preserved (contain, no
+    cropping) — the default. **Fill** = scaled to cover the panel, aspect preserved, overflow cropped.
+    **Actual** = native 1:1, always exactly 100%. Fit and Fill are panel-dependent and re-resolve on
+    every resize; Actual does not.
+  - *Sticky points:* while stuck, the widget reads `Fit · 42%`; move off it with the wheel and it reads
+    `43%`. Landing within **2.5%** of a point snaps back onto it (tie-break `Actual` → `Fit` → `Fill`),
+    so the crossover is a place you can feel and see, not an invisible coincidence.
+  - *Range:* **dynamic**, per file and panel — `zoomBounds()` gives an order of magnitude either side
+    of the fitted size, then widens until Fit, Fill and 100% are all inside it (a snap point outside
+    the bounds would be unreachable). Capped at 6400% *before* that widening — a snap point may still
+    push the ceiling higher, which is the point of the widening.
+- **Zoom step is geometric:** `×1.1` per wheel tick or `−` / `+` click, rounded to whole integers and
+  never smaller than 1 point. A fixed step in percentage points feels wildly different at 42% and at
+  400%; the geometric step also retired wheel acceleration as a separate mechanism.
+- **`Ctrl + Scroll` always zooms** — there is no state in which the gesture is refused — and it anchors
+  on the **cursor**, keeping the point under the pointer in place (`zoomAround`, shared with
+  double-tap and the keyboard).
+- **Keyboard:** `Ctrl +` / `Ctrl =` step up, `Ctrl −` down, `Ctrl 0` = Fit, `Ctrl 1` = Actual. Wired in
+  both the main window (`MediaViewerKeyHandler`) and fullscreen (`PipKeyHandler`).
+- **HUD:** a centred pill shows the percentage for 900 ms while the wheel or keyboard changes it — you
+  are looking at the cursor, not at the top bar. Not raised by the menu, where the value is on screen
+  anyway.
+- **Panning:** whenever the media overflows the panel, **left-button drag** moves it (`Ctrl` + hold
+  Right Mouse Button still works). The frame is clamped so its edges cannot pass the panel edges (no
+  black void), with a `0.35` rubber band past the limit and a `spring(0.85)` settle on release; an
+  axis on which the media is smaller than the panel is pinned to centre, which auto-recentres the
+  frame as the zoom comes back down. Details in `implemented/media-pan-bounds.md`.
+- **Main Panel Indicator:** `[−]  Fit · 42% ▾  [+]` at a **fixed 148 dp**, so the toolbar never
+  re-flows when the label changes length. The `−` / `+` buttons step the zoom; the centre is a single
+  target with a single meaning — open the menu.
+- **Zoom Menu (opens on click, not hover):** a 220 dp card below the indicator, `Theme.colors.surface`,
+  1 dp border, 14 dp radius. Contents:
+  1. **Fit / Fill / Actual rows** — icon, name, and the percentage each currently resolves to; the
+     active one is accent-tinted. The number is what makes the presets and the scale read as one axis.
+  2. A **logarithmic slider** with detent dots at Fit / Fill / Actual. Linear travel would give
+     everything below 100% less than a tenth of the track.
+  3. A real **`TextField`** (`[ 42 ] %`) plus **Reset** (back to Fit, offset zeroed). `Enter` closes.
+  - The popup is **focusable**, which is what allows a real text field: the previous hover popover had
+    to be non-focusable (a focusable popup swallows scene pointer input and makes hover blink), so
+    typing was captured on the anchor one digit at a time. Click-opening removed that, the grace timer
+    and the fixed-width workaround with it.
+- **Icons (macOS / SF Symbols):** `rectangle.arrowtriangle.2.inward` (Fit),
+  `rectangle.arrowtriangle.2.outward` (Fill), `aspectratio` (Actual — enum `ScalePreset.Original`,
+  labelled "Actual" in the UI), `chevron.down` on the indicator. Registered in `Icons.kt` under
+  `Icons.Static`.
+- **Settings Persistence:** the **default size state** applied when a file opens is configurable in
+  Settings → Media Viewer: Preset or Zoom plus its value (Fit/Fill/Actual, or a percentage — **of
+  actual size**, range `10…1600`), and a **"Remember zoom & size"** toggle. Off → files always open at
+  that default (default = Fit) and in-file changes are ephemeral; on → whatever the user sets inside a
+  file is written back as the new default. Fullscreen ⇄ windowed always preserves the current state
+  (same file). `sizeSchemaVersion` in `WokaSettings` guards a one-off reset of `defaultZoomPercent`,
+  which meant a percentage of the *fitted* size before Step 8b and cannot be converted honestly.
 
 ## 2. Stream & Track Selection
 
@@ -109,7 +146,7 @@ The player runs on JavaCV `FFmpegFrameGrabber` (`VideoPlayerDecoder.kt`), which 
 
 **Project context — read before proposing interim work.** Woka is personal software: not deployed, not shipped to anyone, single user. A half-finished capability that shows in the UI and does nothing is **acceptable** between steps. Do not spend steps on stopgaps, graceful-degradation states or "hide it until it works" mitigations for gaps a later step closes anyway — go straight at the real step instead.
 
-**File-size watch (§2 mandate, real `wc -l`).** Over the 150-line limit, so each must be split before it is next edited: `MediaSlider.kt` 199, `ThumbnailLoader.kt` 177, `SizeModeIndicator.kt` 177, `SubtitleCustomizePanel.kt` 155, `GlobalControlButtons.kt` 153, `FolderGrid.kt` 169. *(Measure with `wc -l`; PowerShell `Measure-Object -Line` under-reports.)* Already cleared: `SettingsRepositoryImpl` and `VideoPlayerState` (Step 5 prep), `FolderViewModel` (Step 5), `MediaViewerScreen.kt` 226 → 145 (Step 7). **At the line:** `PlayerSettingsSync.kt` 149, `VideoPlayerState.kt` 149, `MediaViewerContent.kt` 148 — split before adding to any of them.
+**File-size watch (§2 mandate, real `wc -l`).** Over the 150-line limit, so each must be split before it is next edited: `MediaSlider.kt` 199, `ThumbnailLoader.kt` 177, `FolderGrid.kt` 169, `SubtitleCustomizePanel.kt` 155. *(Measure with `wc -l`; PowerShell `Measure-Object -Line` under-reports.)* Already cleared: `SettingsRepositoryImpl` and `VideoPlayerState` (Step 5 prep), `FolderViewModel` (Step 5), `MediaViewerScreen.kt` 226 → 145 (Step 7), `SettingsPanels.kt` 182 → 49 and `MediaViewerContent.kt` 148 → 132 (Step 8b). `SizeModeIndicator.kt` 177 and `GlobalControlButtons.kt` 153 left the list by deletion / shrinkage in Step 8. **At the line:** `VideoPlayerState.kt` 149, `PlayerSettingsSync.kt` 149, `MediaViewerKeyHandler.kt` 149, `MediaViewerSettingsPanel.kt` 149, `MediaViewerContentGestures.kt` 148, `SettingsRepositoryImpl.kt` 145 — split before adding to any of them.
 
 - **Step 0 — Foundation: stream enumeration + track model (§2.0). — ✅ Done**
   - New (commonMain): `MediaTrack` (data class — index/number/type/codec/language/title/isDefault/isForced + audio channels/layout + subtitle isTextBased; `label`, `identity` tuple), `MediaTracks` (video/audio/subtitle lists + `hasSubtitle`/`hasMultiple*`). Pure Kotlin so UI can observe.
@@ -197,19 +234,17 @@ The player runs on JavaCV `FFmpegFrameGrabber` (`VideoPlayerDecoder.kt`), which 
   - **Splits forced by the §2 mandate:** `MediaViewerScreen` 226 → 145 (`MediaViewerScreenEffects`, `MediaViewerShortcutEffect`, `MediaViewerPlaylist`), `VideoPlayerAudioDecoder` (`VideoPlayerAudioSamples`), `VideoPlayerSpeed` (`VideoPlayerAudioTempo`), `PlayerSpeedSlider` (`PlayerSpeedSliderParts`). `MediaSlider.kt` was **not** reused and stays at 199.
   - **Advisory, added on request:** `PlayerSpeedNotice.kt` under the slider — above 1× on a frame ≥3.5 Mpx it says frames get dropped to keep the sound in step. Threshold is frame **area**, not codec, because the cost that caps playback is per-pixel.
   - **Verified live:** all three repeat states including Folder advance, shuffle exhausts before repeating, speed holds A/V and subtitle sync at 0.5× and 2× with no pitch shift, slider snaps to 1×.
-- **Step 8 — UI cleanup: Copy button + size-mode control (§7 / §1).** Two independent items; the first is trivial, the second is the real work and starts with design, not code.
+- **Step 8 — UI cleanup: Copy button + size-mode control (§7 / §1). — ✅ Done** Two independent items; the first was trivial, the second was the real work and started with design, not code.
   - **8a — Remove the Copy button** from the global controls (§7). — ✅ **Done.** `CopyButton` deleted from `GlobalControlButtons.kt` and dropped from `MediaViewerNormalControls`; the `copyTrigger` flash plumbing it was the only consumer of (`MediaViewerScreen` → `MediaViewerLayoutWrapper` → `MediaViewerTopBarSetup` → the row) went with it. **Copying still works** via `Ctrl+C` and the viewer context menu — `copyAction` and `copyFileToClipboard` are untouched; only the toolbar affordance is gone. **Also removed on request: the fullscreen `MagicWandButton`** — a placeholder with an empty `onClick` since it shipped, so the fullscreen row now matches the windowed one. `Icons.Static.MagicWand` / `DocumentOnDocument` stay registered, now unused.
-  - **8b — Rework the zoom ⇄ preset control.** *(Raised this session.)* **The problem, stated plainly: the author of the feature, knowing exactly how it is built, still does not orient in it on the first try.** That is the whole justification — no user research needed beyond it. §1 shipped and works, but the interaction is the weakest surface in the player.
-  - **Diagnosed causes** (to be confirmed at design time, not treated as settled):
-    1. **The mode switch lives in two different places depending on the mode you are in.** In Preset mode it is a click on the centre label; in Zoom mode it is a line at the bottom of a *hover popover*. One action, two unrelated affordances, neither discoverable from the other.
-    2. **The centre label in Preset mode does two different things from the same click target** — resets to Fit, or switches to Zoom Mode — disambiguated only by a tooltip that appears after a delay.
-    3. **The crossover is invisible.** Fit and 100% render identically by design, but nothing on screen tells you they are the same point, so crossing between modes feels like a jump rather than a continuation.
-    4. **Nothing states which mode you are in** except the widget silently changing shape.
-  - **Candidate directions** (record only — decide during the design pass):
-    - **One continuous control, no modes.** A single scale where Fit / Fill / Actual are *named snap points* rather than a separate mode: for a given video and panel each of them is a specific percentage, so they can live on the same axis. Kills the mode concept outright. Risk: Fill crops and Actual is panel-independent, so the "percentage" reading is not uniform along the axis — needs to be checked before committing.
-    - **Keep both modes, fix the affordance.** A small always-visible segmented toggle (`%` ⇄ preset icon) so the switch never moves and never overloads another control. Cheaper, less elegant, does not address cause 3.
-  - **File-size mandate (§2): `SizeModeIndicator.kt` is 177 lines — split before touching it.**
-  - Risk: low technically, **the risk is design**. Verify: a first-time user (or the author on a cold read) reaches any of Fit / Fill / Actual / an arbitrary percentage without a tooltip.
+  - **8b — Rework the zoom ⇄ preset control. — ✅ Done.** *The full plan, the diagnosis and the implementation notes are in `implemented/zoom-size-control-redesign.md`; §1 above was rewritten to the shipped behaviour. Summary here so this list stays readable on its own.*
+    - **The problem, stated plainly: the author of the feature, knowing exactly how it is built, still did not orient in it on the first try.** That was the whole justification — no user research needed beyond it. Reading the code confirmed the four diagnosed causes (mode switch in two unrelated places; the centre label doing two things from one click; an invisible Fit/100% crossover; nothing naming the current mode) and turned up **six more**, of which two mattered most: **the percentage was measured from the *fitted* size, not from 1:1** — so "100%" meant Fit while a separate "Actual" preset meant 1:1 — and **`SizeMode.kt`'s own KDoc described the model wrongly** (*"relative to native pixels (100 = 1:1)"*, *"Zoom(100) and Preset(Original) render identically"* — both false). The second is the objective evidence behind the justification.
+    - **Direction taken: one continuous scale, no modes.** The percentage is re-based on native 1:1 and Fit / Fill / Actual become **sticky snap points** on it, each showing the percentage it currently resolves to. `SizeMode` kept its shape — `Preset` is the sticky point, `Zoom` the free value; only the meaning of `percent` changed, and the UI stopped calling them modes. The listed risk ("the percentage reading is not uniform along the axis") turned out not to bite: every point is a plain multiple of native size. What is genuinely non-uniform is *ordering* — Actual can sit below Fit for small media — which the computed percentages make visible instead of hiding.
+    - **New:** `ZoomScale.kt` (fit/fill/preset percentages, dynamic `zoomBounds`, geometric `stepUp`/`stepDown`, `snapToPreset`, log slider mapping, `zoomAround`), `SizeIndicatorButton.kt`, `ZoomMenuPopover.kt` + `ZoomMenuSlider.kt` + `ZoomMenuInput.kt` + `ZoomMenuPresetRow.kt`, `MediaViewerZoomActions.kt` (`zoomTo` / `resolveZoomKey`, shared by wheel, double-tap and keyboard), `PanBounds.kt`, `ZoomHudOverlay` (in `MediaOverlays.kt`).
+    - **Deleted:** `SizeModeIndicator.kt` (177 — the §2 blocker, rewritten wholesale rather than split), `ZoomPopover.kt`, `ZoomSliderView.kt`, `ZoomInputView.kt`, `ScalingDisabledOverlay` (nowhere left to refuse a zoom), the `ZoomPopoverView` setting end to end (enum, `WokaSettings` field, `setZoomPopoverView`, and the threading through six files), the `savedPreset` parameter chain, and the wheel acceleration. Net **−904 / +343** lines.
+    - **`computeGraphicsScale`'s preset branches deliberately divide by the un-rounded `fitScale`.** Routing them through the integer percentage cost "Actual" up to 2% on 4K in a small window, and 1:1 has to be pixel-exact. The integer is used only where a human chose it.
+    - **Absorbed here:** `media-pan-bounds.md` (clamp to the panel edges, `0.35` rubber band, `spring(0.85)` settle, auto-recentre) — shipped as this step's Phase 4 because the clamp needs exactly the geometry the redesign reworked. That document moved to `implemented/` with this one.
+    - **Splits forced by the §2 mandate** (mechanical, no behaviour change): `MediaViewerFrame.kt` out of `MediaViewerContent`, `MediaViewerTapGestures.kt` + `MediaViewerZoomActions.kt` out of `MediaViewerContentGestures`, `MediaViewerFullscreenSurface.kt` out of `MediaViewerFullscreenWindow`, `MediaViewerSettingsPanel.kt` out of `SettingsPanels.kt` (182 before this work), `ZoomMenuPresetRow.kt` out of `ZoomMenuPopover`.
+    - **Verified live:** all of it works — snap points, cursor-anchored wheel zoom, keyboard, HUD, pan clamp and settle, window ⇄ fullscreen, defaults after restart. The acceptance criterion holds: Fit, Fill, Actual and an arbitrary percentage are all reachable cold, with no tooltip.
 - **Step 9 — External subtitle files (§3).** *(Was the other half of the original Step 6. Deliberately ordered below Steps 7–8: those close gaps in already-shipped functionality, this adds a scenario the project's own corpus does not contain.)*
   - **Why it stays in the plan at all.** Sidecar `.srt` is standard practice for non-English audiences pulling subtitles separately from the release; `.ass` is anime fansub territory. Modern Web-DL/MKV muxes everything in, which is why the test corpus never hits it. **And the parsing is already free:** `decodeTextSubtitles(filepath, indices)` (Step 3) opens an arbitrary path through `avformat_open_input`, and FFmpeg demuxes a `.srt`/`.ass` as an ordinary container holding one subtitle stream — so loading a sidecar is the same call with the sidecar's path and index `{0}`. `Cue`, the overlay, §3 styling and Step 5 persistence all already stand.
   - **The real work is not the parsing.** In rough cost order:

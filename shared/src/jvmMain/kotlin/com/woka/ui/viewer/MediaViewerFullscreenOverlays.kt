@@ -18,9 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.woka.data.CarouselVisibility
-import com.woka.data.ScalePreset
 import com.woka.data.SettingsRepository
-import com.woka.data.ZoomPopoverView
 import com.woka.ui.viewer.pip.PipManager
 import com.woka.ui.viewer.player.VideoPlayerState
 import com.woka.ui.viewer.player.selectAudioTrack
@@ -94,10 +92,7 @@ fun BoxScope.MediaViewerFullscreenOverlays(
 @Composable
 fun BoxScope.MediaViewerFullscreenTopControls(
     isUiVisible: Boolean,
-    savedPreset: ScalePreset,
-    popoverView: ZoomPopoverView,
-    onSizeModeChange: (SizeMode) -> Unit,
-    onPopoverViewChange: (ZoomPopoverView) -> Unit
+    onSizeModeChange: (SizeMode) -> Unit
 ) {
     AnimatedVisibility(
         visible = isUiVisible,
@@ -112,14 +107,13 @@ fun BoxScope.MediaViewerFullscreenTopControls(
         ) {
             MediaViewerFullscreenControls(
                 sizeMode = PipManager.sizeMode,
-                savedPreset = savedPreset,
-                popoverView = popoverView,
+                containerSize = PipManager.containerSize,
+                nativeSize = PipManager.nativeSize,
                 onSizeModeChange = onSizeModeChange,
                 onOffsetReset = {
                     PipManager.offsetX = 0f
                     PipManager.offsetY = 0f
                 },
-                onPopoverViewChange = onPopoverViewChange,
                 carouselMode = CarouselVisibility.HIDDEN,
                 onToggleCarousel = { },
                 onEdit = { },

@@ -1,6 +1,6 @@
 package com.woka.ui.viewer
 
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
@@ -14,17 +14,16 @@ import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntSize
 import com.woka.ui.viewer.player.VideoPlayerState
-import com.woka.ui.viewer.player.togglePlayPause
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
 /**
  * Pointer gestures for the media area:
- * - `Ctrl + Scroll` zooms by ±1% in Zoom Mode; in Preset Mode it is disabled and
- *   fires [onScalingDisabledAttempt] instead (never auto-switches modes).
- * - `Ctrl + hold Right Mouse Button + drag` pans the frame when it overflows.
- * - Tap toggles play/pause (video); double-tap toggles fullscreen (video) or
- *   Fit ↔ 100% (image).
+ * - `Ctrl + Scroll` zooms one geometric step — **always**, there is no state in
+ *   which the gesture is refused — keeping the point under the cursor in place.
+ * - Dragging pans whenever the media overflows the panel (`Ctrl` + right button
+ *   still works), with resistance past the edge and a clamp on release.
+ * - Taps are handled by [mediaTapGestures].
  */
 @Composable
 fun Modifier.mediaViewerGestures(
@@ -36,7 +35,8 @@ fun Modifier.mediaViewerGestures(
     videoState: VideoPlayerState?,
     onSizeModeChange: (SizeMode) -> Unit,
     onOffsetChange: (Float, Float) -> Unit,
-    onScalingDisabledAttempt: () -> Unit,
+    onPanActiveChange: (Boolean) -> Unit,
+    onZoomHud: () -> Unit,
     onPlayPause: () -> Unit,
     onToggleFullscreen: () -> Unit
 ): Modifier {
@@ -46,39 +46,58 @@ fun Modifier.mediaViewerGestures(
     val curContainer by rememberUpdatedState(containerSize)
     val curNative by rememberUpdatedState(nativeSize)
 
+    fun applyZoom(percent: Int, anchor: Offset?) {
+        val result = zoomTo(percent, anchor, curMode, curContainer, curNative, curOffsetX, curOffsetY)
+        onOffsetChange(result.offsetX, result.offsetY)
+        onSizeModeChange(result.sizeMode)
+        onZoomHud()
+    }
+
+    fun pan(deltaX: Float, deltaY: Float) {
+        val (x, y) = rubberBandOffset(
+            curOffsetX + deltaX,
+            curOffsetY + deltaY,
+            curMode,
+            curContainer,
+            curNative
+        )
+        onOffsetChange(x, y)
+    }
+
+    fun settlePan() {
+        onPanActiveChange(false)
+        val (x, y) = clampOffset(curOffsetX, curOffsetY, curMode, curContainer, curNative)
+        onOffsetChange(x, y)
+    }
+
     return this
         .pointerInput(Unit) {
             awaitPointerEventScope {
                 var panning = false
                 var lastPos = Offset.Zero
-                var lastScrollNanos = 0L
-                var scrollAccel = 1
                 while (true) {
                     // Initial pass so Ctrl+RMB pan is intercepted before the child
                     // ContextMenuArea; non-Ctrl events are left unconsumed and still
                     // reach the context menu / tap detector on the Main pass.
                     val event = awaitPointerEvent(PointerEventPass.Initial)
                     val change = event.changes.first()
-                    val isCtrl = event.keyboardModifiers.isCtrlPressed || event.keyboardModifiers.isMetaPressed
+                    val isCtrl = event.keyboardModifiers.isCtrlPressed ||
+                        event.keyboardModifiers.isMetaPressed
 
                     if (event.type == PointerEventType.Scroll && isCtrl) {
-                        val delta = event.changes.first().scrollDelta.y
-                        when (val mode = curMode) {
-                            is SizeMode.Zoom -> {
-                                // Acceleration: a slow single tick stays ±1 for fine control,
-                                // but scrolling fast (events < 140ms apart) ramps the step up so
-                                // you can cross the range quickly. Magnitude also counts (trackpads).
-                                val now = System.nanoTime()
-                                val fast = now - lastScrollNanos < 140_000_000L
-                                lastScrollNanos = now
-                                scrollAccel = if (fast) (scrollAccel + 2).coerceAtMost(24) else 1
-                                val magnitude = abs(delta).roundToInt().coerceAtLeast(1)
-                                val dir = if (delta > 0) -1 else 1
-                                val step = magnitude * scrollAccel * dir
-                                onSizeModeChange(SizeMode.Zoom(SizeMode.clampPercent(mode.percent + step)))
+                        val delta = change.scrollDelta.y
+                        val bounds = zoomBounds(curContainer, curNative)
+                        var percent = curMode.percentIn(curContainer, curNative)
+                        // Trackpads report several units in one event; repeat the
+                        // geometric step rather than scaling a flat one.
+                        repeat(abs(delta).roundToInt().coerceIn(1, 3)) {
+                            percent = if (delta > 0) {
+                                stepDown(percent, bounds)
+                            } else {
+                                stepUp(percent, bounds)
                             }
-                            is SizeMode.Preset -> onScalingDisabledAttempt()
                         }
+                        applyZoom(percent, change.position)
                         event.changes.forEach { it.consume() }
                         continue
                     }
@@ -88,58 +107,42 @@ fun Modifier.mediaViewerGestures(
                         if (!panning) {
                             panning = true
                             lastPos = change.position
+                            onPanActiveChange(true)
                         } else {
-                            val d = change.position - lastPos
+                            val moved = change.position - lastPos
                             lastPos = change.position
-                            onOffsetChange(curOffsetX + d.x, curOffsetY + d.y)
+                            pan(moved.x, moved.y)
                         }
                         change.consume()
-                    } else {
+                    } else if (panning) {
                         panning = false
+                        settlePan()
                     }
                 }
             }
         }
         .pointerInput(videoState) {
-            detectTapGestures(
-                onDoubleTap = { tap ->
-                    if (videoState != null) {
-                        onToggleFullscreen()
-                    } else {
-                        val mode = curMode
-                        // Double-tap only ever zooms (never drops back to presets). From a
-                        // preset it enters Zoom at 200%; in Zoom it doubles (capped at 1000%),
-                        // and a tap at 1000% resets to 100%.
-                        val next = when (mode) {
-                            is SizeMode.Preset -> SizeMode.Zoom(200)
-                            is SizeMode.Zoom ->
-                                if (mode.percent >= SizeMode.MAX_PERCENT) SizeMode.Zoom(SizeMode.DEFAULT_PERCENT)
-                                else SizeMode.Zoom((mode.percent * 2).coerceAtMost(SizeMode.MAX_PERCENT))
-                        }
-                        val nextPercent = (next as SizeMode.Zoom).percent
-                        if (nextPercent <= SizeMode.DEFAULT_PERCENT) {
-                            onOffsetChange(0f, 0f)
-                        } else {
-                            // Keep the clicked content point under the cursor while zooming in.
-                            val container = curContainer
-                            val s0 = computeGraphicsScale(mode, container, curNative)
-                            val s1 = computeGraphicsScale(next, container, curNative)
-                            val ratio = if (s0 != 0f) s1 / s0 else 1f
-                            val ctrX = container.width / 2f
-                            val ctrY = container.height / 2f
-                            val t1x = (tap.x - ctrX) * (1f - ratio) + ratio * curOffsetX
-                            val t1y = (tap.y - ctrY) * (1f - ratio) + ratio * curOffsetY
-                            onOffsetChange(t1x, t1y)
-                        }
-                        onSizeModeChange(next)
-                    }
-                },
-                onTap = {
-                    if (videoState != null) {
-                        videoState.togglePlayPause()
-                        onPlayPause()
-                    }
+            detectDragGestures(
+                onDragStart = { onPanActiveChange(true) },
+                onDragEnd = { settlePan() },
+                onDragCancel = { settlePan() }
+            ) { change, drag ->
+                if (contentOverflows(curMode, curContainer, curNative)) {
+                    change.consume()
+                    pan(drag.x, drag.y)
                 }
-            )
+            }
         }
+        .mediaTapGestures(
+            videoState = videoState,
+            mode = { curMode },
+            container = { curContainer },
+            native = { curNative },
+            offset = { curOffsetX to curOffsetY },
+            onSizeModeChange = onSizeModeChange,
+            onOffsetChange = onOffsetChange,
+            onZoomHud = onZoomHud,
+            onPlayPause = onPlayPause,
+            onToggleFullscreen = onToggleFullscreen
+        )
 }

@@ -26,11 +26,12 @@ fun Modifier.mediaViewerKeyHandler(
     onVolumeChange: (Float) -> Unit,
     onPlayPause: () -> Unit,
     onCopy: () -> Unit,
-    onInfo: () -> Unit
+    onInfo: () -> Unit,
+    onZoom: (ZoomKey) -> Unit
 ): Modifier = this.onKeyEvent { event ->
     handleMediaViewerKeyEvent(
         event, currentId, mediaItems, videoState, mediaVolume,
-        onClose, onSkip, onNavigate, onVolumeChange, onPlayPause, onCopy, onInfo
+        onClose, onSkip, onNavigate, onVolumeChange, onPlayPause, onCopy, onInfo, onZoom
     )
 }
 
@@ -52,7 +53,8 @@ fun handleMediaViewerKeyEvent(
     onVolumeChange: (Float) -> Unit,
     onPlayPause: () -> Unit,
     onCopy: () -> Unit,
-    onInfo: () -> Unit
+    onInfo: () -> Unit,
+    onZoom: (ZoomKey) -> Unit
 ): Boolean {
     return when (event.key) {
         Key.Escape -> {
@@ -124,6 +126,24 @@ fun handleMediaViewerKeyEvent(
                 true
             } else false
         }
-        else -> false
+        else -> handleZoomKeyEvent(event, onZoom)
     }
+}
+
+/**
+ * `Ctrl +` / `Ctrl −` / `Ctrl 0` (Fit) / `Ctrl 1` (Actual) — the standard set,
+ * absent until Step 8b.
+ */
+private fun handleZoomKeyEvent(event: KeyEvent, onZoom: (ZoomKey) -> Unit): Boolean {
+    if (event.type != KeyEventType.KeyDown) return false
+    if (!event.isCtrlPressed && !event.isMetaPressed) return false
+    val intent = when (event.key) {
+        Key.Equals, Key.Plus, Key.NumPadAdd -> ZoomKey.In
+        Key.Minus, Key.NumPadSubtract -> ZoomKey.Out
+        Key.Zero, Key.NumPad0 -> ZoomKey.Fit
+        Key.One, Key.NumPad1 -> ZoomKey.Actual
+        else -> return false
+    }
+    onZoom(intent)
+    return true
 }

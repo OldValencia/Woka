@@ -1,20 +1,18 @@
 package com.woka.ui.viewer
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.IntSize
 import com.woka.data.CarouselVisibility
-import com.woka.data.ScalePreset
 import com.woka.data.SettingsRepository
-import com.woka.data.ZoomPopoverView
 
 @Composable
 fun MediaViewerLayoutWrapper(
     isVisible: Boolean,
     sizeMode: SizeMode,
-    savedPreset: ScalePreset,
-    popoverView: ZoomPopoverView,
+    containerSize: IntSize,
+    nativeSize: IntSize,
     onSizeModeChange: (SizeMode) -> Unit,
     onOffsetReset: () -> Unit,
-    onPopoverViewChange: (ZoomPopoverView) -> Unit,
     carouselMode: CarouselVisibility,
     settingsRepo: SettingsRepository,
     currentId: String,
@@ -26,11 +24,10 @@ fun MediaViewerLayoutWrapper(
 ) {
     MediaViewerTopBarSetup(
         sizeMode = sizeMode,
-        savedPreset = savedPreset,
-        popoverView = popoverView,
+        containerSize = containerSize,
+        nativeSize = nativeSize,
         onSizeModeChange = onSizeModeChange,
         onOffsetReset = onOffsetReset,
-        onPopoverViewChange = onPopoverViewChange,
         carouselMode = carouselMode,
         settingsRepo = settingsRepo,
         currentId = currentId,
