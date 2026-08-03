@@ -18,7 +18,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.woka.ui.viewer.player.MediaTrack
+import com.woka.ui.viewer.player.VideoPlayerState
 
 /**
  * Standalone Settings ⚙ popover docked above its toolbar icon (§2.4), matching
@@ -31,11 +31,10 @@ fun PlayerSettingsOverlay(
     isVisible: Boolean,
     bottomPadding: Dp,
     alignment: Alignment = Alignment.BottomEnd,
-    videoTracks: List<MediaTrack>,
-    selectedVideoIndex: Int?,
-    onSelectVideo: (Int) -> Unit,
+    videoState: VideoPlayerState?,
     onHover: (Boolean) -> Unit
 ) {
+    if (videoState == null) return
     // Fade only — a vertical slide made the popover briefly overlap the toolbar
     // icons during the transition, which re-fired Enter/Exit and flickered it.
     AnimatedVisibility(
@@ -50,17 +49,15 @@ fun PlayerSettingsOverlay(
                     // Sits one icon slot right of the Volume popover (end = 96.dp),
                     // matching the [Volume] [Settings] [Fullscreen] toolbar order.
                     .padding(end = 60.dp, bottom = bottomPadding)
-                    .width(190.dp)
+                    // 210.dp matches the subtitle popover: the sync steppers need
+                    // more room than a bare track list did.
+                    .width(210.dp)
                     .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
                     .padding(vertical = 12.dp, horizontal = 8.dp)
                     .onPointerEvent(PointerEventType.Enter) { onHover(true) }
                     .onPointerEvent(PointerEventType.Exit) { onHover(false) }
             ) {
-                PlayerSettingsMenuList(
-                    videoTracks = videoTracks,
-                    selectedVideoIndex = selectedVideoIndex,
-                    onSelectVideo = onSelectVideo
-                )
+                PlayerSettingsMenuList(videoState)
             }
         }
     }

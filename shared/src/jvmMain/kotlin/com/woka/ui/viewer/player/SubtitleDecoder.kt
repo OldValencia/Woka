@@ -41,7 +41,9 @@ internal fun VideoPlayerState.startSubtitleDecoderLoop() {
                 tracks.activeCue = null
             } else {
                 val cues = textCues[selectedIndex]
-                tracks.activeCue = findActiveCue(cues, currentPositionMs)
+                // subtitleTimeMs, not currentPositionMs: the sync offset (§3) is
+                // applied here at lookup, so nothing has to be re-parsed.
+                tracks.activeCue = findActiveCue(cues, subtitleTimeMs)
             }
             delay(50.milliseconds)
         }

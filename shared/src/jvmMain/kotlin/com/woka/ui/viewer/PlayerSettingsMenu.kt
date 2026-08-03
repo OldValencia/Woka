@@ -14,30 +14,29 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.woka.ui.viewer.player.MediaTrack
+import com.woka.ui.viewer.player.VideoPlayerState
+import com.woka.ui.viewer.player.selectVideoTrack
 
 /**
  * Contents of the Settings ⚙ popover (§2.4) — the shared home for secondary
- * playback controls. Today it carries Video Track selection (§2.3); Repeat,
- * Shuffle and Playback Speed (§6) land here later.
+ * playback controls. Carries Video Track selection (§2.3) and the sync offsets
+ * (§3); Repeat, Shuffle and Playback Speed (§6) land here later.
  *
  * The icon is always visible, so the menu must render something even when the
- * file offers no options at all.
+ * file offers nothing — an audio-less, subtitle-less single-video file.
  */
 @Composable
-internal fun PlayerSettingsMenuList(
-    videoTracks: List<MediaTrack>,
-    selectedVideoIndex: Int?,
-    onSelectVideo: (Int) -> Unit
-) {
+internal fun PlayerSettingsMenuList(videoState: VideoPlayerState) {
+    val videoTracks = videoState.tracks.mediaTracks.video
     // A single video stream is the overwhelmingly common case; showing a
     // one-entry track list there would be noise, so it stays hidden (§2.3).
     val showVideoTracks = videoTracks.size > 1
+    val showSync = videoState.hasSubtitle || videoState.hasAudio
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(max = 200.dp)
+            .heightIn(max = 260.dp)
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
@@ -46,11 +45,13 @@ internal fun PlayerSettingsMenuList(
             videoTracks.forEach { track ->
                 PopoverListRow(
                     label = track.label,
-                    selected = track.index == selectedVideoIndex,
-                    onClick = { onSelectVideo(track.index) }
+                    selected = track.index == videoState.tracks.selectedVideoIndex,
+                    onClick = { videoState.selectVideoTrack(track.index) }
                 )
             }
-        } else {
+        }
+        PlayerSyncSection(videoState)
+        if (!showVideoTracks && !showSync) {
             Text(
                 text = "No additional options",
                 color = Color.White.copy(alpha = 0.45f),

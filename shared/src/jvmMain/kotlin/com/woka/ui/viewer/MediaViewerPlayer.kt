@@ -11,7 +11,6 @@ import com.woka.data.CarouselVisibility
 import com.woka.data.MediaItem
 import com.woka.ui.viewer.player.VideoPlayerState
 import com.woka.ui.viewer.player.selectAudioTrack
-import com.woka.ui.viewer.player.selectVideoTrack
 
 @Composable
 fun MediaViewerPlayer(
@@ -115,9 +114,7 @@ fun MediaViewerPlayer(
             isVisible = state.hover.visibleTarget == HoverTarget.Settings,
             bottomPadding = bottomOverlayPadding,
             alignment = if (state.isUiVisible) Alignment.BottomEnd else Alignment.CenterEnd,
-            videoTracks = videoState?.tracks?.mediaTracks?.video ?: emptyList(),
-            selectedVideoIndex = videoState?.tracks?.selectedVideoIndex,
-            onSelectVideo = { index -> videoState?.selectVideoTrack(index) },
+            videoState = videoState,
             onHover = { state.hover.setHovered(HoverTarget.Settings, it) }
         )
         if (showInfoDialog && activeItem != null) {

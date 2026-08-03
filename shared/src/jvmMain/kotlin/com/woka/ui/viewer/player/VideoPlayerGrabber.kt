@@ -58,7 +58,7 @@ internal fun VideoPlayerState.reopenAudioGrabber(
     if (hasAudio) initAudio(grabber, audioChannel)
     // Read the live position AFTER the (latency-carrying) open so the new track
     // lines up with the video clock; the loop's lag-resync mops up any residual.
-    val resumeMs = currentPositionMs
+    val resumeMs = audioTimeFor(currentPositionMs)
     if (resumeMs > 0) try { grabber.setTimestamp(resumeMs * 1000L) } catch (_: Exception) {}
     return grabber
 }

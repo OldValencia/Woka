@@ -30,6 +30,7 @@ internal fun VideoPlayerState.startAudioDecodeLoop(audioChannel: Channel<ByteArr
             if (grabber.audioChannels > 0) initAudio(grabber, audioChannel)
 
             var audioSeekGen = seekGeneration
+            var audioDelayGen = audioDelayGeneration
             var audioTsMs = 0L // last decoded audio position; drives sync, unlike the
             // grabber's timestamp which is stale right after a seek.
             while (isActive) {
@@ -37,14 +38,23 @@ internal fun VideoPlayerState.startAudioDecodeLoop(audioChannel: Channel<ByteArr
                 if (reopenIndex != null) {
                     pendingAudioReopenIndex = null
                     grabber = reopenAudioGrabber(grabber, reopenIndex, audioChannel)
-                    audioTsMs = currentPositionMs
+                    audioTsMs = audioTimeFor(currentPositionMs)
                     audioSeekGen = seekGeneration
                     continue
                 }
                 if (audioSeekGen != seekGeneration) {
                     audioSeekGen = seekGeneration
-                    audioSeekTo(grabber, seekTargetMs, audioChannel)
-                    audioTsMs = seekTargetMs
+                    audioSeekTo(grabber, audioTimeFor(seekTargetMs), audioChannel)
+                    audioTsMs = audioTimeFor(seekTargetMs)
+                    continue
+                }
+                // The user moved the audio offset (§3): re-seek to the new target.
+                // Waiting it out would work only when the offset moves forward —
+                // backwards it would just idle on the lead throttle in silence.
+                if (audioDelayGen != audioDelayGeneration) {
+                    audioDelayGen = audioDelayGeneration
+                    audioSeekTo(grabber, audioTimeFor(currentPositionMs), audioChannel)
+                    audioTsMs = audioTimeFor(currentPositionMs)
                     continue
                 }
                 // isReloadingVideo: a video-track swap re-decodes for seconds (§2.3).
@@ -61,14 +71,14 @@ internal fun VideoPlayerState.startAudioDecodeLoop(audioChannel: Channel<ByteArr
                     continue
                 }
 
-                val aheadMs = audioTsMs - currentPositionMs
+                val aheadMs = audioTsMs - audioTimeFor(currentPositionMs)
                 if (aheadMs > AUDIO_LEAD_MS) {          // decoded far enough ahead
                     delay(10.milliseconds)
                     continue
                 }
                 if (aheadMs < -AUDIO_RESYNC_LAG_MS) {   // fell behind (e.g. after re-open)
-                    audioSeekTo(grabber, currentPositionMs, audioChannel)
-                    audioTsMs = currentPositionMs
+                    audioSeekTo(grabber, audioTimeFor(currentPositionMs), audioChannel)
+                    audioTsMs = audioTimeFor(currentPositionMs)
                     continue
                 }
 

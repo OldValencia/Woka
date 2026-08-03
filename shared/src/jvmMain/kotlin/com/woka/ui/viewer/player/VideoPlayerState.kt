@@ -35,6 +35,19 @@ class VideoPlayerState(
     val tracks = VideoPlayerTracks()
     val hasSubtitle: Boolean get() = tracks.hasSubtitle
     val activeCue: Cue? get() = tracks.activeCue
+
+    // Sync offsets (§3). Positive = that stream runs LATER than the video clock,
+    // so what belongs at position P is the content originally at P − delay. Both
+    // are applied at lookup time only — nothing ever re-decodes. See
+    // VideoPlayerSync.kt for the helpers and the UI entry points.
+    var subtitleDelayMs by mutableStateOf(0L)
+    var audioDelayMs by mutableStateOf(0L)
+
+    // Bumped whenever audioDelayMs changes. The audio loop re-seeks on it instead
+    // of stalling on the lead throttle: shifting the target backwards would
+    // otherwise just make the loop wait in silence for the clock to catch up.
+    @Volatile
+    internal var audioDelayGeneration: Int = 0
     
     internal var soundLineInstance: SourceDataLine? = null
     internal var isPlayingBeforeSeek = false

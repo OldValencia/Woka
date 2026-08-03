@@ -28,10 +28,9 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
             durationMs = grabber.lengthInTime / 1000L
 
             try {
-                // Restore the tracks this file (or this folder) was last watched
-                // with before anything downstream reads a selection (§2.6).
-                val (perFile, perFolder) = readTrackPrefs()
-                tracks.apply(probeMediaTracks(grabber), perFile, perFolder)
+                // Restore the tracks and sync offsets this file was last watched
+                // with, before anything downstream reads a selection (§2.6 / §3).
+                applyTrackPrefs(probeMediaTracks(grabber))
                 logMediaTracks(tracks.mediaTracks)
                 // FFmpeg's own pick for the default video stream is not necessarily
                 // the one flagged AV_DISPOSITION_DEFAULT, so on a multi-video

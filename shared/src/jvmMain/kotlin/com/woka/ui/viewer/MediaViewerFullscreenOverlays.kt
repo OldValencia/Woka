@@ -24,7 +24,6 @@ import com.woka.data.ZoomPopoverView
 import com.woka.ui.viewer.pip.PipManager
 import com.woka.ui.viewer.player.VideoPlayerState
 import com.woka.ui.viewer.player.selectAudioTrack
-import com.woka.ui.viewer.player.selectVideoTrack
 
 /**
  * Toolbar popovers (Volume / Subtitles / Settings) and the bottom control bar of
@@ -65,9 +64,7 @@ fun BoxScope.MediaViewerFullscreenOverlays(
             isVisible = hover.visibleTarget == HoverTarget.Settings,
             bottomPadding = bottomPadding,
             alignment = alignment,
-            videoTracks = videoState.tracks.mediaTracks.video,
-            selectedVideoIndex = videoState.tracks.selectedVideoIndex,
-            onSelectVideo = { index -> videoState.selectVideoTrack(index) },
+            videoState = videoState,
             onHover = { hover.setHovered(HoverTarget.Settings, it) }
         )
     }

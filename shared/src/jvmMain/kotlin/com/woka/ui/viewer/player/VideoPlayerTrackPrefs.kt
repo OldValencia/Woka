@@ -8,12 +8,18 @@ import com.woka.data.TrackPrefs
  * written on change, for all three track types.
  */
 
-/** Reads the remembered choices for this file: per-file first, then per-folder. */
-internal fun VideoPlayerState.readTrackPrefs(): Pair<TrackPrefs?, TrackPrefs?> {
+/**
+ * Restores the remembered tracks and sync offsets on open. Resolution is per-file
+ * first, then the folder heuristic; the offsets (§3) come from the per-file record
+ * only, since they describe one encode's timing rather than a series preference.
+ */
+internal fun VideoPlayerState.applyTrackPrefs(probed: MediaTracks) {
     val settings = AppDependencies.settingsRepository.settings.value
     val perFile = settings.trackPrefsPerFile[file.absolutePath]
     val perFolder = file.parent?.let { settings.trackPrefsPerFolder[it] }
-    return perFile to perFolder
+    tracks.apply(probed, perFile, perFolder)
+    subtitleDelayMs = perFile?.subtitleDelayMs ?: 0L
+    audioDelayMs = perFile?.audioDelayMs ?: 0L
 }
 
 /**
@@ -30,7 +36,9 @@ internal fun VideoPlayerState.persistTrackPrefs() {
             .firstOrNull { it.index == tracks.selectedSubtitleIndex }
             ?.toRef(),
         subtitleOff = tracks.selectedSubtitleIndex == null,
-        video = media.video.firstOrNull { it.index == tracks.selectedVideoIndex }?.toRef()
+        video = media.video.firstOrNull { it.index == tracks.selectedVideoIndex }?.toRef(),
+        subtitleDelayMs = subtitleDelayMs,
+        audioDelayMs = audioDelayMs
     )
     AppDependencies.settingsRepository.setTrackPrefs(file.absolutePath, folderPath, prefs)
 }

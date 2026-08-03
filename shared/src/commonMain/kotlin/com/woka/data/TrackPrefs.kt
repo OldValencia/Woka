@@ -26,5 +26,9 @@ data class TrackPrefs(
     val audio: TrackRef? = null,
     val subtitle: TrackRef? = null,
     val subtitleOff: Boolean = true,
-    val video: TrackRef? = null
+    val video: TrackRef? = null,
+    // Sync offsets (§3), per-file only: they describe one encode's timing, not a
+    // series' preference, so the folder layer strips them like it strips [video].
+    val subtitleDelayMs: Long = 0L,
+    val audioDelayMs: Long = 0L
 )
