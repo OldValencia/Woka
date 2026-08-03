@@ -1,18 +1,15 @@
 package com.woka.ui.viewer
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.TextStyle
@@ -36,27 +33,6 @@ fun InfoButton(isInfoOpen: Boolean, onInfo: () -> Unit) {
                 painter = painterResource(Icons.Static.InfoCircle),
                 contentDescription = "Information",
                 tint = if (isInfoOpen) Theme.colors.accentFolders else Theme.colors.textPrimary,
-                modifier = Modifier.size(16.dp)
-            )
-        }
-    }
-}
-
-@Composable
-fun CopyButton(copyTint: Color, onCopy: () -> Unit) {
-    ViewerTooltip("Copy File") {
-        Box(
-            modifier = Modifier.size(24.dp).clip(CircleShape).pointerHoverIcon(PointerIcon.Hand).clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = { onCopy() }
-            ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                painter = painterResource(Icons.Static.DocumentOnDocument),
-                contentDescription = "Copy",
-                tint = copyTint,
                 modifier = Modifier.size(16.dp)
             )
         }
@@ -128,26 +104,5 @@ fun EditButton(onEdit: () -> Unit) {
             ),
             modifier = Modifier.offset(y = (-1).dp)
         )
-    }
-}
-
-@Composable
-fun MagicWandButton() {
-    ViewerTooltip("Magic Wand") {
-        Box(
-            modifier = Modifier.size(24.dp).clip(CircleShape).pointerHoverIcon(PointerIcon.Hand).clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = { /* Placeholder */ }
-            ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                painter = painterResource(Icons.Static.MagicWand),
-                contentDescription = "Magic Wand",
-                tint = Theme.colors.textPrimary,
-                modifier = Modifier.size(16.dp)
-            )
-        }
     }
 }

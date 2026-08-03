@@ -23,8 +23,6 @@ fun MediaViewerTopBarSetup(
     currentId: String,
     onClose: (String) -> Unit,
     onEdit: () -> Unit,
-    onCopy: () -> Unit,
-    copyTrigger: Long,
     onInfo: () -> Unit,
     isInfoOpen: Boolean
 ) {
@@ -39,14 +37,12 @@ fun MediaViewerTopBarSetup(
     val curPopoverView by rememberUpdatedState(popoverView)
     val curCarousel by rememberUpdatedState(carouselMode)
     val curCurrentId by rememberUpdatedState(currentId)
-    val curCopyTrigger by rememberUpdatedState(copyTrigger)
     val curIsInfoOpen by rememberUpdatedState(isInfoOpen)
     val curOnSizeModeChange by rememberUpdatedState(onSizeModeChange)
     val curOnOffsetReset by rememberUpdatedState(onOffsetReset)
     val curOnPopoverViewChange by rememberUpdatedState(onPopoverViewChange)
     val curOnClose by rememberUpdatedState(onClose)
     val curOnEdit by rememberUpdatedState(onEdit)
-    val curOnCopy by rememberUpdatedState(onCopy)
     val curOnInfo by rememberUpdatedState(onInfo)
 
     DisposableEffect(Unit) {
@@ -69,8 +65,6 @@ fun MediaViewerTopBarSetup(
                     settingsRepo.setCarouselMode(newMode)
                 },
                 onEdit = { curOnEdit() },
-                onCopy = { curOnCopy() },
-                copyTrigger = curCopyTrigger,
                 onInfo = { curOnInfo() },
                 isInfoOpen = curIsInfoOpen
             )

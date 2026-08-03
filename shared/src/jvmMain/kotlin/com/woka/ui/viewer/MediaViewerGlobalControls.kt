@@ -1,7 +1,5 @@
 package com.woka.ui.viewer
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -16,8 +14,6 @@ import com.woka.data.CarouselVisibility
 import com.woka.data.ScalePreset
 import com.woka.data.ZoomPopoverView
 import com.woka.ui.theme.Theme
-import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun MediaViewerControlsContainer(
@@ -48,32 +44,16 @@ fun MediaViewerNormalControls(
     carouselMode: CarouselVisibility,
     onToggleCarousel: () -> Unit,
     onEdit: () -> Unit,
-    onCopy: () -> Unit,
     onInfo: () -> Unit,
-    copyTrigger: Long,
     isInfoOpen: Boolean,
     modifier: Modifier = Modifier
 ) {
-    var copyHighlight by remember { mutableStateOf(false) }
-    LaunchedEffect(copyTrigger) {
-        if (copyTrigger > 0) {
-            copyHighlight = true
-            delay(300.milliseconds)
-            copyHighlight = false
-        }
-    }
-    val copyTint by animateColorAsState(
-        targetValue = if (copyHighlight) Theme.colors.accentFolders else Theme.colors.textPrimary,
-        animationSpec = tween(durationMillis = 200)
-    )
-
     MediaViewerControlsContainer(modifier) {
         SizeControl(sizeMode, savedPreset, popoverView, onSizeModeChange, onOffsetReset, onPopoverViewChange)
 
         Box(modifier = Modifier.height(16.dp).width(1.dp).background(Theme.colors.border))
 
         InfoButton(isInfoOpen, onInfo)
-        CopyButton(copyTint, onCopy)
         ToggleCarouselButton(carouselMode, onToggleCarousel)
 
         Box(modifier = Modifier.height(16.dp).width(1.dp).background(Theme.colors.border))
@@ -103,7 +83,6 @@ fun MediaViewerFullscreenControls(
         Box(modifier = Modifier.height(16.dp).width(1.dp).background(Theme.colors.border))
 
         InfoButton(isInfoOpen, onInfo)
-        MagicWandButton()
         ToggleCarouselButton(carouselMode, onToggleCarousel, isFullscreen = true)
 
         Box(modifier = Modifier.height(16.dp).width(1.dp).background(Theme.colors.border))

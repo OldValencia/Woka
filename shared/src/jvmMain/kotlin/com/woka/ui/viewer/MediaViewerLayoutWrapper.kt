@@ -20,8 +20,6 @@ fun MediaViewerLayoutWrapper(
     currentId: String,
     onClose: (String) -> Unit,
     onEdit: () -> Unit,
-    onCopy: () -> Unit,
-    copyTrigger: Long,
     onInfo: () -> Unit,
     isInfoOpen: Boolean,
     playerContent: @Composable () -> Unit
@@ -38,8 +36,6 @@ fun MediaViewerLayoutWrapper(
         currentId = currentId,
         onClose = onClose,
         onEdit = onEdit,
-        onCopy = onCopy,
-        copyTrigger = copyTrigger,
         onInfo = onInfo,
         isInfoOpen = isInfoOpen
     )

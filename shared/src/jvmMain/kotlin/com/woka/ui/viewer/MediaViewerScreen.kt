@@ -57,12 +57,8 @@ fun MediaViewerScreen(
     MediaViewerAmbientEffects(state, videoState, mediaVolume, settingsRepo, focusRequester)
 
     var showInfoDialog by remember { mutableStateOf(false) }
-    var copyTrigger by remember { mutableStateOf(0L) }
     val copyAction = {
-        if (activeItem != null) {
-            copyFileToClipboard(activeItem.file)
-            copyTrigger = System.currentTimeMillis()
-        }
+        if (activeItem != null) copyFileToClipboard(activeItem.file)
     }
     val infoAction = { if (activeItem != null) showInfoDialog = true }
     val editAction = { onClose(state.currentId) }
@@ -136,8 +132,6 @@ fun MediaViewerScreen(
         currentId = state.currentId,
         onClose = onClose,
         onEdit = editAction,
-        onCopy = copyAction,
-        copyTrigger = copyTrigger,
         onInfo = infoAction,
         isInfoOpen = showInfoDialog,
         playerContent = playerContent
