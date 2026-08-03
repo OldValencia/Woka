@@ -131,6 +131,13 @@ class SettingsRepositoryImpl : SettingsRepository {
     override fun clearTrackPrefsForFile(filePath: String) =
         update { it.copy(trackPrefsPerFile = it.trackPrefsPerFile - filePath) }
 
+    override fun setRepeatMode(mode: RepeatMode) = update { it.copy(repeatMode = mode) }
+
+    override fun setShuffle(shuffle: Boolean) = update { it.copy(shuffle = shuffle) }
+
+    override fun setPlaybackSpeed(speed: Float) =
+        update { it.copy(playbackSpeed = PlaybackSpeed.snap(speed)) }
+
     // The update-copy-save pattern every setter goes through.
     private inline fun update(transform: (WokaSettings) -> WokaSettings) {
         _settings.update { current ->

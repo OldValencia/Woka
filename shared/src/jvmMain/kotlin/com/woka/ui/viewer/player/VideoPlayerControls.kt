@@ -1,5 +1,7 @@
 package com.woka.ui.viewer.player
 
+import com.woka.data.RepeatMode
+
 // How close to the end counts as "at the end".
 private const val END_THRESHOLD_MS = 200L
 
@@ -11,6 +13,7 @@ private const val END_THRESHOLD_MS = 200L
  */
 fun VideoPlayerState.seek(progressMs: Long) {
     val safeProgress = progressMs.coerceIn(0L, durationMs)
+    clearReachedEnd()
     seekGeneration++
     seekTargetMs = safeProgress
     currentPositionMs = safeProgress
@@ -26,6 +29,22 @@ fun VideoPlayerState.seek(progressMs: Long) {
         isPlayingBeforeSeek = false
         isPlaying = false
     }
+}
+
+/**
+ * Relative skip (the ±5s buttons and Alt+arrows). Under Repeat File a forward
+ * skip off the end wraps to the start and keeps playing — pausing there would
+ * contradict the mode. Off and Folder keep [seek]'s pin-and-pause: Folder hands
+ * over to the playlist layer, which advances the file (§6).
+ */
+fun VideoPlayerState.skipBy(deltaMs: Long) {
+    val target = currentPositionMs + deltaMs
+    val pastEnd = durationMs > 0 && target >= durationMs - END_THRESHOLD_MS
+    if (deltaMs > 0 && pastEnd && repeatMode == RepeatMode.File) {
+        seek(0)
+        return
+    }
+    seek(target.coerceIn(0L, durationMs))
 }
 
 fun VideoPlayerState.pauseForSeek() {
@@ -49,5 +68,6 @@ fun VideoPlayerState.togglePlayPause() {
     if (!isPlaying && durationMs > 0 && currentPositionMs >= durationMs - END_THRESHOLD_MS) {
         seek(0)
     }
+    clearReachedEnd()
     isPlaying = !isPlaying
 }

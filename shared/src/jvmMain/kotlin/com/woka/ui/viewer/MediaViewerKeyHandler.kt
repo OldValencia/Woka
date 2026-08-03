@@ -12,7 +12,7 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import com.woka.data.MediaItem
 import com.woka.ui.viewer.player.VideoPlayerState
-import com.woka.ui.viewer.player.seek
+import com.woka.ui.viewer.player.skipBy
 import com.woka.ui.viewer.player.togglePlayPause
 
 fun Modifier.mediaViewerKeyHandler(
@@ -65,7 +65,7 @@ fun handleMediaViewerKeyEvent(
             if (event.type == KeyEventType.KeyDown) {
                 if (event.isAltPressed) {
                     videoState?.let { 
-                        it.seek((it.currentPositionMs - 5000).coerceAtLeast(0)) 
+                        it.skipBy(-5000)
                         onSkip(-1)
                     }
                 } else {
@@ -81,7 +81,7 @@ fun handleMediaViewerKeyEvent(
             if (event.type == KeyEventType.KeyDown) {
                 if (event.isAltPressed) {
                     videoState?.let { 
-                        it.seek((it.currentPositionMs + 5000).coerceAtMost(it.durationMs)) 
+                        it.skipBy(5000)
                         onSkip(1)
                     }
                 } else {

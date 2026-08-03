@@ -9,8 +9,6 @@ import com.woka.AppDependencies
 import com.woka.data.MediaItem
 import com.woka.ui.components.LocalGlobalShortcuts
 import com.woka.ui.viewer.pip.PipManager
-import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -27,61 +25,21 @@ fun MediaViewerScreen(
         mediaItems.find { it.file.absolutePath == state.currentId }
     }
     var isFullscreen by remember { mutableStateOf(false) }
-
     var showConflictDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(activeItem) {
-        if (PipManager.isPipActive && activeItem != null && activeItem.file.absolutePath != PipManager.activeItem?.file?.absolutePath) {
-            showConflictDialog = true
-        } else {
-            if (activeItem != null) {
-                state.imageBitmap = loadThumbnail(activeItem)
-                state.activeItemPath = activeItem.file.absolutePath
-                // Returning from fullscreen (PiP) is the same file: carry the size
-                // state back instead of resetting it to the global preset.
-                val fromPip = PipManager.isTransitioningToMain &&
-                    PipManager.activeItem?.file?.absolutePath == activeItem.file.absolutePath
-                if (fromPip) {
-                    state.sizeMode = PipManager.sizeMode
-                    state.offsetX = PipManager.offsetX; state.offsetY = PipManager.offsetY
-                } else {
-                    state.sizeMode = startSizeMode(settings)
-                    state.offsetX = 0f; state.offsetY = 0f
-                }
-            } else {
-                state.activeItemPath = null
-            }
-        }
-    }
-
-    if (showConflictDialog) {
-        VideoAlreadyOpenedDialog(
-            onConfirm = {
-                PipManager.closePip()
-                showConflictDialog = false
-                if (activeItem != null) {
-                    state.activeItemPath = activeItem.file.absolutePath
-                    state.sizeMode = startSizeMode(settings); state.offsetX = 0f; state.offsetY = 0f
-                }
-            },
-            onDismiss = {
-                showConflictDialog = false
-                onClose(state.currentId)
-            }
-        )
-    }
-
-    // Load thumbnail lazily if confirmed, for now we skip loading
-    LaunchedEffect(activeItem, showConflictDialog) {
-        if (!showConflictDialog && activeItem != null) {
-            state.imageBitmap = loadThumbnail(activeItem)
-        }
-    }
+    MediaViewerActiveItemEffects(
+        state = state,
+        activeItem = activeItem,
+        settings = settings,
+        showConflictDialog = showConflictDialog,
+        onConflictChange = { showConflictDialog = it },
+        onClose = onClose,
+        loadThumbnail = loadThumbnail
+    )
 
     // Restored from settings and written back on change, so the chosen volume
     // survives switching files and app restarts.
     var mediaVolume by remember { mutableStateOf(settings.mediaVolume) }
-    LaunchedEffect(mediaVolume) { settingsRepo.setMediaVolume(mediaVolume) }
 
     val videoState = remember(activeItem, state.activeItemPath) {
         if (activeItem is MediaItem.Video && state.activeItemPath != null) {
@@ -90,28 +48,13 @@ fun MediaViewerScreen(
     }
 
     DisposableEffect(videoState) {
-        onDispose {
-            PipManager.releaseState(videoState)
-        }
+        onDispose { PipManager.releaseState(videoState) }
     }
 
+    MediaViewerPlaybackEffects(state, videoState, settings, mediaItems)
+
     val focusRequester = remember { FocusRequester() }
-    PopoverHoverEffect(state.hover)
-    LaunchedEffect(state.volumeTrigger) {
-        if (state.volumeTrigger > 0) {
-            state.volumeTriggerTimer = 1; delay(2000.milliseconds); state.volumeTriggerTimer = 0
-        }
-    }
-    LaunchedEffect(mediaVolume) { videoState?.updateVolume(mediaVolume) }
-    LaunchedEffect(state.lastInteractionTime, videoState?.isPlaying, state.hover.rawTarget) {
-        if (videoState?.isPlaying == false || state.hover.rawTarget != HoverTarget.None) {
-            state.isUiVisible = true
-        } else {
-            delay(2500.milliseconds)
-            state.isUiVisible = false
-        }
-    }
-    LaunchedEffect(Unit) { focusRequester.requestFocus() }
+    MediaViewerAmbientEffects(state, videoState, mediaVolume, settingsRepo, focusRequester)
 
     var showInfoDialog by remember { mutableStateOf(false) }
     var copyTrigger by remember { mutableStateOf(0L) }
@@ -121,47 +64,24 @@ fun MediaViewerScreen(
             copyTrigger = System.currentTimeMillis()
         }
     }
-    val infoAction = {
-        if (activeItem != null) showInfoDialog = true
-    }
-    val editAction = {
-        onClose(state.currentId)
-    }
+    val infoAction = { if (activeItem != null) showInfoDialog = true }
+    val editAction = { onClose(state.currentId) }
     val onSizeModeChange: (SizeMode) -> Unit = { mode ->
         state.sizeMode = mode
         if (settings.rememberSizeState) persistSizeState(settingsRepo, mode)
     }
 
-    // Register the viewer shortcuts app-wide so they fire in the key-event
-    // preview phase — before any focused button gets the key. This makes Space,
-    // arrows, Esc, etc. work no matter what currently holds focus (e.g. after
-    // clicking a toolbar/window button) and stops those keys from also
-    // activating the focused button. Fresh values are read via rememberUpdatedState.
-    val globalShortcuts = LocalGlobalShortcuts.current
-    val curVideoState by rememberUpdatedState(videoState)
-    val curMediaItems by rememberUpdatedState(mediaItems)
-    val curVolume by rememberUpdatedState(mediaVolume)
-    val curCopy by rememberUpdatedState(copyAction)
-    val curInfo by rememberUpdatedState(infoAction)
-    DisposableEffect(globalShortcuts) {
-        globalShortcuts.onPreviewKey = { event ->
-            handleMediaViewerKeyEvent(
-                event = event,
-                currentId = state.currentId,
-                mediaItems = curMediaItems,
-                videoState = curVideoState,
-                mediaVolume = curVolume,
-                onClose = { onClose(state.currentId) },
-                onSkip = { dir -> state.skipDirection = dir; state.skipTrigger = System.currentTimeMillis() },
-                onNavigate = { dir, newId -> state.animationDirection = dir; state.currentId = newId },
-                onVolumeChange = { vol -> mediaVolume = vol; state.volumeTrigger = System.currentTimeMillis() },
-                onPlayPause = { state.playPauseTrigger = System.currentTimeMillis() },
-                onCopy = { curCopy() },
-                onInfo = { curInfo() }
-            )
-        }
-        onDispose { globalShortcuts.onPreviewKey = null }
-    }
+    MediaViewerShortcutEffect(
+        state = state,
+        mediaItems = mediaItems,
+        videoState = videoState,
+        mediaVolume = mediaVolume,
+        globalShortcuts = LocalGlobalShortcuts.current,
+        onClose = onClose,
+        onVolumeChange = { mediaVolume = it },
+        onCopy = { copyAction() },
+        onInfo = { infoAction() }
+    )
 
     val playerModifier = Modifier.mediaViewerPlayerModifier(
         state = state,
@@ -222,5 +142,4 @@ fun MediaViewerScreen(
         isInfoOpen = showInfoDialog,
         playerContent = playerContent
     )
-
 }

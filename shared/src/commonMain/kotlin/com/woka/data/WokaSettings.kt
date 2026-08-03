@@ -53,5 +53,10 @@ data class WokaSettings(
     // only — a second video stream in another file is a different angle, not the
     // same track).
     val trackPrefsPerFile: Map<String, TrackPrefs> = emptyMap(),
-    val trackPrefsPerFolder: Map<String, TrackPrefs> = emptyMap()
+    val trackPrefsPerFolder: Map<String, TrackPrefs> = emptyMap(),
+    // Playback modes (§6), global rather than per-file: they are how the user
+    // likes to watch, not a property of any one video.
+    val repeatMode: RepeatMode = RepeatMode.Off,
+    val shuffle: Boolean = false,
+    val playbackSpeed: Float = PlaybackSpeed.NORMAL
 )

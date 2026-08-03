@@ -2,8 +2,6 @@ package com.woka.ui.viewer.player
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import java.nio.Buffer
-import java.nio.ShortBuffer
 import kotlin.time.Duration.Companion.milliseconds
 
 // How far ahead of the video clock the audio may decode before it waits, and how
@@ -25,12 +23,20 @@ internal fun VideoPlayerState.startAudioDecodeLoop(audioChannel: Channel<ByteArr
         while (isActive && !tracksProbed) delay(10.milliseconds)
 
         var grabber = openAudioGrabber(tracks.selectedAudioIndex ?: -1)
+        // Non-null only while the speed is off 1x; at 1x audio takes the original
+        // path untouched (§6).
+        var tempo: AudioTempoFilter? = null
         try {
             grabber.start()
             if (grabber.audioChannels > 0) initAudio(grabber, audioChannel)
+            // Built from the live speed, not from a later change: reopening a file
+            // while 2x is already selected bumps no generation, so a change-driven
+            // build would leave the sound running at 1x under a 2x picture.
+            tempo = buildTempoFilter(grabber)
 
             var audioSeekGen = seekGeneration
             var audioDelayGen = audioDelayGeneration
+            var audioSpeedGen = speedGeneration
             var audioTsMs = 0L // last decoded audio position; drives sync, unlike the
             // grabber's timestamp which is stale right after a seek.
             while (isActive) {
@@ -38,13 +44,18 @@ internal fun VideoPlayerState.startAudioDecodeLoop(audioChannel: Channel<ByteArr
                 if (reopenIndex != null) {
                     pendingAudioReopenIndex = null
                     grabber = reopenAudioGrabber(grabber, reopenIndex, audioChannel)
+                    tempo?.close()
+                    tempo = buildTempoFilter(grabber)
                     audioTsMs = audioTimeFor(currentPositionMs)
                     audioSeekGen = seekGeneration
                     continue
                 }
+                // Every branch below goes through audioReseek, which rebuilds the
+                // tempo graph: atempo cannot survive the backwards timestamp jump a
+                // seek produces and would fail over to unfiltered 1x sound (§6).
                 if (audioSeekGen != seekGeneration) {
                     audioSeekGen = seekGeneration
-                    audioSeekTo(grabber, audioTimeFor(seekTargetMs), audioChannel)
+                    tempo = audioReseek(grabber, audioTimeFor(seekTargetMs), audioChannel, tempo)
                     audioTsMs = audioTimeFor(seekTargetMs)
                     continue
                 }
@@ -53,7 +64,15 @@ internal fun VideoPlayerState.startAudioDecodeLoop(audioChannel: Channel<ByteArr
                 // backwards it would just idle on the lead throttle in silence.
                 if (audioDelayGen != audioDelayGeneration) {
                     audioDelayGen = audioDelayGeneration
-                    audioSeekTo(grabber, audioTimeFor(currentPositionMs), audioChannel)
+                    tempo = audioReseek(grabber, audioTimeFor(currentPositionMs), audioChannel, tempo)
+                    audioTsMs = audioTimeFor(currentPositionMs)
+                    continue
+                }
+                // Speed changed: the queued audio was resampled at the old rate, so
+                // it has to go along with the graph that produced it.
+                if (audioSpeedGen != speedGeneration) {
+                    audioSpeedGen = speedGeneration
+                    tempo = audioReseek(grabber, audioTimeFor(currentPositionMs), audioChannel, tempo)
                     audioTsMs = audioTimeFor(currentPositionMs)
                     continue
                 }
@@ -77,7 +96,7 @@ internal fun VideoPlayerState.startAudioDecodeLoop(audioChannel: Channel<ByteArr
                     continue
                 }
                 if (aheadMs < -AUDIO_RESYNC_LAG_MS) {   // fell behind (e.g. after re-open)
-                    audioSeekTo(grabber, audioTimeFor(currentPositionMs), audioChannel)
+                    tempo = audioReseek(grabber, audioTimeFor(currentPositionMs), audioChannel, tempo)
                     audioTsMs = audioTimeFor(currentPositionMs)
                     continue
                 }
@@ -87,13 +106,20 @@ internal fun VideoPlayerState.startAudioDecodeLoop(audioChannel: Channel<ByteArr
                     delay(30.milliseconds)
                     continue
                 }
-                frame.samples?.let {
+                frame.samples?.let { samples ->
                     // Lazy self-heal: if the eager init was skipped (channel count
                     // came back 0 on open) but audio is actually decoding, bring the
                     // sound line up now.
                     if (soundLineInstance == null) initAudio(grabber, audioChannel)
+                    // Media time, unaffected by atempo — the sync comparisons above
+                    // stay in the same units at every speed.
                     audioTsMs = grabber.timestamp / 1000L
-                    sendAudioSamples(it, audioChannel)
+                    val chunks = tempo?.process(frame)
+                    if (chunks != null) {
+                        chunks.forEach { audioChannel.send(it) }
+                    } else {
+                        sendAudioSamples(samples, audioChannel)
+                    }
                 }
             }
         } catch (e: CancellationException) {
@@ -101,20 +127,9 @@ internal fun VideoPlayerState.startAudioDecodeLoop(audioChannel: Channel<ByteArr
         } catch (e: Exception) {
             e.printStackTrace()
         } finally {
+            tempo?.close()
             disposeAudioLine()
             try { grabber.stop(); grabber.release() } catch (_: Exception) {}
         }
     }
-}
-
-private suspend fun sendAudioSamples(samples: Array<Buffer>, audioChannel: Channel<ByteArray>) {
-    val channelSamples = samples[0] as ShortBuffer
-    val shortArray = ShortArray(channelSamples.capacity())
-    channelSamples.get(shortArray)
-    val byteArray = ByteArray(shortArray.size * 2)
-    for (i in shortArray.indices) {
-        byteArray[i * 2] = shortArray[i].toByte()
-        byteArray[i * 2 + 1] = (shortArray[i].toInt() shr 8).toByte()
-    }
-    audioChannel.send(byteArray)
 }

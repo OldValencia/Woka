@@ -5,6 +5,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ImageBitmap
+import com.woka.data.PlaybackSpeed
+import com.woka.data.RepeatMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import java.io.File
@@ -22,8 +24,31 @@ class VideoPlayerState(
     var volume by mutableStateOf(initialVolume)
     var currentFrame by mutableStateOf<ImageBitmap?>(null)
     var currentFrameHdrInfo by mutableStateOf<HdrInfo?>(null)
+
+    // The stream's own HDR metadata, written once per opened video track. Unlike
+    // [currentFrameHdrInfo] — which is rewritten every frame — this is stable, so
+    // the UI can read it without recomposing at the frame rate.
+    var streamHdrInfo by mutableStateOf<HdrInfo?>(null)
+        internal set
+
     var hasAudio by mutableStateOf(false)
-    var isRepeatMode by mutableStateOf(false)
+
+    // Repeat (§6). Only File is a decoder concern — it re-seeks to 0 at EOF.
+    // Folder is navigation, so the decoder treats it exactly like Off and lets
+    // [reachedEnd] surface upwards; MediaViewerPlaylist decides what plays next.
+    var repeatMode by mutableStateOf(RepeatMode.Off)
+
+    // Raised by the presenter when playback runs off the end, cleared on any seek
+    // or resume. The screen observes it to advance the folder playlist (§6).
+    var reachedEnd by mutableStateOf(false)
+
+    // Playback speed (§6), 0.5×–2×. The presenter divides its frame pacing by it
+    // and the audio path runs an `atempo` filter so the pitch stays put.
+    var playbackSpeed by mutableStateOf(PlaybackSpeed.NORMAL)
+
+    // Bumped on every speed change so the audio loop rebuilds its filter graph.
+    @Volatile
+    internal var speedGeneration: Int = 0
 
     // True while the video grabber is being swapped onto another track (§2.3).
     // Re-opening a 4K HEVC stream and decoding back to the play head takes
@@ -35,6 +60,7 @@ class VideoPlayerState(
     val tracks = VideoPlayerTracks()
     val hasSubtitle: Boolean get() = tracks.hasSubtitle
     val activeCue: Cue? get() = tracks.activeCue
+    internal val renderScale = RenderScale() // decode-size policy (§6)
 
     // Sync offsets (§3). Positive = that stream runs LATER than the video clock,
     // so what belongs at position P is the content originally at P − delay. Both

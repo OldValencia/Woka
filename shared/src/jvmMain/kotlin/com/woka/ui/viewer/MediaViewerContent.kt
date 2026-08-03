@@ -53,12 +53,24 @@ fun MediaViewerContent(
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
 
     val sourceBitmap = if (videoState != null) videoState.currentFrame ?: imageBitmap else imageBitmap
-    val nativeSize = IntSize(sourceBitmap.width, sourceBitmap.height)
+    // The stream's own dimensions, not the decoded frame's: video may be decoded
+    // smaller than native to fit the surface (§6), and the zoom presets — Actual
+    // size above all — still mean native 1:1.
+    val videoTrack = videoState?.tracks?.mediaTracks?.video
+        ?.firstOrNull { it.index == videoState.tracks.selectedVideoIndex }
+    val nativeSize = if (videoTrack?.width != null && videoTrack.height != null) {
+        IntSize(videoTrack.width, videoTrack.height)
+    } else {
+        IntSize(sourceBitmap.width, sourceBitmap.height)
+    }
 
     val targetScale = computeGraphicsScale(sizeMode, containerSize, nativeSize)
     val renderScale by animateFloatAsState(targetScale, animationSpec = tween(200))
 
     LaunchedEffect(targetScale) { onEffectiveScaleChange(targetScale) }
+    LaunchedEffect(containerSize, videoState) {
+        videoState?.renderScale?.setSurface(containerSize.width, containerSize.height)
+    }
 
     Box(
         modifier = Modifier

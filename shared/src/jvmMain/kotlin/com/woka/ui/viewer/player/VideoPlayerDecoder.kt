@@ -1,6 +1,5 @@
 package com.woka.ui.viewer.player
 
-import androidx.compose.ui.graphics.ImageBitmap
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import org.bytedeco.ffmpeg.global.avutil.AV_LOG_QUIET
@@ -25,6 +24,7 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
             grabber.start()
 
             var hdrInfo = grabber.readStreamHdrInfo()
+            streamHdrInfo = hdrInfo
             durationMs = grabber.lengthInTime / 1000L
 
             try {
@@ -32,6 +32,9 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
                 // with, before anything downstream reads a selection (§2.6 / §3).
                 applyTrackPrefs(probeMediaTracks(grabber))
                 logMediaTracks(tracks.mediaTracks)
+                renderScale.useNativeOf(
+                    tracks.mediaTracks.video.firstOrNull { it.index == tracks.selectedVideoIndex }
+                )
                 // FFmpeg's own pick for the default video stream is not necessarily
                 // the one flagged AV_DISPOSITION_DEFAULT, so on a multi-video
                 // container the picture could come up on a different track than the
@@ -54,6 +57,7 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
             var frameGeneration = seekGeneration
             var videoSeekGen = seekGeneration
             var durationChecked = durationMs > 0L
+            val pacer = FramePacer()
 
             while (isActive) {
                 val reopenIndex = pendingVideoReopenIndex
@@ -61,12 +65,14 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
                     pendingVideoReopenIndex = null
                     grabber = reopenVideoGrabber(grabber, reopenIndex, videoChannel)
                     hdrInfo = grabber.readStreamHdrInfo()
+                    streamHdrInfo = hdrInfo
                     // The play head did not move, so no generation bump: the frame
                     // reopenVideoGrabber landed stays current and audio — parked on
                     // isReloadingVideo meanwhile — picks up from the same position.
                     frameGeneration = seekGeneration
                     rebasePresenterClock = true
                     isReloadingVideo = false
+                    pacer.rebase()
                     continue
                 }
                 if (videoSeekGen != seekGeneration) {
@@ -74,26 +80,20 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
                     videoSeekTo(grabber, seekTargetMs, videoChannel, hdrInfo)
                     frameGeneration = seekGeneration
                     videoReadyGen = videoSeekGen // frame has landed; audio may resume
+                    pacer.rebase()
                     continue
                 }
+                if (requestRescaleIfNeeded(grabber.videoStream)) continue
 
                 if (!isPlaying || isSeeking) {
+                    pacer.rebase()
                     delay(50.milliseconds)
                     continue
                 }
 
                 val frame = grabber.grabFrame(false, true, true, false, false)
                 if (frame == null) {
-                    if (isRepeatMode) {
-                        seekTargetMs = 0L
-                        seekGeneration++ // both loops restart from the beginning
-                    } else {
-                        videoChannel.send(VideoFrame(ImageBitmap(1, 1), -2L, frameGeneration))
-                        val gen = seekGeneration
-                        while (isPlaying && seekGeneration == gen && isActive) {
-                            delay(50.milliseconds)
-                        }
-                    }
+                    handleEndOfStream(videoChannel, frameGeneration)
                     continue
                 }
 
@@ -105,7 +105,10 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
                         durationChecked = true
                     }
                     val frameTsMs = grabber.timestamp / 1000L
-                    val bitmap = frame.toComposeBitmap(hdrInfo)
+                    // Already past its slot: decoded (the stream needs it) but not
+                    // converted, which is where the time actually goes (§6).
+                    if (pacer.shouldSkip(frameTsMs, playbackSpeed)) continue
+                    val bitmap = pacer.convert(frame)
                     videoChannel.send(VideoFrame(bitmap, frameTsMs, frameGeneration, hdrInfo))
                 }
             }

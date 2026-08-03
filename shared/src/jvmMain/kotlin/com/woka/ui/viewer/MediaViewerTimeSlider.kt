@@ -20,9 +20,8 @@ import com.woka.ui.viewer.player.VideoPlayerState
 import com.woka.ui.viewer.player.pauseForSeek
 import com.woka.ui.viewer.player.resumeAfterSeek
 import com.woka.ui.viewer.player.seek
+import com.woka.ui.viewer.player.skipBy
 import org.jetbrains.compose.resources.painterResource
-import kotlin.math.max
-import kotlin.math.min
 
 @Composable
 fun MediaViewerTimeSlider(
@@ -57,7 +56,7 @@ fun MediaViewerTimeSlider(
                 modifier = Modifier
                     .clip(RoundedCornerShape(6.dp))
                     .clickable(enabled = videoState != null) {
-                        videoState?.seek(max(0, currentMs - 5000))
+                        videoState?.skipBy(-5000)
                     },
                 contentAlignment = Alignment.Center
             ) {
@@ -104,7 +103,7 @@ fun MediaViewerTimeSlider(
                 modifier = Modifier
                     .clip(RoundedCornerShape(6.dp))
                     .clickable(enabled = videoState != null) {
-                        videoState?.seek(min(durationMs, currentMs + 5000))
+                        videoState?.skipBy(5000)
                     },
                 contentAlignment = Alignment.Center
             ) {

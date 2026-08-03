@@ -32,19 +32,25 @@ internal fun VideoPlayerState.initAudio(
         audioJob = scope.launch(Dispatchers.IO) {
             var soundLineWasPaused = false
             try {
-                for (byteArray in audioChannel) {
-                    if (byteArray.isEmpty()) {
-                        isPlaying = false
-                        currentPositionMs = durationMs
-                        continue
-                    }
-                    while (!isPlaying || isSeeking) {
+                while (isActive) {
+                    if (!isPlaying || isSeeking) {
                         if (!soundLineWasPaused) {
                             soundLine.stop()
                             soundLineWasPaused = true
                         }
                         delay(50.milliseconds)
+                        continue
                     }
+                    // Poll instead of blocking on the channel. Above 1x the decoder
+                    // can leave it empty, and a blocked receive never reaches the
+                    // stop() above — pausing then left the line looping its tail.
+                    val byteArray = withTimeoutOrNull(50.milliseconds) {
+                        audioChannel.receiveCatching().getOrNull()
+                    } ?: continue
+                    // An empty buffer used to mean "audio ended", but nothing sends
+                    // one deliberately any more — only a producer bug can, and
+                    // answering that by stopping playback froze the whole player.
+                    if (byteArray.isEmpty()) continue
                     if (soundLineWasPaused) {
                         soundLine.start()
                         soundLineWasPaused = false

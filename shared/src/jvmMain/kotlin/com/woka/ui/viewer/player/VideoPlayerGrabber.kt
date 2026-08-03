@@ -16,6 +16,9 @@ internal fun VideoPlayerState.openVideoGrabber(videoStreamIndex: Int = -1): FFmp
     grabber.setVideoOption("threads", "auto") // SW decode: dodge D3D11VA half-frame scaling bugs
     grabber.pixelFormat = AV_PIX_FMT_RGBA
     if (videoStreamIndex >= 0) grabber.videoStream = videoStreamIndex
+    // Output at the size actually drawn (§6). No-op until the probe has filled in
+    // the native dimensions, so the very first open is always native.
+    renderScale.applyTo(grabber)
     return grabber
 }
 

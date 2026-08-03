@@ -4,16 +4,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.woka.AppDependencies
 import com.woka.ui.viewer.player.VideoPlayerState
 import com.woka.ui.viewer.player.selectVideoTrack
 
@@ -27,16 +26,17 @@ import com.woka.ui.viewer.player.selectVideoTrack
  */
 @Composable
 internal fun PlayerSettingsMenuList(videoState: VideoPlayerState) {
+    val repo = remember { AppDependencies.settingsRepository }
+    val settings by repo.settings.collectAsState()
     val videoTracks = videoState.tracks.mediaTracks.video
     // A single video stream is the overwhelmingly common case; showing a
     // one-entry track list there would be noise, so it stays hidden (§2.3).
     val showVideoTracks = videoTracks.size > 1
-    val showSync = videoState.hasSubtitle || videoState.hasAudio
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(max = 260.dp)
+            .heightIn(max = 320.dp)
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
@@ -50,14 +50,17 @@ internal fun PlayerSettingsMenuList(videoState: VideoPlayerState) {
                 )
             }
         }
+        PlaybackModeRows(
+            repeat = settings.repeatMode,
+            shuffle = settings.shuffle,
+            onRepeatCycle = { repo.setRepeatMode(settings.repeatMode.next()) },
+            onShuffleToggle = { repo.setShuffle(!settings.shuffle) }
+        )
+        PlayerSpeedSlider(
+            speed = settings.playbackSpeed,
+            onSpeedChange = { repo.setPlaybackSpeed(it) }
+        )
+        PlayerSpeedNotice(videoState, settings.playbackSpeed)
         PlayerSyncSection(videoState)
-        if (!showVideoTracks && !showSync) {
-            Text(
-                text = "No additional options",
-                color = Color.White.copy(alpha = 0.45f),
-                style = TextStyle(fontSize = 12.sp),
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
-            )
-        }
     }
 }

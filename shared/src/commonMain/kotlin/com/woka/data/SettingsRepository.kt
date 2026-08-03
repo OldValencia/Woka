@@ -29,4 +29,7 @@ interface SettingsRepository {
     fun removePinnedSession(path: String)
     fun setTrackPrefs(filePath: String, folderPath: String, prefs: TrackPrefs)
     fun clearTrackPrefsForFile(filePath: String)
+    fun setRepeatMode(mode: RepeatMode)
+    fun setShuffle(shuffle: Boolean)
+    fun setPlaybackSpeed(speed: Float)
 }

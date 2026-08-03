@@ -3,7 +3,7 @@ package com.woka.ui.viewer
 import androidx.compose.ui.input.key.*
 import com.woka.ui.viewer.pip.PipManager
 import com.woka.ui.viewer.player.VideoPlayerState
-import com.woka.ui.viewer.player.seek
+import com.woka.ui.viewer.player.skipBy
 import com.woka.ui.viewer.player.togglePlayPause
 
 /**
@@ -24,12 +24,12 @@ fun handlePipKeyEvent(event: KeyEvent, videoState: VideoPlayerState?): Boolean {
         }
 
         Key.DirectionLeft -> {
-            videoState?.let { it.seek((it.currentPositionMs - 5000).coerceAtLeast(0)) }
+            videoState?.skipBy(-5000)
             true
         }
 
         Key.DirectionRight -> {
-            videoState?.let { it.seek((it.currentPositionMs + 5000).coerceAtMost(it.durationMs)) }
+            videoState?.skipBy(5000)
             true
         }
 
