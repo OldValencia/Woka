@@ -25,15 +25,28 @@ class VideoPlayerTracks {
     var selectedVideoIndex by mutableStateOf<Int?>(null)
     var selectedAudioIndex by mutableStateOf<Int?>(null)
 
-    // null == subtitles Off, which is the default on first open (§2.2).
-    var selectedSubtitleIndex by mutableStateOf<Int?>(null)
+    // Off is the default on first open (§2.2).
+    var subtitleSelection by mutableStateOf<SubtitleSelection>(SubtitleSelection.Off)
     var activeCue by mutableStateOf<Cue?>(null)
+
+    /** Sidecar files found next to the video (Step 9), kept apart from [mediaTracks]. */
+    var externalSubtitles by mutableStateOf<List<ExternalSubtitle>>(emptyList())
+
+    /** Paths dismissed from [externalSubtitles]; the file on disk is untouched. */
+    var hiddenExternalSubtitles by mutableStateOf<Set<String>>(emptySet())
+
+    /** True when there is anything at all to choose from, embedded or sidecar. */
+    val hasAnySubtitle: Boolean
+        get() = hasSubtitle || externalSubtitles.isNotEmpty()
 
     /**
      * Applies the probe result, restoring remembered selections (§2.6): the
      * per-file record wins, else the folder heuristic, else the container's own
      * default disposition. Video resolves from [perFile] only — carrying a video
      * track across episodes is meaningless.
+     *
+     * Set [externalSubtitles] before calling this: a restored sidecar has to be
+     * resolvable against the list that was actually found on disk.
      */
     fun apply(tracks: MediaTracks, perFile: TrackPrefs? = null, perFolder: TrackPrefs? = null) {
         mediaTracks = tracks
@@ -43,12 +56,35 @@ class VideoPlayerTracks {
             ?: tracks.video.defaultIndex()
         selectedAudioIndex = tracks.audio.matchRef(prefs?.audio)?.index
             ?: tracks.audio.defaultIndex()
-        // Subtitles stay Off (§2.2) unless a record explicitly says they were on.
-        selectedSubtitleIndex = if (prefs == null || prefs.subtitleOff) {
-            null
-        } else {
-            tracks.subtitle.matchRef(prefs.subtitle)?.index
-        }
+        subtitleSelection = resolveSubtitle(tracks, perFile, perFolder)
+    }
+
+    /**
+     * Sidecar first, and by two different keys per layer. The per-file record
+     * stores the path, which identifies exactly one file; the folder record stores
+     * only the *language*, because a path is meaningless on the next episode —
+     * that file has its own sidecar, and what carries over is "the user watches
+     * this folder with external Russian".
+     */
+    private fun resolveSubtitle(
+        tracks: MediaTracks,
+        perFile: TrackPrefs?,
+        perFolder: TrackPrefs?
+    ): SubtitleSelection {
+        val prefs = perFile ?: perFolder
+        if (prefs == null || prefs.subtitleOff) return SubtitleSelection.Off
+
+        perFile?.subtitleExternal
+            ?.let { path -> externalSubtitles.firstOrNull { it.path == path } }
+            ?.let { return SubtitleSelection.External(it.path) }
+
+        prefs.subtitleExternalLanguage
+            ?.let { lang -> externalSubtitles.firstOrNull { it.language == lang } }
+            ?.let { return SubtitleSelection.External(it.path) }
+
+        return tracks.subtitle.matchRef(prefs.subtitle)?.index
+            ?.let { SubtitleSelection.Embedded(it) }
+            ?: SubtitleSelection.Off
     }
 
     private fun List<MediaTrack>.defaultIndex(): Int? =

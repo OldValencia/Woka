@@ -28,7 +28,10 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.woka.ui.viewer.player.VideoPlayerState
-import com.woka.ui.viewer.player.selectSubtitleTrack
+import com.woka.ui.viewer.player.addExternalSubtitle
+import com.woka.ui.viewer.player.hideExternalSubtitle
+import com.woka.ui.viewer.player.selectSubtitle
+import com.woka.utils.openFilePicker
 
 /**
  * Standalone vertical subtitle popover overlay that docks above the toolbar icon (§2.2),
@@ -44,9 +47,10 @@ fun SubtitleVerticalOverlay(
     videoState: VideoPlayerState?,
     onHover: (Boolean) -> Unit
 ) {
-    if (videoState?.hasSubtitle != true) return
+    if (videoState?.tracks?.hasAnySubtitle != true) return
     val tracks = videoState.tracks.mediaTracks.subtitle
-    val selectedIndex = videoState.tracks.selectedSubtitleIndex
+    val external = videoState.tracks.externalSubtitles
+    val selection = videoState.tracks.subtitleSelection
     var showCustomize by remember { mutableStateOf(false) }
 
     // Collapse back to the track list whenever the popover closes.
@@ -88,8 +92,17 @@ fun SubtitleVerticalOverlay(
                     } else {
                         SubtitlePopoverList(
                             tracks = tracks,
-                            selectedIndex = selectedIndex,
-                            onSelect = { index -> videoState.selectSubtitleTrack(index) },
+                            external = external,
+                            selection = selection,
+                            onSelect = { videoState.selectSubtitle(it) },
+                            onAddFile = {
+                                openFilePicker(
+                                    title = "Choose a subtitle file",
+                                    extensions = listOf("srt", "ass", "ssa"),
+                                    initialDirectory = videoState.file.parent
+                                )?.let { videoState.addExternalSubtitle(it) }
+                            },
+                            onRemoveFile = { videoState.hideExternalSubtitle(it) },
                             onCustomize = { showCustomize = true }
                         )
                     }

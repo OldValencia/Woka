@@ -19,6 +19,12 @@ internal object SubtitleParser {
 
     private val assPrefixRegex = Regex("^.*?,\\s*\\d+\\s*,\\s*\\d+\\s*,\\s*\\d+\\s*,[^,]*,")
 
+    // Only the tag set SRT actually uses. A generic `<[^>]*>` sweep would also eat
+    // ordinary angle-bracketed dialogue, which is a real thing in subtitles. Needed
+    // for sidecars (Step 9): FFmpeg rewrites these into ASS tags for embedded SRT,
+    // so this is a no-op on that path.
+    private val htmlTagRegex = Regex("</?(?:b|i|u|s|font)(?:\\s[^>]*)?>", RegexOption.IGNORE_CASE)
+
     /**
      * Cleans raw subtitle text from AVSubtitleRect by stripping ASS dialogue
      * prefixes, style override tags ({...}), and normalizing line breaks.
@@ -33,6 +39,7 @@ internal object SubtitleParser {
             .replace("\\n", "\n")
             .replace("\\h", " ")
         text = stripTags(text)
+        text = htmlTagRegex.replace(text, "")
         return text.trim()
     }
 

@@ -3,8 +3,10 @@ package com.woka.ui.viewer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -12,6 +14,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,7 +39,8 @@ import com.woka.ui.theme.Theme
 internal fun PopoverListRow(
     label: String,
     selected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onRemove: (() -> Unit)? = null
 ) {
     var hovered by remember { mutableStateOf(false) }
     val background = when {
@@ -44,7 +48,7 @@ internal fun PopoverListRow(
         hovered -> Color.White.copy(alpha = 0.10f)
         else -> Color.Transparent
     }
-    Box(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(6.dp))
@@ -53,7 +57,8 @@ internal fun PopoverListRow(
             .onPointerEvent(PointerEventType.Enter) { hovered = true }
             .onPointerEvent(PointerEventType.Exit) { hovered = false }
             .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 5.dp)
+            .padding(horizontal = 8.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Marquee(
             text = label,
@@ -62,7 +67,36 @@ internal fun PopoverListRow(
                 fontSize = 12.sp
             ),
             animate = hovered || selected,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.weight(1f)
+        )
+        // Only appears on hover, and only for rows that can actually be removed,
+        // so the list stays as quiet as the rest of the player's popovers.
+        if (onRemove != null && hovered) {
+            RemoveRowButton(onRemove)
+        }
+    }
+}
+
+/** Small ✕ at the trailing edge of a removable row. */
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun RemoveRowButton(onClick: () -> Unit) {
+    var hovered by remember { mutableStateOf(false) }
+    Box(
+        modifier = Modifier
+            .padding(start = 6.dp)
+            .size(16.dp)
+            .clip(RoundedCornerShape(4.dp))
+            .background(if (hovered) Color.White.copy(alpha = 0.18f) else Color.Transparent)
+            .onPointerEvent(PointerEventType.Enter) { hovered = true }
+            .onPointerEvent(PointerEventType.Exit) { hovered = false }
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "✕",
+            color = Color.White.copy(alpha = if (hovered) 1f else 0.6f),
+            style = TextStyle(fontSize = 10.sp)
         )
     }
 }

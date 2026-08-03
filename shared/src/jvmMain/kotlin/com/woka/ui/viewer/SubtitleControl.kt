@@ -15,8 +15,9 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.unit.dp
 import com.woka.ui.icons.Icons
 import com.woka.ui.theme.Theme
+import com.woka.ui.viewer.player.SubtitleSelection
 import com.woka.ui.viewer.player.VideoPlayerState
-import com.woka.ui.viewer.player.selectSubtitleTrack
+import com.woka.ui.viewer.player.selectSubtitle
 import org.jetbrains.compose.resources.painterResource
 
 /**
@@ -32,10 +33,11 @@ fun SubtitleControl(
     modifier: Modifier = Modifier
 ) {
     val tracks = videoState.tracks.mediaTracks.subtitle
-    val selectedIndex = videoState.tracks.selectedSubtitleIndex
+    val external = videoState.tracks.externalSubtitles
+    val selection = videoState.tracks.subtitleSelection
 
     Box(modifier = modifier) {
-        val isOff = selectedIndex == null
+        val isOff = selection == SubtitleSelection.Off
         val icon = if (isOff) Icons.Static.SubtitlesOff else Icons.Static.Subtitles
         val tint = if (isOff) Theme.colors.textPrimary.copy(alpha = 0.5f) else Theme.colors.textPrimary
 
@@ -47,8 +49,13 @@ fun SubtitleControl(
                     .onPointerEvent(PointerEventType.Enter) { onHoverChange(true) }
                     .onPointerEvent(PointerEventType.Exit) { onHoverChange(false) }
                     .clickable {
-                        videoState.selectSubtitleTrack(
-                            if (selectedIndex == null) tracks.firstOrNull()?.index else null
+                        // Toggling on prefers an embedded track and falls back to
+                        // a sidecar, so a file with only sidecars still toggles.
+                        val on = tracks.firstOrNull()
+                            ?.let { SubtitleSelection.Embedded(it.index) }
+                            ?: external.firstOrNull()?.let { SubtitleSelection.External(it.path) }
+                        videoState.selectSubtitle(
+                            if (isOff) on ?: SubtitleSelection.Off else SubtitleSelection.Off
                         )
                     },
                 contentAlignment = Alignment.Center

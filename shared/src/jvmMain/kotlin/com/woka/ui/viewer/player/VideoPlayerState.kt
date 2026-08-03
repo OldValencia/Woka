@@ -58,7 +58,9 @@ class VideoPlayerState(
         internal set
 
     val tracks = VideoPlayerTracks()
-    val hasSubtitle: Boolean get() = tracks.hasSubtitle
+    // Sidecar files count (Step 9): the toolbar icon and the SYNC row exist to
+    // control whatever subtitles this file has, wherever they came from.
+    val hasSubtitle: Boolean get() = tracks.hasAnySubtitle
     val activeCue: Cue? get() = tracks.activeCue
     internal val renderScale = RenderScale() // decode-size policy (§6)
 

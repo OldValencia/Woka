@@ -13,6 +13,7 @@ import org.bytedeco.ffmpeg.global.avcodec.*
 import org.bytedeco.ffmpeg.global.avformat.*
 import org.bytedeco.ffmpeg.global.avutil.AVMEDIA_TYPE_SUBTITLE
 import org.bytedeco.javacpp.IntPointer
+import java.io.File
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -22,7 +23,6 @@ import kotlin.time.Duration.Companion.milliseconds
 internal fun VideoPlayerState.startSubtitleDecoderLoop() {
     scope.launch(Dispatchers.IO) {
         val subtitleTracks = tracks.mediaTracks.subtitle
-        if (subtitleTracks.isEmpty()) return@launch
 
         val textTrackIndices = subtitleTracks
             .filter { it.isTextBased != false }
@@ -35,16 +35,21 @@ internal fun VideoPlayerState.startSubtitleDecoderLoop() {
             emptyMap()
         }
 
+        // Sidecars are parsed on first selection rather than up front: they cost
+        // a millisecond each, and the picker (Step 9) can add one at any time.
+        val externalCues = mutableMapOf<String, List<Cue>>()
+
         while (isActive) {
-            val selectedIndex = tracks.selectedSubtitleIndex
-            if (selectedIndex == null) {
-                tracks.activeCue = null
-            } else {
-                val cues = textCues[selectedIndex]
-                // subtitleTimeMs, not currentPositionMs: the sync offset (§3) is
-                // applied here at lookup, so nothing has to be re-parsed.
-                tracks.activeCue = findActiveCue(cues, subtitleTimeMs)
+            val cues = when (val selection = tracks.subtitleSelection) {
+                is SubtitleSelection.Off -> null
+                is SubtitleSelection.Embedded -> textCues[selection.index]
+                is SubtitleSelection.External -> externalCues.getOrPut(selection.path) {
+                    parseSubtitleFile(File(selection.path))
+                }
             }
+            // subtitleTimeMs, not currentPositionMs: the sync offset (§3) is
+            // applied here at lookup, so nothing has to be re-parsed.
+            tracks.activeCue = if (cues == null) null else findActiveCue(cues, subtitleTimeMs)
             delay(50.milliseconds)
         }
     }

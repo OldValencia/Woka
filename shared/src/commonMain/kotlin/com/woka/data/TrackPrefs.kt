@@ -27,6 +27,20 @@ data class TrackPrefs(
     val subtitle: TrackRef? = null,
     val subtitleOff: Boolean = true,
     val video: TrackRef? = null,
+    // External sidecar subtitles (Step 9). The path identifies one specific file,
+    // so the folder layer strips it and keeps only the language — the next episode
+    // has its own sidecar, and what carries over is which language was wanted.
+    val subtitleExternal: String? = null,
+    val subtitleExternalLanguage: String? = null,
+    // Files added through the picker. The automatic scan cannot find these again —
+    // they may live anywhere and be named anything — so without this list a
+    // hand-picked subtitle would not survive re-opening the video.
+    val subtitleExternalAdded: List<String> = emptyList(),
+    // Sidecars dismissed from the list. The list is built by scanning the folder,
+    // not from this file, so hiding needs a record of its own — otherwise the next
+    // open finds the file again and puts it straight back. Re-adding it through
+    // the picker clears the entry.
+    val subtitleExternalHidden: List<String> = emptyList(),
     // Sync offsets (§3), per-file only: they describe one encode's timing, not a
     // series' preference, so the folder layer strips them like it strips [video].
     val subtitleDelayMs: Long = 0L,

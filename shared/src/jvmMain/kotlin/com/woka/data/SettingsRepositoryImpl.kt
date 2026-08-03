@@ -112,14 +112,19 @@ class SettingsRepositoryImpl : SettingsRepository {
         update { current ->
             current.copy(
                 trackPrefsPerFile = current.trackPrefsPerFile + (filePath to prefs),
-                // The folder layer carries neither video (§2.6) nor the sync
-                // offsets (§3): another episode's second video stream is a
-                // different encode, and its timing is its own.
+                // The folder layer carries neither video (§2.6), nor the sync
+                // offsets (§3), nor a sidecar path (Step 9): another episode's
+                // second video stream is a different encode, its timing is its
+                // own, and its subtitle file is a different file. The sidecar's
+                // *language* does carry — that is the preference worth keeping.
                 trackPrefsPerFolder = current.trackPrefsPerFolder + (
                     folderPath to prefs.copy(
                         video = null,
                         subtitleDelayMs = 0L,
-                        audioDelayMs = 0L
+                        audioDelayMs = 0L,
+                        subtitleExternal = null,
+                        subtitleExternalAdded = emptyList(),
+                        subtitleExternalHidden = emptyList()
                     )
                 )
             )

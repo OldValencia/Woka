@@ -30,13 +30,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.woka.ui.components.Marquee
 import com.woka.ui.theme.Theme
+import com.woka.ui.viewer.player.ExternalSubtitle
 import com.woka.ui.viewer.player.MediaTrack
+import com.woka.ui.viewer.player.SubtitleSelection
 
 @Composable
 internal fun SubtitlePopoverList(
     tracks: List<MediaTrack>,
-    selectedIndex: Int?,
-    onSelect: (Int?) -> Unit,
+    external: List<ExternalSubtitle>,
+    selection: SubtitleSelection,
+    onSelect: (SubtitleSelection) -> Unit,
+    onAddFile: () -> Unit,
+    onRemoveFile: (String) -> Unit,
     onCustomize: () -> Unit
 ) {
     Column(
@@ -51,14 +56,27 @@ internal fun SubtitlePopoverList(
         ) {
             PopoverListRow(
                 label = "Off",
-                selected = selectedIndex == null,
-                onClick = { onSelect(null) }
+                selected = selection == SubtitleSelection.Off,
+                onClick = { onSelect(SubtitleSelection.Off) }
             )
             tracks.forEach { track ->
                 PopoverListRow(
                     label = track.label,
-                    selected = track.index == selectedIndex,
-                    onClick = { onSelect(track.index) }
+                    selected = selection.embeddedIndex == track.index,
+                    onClick = { onSelect(SubtitleSelection.Embedded(track.index)) }
+                )
+            }
+            // Sidecars are listed after the embedded tracks and marked with their
+            // format, so it is obvious which entries came from a file on disk.
+            external.forEach { file ->
+                PopoverListRow(
+                    label = "${file.label} · ${file.format}",
+                    selected = selection.externalPath == file.path,
+                    onClick = { onSelect(SubtitleSelection.External(file.path)) },
+                    // Every sidecar gets the ✕ — the row does not look different
+                    // depending on where the file happens to live, so it must not
+                    // behave differently either. It hides, never deletes.
+                    onRemove = { onRemoveFile(file.path) }
                 )
             }
         }
@@ -66,7 +84,8 @@ internal fun SubtitlePopoverList(
             modifier = Modifier.padding(vertical = 4.dp),
             color = Color.White.copy(alpha = 0.15f)
         )
-        SubtitleCustomizeRow(onClick = onCustomize)
+        SubtitleActionRow(label = "Add subtitle file…", onClick = onAddFile)
+        SubtitleActionRow(label = "Customize Subtitles", onClick = onCustomize)
     }
 }
 
@@ -77,7 +96,7 @@ internal fun SubtitlePopoverList(
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-private fun SubtitleCustomizeRow(onClick: () -> Unit) {
+private fun SubtitleActionRow(label: String, onClick: () -> Unit) {
     var hovered by remember { mutableStateOf(false) }
     val background = if (hovered) Color.White.copy(alpha = 0.10f) else Color.Transparent
     Box(
@@ -92,7 +111,7 @@ private fun SubtitleCustomizeRow(onClick: () -> Unit) {
             .padding(horizontal = 8.dp, vertical = 5.dp)
     ) {
         Marquee(
-            text = "Customize Subtitles",
+            text = label,
             style = TextStyle(
                 color = Theme.colors.accent,
                 fontSize = 12.sp
