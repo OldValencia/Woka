@@ -32,6 +32,9 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
                 // with, before anything downstream reads a selection (§2.6 / §3).
                 applyTrackPrefs(probeMediaTracks(grabber))
                 logMediaTracks(tracks.mediaTracks)
+                // Same open format context, so this is free (§4). Reads durationMs,
+                // which is why it sits after that assignment.
+                tracks.chapters = probeChapters(grabber, durationMs)
                 renderScale.useNativeOf(
                     tracks.mediaTracks.video.firstOrNull { it.index == tracks.selectedVideoIndex }
                 )

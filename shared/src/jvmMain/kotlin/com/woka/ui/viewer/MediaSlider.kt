@@ -4,30 +4,37 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Popup
+import com.woka.ui.viewer.player.MediaChapter
 
 /**
  * A slim, YouTube-style horizontal slider: a thin track with a small dot that
  * grows while being dragged. The tap/drag hit area is kept generously tall
  * ([hitAreaHeight]) even though the visuals are compact.
+ *
+ * With [chapters] the track is drawn segmented (§4); segmentation is purely
+ * visual — a click still seeks to the clicked position, never to a boundary.
  */
 @Composable
 fun MediaSlider(
@@ -36,6 +43,8 @@ fun MediaSlider(
     modifier: Modifier = Modifier,
     onValueChangeFinished: (() -> Unit)? = null,
     tooltipText: ((Float) -> String)? = null,
+    chapters: List<MediaChapter> = emptyList(),
+    durationMs: Long = 0L,
     activeColor: Color = MaterialTheme.colorScheme.onSurface,
     inactiveColor: Color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
     thumbColor: Color = Color.White,
@@ -45,6 +54,7 @@ fun MediaSlider(
     hitAreaHeight: Dp = 24.dp
 ) {
     var dragX by remember { mutableStateOf<Float?>(null) }
+    var hoverX by remember { mutableStateOf<Float?>(null) }
     var width by remember { mutableStateOf(0f) }
     val isDragging = dragX != null
 
@@ -56,12 +66,25 @@ fun MediaSlider(
         dragX?.let { (it / width).coerceIn(0f, 1f) } ?: safeValue
     } else safeValue
 
+    // The pointer moves at frame rate, so the chapter under it is derived rather
+    // than recomposing the whole control bar on every Move event.
+    val hoveredIndex by remember(chapters, durationMs) {
+        derivedStateOf { chapterIndexAt(chapters, durationMs, hoverX ?: dragX, width) }
+    }
+
+    // Where the bar would jump to, shown as a lighter fill up to the cursor. Not
+    // during a drag: the accent fill is already following the pointer there.
+    val previewProgress = hoverX
+        ?.takeIf { !isDragging && width > 0f }
+        ?.let { (it / width).coerceIn(0f, 1f) }
+
     val animatedThumbSize by animateDpAsState(if (isDragging) thumbSizeDragged else thumbSize)
 
     Box(
         modifier = modifier
             .height(hitAreaHeight)
             .onSizeChanged { width = it.width.toFloat() }
+            .sliderHover { hoverX = it }
             .pointerInput(Unit) {
                 detectDragGestures(
                     onDragStart = { offset ->
@@ -91,21 +114,16 @@ fun MediaSlider(
             },
         contentAlignment = Alignment.CenterStart
     ) {
-        // Track
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(trackHeight)
-                .clip(CircleShape)
-                .background(inactiveColor)
-        )
-        // Active Track
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(displayValue)
-                .height(trackHeight)
-                .clip(CircleShape)
-                .background(activeColor)
+        MediaSliderTrack(
+            progress = displayValue,
+            previewProgress = previewProgress,
+            chapters = chapters,
+            durationMs = durationMs,
+            hoveredIndex = hoveredIndex,
+            hovered = hoverX != null || isDragging,
+            activeColor = activeColor,
+            inactiveColor = inactiveColor,
+            trackHeight = trackHeight
         )
         // Thumb
         Box(
@@ -116,84 +134,15 @@ fun MediaSlider(
                 .background(thumbColor, CircleShape)
         )
 
-        if (tooltipText != null && dragX != null) {
-            Popup(
-                alignment = Alignment.TopCenter,
-                offset = IntOffset((displayValue * width).toInt() - (width / 2f).toInt(), -35)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(6.dp))
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = tooltipText(displayValue),
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
+        // Follows the cursor, and falls back to the drag once the pointer has
+        // left the row mid-scrub.
+        val pillX = hoverX ?: dragX
+        if (tooltipText != null && pillX != null && width > 0f) {
+            MediaSliderTooltip(
+                x = pillX.coerceIn(0f, width),
+                timeText = tooltipText((pillX / width).coerceIn(0f, 1f)),
+                chapterTitle = chapters.getOrNull(hoveredIndex)?.title
+            )
         }
-    }
-}
-
-@Composable
-fun MediaVerticalSlider(
-    value: Float,
-    onValueChange: (Float) -> Unit,
-    modifier: Modifier = Modifier,
-    activeColor: Color = Color.White,
-    inactiveColor: Color = Color.White.copy(alpha = 0.2f),
-) {
-    var dragY by remember { mutableStateOf<Float?>(null) }
-    var height by remember { mutableStateOf(0f) }
-
-    val currentOnValueChange by rememberUpdatedState(onValueChange)
-
-    val safeValue = value.coerceIn(0f, 1f)
-    val displayValue = if (height > 0f) {
-        dragY?.let { (1f - (it / height)).coerceIn(0f, 1f) } ?: safeValue
-    } else safeValue
-
-    Box(
-        modifier = modifier
-            .onSizeChanged { height = it.height.toFloat() }
-            .pointerInput(Unit) {
-                detectDragGestures(
-                    onDragStart = { offset ->
-                        dragY = offset.y
-                        currentOnValueChange((1f - (offset.y / height)).coerceIn(0f, 1f))
-                    },
-                    onDragEnd = { dragY = null },
-                    onDragCancel = { dragY = null }
-                ) { change, dragAmount ->
-                    change.consume()
-                    dragY = (dragY ?: 0f) + dragAmount.y
-                    currentOnValueChange((1f - (dragY!! / height)).coerceIn(0f, 1f))
-                }
-            }
-            .pointerInput(Unit) {
-                detectTapGestures { offset ->
-                    currentOnValueChange((1f - (offset.y / height)).coerceIn(0f, 1f))
-                }
-            },
-        contentAlignment = Alignment.BottomCenter
-    ) {
-        // Track
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(CircleShape)
-                .background(inactiveColor)
-        )
-        // Active Track
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(displayValue)
-                .clip(CircleShape)
-                .background(activeColor)
-        )
     }
 }

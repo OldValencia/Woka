@@ -92,6 +92,9 @@ fun MediaViewerTimeSlider(
                     isDragging = false
                 }
             },
+            tooltipText = { formatTime((it * durationMs).toLong()) },
+            chapters = videoState?.tracks?.chapters.orEmpty(),
+            durationMs = durationMs,
             activeColor = Theme.colors.accent,
             inactiveColor = Theme.colors.textSecondary,
             thumbColor = Theme.colors.accent,

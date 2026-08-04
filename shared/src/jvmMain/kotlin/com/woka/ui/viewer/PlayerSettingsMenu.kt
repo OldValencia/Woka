@@ -62,6 +62,7 @@ internal fun PlayerSettingsMenuList(videoState: VideoPlayerState) {
             onSpeedChange = { repo.setPlaybackSpeed(it) }
         )
         PlayerSpeedNotice(videoState, settings.playbackSpeed)
+        PlayerChapterSection(videoState)
         PlayerSyncSection(videoState)
         // The per-file record wins over the folder layer, so a file configured once
         // keeps its choice forever. This is the way back (Step 15) — it lives here

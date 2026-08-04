@@ -3,6 +3,28 @@
 Container chapters (MKV) drawn as YouTube-style segments on the seek bar, plus a hover pill naming
 the segment, and a chapter list in the ⚙ menu.
 
+## ✅ Shipped — where the build differs from the plan below
+
+The plan is kept as written; these five points override it, so read them first.
+
+1. **`probeChapters` lives in its own `MediaChapterProbe.kt`,** not in `MediaTrackProbe.kt` — the
+   normalisation would have put that file at ~165 lines, over the §2 mandate.
+2. **The probe survives `durationMs == 0`.** It is occasionally still 0 right after `start()`, and
+   clamping to it would have dropped every chapter; the ceiling falls back to the largest chapter
+   end instead.
+3. **The hovered segment lightens by blending towards white (`lerp`, 0.30), not by raising alpha
+   0.2 → 0.35.** The plan assumed a translucent inactive colour, but the real caller passes an
+   opaque `Theme.colors.textSecondary` — lowering its alpha darkens it against the panel.
+4. **Added on request after the first live test: a YouTube-style hover preview fill** — everything
+   up to the cursor drawn in a lighter shade (`lerp` 0.50), under the played fill so the accent
+   still reads as the real position. Not drawn during a drag, where the accent already follows.
+5. **The pill is positioned by a `PopupPositionProvider`, not `Popup(alignment, offset)`.** Phase 4
+   as written shipped broken and is the one real defect this step produced — see the Step 12 entry
+   in `video-player-enhancements.md` for the diagnosis. Two extra files came out of it:
+   `MediaSliderTooltip.kt` (the pill, split off because `MediaSlider.kt` would have passed 150) and
+   `MediaSliderHover.kt` (`Modifier.sliderHover`, one `pointerInput(Unit)` loop instead of three
+   event-keyed `onPointerEvent` modifiers).
+
 ## Decisions taken up front (do not re-litigate)
 
 - **The hover pill is shown always** — with or without chapters — carrying the time, and the chapter

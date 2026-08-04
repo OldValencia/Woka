@@ -47,6 +47,12 @@ class VideoPlayerTracks {
     var subtitleSelection by mutableStateOf<SubtitleSelection>(SubtitleSelection.Off)
     var activeCue by mutableStateOf<Cue?>(null)
 
+    /**
+     * Container chapters (§4), read by the same probe pass. Empty when the file
+     * has none — or only one, which is not a segmentation.
+     */
+    var chapters by mutableStateOf<List<MediaChapter>>(emptyList())
+
     /** Sidecar files found next to the video (Step 9), kept apart from [mediaTracks]. */
     var externalSubtitles by mutableStateOf<List<ExternalSubtitle>>(emptyList())
 
