@@ -54,9 +54,7 @@ object ThumbnailLoader {
     }
 
     private fun loadVideoThumbnail(item: MediaItem.Video): ImageBitmap? {
-        val previewDir = File(System.getProperty("user.home"), "Documents/OldValencia/Woka/.thumbnails")
-        if (!previewDir.exists()) previewDir.mkdirs()
-        val previewFile = File(previewDir, "${item.file.name.hashCode()}.png")
+        val previewFile = thumbnailCacheFile(item.file)
         if (previewFile.exists() && previewFile.isFile) {
             val existing = try {
                 ImageIO.read(previewFile)

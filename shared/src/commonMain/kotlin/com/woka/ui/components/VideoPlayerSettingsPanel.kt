@@ -66,6 +66,16 @@ fun VideoPlayerSettingsPanel() {
         }
 
         Spacer(modifier = Modifier.height(20.dp))
+        SectionLabel("System")
+        Spacer(modifier = Modifier.height(10.dp))
+        SettingsToggleRow(
+            title = "System media controls",
+            subtitle = "Use the keyboard's media keys and show Woka in the system Now Playing panel",
+            checked = settings.systemMediaControls,
+            onCheckedChange = { repository.setSystemMediaControls(it) }
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
         SectionLabel("Tracks")
         Spacer(modifier = Modifier.height(10.dp))
         SettingsToggleRow(

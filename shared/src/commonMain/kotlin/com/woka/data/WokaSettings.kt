@@ -84,7 +84,11 @@ data class WokaSettings(
     // from the last file watched in the same folder. Off by default: it is a guess,
     // and a wrong one silently changes the language a file opens in. The per-file
     // record is unaffected and always applies.
-    val carryTracksAcrossFolder: Boolean = false
+    val carryTracksAcrossFolder: Boolean = false,
+    // OS media session (§4): hardware media keys plus the system Now Playing
+    // panel. On by default — with the session registered the OS routes the keys
+    // to whichever app is playing, so Woka never takes them from anything else.
+    val systemMediaControls: Boolean = true
 )
 
 /**

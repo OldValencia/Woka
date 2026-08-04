@@ -124,6 +124,9 @@ class SettingsRepositoryImpl : SettingsRepository {
     override fun setCarryTracksAcrossFolder(enabled: Boolean) =
         update { it.copy(carryTracksAcrossFolder = enabled) }
 
+    override fun setSystemMediaControls(enabled: Boolean) =
+        update { it.copy(systemMediaControls = enabled) }
+
     // The update-copy-save pattern every setter goes through.
     private inline fun update(transform: (WokaSettings) -> WokaSettings) {
         _settings.update { current ->

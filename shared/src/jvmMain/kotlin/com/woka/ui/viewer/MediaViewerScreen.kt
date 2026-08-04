@@ -41,8 +41,14 @@ fun MediaViewerScreen(
     // survives switching files and app restarts.
     var mediaVolume by remember { mutableStateOf(settings.mediaVolume) }
 
-    val videoState = remember(activeItem, state.activeItemPath) {
-        if (activeItem is MediaItem.Video && state.activeItemPath != null) {
+    // The gate is "*this* item cleared the PiP conflict check", not the path being
+    // non-null: activeItem changes a frame before activeItemPath catches up, so
+    // keying on the raw path built — and probed — the player twice per file.
+    val itemReady = state.activeItemPath != null &&
+        state.activeItemPath == activeItem?.file?.absolutePath
+
+    val videoState = remember(activeItem, itemReady) {
+        if (activeItem is MediaItem.Video && itemReady) {
             PipManager.createOrGetState(activeItem, mediaVolume)
         } else null
     }
@@ -52,6 +58,7 @@ fun MediaViewerScreen(
     }
 
     MediaViewerPlaybackEffects(state, videoState, settings, mediaItems)
+    MediaViewerSystemControlsEffect(state, videoState, mediaItems, settings.systemMediaControls)
 
     val focusRequester = remember { FocusRequester() }
     MediaViewerAmbientEffects(state, videoState, mediaVolume, settingsRepo, focusRequester)

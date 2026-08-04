@@ -66,6 +66,8 @@ fun MediaViewerFullscreenWindow(
             window.requestFocus()
         }
 
+        FullscreenSystemControlsEffect(item, videoState, fsSettings.systemMediaControls)
+
         var isUiVisible by remember { mutableStateOf(true) }
         var lastInteractionTime by remember { mutableStateOf(System.currentTimeMillis()) }
 

@@ -38,8 +38,11 @@ internal fun MediaViewerActiveItemEffects(
             state.activeItemPath = null
             return@LaunchedEffect
         }
-        state.imageBitmap = loadThumbnail(activeItem)
+        // Assigned before the thumbnail loads, not after: this is the gate the
+        // video player is created on, and awaiting a decode first would delay
+        // playback by however long that decode takes.
         state.activeItemPath = path
+        state.imageBitmap = loadThumbnail(activeItem)
         // Returning from fullscreen (PiP) is the same file: carry the size state
         // back instead of resetting it to the global preset.
         val fromPip = PipManager.isTransitioningToMain &&
