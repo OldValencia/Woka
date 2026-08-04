@@ -1,6 +1,51 @@
 # Full ASS/SSA Subtitle Rendering (libass)
 
-> **Status:** Deferred phase (the "5%"). The base subtitle system — SRT, **ASS-as-plain-text**, PGS/VobSub bitmap, external sidecars, track switching, delay/advance — ships in `video-player-enhancements.md` §2–§3 on the current stack **without** this. This document covers only *pixel-accurate* ASS rendering.
+> **Status: ❌ REJECTED — 2026-08-05. Not deferred; decided against.** The base subtitle system —
+> SRT, **ASS-as-plain-text**, PGS/VobSub bitmap, external sidecars, track switching, delay/advance —
+> shipped in `video-player-enhancements.md` §2–§3 on the current stack without this, and that is
+> where it stays. The design below is kept as the record of what was weighed, not as work to do.
+> Reasoning in *Why this was rejected*; everything after it is the original plan, unedited.
+
+## Why this was rejected
+
+**What plain-text ASS actually costs us, measured against the shipped code.** `SubtitleParser.cleanText`
+strips `{...}` override tags cleanly and unfolds `\N` / `\h`, so an ASS track plays as ordinary
+text — correctly timed, switchable, with delay/advance and the app's own styling. Exactly three
+things do not work:
+
+1. **Positioning** (`\pos`, `\an`), and with it **overlap**. Signs and typesetting — on-screen text,
+   captions, chapter cards — lose their placement and fall to bottom-centre. They do not pile up
+   there, though: `findActiveCue` returns the *first* cue covering the timestamp, so when a sign and
+   a line of dialogue overlap, **one of them simply does not appear.** That silent drop, not a
+   collision, is the real defect — and it is the only one of the three that actually hurts.
+2. **Karaoke** (`\k`, `\kf`). An OP line appears whole instead of filling per syllable, often as
+   three simultaneous rows (romaji + kanji + translation).
+3. **Per-line styling** — colour per speaker, fonts, rotation. Cosmetic.
+
+**What it would cost.** A native chain — libass + freetype + fontconfig + HarfBuzz — with no bytedeco
+preset, so our own binding, then per-OS bundling into a jpackage distribution for platforms this
+machine does not have. Step 13 in the same week spent a whole phase on hand-rolled native
+integration and ended with the code deleted; that one at least failed against a single readable
+HRESULT, where this would fail against three platform builds.
+
+**Against a scenario the project does not contain.** The corpus is Netflix WEB-DL, whose subtitles
+are text or bitmap — ASS does not occur in it. The ASS files under test are fixtures built for
+Step 9, not real content. Full ASS serves fansubbed anime with dense typesetting, which is not what
+Woka is used for. And Woka is personal and undeployed: there is no other user whose files have to
+work.
+
+**The cheap fix, if it ever bites.** Should a release land where a sign and a line of dialogue
+overlap and one of them vanishes, the answer is **not** libass. It is two small changes in Kotlin,
+neither of which needs a native dependency:
+
+- Make `findActiveCue` collect *every* cue covering the timestamp instead of returning the first.
+- Read `\an` / `\pos` out of the override tag **before** `stripTags` discards it, and use them to
+  place a second simultaneous cue at the top of the frame rather than over the dialogue.
+
+Around thirty lines, and it closes the whole visible problem.
+
+**Reopen only if** a real file in actual use is unwatchable *and* the Kotlin mitigation above has
+been tried and proved insufficient. Absent both, this document stays closed.
 
 ## 1. Scope — what this adds
 Advanced ASS/SSA features that a plain-text renderer cannot reproduce:

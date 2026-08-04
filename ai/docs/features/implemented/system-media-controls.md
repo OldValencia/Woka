@@ -17,8 +17,9 @@ Hardware media keys control Woka. ~~And the OS shows a Now Playing entry for it.
   SMTC on from outside; and **with SMTC registered, Windows itself routes the media keys**, which
   would have dissolved the "who owns the keys" problem rather than adding to it. That second
   argument is exactly what failed to materialise.
-- **Windows working is what makes this step Done.** The macOS backend is written in the same pass
-  but cannot be run from this machine; it stays marked unverified until there is a Mac.
+- **Windows working is what makes this step Done.** The macOS backend was to be written in the same
+  pass and left unverified until there was a Mac. It was **not** written — the Windows detour
+  consumed the phase — so Phase 4 below is a design, not code.
 - **The session exists only while a video is open in the viewer** — windowed or fullscreen. Outside
   the viewer Woka registers nothing with the OS.
 - **Hand-rolled FFM on both platforms, not a library.** See below. Now moot on Windows, still the
@@ -99,8 +100,8 @@ proven.
   still current, which makes the handover safe in either order.
 - Commands arrive on an OS thread; `SystemMediaSession` marshals them onto the EDT with
   `EventQueue.invokeLater` before touching Compose state.
-- New `system/SystemMediaControlsFactory.kt` (OS switch) and `system/LoggingSystemMediaControls.kt`
-  (no-op + logging, the Phase 1 stand-in).
+- New `system/SystemMediaControlsFactory.kt` (OS switch) and the stand-in for platforms with no
+  backend — shipped as `system/NoopSystemMediaControls.kt`, without the logging the plan sketched.
 - New `ui/viewer/MediaViewerSystemControlsEffect.kt`, shaped like `MediaViewerPlaybackEffects`:
   attach while a video is open, push metadata when it changes, push playback state on every
   play/pause and **on a 1 s tick** for position (the panel does not need 60 Hz, and reading
@@ -272,8 +273,6 @@ Windows — this list is what makes the step Done, and it is ✅ met as of the s
 6. No OS panel entry appears anywhere, and no FFM warnings in the log.
 
 macOS, when a Mac exists: 1–5 against the hardware keys, run from `createDistributable`.
-
-macOS, when a Mac exists: the same list against Control Centre, run from `createDistributable`.
 
 ## Out of scope
 
