@@ -297,7 +297,7 @@ The player runs on JavaCV `FFmpegFrameGrabber` (`VideoPlayerDecoder.kt`), which 
   - Verify: `Off` remembers nothing; `Always` resumes any video; `Long videos` resumes only past the threshold; finishing a film clears its record; Alt+F4 mid-film still leaves a position; unlinking a folder and deleting a video drop theirs; window ⇄ fullscreen does not re-seek.
   - **Verified live:** opens at the remembered moment with subtitles on and the audio stream in sync.
 
-- **Step 12 — Smart Chapters (§4).** Read container chapters (MKV) and draw them as timeline segments.
+- **Step 12 — Smart Chapters (§4).** Read container chapters (MKV) and draw them as timeline segments. **Designed in full: `pending/smart-chapters.md`** — YouTube-style segments that appear on hover, a hover pill carrying the chapter title and the time (shown on every file, chapters or not), and a chapter list in the ⚙ menu. No persistent label and no keyboard shortcuts, both decided against. Fixtures already exist (`Yanni.Live…mkv` 15 named chapters, `Avatar…S02E01.mkv` 2, `_TEST.bitmap-subs.mkv` none), and `MediaSlider.kt` (199) must be split before any of it.
 
 - **Step 13 — System Media Controls (§4).** OS media-key integration (play/pause/next) — needs a JVM-side native hook; the largest unknown in this document.
 
