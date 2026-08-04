@@ -80,5 +80,6 @@ fun VideoPlayerState.selectAudioTrack(index: Int) {
     if (tracks.selectedAudioIndex == index) return
     tracks.selectedAudioIndex = index
     pendingAudioReopenIndex = index
+    tracks.markChosen(TrackChoice.Audio)
     persistTrackPrefs()
 }

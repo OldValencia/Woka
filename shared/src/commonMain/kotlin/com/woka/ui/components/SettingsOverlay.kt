@@ -1,29 +1,38 @@
 package com.woka.ui.components
 
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.woka.data.CarouselVisibility
 import com.woka.data.ScalePreset
-import com.woka.ui.icons.Icons
 import com.woka.ui.theme.Theme
 
 @Composable
@@ -47,6 +56,8 @@ fun SettingsOverlay(
     defaultZoomPercent: Int,
     onDefaultZoomPercentChange: (Int) -> Unit
 ) {
+    // Owned here, outside the AnimatedVisibility, so closing and reopening Settings
+    // returns to the category the user was last on.
     var selectedCategory by remember { mutableStateOf("Appearance") }
     AnimatedVisibility(
         visible = isOpen,
@@ -99,85 +110,27 @@ fun SettingsOverlay(
                     .border(1.dp, Theme.colors.border, RoundedCornerShape(20.dp))
                     .padding(28.dp)
             ) {
-                Column(modifier = Modifier.fillMaxSize()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        BasicText(
-                            text = "Settings",
-                            style = TextStyle(
-                                color = Theme.colors.textPrimary,
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        )
-                        Spacer(Modifier.weight(1f))
-                        CloseIconButton(onClick = onClose)
-                    }
-                    Spacer(modifier = Modifier.height(28.dp))
-                    Row(modifier = Modifier.fillMaxSize()) {
-                        // Sidebar
-                        Column(modifier = Modifier.width(140.dp).fillMaxHeight()) {
-                            SidebarItem(
-                                text = "Appearance",
-                                icon = Icons.Static.Image,
-                                isSelected = selectedCategory == "Appearance",
-                                onClick = { selectedCategory = "Appearance" }
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            SidebarItem(
-                                text = "Library",
-                                icon = Icons.Static.Folder,
-                                isSelected = selectedCategory == "Library",
-                                onClick = { selectedCategory = "Library" }
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            SidebarItem(
-                                text = "Media Viewer",
-                                icon = Icons.Static.Eye,
-                                isSelected = selectedCategory == "Media Viewer",
-                                onClick = { selectedCategory = "Media Viewer" }
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(28.dp))
-                        // Content
-                        Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
-                            AnimatedContent(
-                                targetState = selectedCategory,
-                                transitionSpec = {
-                                    fadeIn(tween(220)) togetherWith fadeOut(tween(180))
-                                },
-                                label = "CategoryTransition"
-                            ) { category ->
-                                Column(modifier = Modifier.fillMaxSize()) {
-                                    when (category) {
-                                        "Appearance" -> {
-                                            AppearanceSettingsPanel(currentTheme, onThemeChange)
-                                        }
-                                        "Library" -> {
-                                            LibrarySettingsPanel(
-                                                globalShowTitles,
-                                                onGlobalShowTitlesChange,
-                                                showHiddenFiles,
-                                                onShowHiddenFilesChange
-                                            )
-                                        }
-                                        "Media Viewer" -> {
-                                            MediaViewerSettingsPanel(
-                                                carouselMode, onCarouselModeChange,
-                                                rememberSizeState, onRememberSizeStateChange,
-                                                defaultUseZoom, onDefaultUseZoomChange,
-                                                defaultPreset, onDefaultPresetChange,
-                                                defaultZoomPercent, onDefaultZoomPercentChange
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                SettingsOverlayContent(
+                    selectedCategory = selectedCategory,
+                    onSelectCategory = { selectedCategory = it },
+                    onClose = onClose,
+                    currentTheme = currentTheme,
+                    onThemeChange = onThemeChange,
+                    globalShowTitles = globalShowTitles,
+                    onGlobalShowTitlesChange = onGlobalShowTitlesChange,
+                    showHiddenFiles = showHiddenFiles,
+                    onShowHiddenFilesChange = onShowHiddenFilesChange,
+                    carouselMode = carouselMode,
+                    onCarouselModeChange = onCarouselModeChange,
+                    rememberSizeState = rememberSizeState,
+                    onRememberSizeStateChange = onRememberSizeStateChange,
+                    defaultUseZoom = defaultUseZoom,
+                    onDefaultUseZoomChange = onDefaultUseZoomChange,
+                    defaultPreset = defaultPreset,
+                    onDefaultPresetChange = onDefaultPresetChange,
+                    defaultZoomPercent = defaultZoomPercent,
+                    onDefaultZoomPercentChange = onDefaultZoomPercentChange
+                )
             }
         }
     }

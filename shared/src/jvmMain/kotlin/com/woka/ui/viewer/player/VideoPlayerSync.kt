@@ -24,6 +24,7 @@ fun VideoPlayerState.setSubtitleDelay(delayMs: Long) {
     val clamped = delayMs.coerceIn(-SYNC_LIMIT_MS, SYNC_LIMIT_MS)
     if (clamped == subtitleDelayMs) return
     subtitleDelayMs = clamped
+    tracks.markChosen(TrackChoice.Sync)
     persistTrackPrefs()
 }
 
@@ -32,6 +33,7 @@ fun VideoPlayerState.setAudioDelay(delayMs: Long) {
     if (clamped == audioDelayMs) return
     audioDelayMs = clamped
     audioDelayGeneration++
+    tracks.markChosen(TrackChoice.Sync)
     persistTrackPrefs()
 }
 

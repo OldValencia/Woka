@@ -15,8 +15,26 @@ import com.woka.data.TrackPrefs
  * / `selectSubtitleTrack`; [apply] seeds them on open from the probe and the
  * remembered records (§2.6).
  */
+/**
+ * The dimensions a per-file record can hold, tracked so that only the ones the
+ * user actually touched *in this file* are written (Step 15).
+ */
+enum class TrackChoice { Audio, Subtitle, Video, Sync, Sidecars }
+
 @Stable
 class VideoPlayerTracks {
+    /**
+     * What was explicitly chosen in this file during this session, plus whatever
+     * the stored record already held. Anything outside it is inherited, and
+     * inherited values must not be written back as if they had been picked.
+     */
+    var chosen by mutableStateOf<Set<TrackChoice>>(emptySet())
+        private set
+
+    fun markChosen(choice: TrackChoice) {
+        chosen = chosen + choice
+    }
+
     var mediaTracks by mutableStateOf(MediaTracks.EMPTY)
         private set
     var hasSubtitle by mutableStateOf(false)
@@ -40,10 +58,12 @@ class VideoPlayerTracks {
         get() = hasSubtitle || externalSubtitles.isNotEmpty()
 
     /**
-     * Applies the probe result, restoring remembered selections (§2.6): the
-     * per-file record wins, else the folder heuristic, else the container's own
-     * default disposition. Video resolves from [perFile] only — carrying a video
-     * track across episodes is meaningless.
+     * Applies the probe result, restoring remembered selections (§2.6).
+     *
+     * Resolution is **per dimension**, not per record (Step 15): audio takes the
+     * per-file choice if there is one, else the folder's, else the container
+     * default, and subtitles do the same independently. Video resolves from
+     * [perFile] only — carrying a video track across episodes is meaningless.
      *
      * Set [externalSubtitles] before calling this: a restored sidecar has to be
      * resolvable against the list that was actually found on disk.
@@ -51,12 +71,28 @@ class VideoPlayerTracks {
     fun apply(tracks: MediaTracks, perFile: TrackPrefs? = null, perFolder: TrackPrefs? = null) {
         mediaTracks = tracks
         hasSubtitle = tracks.hasSubtitle
-        val prefs = perFile ?: perFolder
+        chosen = choicesIn(perFile)
         selectedVideoIndex = tracks.video.matchRef(perFile?.video)?.index
             ?: tracks.video.defaultIndex()
-        selectedAudioIndex = tracks.audio.matchRef(prefs?.audio)?.index
+        selectedAudioIndex = tracks.audio.matchRef(perFile?.audio ?: perFolder?.audio)?.index
             ?: tracks.audio.defaultIndex()
         subtitleSelection = resolveSubtitle(tracks, perFile, perFolder)
+    }
+
+    /** What the stored record already claims was chosen here, so a later write keeps it. */
+    private fun choicesIn(perFile: TrackPrefs?): Set<TrackChoice> {
+        if (perFile == null) return emptySet()
+        return buildSet {
+            if (perFile.audio != null) add(TrackChoice.Audio)
+            if (perFile.hasSubtitleChoice) add(TrackChoice.Subtitle)
+            if (perFile.video != null) add(TrackChoice.Video)
+            if (perFile.subtitleDelayMs != 0L || perFile.audioDelayMs != 0L) add(TrackChoice.Sync)
+            if (perFile.subtitleExternalAdded.isNotEmpty() ||
+                perFile.subtitleExternalHidden.isNotEmpty()
+            ) {
+                add(TrackChoice.Sidecars)
+            }
+        }
     }
 
     /**
@@ -71,18 +107,23 @@ class VideoPlayerTracks {
         perFile: TrackPrefs?,
         perFolder: TrackPrefs?
     ): SubtitleSelection {
-        val prefs = perFile ?: perFolder
-        if (prefs == null || prefs.subtitleOff) return SubtitleSelection.Off
+        // One layer answers the whole subtitle question: the file's if it made a
+        // choice at all, otherwise the folder's. Mixing the two would let a file
+        // that only turned subs *off* still inherit the folder's track.
+        val layer = perFile?.takeIf { it.hasSubtitleChoice }
+            ?: perFolder
+            ?: return SubtitleSelection.Off
+        if (layer.subtitleOff == true) return SubtitleSelection.Off
 
-        perFile?.subtitleExternal
+        layer.subtitleExternal
             ?.let { path -> externalSubtitles.firstOrNull { it.path == path } }
             ?.let { return SubtitleSelection.External(it.path) }
 
-        prefs.subtitleExternalLanguage
+        layer.subtitleExternalLanguage
             ?.let { lang -> externalSubtitles.firstOrNull { it.language == lang } }
             ?.let { return SubtitleSelection.External(it.path) }
 
-        return tracks.subtitle.matchRef(prefs.subtitle)?.index
+        return tracks.subtitle.matchRef(layer.subtitle)?.index
             ?.let { SubtitleSelection.Embedded(it) }
             ?: SubtitleSelection.Off
     }

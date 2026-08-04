@@ -26,9 +26,25 @@ interface SettingsRepository {
     fun setMediaVolume(volume: Float)
     fun addPinnedSession(session: PinnedSession)
     fun removePinnedSession(path: String)
-    fun setTrackPrefs(filePath: String, folderPath: String, prefs: TrackPrefs)
+    /**
+     * Both layers are written on every manual switch, but each gets its own record:
+     * the file's is a merge of what was ever chosen there, the folder's carries only
+     * what this action chose (§2.6 / Step 15).
+     */
+    fun setTrackPrefs(
+        filePath: String,
+        folderPath: String,
+        filePrefs: TrackPrefs,
+        folderPrefs: TrackPrefs
+    )
     fun clearTrackPrefsForFile(filePath: String)
+    fun clearAllTrackPrefs()
     fun setRepeatMode(mode: RepeatMode)
     fun setShuffle(shuffle: Boolean)
     fun setPlaybackSpeed(speed: Float)
+    fun setResumeMode(mode: ResumeMode)
+    fun setResumeMinDuration(minutes: Int)
+    fun setPlaybackPosition(filePath: String, positionMs: Long)
+    fun clearPlaybackPosition(filePath: String)
+    fun setCarryTracksAcrossFolder(enabled: Boolean)
 }

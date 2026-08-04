@@ -20,7 +20,15 @@ import java.io.File
 internal fun VideoPlayerState.applyTrackPrefs(probed: MediaTracks) {
     val settings = AppDependencies.settingsRepository.settings.value
     val perFile = settings.trackPrefsPerFile[file.absolutePath]
-    val perFolder = file.parent?.let { settings.trackPrefsPerFolder[it] }
+    // The folder layer is a heuristic — "the last file watched here was Russian, so
+    // this one probably is too" — and it is opt-in (§2.6). The record is still
+    // written either way, so turning the setting on works from the next file rather
+    // than from an empty history. The per-file record is never gated.
+    val perFolder = if (settings.carryTracksAcrossFolder) {
+        file.parent?.let { settings.trackPrefsPerFolder[it] }
+    } else {
+        null
+    }
     tracks.hiddenExternalSubtitles = perFile?.subtitleExternalHidden.orEmpty().toSet()
     tracks.externalSubtitles = (scanExternalSubtitles(file) + restoreAddedSubtitles(perFile))
         .filterNot { it.path in tracks.hiddenExternalSubtitles }
@@ -45,34 +53,6 @@ private fun VideoPlayerState.restoreAddedSubtitles(perFile: TrackPrefs?): List<E
 }
 
 /**
- * Writes the current selection back to settings. Both layers are written on every
- * manual switch: the per-file record is authoritative when this exact file is
- * re-opened, the per-folder one seeds the next episode in the same folder.
- */
-internal fun VideoPlayerState.persistTrackPrefs() {
-    val folderPath = file.parent ?: return
-    val media = tracks.mediaTracks
-    val selection = tracks.subtitleSelection
-    val external = selection.externalPath
-        ?.let { path -> tracks.externalSubtitles.firstOrNull { it.path == path } }
-    val prefs = TrackPrefs(
-        audio = media.audio.firstOrNull { it.index == tracks.selectedAudioIndex }?.toRef(),
-        subtitle = media.subtitle
-            .firstOrNull { it.index == selection.embeddedIndex }
-            ?.toRef(),
-        subtitleOff = selection == SubtitleSelection.Off,
-        video = media.video.firstOrNull { it.index == tracks.selectedVideoIndex }?.toRef(),
-        subtitleExternal = external?.path,
-        subtitleExternalLanguage = external?.language,
-        subtitleExternalAdded = tracks.externalSubtitles.filter { it.isManual }.map { it.path },
-        subtitleExternalHidden = tracks.hiddenExternalSubtitles.toList(),
-        subtitleDelayMs = subtitleDelayMs,
-        audioDelayMs = audioDelayMs
-    )
-    AppDependencies.settingsRepository.setTrackPrefs(file.absolutePath, folderPath, prefs)
-}
-
-/**
  * Selects a subtitle source — embedded stream, sidecar file, or Off (§2.2).
  *
  * The single write point the UI must use — writing `tracks.subtitleSelection`
@@ -83,6 +63,7 @@ internal fun VideoPlayerState.persistTrackPrefs() {
 fun VideoPlayerState.selectSubtitle(selection: SubtitleSelection) {
     if (tracks.subtitleSelection == selection) return
     tracks.subtitleSelection = selection
+    tracks.markChosen(TrackChoice.Subtitle)
     persistTrackPrefs()
 }
 
@@ -102,6 +83,8 @@ fun VideoPlayerState.addExternalSubtitle(path: String) {
         tracks.externalSubtitles = tracks.externalSubtitles + describePickedSubtitle(picked)
     }
     tracks.subtitleSelection = SubtitleSelection.External(absolute)
+    tracks.markChosen(TrackChoice.Subtitle)
+    tracks.markChosen(TrackChoice.Sidecars)
     persistTrackPrefs()
 }
 
@@ -121,6 +104,8 @@ fun VideoPlayerState.hideExternalSubtitle(path: String) {
     // would keep rendering cues from a source no longer in the list.
     if (tracks.subtitleSelection.externalPath == path) {
         tracks.subtitleSelection = SubtitleSelection.Off
+        tracks.markChosen(TrackChoice.Subtitle)
     }
+    tracks.markChosen(TrackChoice.Sidecars)
     persistTrackPrefs()
 }

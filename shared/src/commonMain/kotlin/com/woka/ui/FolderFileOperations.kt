@@ -12,8 +12,12 @@ import kotlinx.coroutines.launch
 fun FolderViewModel.deleteFiles(paths: List<String>) {
     scope.launch {
         FolderActions.deleteFiles(paths)
-        // A deleted video must not leave a stale track record behind (§2.6).
-        paths.forEach { settingsRepository.clearTrackPrefsForFile(it) }
+        // A deleted video must not leave a stale record behind — neither its tracks
+        // (§2.6) nor its resume position (§4).
+        paths.forEach {
+            settingsRepository.clearTrackPrefsForFile(it)
+            settingsRepository.clearPlaybackPosition(it)
+        }
         refresh()
         clearSelection()
     }

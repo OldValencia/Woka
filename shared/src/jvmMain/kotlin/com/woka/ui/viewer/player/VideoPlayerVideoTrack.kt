@@ -42,5 +42,6 @@ fun VideoPlayerState.selectVideoTrack(index: Int) {
     tracks.selectedVideoIndex = index
     isReloadingVideo = true
     pendingVideoReopenIndex = index
+    tracks.markChosen(TrackChoice.Video)
     persistTrackPrefs()
 }

@@ -59,6 +59,12 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
             var durationChecked = durationMs > 0L
             val pacer = FramePacer()
 
+            // Resume (§4) goes through the ordinary seek path, and only after
+            // videoSeekGen has been captured — set before it, the generation bump
+            // would already be accounted for and the loop would never act on it.
+            resumePositionMs()?.let { seek(it) }
+            launchResumeSaver(this)
+
             while (isActive) {
                 val reopenIndex = pendingVideoReopenIndex
                 if (reopenIndex != null) {
@@ -119,6 +125,9 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
         } catch (e: Exception) {
             e.printStackTrace()
         } finally {
+            // Runs on cancellation too, which is what makes dispose() the moment a
+            // closed file's position is written (§4).
+            saveResumePosition()
             tracksProbed = true // never leave the audio loop waiting if start() failed
             isReloadingVideo = false // a failed swap must not leave a stuck spinner
             try {

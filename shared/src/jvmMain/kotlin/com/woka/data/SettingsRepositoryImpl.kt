@@ -31,17 +31,8 @@ class SettingsRepositoryImpl : SettingsRepository {
         }
     }
 
-    override fun removeLinkedFolder(path: String) = update { current ->
-        // Unlinking must leave no stale track records behind (§2.6 cleanup): drop
-        // the folder's own record plus every per-file record under it.
-        val prefix = path.trimEnd(File.separatorChar) + File.separatorChar
-        current.copy(
-            linkedFolders = current.linkedFolders - path,
-            trackPrefsPerFile = current.trackPrefsPerFile.filterKeys { !it.startsWith(prefix) },
-            trackPrefsPerFolder = current.trackPrefsPerFolder
-                .filterKeys { it != path && !it.startsWith(prefix) }
-        )
-    }
+    override fun removeLinkedFolder(path: String) =
+        update { it.withoutFolder(path, File.separatorChar) }
 
     override fun setFolderLayout(path: String, layout: ViewLayout) =
         update { it.copy(folderLayouts = it.folderLayouts + (path to layout)) }
@@ -82,56 +73,35 @@ class SettingsRepositoryImpl : SettingsRepository {
 
     override fun setSubtitleOutline(outline: Boolean) = update { it.copy(subtitleOutline = outline) }
 
-    override fun resetSubtitleAppearance() {
-        val d = WokaSettings()
-        update {
-            it.copy(
-                subtitleSize = d.subtitleSize,
-                subtitleFont = d.subtitleFont,
-                subtitleColorArgb = d.subtitleColorArgb,
-                subtitleBoxOpacity = d.subtitleBoxOpacity,
-                subtitleOutline = d.subtitleOutline
-            )
-        }
-    }
+    override fun resetSubtitleAppearance() = update { it.withDefaultSubtitleAppearance() }
 
     override fun setMediaVolume(volume: Float) =
         update { it.copy(mediaVolume = volume.coerceIn(0f, 1f)) }
 
-    override fun addPinnedSession(session: PinnedSession) = update { current ->
-        current.copy(
-            pinnedSessions = current.pinnedSessions.filter { it.path != session.path } + session
-        )
-    }
+    override fun addPinnedSession(session: PinnedSession) =
+        update { it.withPinnedSession(session) }
 
     override fun removePinnedSession(path: String) = update { current ->
         current.copy(pinnedSessions = current.pinnedSessions.filter { it.path != path })
     }
 
-    override fun setTrackPrefs(filePath: String, folderPath: String, prefs: TrackPrefs) =
-        update { current ->
-            current.copy(
-                trackPrefsPerFile = current.trackPrefsPerFile + (filePath to prefs),
-                // The folder layer carries neither video (§2.6), nor the sync
-                // offsets (§3), nor a sidecar path (Step 9): another episode's
-                // second video stream is a different encode, its timing is its
-                // own, and its subtitle file is a different file. The sidecar's
-                // *language* does carry — that is the preference worth keeping.
-                trackPrefsPerFolder = current.trackPrefsPerFolder + (
-                    folderPath to prefs.copy(
-                        video = null,
-                        subtitleDelayMs = 0L,
-                        audioDelayMs = 0L,
-                        subtitleExternal = null,
-                        subtitleExternalAdded = emptyList(),
-                        subtitleExternalHidden = emptyList()
-                    )
-                )
-            )
-        }
+    override fun setTrackPrefs(
+        filePath: String,
+        folderPath: String,
+        filePrefs: TrackPrefs,
+        folderPrefs: TrackPrefs
+    ) = update { it.withTrackPrefs(filePath, folderPath, filePrefs, folderPrefs) }
 
     override fun clearTrackPrefsForFile(filePath: String) =
         update { it.copy(trackPrefsPerFile = it.trackPrefsPerFile - filePath) }
+
+    /**
+     * The escape hatch for a library-wide change of mind (Step 15): without it,
+     * switching a whole season to another dub would mean visiting every file that
+     * ever had an explicit choice.
+     */
+    override fun clearAllTrackPrefs() =
+        update { it.copy(trackPrefsPerFile = emptyMap(), trackPrefsPerFolder = emptyMap()) }
 
     override fun setRepeatMode(mode: RepeatMode) = update { it.copy(repeatMode = mode) }
 
@@ -139,6 +109,20 @@ class SettingsRepositoryImpl : SettingsRepository {
 
     override fun setPlaybackSpeed(speed: Float) =
         update { it.copy(playbackSpeed = PlaybackSpeed.snap(speed)) }
+
+    override fun setResumeMode(mode: ResumeMode) = update { it.copy(resumeMode = mode) }
+
+    override fun setResumeMinDuration(minutes: Int) =
+        update { it.copy(resumeMinDurationMinutes = minutes.coerceIn(1, 240)) }
+
+    override fun setPlaybackPosition(filePath: String, positionMs: Long) =
+        update { it.copy(playbackPositions = it.playbackPositions + (filePath to positionMs)) }
+
+    override fun clearPlaybackPosition(filePath: String) =
+        update { it.copy(playbackPositions = it.playbackPositions - filePath) }
+
+    override fun setCarryTracksAcrossFolder(enabled: Boolean) =
+        update { it.copy(carryTracksAcrossFolder = enabled) }
 
     // The update-copy-save pattern every setter goes through.
     private inline fun update(transform: (WokaSettings) -> WokaSettings) {

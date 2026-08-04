@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.woka.AppDependencies
 import com.woka.ui.viewer.player.VideoPlayerState
+import com.woka.ui.viewer.player.resetTracksForThisFile
 import com.woka.ui.viewer.player.selectVideoTrack
 
 /**
@@ -62,5 +63,17 @@ internal fun PlayerSettingsMenuList(videoState: VideoPlayerState) {
         )
         PlayerSpeedNotice(videoState, settings.playbackSpeed)
         PlayerSyncSection(videoState)
+        // The per-file record wins over the folder layer, so a file configured once
+        // keeps its choice forever. This is the way back (Step 15) — it lives here
+        // rather than in the subtitle popover, which is a list of tracks, not a
+        // place for a destructive action.
+        PopoverSectionLabel("Tracks")
+        PopoverResetRow(
+            label = "Reset tracks for this file",
+            enabled = settings.trackPrefsPerFile.containsKey(videoState.file.absolutePath),
+            onReset = { videoState.resetTracksForThisFile() },
+            disabledHint = "Nothing to reset: no track was chosen in this file, " +
+                "so it already opens on the folder or container default"
+        )
     }
 }

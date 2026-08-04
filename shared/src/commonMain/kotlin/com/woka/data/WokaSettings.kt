@@ -12,6 +12,17 @@ enum class ScalePreset { Fit, Fill, Original }
 enum class SubtitleSize { Auto, Small, Medium, Large, ExtraLarge }
 enum class SubtitleFont { System, Serif, Monospace }
 
+/**
+ * Playback resume (§4). Three modes rather than a flag plus a threshold: "off" and
+ * "long videos only" are not two states of one switch, and folding the third into
+ * a sentinel threshold would be unreadable in `settings.json`.
+ *
+ * [LongOnly] compares against `resumeMinDurationMinutes` — a film or an episode is
+ * worth resuming, a clip is not, and being asked to resume a two-minute video is
+ * exactly what makes the feature annoying.
+ */
+enum class ResumeMode { Off, LongOnly, Always }
+
 @Serializable
 data class PinnedSession(
     val path: String,
@@ -61,5 +72,28 @@ data class WokaSettings(
     // likes to watch, not a property of any one video.
     val repeatMode: RepeatMode = RepeatMode.Off,
     val shuffle: Boolean = false,
-    val playbackSpeed: Float = PlaybackSpeed.NORMAL
+    val playbackSpeed: Float = PlaybackSpeed.NORMAL,
+    // Playback resume (§4). Off by default: silently starting a file somewhere in
+    // the middle is a surprise until the user has asked for it. Off records
+    // nothing and restores nothing; positions already written stay in the file and
+    // are swept by the folder-unlink / file-delete cleanup like the track records.
+    val resumeMode: ResumeMode = ResumeMode.Off,
+    val resumeMinDurationMinutes: Int = 20,
+    val playbackPositions: Map<String, Long> = emptyMap(),
+    // The per-folder layer of §2.6 — guessing this episode's audio/subtitle tracks
+    // from the last file watched in the same folder. Off by default: it is a guess,
+    // and a wrong one silently changes the language a file opens in. The per-file
+    // record is unaffected and always applies.
+    val carryTracksAcrossFolder: Boolean = false
 )
+
+/**
+ * Whether a video of this length participates in resume (§4). A duration of 0 —
+ * not yet known, or not a video — never does: without it "long enough" has no
+ * meaning and the position could not be judged finished either.
+ */
+fun WokaSettings.resumeAppliesTo(durationMs: Long): Boolean = when (resumeMode) {
+    ResumeMode.Off -> false
+    ResumeMode.Always -> durationMs > 0L
+    ResumeMode.LongOnly -> durationMs >= resumeMinDurationMinutes * 60_000L
+}
