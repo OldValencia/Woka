@@ -119,6 +119,7 @@ fun MediaViewerContent(
                 renderScale = renderScale,
                 offsetX = drawnOffsetX,
                 offsetY = drawnOffsetY,
+                subtitleBottomPadding = bottomPadding,
                 onEdit = onEdit,
                 onCopy = onCopy,
                 onInfo = onInfo

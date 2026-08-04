@@ -5,7 +5,6 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -32,9 +31,9 @@ import com.woka.ui.viewer.player.Cue
 import androidx.compose.runtime.collectAsState
 
 /**
- * Renders text and bitmap subtitle cues as a Compose overlay over the clean
- * video frame (§2.2). Text cues are styled from the persisted appearance (§3);
- * the size auto-scales to the panel height ([BoxWithConstraints.maxHeight]).
+ * Renders text subtitle cues as a Compose overlay over the clean video frame
+ * (§2.2), styled from the persisted appearance (§3); the size auto-scales to the
+ * panel height ([BoxWithConstraints.maxHeight]).
  */
 @Composable
 fun SubtitleOverlay(
@@ -49,22 +48,16 @@ fun SubtitleOverlay(
         contentAlignment = Alignment.BottomCenter
     ) {
         val panelHeightDp = maxHeight.value
+        // Bitmap cues are not handled here: they carry their own placement and are
+        // drawn inside the frame's zoom/pan transform (SubtitleBitmapLayer, Step 10).
+        val text = cue?.text
         AnimatedVisibility(
-            visible = cue != null,
+            visible = text != null,
             enter = fadeIn(),
             exit = fadeOut()
         ) {
-            if (cue != null) {
-                val text = cue.text
-                val bitmap = cue.bitmap
-                when {
-                    text != null -> TextSubtitleBox(text, animBottom, settings, panelHeightDp)
-                    bitmap != null -> Image(
-                        bitmap = bitmap,
-                        contentDescription = "Subtitle",
-                        modifier = Modifier.padding(bottom = animBottom)
-                    )
-                }
+            if (text != null) {
+                TextSubtitleBox(text, animBottom, settings, panelHeightDp)
             }
         }
     }

@@ -12,6 +12,8 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
 import com.woka.ui.viewer.player.VideoPlayerState
 
 /**
@@ -26,6 +28,7 @@ fun MediaViewerFrame(
     renderScale: Float,
     offsetX: Float,
     offsetY: Float,
+    subtitleBottomPadding: Dp,
     onEdit: () -> Unit,
     onCopy: () -> Unit,
     onInfo: () -> Unit
@@ -68,6 +71,17 @@ fun MediaViewerFrame(
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.fillMaxSize()
             )
+            // Bitmap subtitles carry their own placement, so they are drawn here —
+            // inside the zoom/pan transform — rather than by the panel-anchored
+            // text overlay (Step 10 / §2.2).
+            videoState?.activeCue?.image?.let { image ->
+                SubtitleBitmapLayer(
+                    image = image,
+                    frameSize = IntSize(frameToDraw.width, frameToDraw.height),
+                    bottomPadding = subtitleBottomPadding,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
         }
     }
 }

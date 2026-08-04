@@ -27,6 +27,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.woka.ui.viewer.player.SUBTITLE_FILE_EXTENSIONS
 import com.woka.ui.viewer.player.VideoPlayerState
 import com.woka.ui.viewer.player.addExternalSubtitle
 import com.woka.ui.viewer.player.hideExternalSubtitle
@@ -98,7 +99,7 @@ fun SubtitleVerticalOverlay(
                             onAddFile = {
                                 openFilePicker(
                                     title = "Choose a subtitle file",
-                                    extensions = listOf("srt", "ass", "ssa"),
+                                    extensions = SUBTITLE_FILE_EXTENSIONS,
                                     initialDirectory = videoState.file.parent
                                 )?.let { videoState.addExternalSubtitle(it) }
                             },

@@ -1,38 +1,21 @@
 package com.woka.ui.viewer
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.input.pointer.pointerHoverIcon
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.woka.ui.components.Marquee
-import com.woka.ui.theme.Theme
 import com.woka.ui.viewer.player.ExternalSubtitle
 import com.woka.ui.viewer.player.MediaTrack
 import com.woka.ui.viewer.player.SubtitleSelection
+import com.woka.ui.viewer.player.isBitmapSubtitleFile
 
 @Composable
 internal fun SubtitlePopoverList(
@@ -85,39 +68,23 @@ internal fun SubtitlePopoverList(
             color = Color.White.copy(alpha = 0.15f)
         )
         SubtitleActionRow(label = "Add subtitle file…", onClick = onAddFile)
-        SubtitleActionRow(label = "Customize Subtitles", onClick = onCustomize)
-    }
-}
-
-/**
- * Accent-coloured action row at the foot of the list. Kept separate from
- * [PopoverListRow]: it is an action, never a selection, so it has no selected
- * state and always renders in the accent colour.
- */
-@OptIn(ExperimentalComposeUiApi::class)
-@Composable
-private fun SubtitleActionRow(label: String, onClick: () -> Unit) {
-    var hovered by remember { mutableStateOf(false) }
-    val background = if (hovered) Color.White.copy(alpha = 0.10f) else Color.Transparent
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(6.dp))
-            .background(background)
-            .pointerHoverIcon(PointerIcon.Hand)
-            .onPointerEvent(PointerEventType.Enter) { hovered = true }
-            .onPointerEvent(PointerEventType.Exit) { hovered = false }
-            .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 5.dp)
-    ) {
-        Marquee(
-            text = label,
-            style = TextStyle(
-                color = Theme.colors.accent,
-                fontSize = 12.sp
-            ),
-            animate = hovered,
-            modifier = Modifier.fillMaxWidth()
+        // A PGS / VobSub cue is a finished picture — §3 restyles text, so on those
+        // the row would open a panel whose every control does nothing.
+        val isBitmap = isBitmapSelection(selection, tracks)
+        SubtitleActionRow(
+            label = "Customize Subtitles",
+            onClick = onCustomize,
+            enabled = !isBitmap,
+            disabledHint = "Can't be customized: PGS / VobSub subtitles are ready-made images, not text"
         )
     }
 }
+
+private fun isBitmapSelection(selection: SubtitleSelection, tracks: List<MediaTrack>): Boolean =
+    when (selection) {
+        is SubtitleSelection.Off -> false
+        is SubtitleSelection.Embedded ->
+            tracks.firstOrNull { it.index == selection.index }?.isTextBased == false
+        is SubtitleSelection.External -> isBitmapSubtitleFile(selection.path)
+    }
+

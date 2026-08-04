@@ -21,6 +21,11 @@ internal fun VideoPlayerState.startAudioDecodeLoop(audioChannel: Channel<ByteArr
         // never do a concurrent first-open (which returned incomplete info). By
         // now hasAudio and the selected track index are set from the probe.
         while (isActive && !tracksProbed) delay(10.milliseconds)
+        // A file with no audio stream at all has nothing to open. The loop below
+        // already parks on !hasAudio, but the grabber is started before it is ever
+        // reached — and this grabber has video disabled, so with no audio stream
+        // either there is nothing left for it to find and start() throws.
+        if (!hasAudio) return@launch
 
         var grabber = openAudioGrabber(tracks.selectedAudioIndex ?: -1)
         // Non-null only while the speed is off 1x; at 1x audio takes the original

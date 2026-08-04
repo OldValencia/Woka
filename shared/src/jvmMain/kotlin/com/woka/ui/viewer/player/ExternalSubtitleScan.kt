@@ -2,8 +2,24 @@ package com.woka.ui.viewer.player
 
 import java.io.File
 
-/** Extensions treated as text sidecars. Bitmap sidecars (`.idx`/`.sub`, `.sup`) are Step 10. */
-private val SUBTITLE_EXTENSIONS = setOf("srt", "ass", "ssa")
+private val TEXT_SUBTITLE_EXTENSIONS = setOf("srt", "ass", "ssa")
+
+/**
+ * Bitmap sidecars (Step 10). `.sub` is deliberately absent: it is the payload of
+ * the `.idx` beside it — FFmpeg's `vobsub` demuxer is pointed at the index and
+ * finds it itself — and a bare `.sub` is also the MicroDVD text format, so listing
+ * it would add a second row for the same subtitles that decodes as neither.
+ */
+private val BITMAP_SUBTITLE_EXTENSIONS = setOf("sup", "idx")
+
+private val SUBTITLE_EXTENSIONS = TEXT_SUBTITLE_EXTENSIONS + BITMAP_SUBTITLE_EXTENSIONS
+
+/** Everything the "Add subtitle file…" picker accepts (§2.2). */
+val SUBTITLE_FILE_EXTENSIONS: List<String> = SUBTITLE_EXTENSIONS.toList()
+
+/** True when this sidecar decodes to pictures rather than text (Step 10). */
+fun isBitmapSubtitleFile(path: String): Boolean =
+    path.substringAfterLast('.', "").lowercase() in BITMAP_SUBTITLE_EXTENSIONS
 
 private val FLAG_TOKENS = setOf("forced", "sdh", "cc", "hi")
 
@@ -66,7 +82,14 @@ private fun describeSidecar(file: File, base: String): ExternalSubtitle {
         language = language,
         forced = forced,
         sdh = sdh,
-        format = file.extension.uppercase(),
+        format = formatLabel(file.extension),
         title = suffix.takeIf { it.isNotBlank() }
     )
+}
+
+/** What the format is called on screen, which is not always its extension. */
+private fun formatLabel(extension: String): String = when (extension.lowercase()) {
+    "sup" -> "PGS"
+    "idx" -> "VobSub"
+    else -> extension.uppercase()
 }
