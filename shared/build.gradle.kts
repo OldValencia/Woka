@@ -33,5 +33,18 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
+        // `jvmTest` used to inherit from `commonTest` alone, which is enough for
+        // pure logic but not for `runTest`, for ViewModels bound to
+        // `Dispatchers.Main`, or for Compose UI tests.
+        val jvmTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+                implementation(libs.junit)
+                implementation(libs.kotlinx.coroutinesTest)
+                implementation(libs.kotlinx.coroutinesSwing)
+                implementation(libs.compose.uiTestJUnit4)
+                implementation(compose.desktop.currentOs)
+            }
+        }
     }
 }

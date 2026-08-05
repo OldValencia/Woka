@@ -1,0 +1,21 @@
+1
+00:00:01,000 --> 00:00:06,000
+[E02 · .en.srt · UTF-8]
+Language-suffixed sidecar on the second episode.
+
+2
+00:00:07,000 --> 00:00:12,000
+Use this to check the folder-level carry-over:
+turn on the English sidecar on E01, open E02, this should come up.
+
+3
+00:00:20,000 --> 00:00:26,000
+Second cue on E02.
+
+4
+00:01:00,000 --> 00:01:05,000
+One minute mark on E02.
+
+5
+00:05:00,000 --> 00:05:08,000
+Five minute mark on E02.

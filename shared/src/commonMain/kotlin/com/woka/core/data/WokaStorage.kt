@@ -7,31 +7,60 @@ import java.security.MessageDigest
 private const val KEY_SCHEMA_MARKER = ".keys-v2"
 
 /**
+ * Overrides [WokaStorage.root] when set. Exists for tests, which must never write
+ * into the real `Documents/OldValencia/Woka` of whoever runs them; production
+ * never sets it and takes the user-home default.
+ */
+const val STORAGE_ROOT_PROPERTY = "woka.storageRoot"
+
+/**
  * Every path Woka writes to, in one place. The root used to be assembled by hand
  * in three files, and two of them derived the thumbnail-cache path independently
  * of each other.
  */
 object WokaStorage {
 
-    val root: File = File(System.getProperty("user.home"), "Documents/OldValencia/Woka")
+    private val defaultRoot = File(System.getProperty("user.home"), "Documents/OldValencia/Woka")
+
+    /**
+     * Read through a getter rather than captured once, so a test can point the
+     * whole storage layer at a temp directory and put it back afterwards.
+     */
+    val root: File
+        get() = System.getProperty(STORAGE_ROOT_PROPERTY)?.let { File(it) } ?: defaultRoot
 
     val settingsFile: File
         get() = File(root, "settings.json")
+
+    /** Which directory [prepareThumbnailsDir] has already run for, if any. */
+    private var preparedDir: File? = null
 
     /**
      * Poster-frame cache. The naming scheme changed with this version, so the
      * directory is dropped once on first launch rather than migrated: a thumbnail
      * is cheaper to regenerate than to move, and Woka has no users to stay
      * compatible with.
+     *
+     * The one-time preparation used to be a `by lazy`; it is now guarded per
+     * directory instead, because [root] is no longer a constant and a `lazy` would
+     * pin the cache to whichever root was seen first.
      */
-    val thumbnailsDir: File by lazy {
-        val dir = File(root, ".thumbnails")
+    val thumbnailsDir: File
+        get() {
+            val dir = File(root, ".thumbnails")
+            if (preparedDir != dir) prepareThumbnailsDir(dir)
+            return dir
+        }
+
+    @Synchronized
+    private fun prepareThumbnailsDir(dir: File) {
+        if (preparedDir == dir) return
         if (!File(dir, KEY_SCHEMA_MARKER).exists()) {
             dir.deleteRecursively()
             dir.mkdirs()
             if (dir.isDirectory) File(dir, KEY_SCHEMA_MARKER).createNewFile()
         }
-        dir
+        preparedDir = dir
     }
 
     /**

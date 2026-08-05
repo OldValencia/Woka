@@ -1,0 +1,16 @@
+# VobSub index file, v7 (generated for Woka Step 10 testing)
+size: 1920x1080
+palette: 000000, f0f0f0, cccccc, 999999, 3333fa, 1111bb, 101010, f0f0f0, 33fa33, 11bb11, fafa33, bbbb11, fa33fa, bb11bb, 33fafa, 11bbbb
+langidx: 0
+
+id: en, index: 0
+timestamp: 00:00:01:000, filepos: 000000000
+timestamp: 00:00:07:000, filepos: 000002000
+timestamp: 00:00:13:000, filepos: 000003000
+timestamp: 00:00:20:000, filepos: 000006000
+timestamp: 00:00:27:000, filepos: 000008800
+timestamp: 00:00:33:000, filepos: 00000a000
+timestamp: 00:00:40:000, filepos: 00000b000
+timestamp: 00:01:00:000, filepos: 00000c800
+timestamp: 00:05:00:000, filepos: 00000d800
+timestamp: 00:10:00:000, filepos: 000010000

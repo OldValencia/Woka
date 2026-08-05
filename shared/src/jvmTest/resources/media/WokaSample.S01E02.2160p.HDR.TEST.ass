@@ -1,0 +1,29 @@
+[Script Info]
+; Test fixture for Step 9 (external subtitle files) — Woka
+Title: Woka ASS sidecar test
+ScriptType: v4.00+
+WrapStyle: 0
+PlayResX: 1920
+PlayResY: 1080
+ScaledBorderAndShadow: yes
+YCbCr Matrix: TV.709
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,54,&H00FFFFFF,&H000000FF,&H00000000,&H64000000,0,0,0,0,100,100,0,0,1,3,1,2,60,60,50,1
+Style: Top,Arial,48,&H0000FFFF,&H000000FF,&H00000000,&H64000000,-1,0,0,0,100,100,0,0,1,3,1,8,60,60,50,1
+Style: Sign,Arial,44,&H0000FF00,&H000000FF,&H00000000,&H00000000,0,-1,0,0,100,100,0,0,1,2,0,5,30,30,30,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:01.00,0:00:06.00,Default,,0,0,0,,[E02 · .ass · UTF-8]\NPlain dialogue on the Default style.
+Dialogue: 0,0:00:07.00,0:00:12.00,Default,,0,0,0,,{\i1}Italic override tag{\i0} then normal, then {\b1}bold{\b0}.
+Dialogue: 0,0:00:13.00,0:00:19.00,Default,,0,0,0,,Three lines in one event.\NThe \\N breaks must survive\Nas real line breaks.
+Dialogue: 0,0:00:20.00,0:00:26.00,Default,,0,0,0,,A deliberately very long event that has to wrap inside the video panel instead of running off both edges of the screen.
+Dialogue: 0,0:00:27.00,0:00:32.00,Top,,0,0,0,,{\an8}Top-aligned style — in this phase it is expected to render as ordinary bottom text.
+Dialogue: 0,0:00:33.00,0:00:38.00,Sign,,0,0,0,,{\pos(960,300)\c&H00FF00&\fs70}Positioned + coloured sign — also expected as plain text for now.
+Dialogue: 0,0:00:40.00,0:00:45.00,Default,,0,0,0,,Кириллица в ASS: ёжик съел щуку.
+Dialogue: 0,0:00:46.00,0:00:52.00,Default,,0,0,0,,{\fad(300,300)}Fade tag present — the text must still appear and disappear on time.
+Dialogue: 0,0:01:00.00,0:01:05.00,Default,,0,0,0,,One minute mark on E02 (.ass).
+Dialogue: 0,0:05:00.00,0:05:08.00,Default,,0,0,0,,Five minute mark — seek here to check\Nthe cue lookup follows the play head.
+Dialogue: 0,0:10:00.00,0:10:06.00,Default,,0,0,0,,Ten minute mark on E02 (.ass).
