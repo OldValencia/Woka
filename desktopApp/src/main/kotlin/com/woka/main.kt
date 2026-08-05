@@ -22,9 +22,11 @@ import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import com.woka.di.initKoin
+import com.woka.app.di.initKoin
 import java.awt.MouseInfo
 import java.awt.Point
+import com.woka.app.App
+import java.awt.Dimension
 
 fun main() {
     initKoin()
@@ -40,7 +42,7 @@ fun main() {
             transparent = true,
             state = windowState
         ) {
-            window.minimumSize = java.awt.Dimension(800, 580)
+            window.minimumSize = Dimension(800, 580)
             val density = LocalDensity.current.density
 
             // The floating size must be remembered explicitly: while the window is

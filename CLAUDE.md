@@ -30,22 +30,41 @@ New plan → `pending/<name>.md`, format per `.claude/skills/plan-creation/SKILL
 
 ## Layout — package root `com.woka`
 
+**Feature-first.** `app/` wires, `core/` is shared by everyone, `feature/<name>/` owns one thing.
+A file's package is its directory; nothing lives outside these three roots.
+
 ```
-shared/src/commonMain/kotlin/com/woka/
-  App.kt · navigation/Router.kt · di/Koin.kt
-  data/           SettingsRepository, WokaSettings, LocalMediaRepository
-  ui/             Home/Folder screens + ViewModels
-  ui/components/  HIG widgets: dock, cards, top bar, overlays, Marquee
-  ui/theme/ · ui/icons/ · ui/viewer/ (surface + player models) · utils/
-shared/src/jvmMain/kotlin/com/woka/
-  di/PlatformModule.kt · data/SettingsRepositoryImpl.kt + SettingsStore.kt
-  ui/viewer/         MediaViewer* Subtitle* Zoom* Pip* Hdr* PlayerSettings* Popover*
-  ui/viewer/player/  JavaCV decode, audio, seek, tracks, subtitles
-  ui/components/dialogs/   AWT FileDialog
+com.woka/
+  app/        App.kt (+AppDependencies) · di/ · navigation/Router.kt
+    shell/    MainShell, GlobalTopBar, WinControls, SmartBreadcrumbs, FloatingDock,
+              DockItem, DockAccessories, TopBarAccessories
+  core/
+    data/     MediaItem, LocalMediaRepository, Settings{Repository,Store,Mutations},
+              WokaSettings, PlaybackMode, TrackPrefs
+    system/   SystemMediaControls + AWT media keys                        (jvm)
+    ui/       theme/ · icons/ · components/ (Marquee, IosSwitch, SegmentedControl,
+              DropdownItem, FolderCard*, GridScrollbarAdapter, RenameDialog)
+              dialogs/ AWT FileDialog (jvm) · image/ ImageBitmapCache (jvm)
+    utils/    DesktopUtils, VideoThumbnail                                (expect/actual)
+  feature/
+    home/ · folder/ · library/ · search/ · settings/
+    viewer/   NativeMediaViewer                                          (expect/actual)
+      shell/  screen, state, effects, content, frame, gestures, keys, layout, toolbar,
+              carousel, fullscreen, playlist, FileInfo*, Popover*, MediaThumbnails,
+              and the sizing model: SizeMode, ScaleMath, ZoomScale, PanBounds
+        zoom/   zoom *menu UI* only: SizeControl, SizeIndicatorButton, ZoomMenu*
+        slider/ MediaSlider*, MediaVerticalSlider
+      image/  ImageLoader
+      video/  controls, Subtitle* UI, PlayerSettings*, PlayerSpeed*, chapters, volume
+        model/  Cue, MediaTrack(s), MediaChapter, SubtitleSelection…    (commonMain)
+        engine/ JavaCV decode, audio, seek, tracks, subtitles, HDR probe (jvmMain)
+      pip/    PipManager, GlobalPipWindow, Pip*
+    editor/   reserved for roadmap Phase 5
 desktopApp/   launcher: main(), window, CLI args
 ```
 
-`expect` in `commonMain`, `actual` in `jvmMain` (`VideoThumbnail.kt` / `VideoThumbnail.jvm.kt`).
+`expect` in `commonMain`, `actual` in `jvmMain` — **both halves live in the same package**
+(`core/utils/VideoThumbnail.kt` / `VideoThumbnail.jvm.kt`).
 
 ## Stack
 

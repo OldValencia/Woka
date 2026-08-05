@@ -31,6 +31,9 @@ The app entry point (`main()`) routes based on CLI arguments:
 - **Grid & Cards:** Refine folder and media cards with proper corner radii, smooth hover animations, selection states, and glassmorphism elements.
 - **Typography & Spacing:** Adjust fonts (weight, size, color hierarchy) and padding to ensure a clean, uncluttered, professional aesthetic.
 - **Empty States & Settings:** Polish the Settings overlay and empty folder views with engaging graphics or subtle instructions.
+- **Package restructure (done):** moved from layer-first to feature-first (`app/`, `core/`,
+  `feature/<name>/`) per `features/implemented/package-restructure-feature-first.md`. Code-quality
+  refactor and the viewer verification pass follow it, still in `features/pending/`.
 
 ### Phase 4: The Viewer (Preview & Carousel)
 - **UX:** Clicking a media file in the grid dims the background and opens the Viewer overlay.
