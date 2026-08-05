@@ -23,14 +23,23 @@ fun MediaViewerFullscreenSurface(
     onZoomHud: () -> Unit
 ) {
     Box(modifier) {
-        val dummyBitmap = remember { ImageBitmap(1, 1) }
+        // The fullscreen window never shows a still, and the player owns the
+        // picture — the 1x1 poster only exists for the frames before the first
+        // decode lands.
+        val poster = remember { ImageBitmap(1, 1) }
+        val media = remember(videoState, poster) {
+            if (videoState != null) ViewerMedia.Video(videoState, poster) else ViewerMedia.Still(poster)
+        }
         MediaViewerContent(
-            imageBitmap = dummyBitmap,
+            media = media,
             animationDirection = 0,
-            sizeMode = PipManager.sizeMode,
-            offsetX = PipManager.offsetX,
-            offsetY = PipManager.offsetY,
-            videoState = videoState,
+            transform = ViewerTransform(
+                PipManager.sizeMode,
+                PipManager.offsetX,
+                PipManager.offsetY
+            ),
+            // The fullscreen window has no context menu of its own.
+            actions = NO_VIEWER_ACTIONS,
             bottomPadding = subtitleBottomPadding,
             onSizeModeChange = onSizeModeChange,
             onOffsetChange = { x, y ->
@@ -44,9 +53,6 @@ fun MediaViewerFullscreenSurface(
             },
             onZoomHud = onZoomHud,
             onPlayPause = { },
-            onEdit = { },
-            onCopy = { },
-            onInfo = { },
             onToggleFullscreen = { PipManager.closePip(returnToMain = true) }
         )
     }

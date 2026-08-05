@@ -1,5 +1,6 @@
 package com.woka.core.data
 
+import androidx.compose.runtime.Immutable
 import kotlinx.serialization.Serializable
 
 enum class ViewLayout { SmallGrid, Grid, BigGrid }
@@ -23,6 +24,7 @@ enum class SubtitleFont { System, Serif, Monospace }
  */
 enum class ResumeMode { Off, LongOnly, Always }
 
+@Immutable
 @Serializable
 data class PinnedSession(
     val path: String,
@@ -30,6 +32,7 @@ data class PinnedSession(
     val scrollOffset: Int = 0
 )
 
+@Immutable
 @Serializable
 data class WokaSettings(
     val linkedFolders: List<String> = emptyList(),

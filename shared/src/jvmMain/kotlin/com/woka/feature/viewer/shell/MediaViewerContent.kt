@@ -22,50 +22,32 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.SubtitleOverlay
 import com.woka.feature.viewer.video.VideoReloadOverlay
 
 @Composable
 fun MediaViewerContent(
-    imageBitmap: ImageBitmap,
+    media: ViewerMedia,
     animationDirection: Int,
-    sizeMode: SizeMode,
-    offsetX: Float,
-    offsetY: Float,
-    videoState: VideoPlayerState?,
-    bottomPadding: Dp = 40.dp,
+    transform: ViewerTransform,
+    actions: ViewerActions,
     onSizeModeChange: (SizeMode) -> Unit,
     onOffsetChange: (Float, Float) -> Unit,
     onEffectiveScaleChange: (Float) -> Unit,
     onMetricsChange: (IntSize, IntSize) -> Unit,
     onZoomHud: () -> Unit,
     onPlayPause: () -> Unit,
-    onEdit: () -> Unit,
-    onCopy: () -> Unit,
-    onInfo: () -> Unit,
-    onToggleFullscreen: () -> Unit
+    onToggleFullscreen: () -> Unit,
+    bottomPadding: Dp = 40.dp
 ) {
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
 
-    val sourceBitmap = if (videoState != null) videoState.currentFrame ?: imageBitmap else imageBitmap
-    // The stream's own dimensions, not the decoded frame's: video may be decoded
-    // smaller than native to fit the surface (§6), and the zoom presets — Actual
-    // size above all — still mean native 1:1.
-    val videoTrack = videoState?.tracks?.mediaTracks?.video
-        ?.firstOrNull { it.index == videoState.tracks.selectedVideoIndex }
-    val nativeSize = if (videoTrack?.width != null && videoTrack.height != null) {
-        IntSize(videoTrack.width, videoTrack.height)
-    } else {
-        IntSize(sourceBitmap.width, sourceBitmap.height)
-    }
-
-    val targetScale = computeGraphicsScale(sizeMode, containerSize, nativeSize)
+    val nativeSize = media.nativeSize
+    val targetScale = computeGraphicsScale(transform.sizeMode, containerSize, nativeSize)
     val renderScale by animateFloatAsState(targetScale, animationSpec = tween(200))
 
     // While a drag is live the frame must track the pointer exactly; the spring is
@@ -74,13 +56,13 @@ fun MediaViewerContent(
     var isPanning by remember { mutableStateOf(false) }
     val offsetSpec: AnimationSpec<Float> =
         if (isPanning) snap() else spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow)
-    val drawnOffsetX by animateFloatAsState(offsetX, animationSpec = offsetSpec)
-    val drawnOffsetY by animateFloatAsState(offsetY, animationSpec = offsetSpec)
+    val drawnOffsetX by animateFloatAsState(transform.offsetX, animationSpec = offsetSpec)
+    val drawnOffsetY by animateFloatAsState(transform.offsetY, animationSpec = offsetSpec)
 
     LaunchedEffect(targetScale) { onEffectiveScaleChange(targetScale) }
     LaunchedEffect(containerSize, nativeSize) { onMetricsChange(containerSize, nativeSize) }
-    LaunchedEffect(containerSize, videoState) {
-        videoState?.renderScale?.setSurface(containerSize.width, containerSize.height)
+    LaunchedEffect(containerSize, media) {
+        media.player?.renderScale?.setSurface(containerSize.width, containerSize.height)
     }
 
     Box(
@@ -88,12 +70,12 @@ fun MediaViewerContent(
             .fillMaxSize()
             .onSizeChanged { containerSize = it }
             .mediaViewerGestures(
-                sizeMode = sizeMode,
-                offsetX = offsetX,
-                offsetY = offsetY,
+                sizeMode = transform.sizeMode,
+                offsetX = transform.offsetX,
+                offsetY = transform.offsetY,
                 containerSize = containerSize,
                 nativeSize = nativeSize,
-                videoState = videoState,
+                videoState = media.player,
                 onSizeModeChange = onSizeModeChange,
                 onOffsetChange = onOffsetChange,
                 onPanActiveChange = { isPanning = it },
@@ -104,7 +86,7 @@ fun MediaViewerContent(
         contentAlignment = Alignment.Center
     ) {
         AnimatedContent(
-            targetState = imageBitmap,
+            targetState = media.poster,
             transitionSpec = {
                 if (animationDirection == 0) {
                     fadeIn() togetherWith fadeOut()
@@ -114,22 +96,20 @@ fun MediaViewerContent(
                 }
             },
             modifier = Modifier.fillMaxSize()
-        ) { targetBitmap ->
+        ) { targetPoster ->
             MediaViewerFrame(
-                targetBitmap = targetBitmap,
-                videoState = videoState,
+                media = media,
+                targetPoster = targetPoster,
                 renderScale = renderScale,
                 offsetX = drawnOffsetX,
                 offsetY = drawnOffsetY,
                 subtitleBottomPadding = bottomPadding,
-                onEdit = onEdit,
-                onCopy = onCopy,
-                onInfo = onInfo
+                actions = actions
             )
         }
-        if (videoState != null) {
-            SubtitleOverlay(cue = videoState.activeCue, bottomPadding = bottomPadding)
-            VideoReloadOverlay(isVisible = videoState.isReloadingVideo)
+        if (media is ViewerMedia.Video) {
+            SubtitleOverlay(cue = media.player.activeCue, bottomPadding = bottomPadding)
+            VideoReloadOverlay(isVisible = media.player.isReloadingVideo)
         }
     }
 }

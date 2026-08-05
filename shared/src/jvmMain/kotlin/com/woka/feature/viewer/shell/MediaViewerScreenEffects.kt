@@ -99,13 +99,6 @@ internal fun MediaViewerAmbientEffects(
         settingsRepo.setMediaVolume(mediaVolume)
         videoState?.updateVolume(mediaVolume)
     }
-    LaunchedEffect(state.volumeTrigger) {
-        if (state.volumeTrigger > 0) {
-            state.volumeTriggerTimer = 1
-            delay(2000.milliseconds)
-            state.volumeTriggerTimer = 0
-        }
-    }
     LaunchedEffect(state.lastInteractionTime, videoState?.isPlaying, state.hover.rawTarget) {
         if (videoState?.isPlaying == false || state.hover.rawTarget != HoverTarget.None) {
             state.isUiVisible = true

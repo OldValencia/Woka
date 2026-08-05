@@ -46,7 +46,7 @@ internal fun MediaViewerShortcutEffect(
                 onClose = { onClose(state.currentId) },
                 onSkip = { dir ->
                     state.skipDirection = dir
-                    state.skipTrigger = System.currentTimeMillis()
+                    state.skipEvent.raise()
                 },
                 onNavigate = { dir, newId ->
                     state.animationDirection = dir
@@ -54,9 +54,9 @@ internal fun MediaViewerShortcutEffect(
                 },
                 onVolumeChange = { vol ->
                     curVolumeChange(vol)
-                    state.volumeTrigger = System.currentTimeMillis()
+                    state.volumeEvent.raise()
                 },
-                onPlayPause = { state.playPauseTrigger = System.currentTimeMillis() },
+                onPlayPause = { state.playPauseEvent.raise() },
                 onCopy = { curCopy() },
                 onInfo = { curInfo() },
                 onZoom = { key -> state.applyZoomKey(key) { curSizeModeChange(it) } }

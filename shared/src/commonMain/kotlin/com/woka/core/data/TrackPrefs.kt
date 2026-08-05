@@ -1,11 +1,13 @@
 package com.woka.core.data
 
+import androidx.compose.runtime.Immutable
 import kotlinx.serialization.Serializable
 
 /**
  * A remembered track, stored by its stable identity tuple (§2.0 / §2.6) — never
  * by the container stream index, which differs between files of the same series.
  */
+@Immutable
 @Serializable
 data class TrackRef(
     val language: String? = null,
@@ -28,6 +30,7 @@ data class TrackRef(
  * [subtitleOff] is therefore three-valued: `true` = the user turned subs off here,
  * `false` = they turned some on, `null` = they never said.
  */
+@Immutable
 @Serializable
 data class TrackPrefs(
     val audio: TrackRef? = null,

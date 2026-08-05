@@ -1,5 +1,10 @@
 package com.woka.core.ui.components
 
+import com.woka.core.data.MediaKind
+import com.woka.core.data.WokaStorage
+import com.woka.core.data.canDecode
+import com.woka.core.data.isMedia
+import com.woka.core.data.mediaKind
 import java.io.File
 import kotlin.math.log10
 import kotlin.math.pow
@@ -16,11 +21,10 @@ fun formatFileSize(size: Long): String {
 
 fun getFolderCardSubtitle(isDir: Boolean, file: File): String {
     if (isDir) return "Folder"
-    val ext = file.extension.lowercase()
-    val type = when (ext) {
-        "jpg", "jpeg", "png", "webp", "gif", "bmp", "heic" -> "Image"
-        "mp4", "mkv", "avi", "mov", "webm" -> "Video"
-        else -> "File"
+    val type = when (file.mediaKind()) {
+        MediaKind.Image -> "Image"
+        MediaKind.Video -> "Video"
+        null -> "File"
     }
     return "$type • ${formatFileSize(file.length())}"
 }
@@ -30,20 +34,14 @@ data class FolderStateData(val itemCount: Int, val previews: List<File>)
 suspend fun fetchFolderStateData(file: File): FolderStateData {
     return withContext(Dispatchers.IO) {
         val allFiles = file.listFiles() ?: emptyArray()
-        val count = allFiles.count { f ->
-            val ext = f.extension.lowercase()
-            f.isDirectory || ext in listOf("jpg", "jpeg", "png", "webp", "gif", "heic", "mp4", "mkv", "avi", "mov", "webm")
-        }
+        val count = allFiles.count { f -> f.isDirectory || f.isMedia }
         val previews = allFiles.mapNotNull { f ->
             if (!f.isFile) return@mapNotNull null
-            val ext = f.extension.lowercase()
-            if (ext in listOf("jpg", "jpeg", "png", "webp", "gif", "heic")) {
-                f
-            } else if (ext in listOf("mp4", "mkv", "avi", "mov", "webm")) {
-                val previewFile = File(System.getProperty("user.home"), "Documents/OldValencia/Woka/.thumbnails/${f.name.hashCode()}.png")
-                if (previewFile.exists()) previewFile else null
-            } else {
-                null
+            when (f.mediaKind()) {
+                // A format with no decoder would only draw an empty tile (§2).
+                MediaKind.Image -> f.takeIf { it.canDecode }
+                MediaKind.Video -> WokaStorage.thumbnailFile(f).takeIf { it.exists() }
+                null -> null
             }
         }.take(3)
         FolderStateData(count, previews)

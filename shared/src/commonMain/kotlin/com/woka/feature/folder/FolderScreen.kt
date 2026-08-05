@@ -10,14 +10,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.unit.IntOffset
-import com.woka.core.data.MediaItem
 import com.woka.app.shell.LocalDockAccessories
+import com.woka.core.data.MediaItem
 import com.woka.core.ui.theme.Theme
+import com.woka.feature.viewer.NativeMediaViewer
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.parameter.parametersOf
-import com.woka.feature.viewer.NativeMediaViewer
 
 class FolderDependencies(val path: String) : KoinComponent {
     val viewModel: FolderViewModel by inject { parametersOf(path) }
@@ -34,13 +33,10 @@ fun FolderScreen(
     val viewModel = dependencies.viewModel
     val state by viewModel.state.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-    var itemToRename by remember { mutableStateOf<String?>(null) }
-    var showBgContextMenu by remember { mutableStateOf(false) }
-    var bgContextMenuOffset by remember { mutableStateOf(IntOffset.Zero) }
-    var showCreateFolderDialog by remember { mutableStateOf(false) }
+    val overlays = remember { FolderOverlayState() }
     var viewerMediaId by remember { mutableStateOf<String?>(openViewerForId) }
     var scrollToMediaId by remember { mutableStateOf<String?>(null) }
-    
+
     LaunchedEffect(openViewerForId) {
         if (openViewerForId != null) {
             viewerMediaId = openViewerForId
@@ -61,31 +57,24 @@ fun FolderScreen(
             } else {
                 FolderContent(
                     path = path,
-                    highlightFile = highlightFile,
                     state = state,
                     viewModel = viewModel,
+                    overlays = overlays,
                     onNavigateToFolder = onNavigateToFolder,
                     onOpenMedia = { id -> viewerMediaId = id },
-                    itemToRename = itemToRename,
-                    showCreateFolderDialog = showCreateFolderDialog,
-                    showBgContextMenu = showBgContextMenu,
-                    bgContextMenuOffset = bgContextMenuOffset,
+                    highlightFile = highlightFile,
                     scrollToMediaId = scrollToMediaId,
-                    onRenameItemChange = { itemToRename = it },
-                    onShowCreateFolderDialogChange = { showCreateFolderDialog = it },
-                    onShowBgContextMenuChange = { showBgContextMenu = it },
-                    onBgContextMenuOffsetChange = { bgContextMenuOffset = it },
                     onScrollToMediaIdConsumed = { scrollToMediaId = null }
                 )
             }
         }
     }
-    
+
     if (viewerMediaId != null) {
         NativeMediaViewer(
             initialId = viewerMediaId!!,
             mediaItems = state.items.filter { it is MediaItem.Image || it is MediaItem.Video },
-            onClose = { lastMediaId -> 
+            onClose = { lastMediaId ->
                 viewerMediaId = null
                 scrollToMediaId = lastMediaId
             }

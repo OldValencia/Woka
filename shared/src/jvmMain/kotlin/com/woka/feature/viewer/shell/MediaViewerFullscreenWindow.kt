@@ -37,7 +37,7 @@ fun MediaViewerFullscreenWindow(
     // Declared outside the window content: the key preview runs as a Window
     // parameter, so anything it touches has to exist before the content lambda.
     val fsSettings by settingsRepo.settings.collectAsState()
-    var fsZoomHud by remember { mutableStateOf(0L) }
+    val fsZoomHud = remember { ViewerEvent() }
     val onFsSizeModeChange: (SizeMode) -> Unit = { mode ->
         PipManager.sizeMode = mode
         if (fsSettings.rememberSizeState) persistSizeState(settingsRepo, mode)
@@ -56,7 +56,7 @@ fun MediaViewerFullscreenWindow(
                 event = it,
                 videoState = videoState,
                 onSizeModeChange = { mode -> onFsSizeModeChange(mode) },
-                onZoomHud = { fsZoomHud = System.currentTimeMillis() }
+                onZoomHud = { fsZoomHud.raise() }
             )
         }
     ) {
@@ -105,13 +105,13 @@ fun MediaViewerFullscreenWindow(
                     videoState = videoState,
                     subtitleBottomPadding = fsSubtitleBottomPadding,
                     onSizeModeChange = onFsSizeModeChange,
-                    onZoomHud = { fsZoomHud = System.currentTimeMillis() }
+                    onZoomHud = { fsZoomHud.raise() }
                 )
 
                 PipCornerFlash()
 
                 ZoomHudOverlay(
-                    trigger = fsZoomHud,
+                    event = fsZoomHud,
                     label = "${PipManager.sizeMode.percentIn(
                         PipManager.containerSize,
                         PipManager.nativeSize

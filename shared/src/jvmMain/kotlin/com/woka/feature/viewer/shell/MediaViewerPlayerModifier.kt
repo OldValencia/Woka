@@ -47,10 +47,10 @@ internal fun Modifier.mediaViewerPlayerModifier(
         videoState = videoState,
         mediaVolume = mediaVolume,
         onClose = { onClose(state.currentId) },
-        onSkip = { dir -> state.skipDirection = dir; state.skipTrigger = System.currentTimeMillis() },
+        onSkip = { dir -> state.skipDirection = dir; state.skipEvent.raise() },
         onNavigate = { dir, newId -> state.animationDirection = dir; state.currentId = newId },
         onVolumeChange = onVolumeChange,
-        onPlayPause = { state.playPauseTrigger = System.currentTimeMillis() },
+        onPlayPause = { state.playPauseEvent.raise() },
         onCopy = copyAction,
         onInfo = infoAction,
         onZoom = { key -> state.applyZoomKey(key, onSizeModeChange) }

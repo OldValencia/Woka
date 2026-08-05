@@ -87,6 +87,10 @@ object Theme {
         @Composable
         @ReadOnlyComposable
         get() = LocalColors.current
+
+    /** Tokens for chrome drawn over media; theme-independent, see [ViewerChrome]. */
+    val viewer: ViewerChrome
+        get() = ViewerChrome
 }
 
 @Composable

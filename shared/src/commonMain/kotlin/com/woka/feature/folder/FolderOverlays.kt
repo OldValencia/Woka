@@ -11,7 +11,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import com.woka.core.ui.theme.Theme
@@ -19,48 +18,49 @@ import java.io.File
 import com.woka.core.ui.components.DropdownItem
 import com.woka.core.ui.components.RenameDialog
 
+/**
+ * The folder screen's dialogs and background context menu. State and the eight
+ * callbacks that used to carry it are folded into [FolderOverlayState]; the two
+ * confirm paths call the ViewModel directly, as `FolderGrid` already does.
+ */
 @Composable
 fun FolderOverlays(
-    itemToRename: String?,
-    showCreateFolderDialog: Boolean,
-    showBgContextMenu: Boolean,
-    bgContextMenuOffset: IntOffset,
-    onDismissRename: () -> Unit,
-    onConfirmRename: (String, String) -> Unit, // path, new name
-    onDismissCreateFolder: () -> Unit,
-    onConfirmCreateFolder: (String) -> Unit,
-    onDismissBgContextMenu: () -> Unit,
-    onCreateFolderClick: () -> Unit,
-    onPinFolderClick: () -> Unit
+    overlays: FolderOverlayState,
+    viewModel: FolderViewModel,
+    path: String
 ) {
-    itemToRename?.let { renamePath ->
+    overlays.itemToRename?.let { renamePath ->
         val file = File(renamePath)
         val ext = if (file.isDirectory || file.nameWithoutExtension.isEmpty()) "" else file.extension
         val nameWithoutExt = if (ext.isNotEmpty()) file.nameWithoutExtension else file.name
         RenameDialog(
             initialName = nameWithoutExt,
-            onDismiss = onDismissRename,
+            onDismiss = { overlays.itemToRename = null },
             onConfirm = { newName ->
                 val finalName = if (ext.isNotEmpty()) "$newName.$ext" else newName
-                onConfirmRename(renamePath, finalName)
+                viewModel.renameFile(renamePath, finalName)
+                overlays.itemToRename = null
             }
         )
     }
 
-    if (showCreateFolderDialog) {
+    if (overlays.showCreateFolderDialog) {
         RenameDialog(
             initialName = "New Folder",
             title = "Create folder",
-            onDismiss = onDismissCreateFolder,
-            onConfirm = onConfirmCreateFolder
+            onDismiss = { overlays.showCreateFolderDialog = false },
+            onConfirm = { newName ->
+                viewModel.createFolder(newName)
+                overlays.showCreateFolderDialog = false
+            }
         )
     }
 
-    if (showBgContextMenu) {
+    if (overlays.showBgContextMenu) {
         Popup(
             alignment = Alignment.TopStart,
-            offset = bgContextMenuOffset,
-            onDismissRequest = onDismissBgContextMenu
+            offset = overlays.bgContextMenuOffset,
+            onDismissRequest = { overlays.dismissBgContextMenu() }
         ) {
             Column(
                 modifier = Modifier
@@ -71,10 +71,12 @@ fun FolderOverlays(
                     .padding(6.dp)
             ) {
                 DropdownItem("Create folder") {
-                    onCreateFolderClick()
+                    overlays.showCreateFolderDialog = true
+                    overlays.dismissBgContextMenu()
                 }
                 DropdownItem("Pin to Library", textColor = Theme.colors.accentFolders) {
-                    onPinFolderClick()
+                    viewModel.pinFolder(path)
+                    overlays.dismissBgContextMenu()
                 }
             }
         }

@@ -14,8 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.woka.app.AppDependencies
 import com.woka.feature.viewer.video.engine.VideoPlayerState
-import com.woka.feature.viewer.video.engine.resetTracksForThisFile
-import com.woka.feature.viewer.video.engine.selectVideoTrack
+import com.woka.feature.viewer.video.engine.track.resetTracksForThisFile
+import com.woka.feature.viewer.video.engine.track.selectVideoTrack
 import com.woka.feature.viewer.shell.PopoverListRow
 import com.woka.feature.viewer.shell.PopoverSectionLabel
 

@@ -23,6 +23,7 @@ import com.woka.feature.viewer.video.engine.seek
 import com.woka.feature.viewer.video.engine.skipBy
 import org.jetbrains.compose.resources.painterResource
 import com.woka.feature.viewer.shell.slider.MediaSlider
+import com.woka.feature.viewer.shell.slider.defaultMediaSliderStyle
 
 @Composable
 fun MediaViewerTimeSlider(
@@ -94,11 +95,8 @@ fun MediaViewerTimeSlider(
                 }
             },
             tooltipText = { formatTime((it * durationMs).toLong()) },
-            chapters = videoState?.tracks?.chapters.orEmpty(),
-            durationMs = durationMs,
-            activeColor = Theme.colors.accent,
-            inactiveColor = Theme.colors.textSecondary,
-            thumbColor = Theme.colors.accent,
+            segments = chapterSegments(videoState?.tracks?.chapters.orEmpty(), durationMs),
+            style = defaultMediaSliderStyle(),
             modifier = Modifier.weight(1f)
         )
 

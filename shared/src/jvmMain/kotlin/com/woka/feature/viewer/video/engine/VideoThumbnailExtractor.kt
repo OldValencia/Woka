@@ -3,6 +3,7 @@ package com.woka.feature.viewer.video.engine
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import com.woka.core.data.MediaItem
+import com.woka.core.data.WokaStorage
 import com.woka.core.ui.image.ImageBitmapCache
 import org.bytedeco.ffmpeg.global.avutil.AV_LOG_QUIET
 import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_BGR24
@@ -38,7 +39,7 @@ internal fun quietFfmpegLogs() {
 internal object VideoThumbnailExtractor {
 
     fun load(item: MediaItem.Video): ImageBitmap? {
-        val previewFile = thumbnailCacheFile(item.file)
+        val previewFile = WokaStorage.thumbnailFile(item.file)
         if (previewFile.exists() && previewFile.isFile) {
             val existing = try {
                 ImageIO.read(previewFile)
@@ -86,7 +87,7 @@ internal object VideoThumbnailExtractor {
         duration: Long
     ): BufferedImage? {
         if (duration !in 1..targetTs) grabber.setTimestamp(targetTs)
-        (0 until 15).forEach { i ->
+        (0 until 15).forEach { _ ->
             val frame: Frame? = grabber.grabImage()
             if (frame != null && frame.image != null) {
                 return converter.getBufferedImage(frame)

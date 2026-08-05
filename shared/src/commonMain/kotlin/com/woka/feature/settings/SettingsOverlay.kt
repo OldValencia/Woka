@@ -31,30 +31,26 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.unit.dp
-import com.woka.core.data.CarouselVisibility
-import com.woka.core.data.ScalePreset
+import com.woka.core.data.SettingsRepository
+import com.woka.core.data.WokaSettings
 import com.woka.core.ui.theme.Theme
 
+/**
+ * Takes the settings object and the repository rather than eight
+ * value-plus-callback pairs: every one of those pairs read a [WokaSettings] field
+ * and called the identically named [SettingsRepository] setter, and `App.kt` wrote
+ * all eighteen arguments out by hand.
+ *
+ * Safe for recomposition because [WokaSettings] is `@Immutable` and
+ * [SettingsRepository] is `@Stable` — without that the panels below would become
+ * non-skippable and recompose on every parent pass.
+ */
 @Composable
 fun SettingsOverlay(
     isOpen: Boolean,
     onClose: () -> Unit,
-    currentTheme: String,
-    onThemeChange: (String) -> Unit,
-    globalShowTitles: Boolean,
-    onGlobalShowTitlesChange: (Boolean) -> Unit,
-    showHiddenFiles: Boolean,
-    onShowHiddenFilesChange: (Boolean) -> Unit,
-    carouselMode: CarouselVisibility,
-    onCarouselModeChange: (CarouselVisibility) -> Unit,
-    rememberSizeState: Boolean,
-    onRememberSizeStateChange: (Boolean) -> Unit,
-    defaultUseZoom: Boolean,
-    onDefaultUseZoomChange: (Boolean) -> Unit,
-    defaultPreset: ScalePreset,
-    onDefaultPresetChange: (ScalePreset) -> Unit,
-    defaultZoomPercent: Int,
-    onDefaultZoomPercentChange: (Int) -> Unit
+    settings: WokaSettings,
+    repo: SettingsRepository
 ) {
     // Owned here, outside the AnimatedVisibility, so closing and reopening Settings
     // returns to the category the user was last on.
@@ -114,22 +110,8 @@ fun SettingsOverlay(
                     selectedCategory = selectedCategory,
                     onSelectCategory = { selectedCategory = it },
                     onClose = onClose,
-                    currentTheme = currentTheme,
-                    onThemeChange = onThemeChange,
-                    globalShowTitles = globalShowTitles,
-                    onGlobalShowTitlesChange = onGlobalShowTitlesChange,
-                    showHiddenFiles = showHiddenFiles,
-                    onShowHiddenFilesChange = onShowHiddenFilesChange,
-                    carouselMode = carouselMode,
-                    onCarouselModeChange = onCarouselModeChange,
-                    rememberSizeState = rememberSizeState,
-                    onRememberSizeStateChange = onRememberSizeStateChange,
-                    defaultUseZoom = defaultUseZoom,
-                    onDefaultUseZoomChange = onDefaultUseZoomChange,
-                    defaultPreset = defaultPreset,
-                    onDefaultPresetChange = onDefaultPresetChange,
-                    defaultZoomPercent = defaultZoomPercent,
-                    onDefaultZoomPercentChange = onDefaultZoomPercentChange
+                    settings = settings,
+                    repo = repo
                 )
             }
         }

@@ -17,7 +17,7 @@ import com.woka.core.ui.icons.Icons
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.viewer.video.model.SubtitleSelection
 import com.woka.feature.viewer.video.engine.VideoPlayerState
-import com.woka.feature.viewer.video.engine.selectSubtitle
+import com.woka.feature.viewer.video.engine.track.selectSubtitle
 import org.jetbrains.compose.resources.painterResource
 import com.woka.feature.viewer.shell.SimpleTooltip
 

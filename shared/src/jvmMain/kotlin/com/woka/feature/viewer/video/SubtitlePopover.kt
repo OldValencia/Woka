@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.dp
 import com.woka.feature.viewer.video.model.ExternalSubtitle
 import com.woka.feature.viewer.video.model.MediaTrack
 import com.woka.feature.viewer.video.model.SubtitleSelection
-import com.woka.feature.viewer.video.engine.isBitmapSubtitleFile
+import com.woka.feature.viewer.video.engine.subtitle.isBitmapSubtitleFile
 import com.woka.feature.viewer.shell.PopoverListRow
 
 @Composable

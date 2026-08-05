@@ -64,5 +64,5 @@ internal fun MediaViewerState.applyZoomKey(key: ZoomKey, onSizeModeChange: (Size
     offsetX = result.offsetX
     offsetY = result.offsetY
     onSizeModeChange(result.sizeMode)
-    zoomHudTrigger = System.currentTimeMillis()
+    zoomHudEvent.raise()
 }

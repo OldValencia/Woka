@@ -17,7 +17,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.input.pointer.*
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.woka.core.data.MediaItem
@@ -32,16 +31,13 @@ fun FolderGrid(
     state: FolderState,
     viewModel: FolderViewModel,
     gridState: LazyGridState,
-    gridColumnSize: Dp,
+    zoom: FolderZoom,
     path: String,
-    highlightFile: String? = null,
     focusRequester: FocusRequester,
+    overlays: FolderOverlayState,
     onNavigateToFolder: (String) -> Unit,
-    onShowBgContextMenu: (IntOffset) -> Unit,
-    onZoomIn: () -> Unit,
-    onZoomOut: () -> Unit,
-    onRenameItem: (String) -> Unit,
     onOpenMedia: (String) -> Unit,
+    highlightFile: String? = null,
     modifier: Modifier = Modifier
 ) {
     LaunchedEffect(highlightFile, state.items) {
@@ -61,7 +57,9 @@ fun FolderGrid(
                 if (event.button == PointerButton.Secondary) {
                     val change = event.changes.first()
                     if (!change.isConsumed) {
-                        onShowBgContextMenu(IntOffset(change.position.x.toInt() + 2, change.position.y.toInt() + 2))
+                        overlays.openBgContextMenu(
+                            IntOffset(change.position.x.toInt() + 2, change.position.y.toInt() + 2)
+                        )
                         change.consume()
                     }
                 }
@@ -70,9 +68,9 @@ fun FolderGrid(
                 if (event.keyboardModifiers.isCtrlPressed) {
                     val delta = event.changes.firstOrNull()?.scrollDelta?.y ?: 0f
                     if (delta < 0) {
-                        onZoomIn()
+                        zoom.zoomIn()
                     } else if (delta > 0) {
-                        onZoomOut()
+                        zoom.zoomOut()
                     }
                     event.changes.forEach { it.consume() }
                 }
@@ -81,12 +79,12 @@ fun FolderGrid(
                 if (event.type == KeyEventType.KeyDown && event.isCtrlPressed) {
                     when (event.key) {
                         Key.Equals, Key.Plus, Key.NumPadAdd -> {
-                            onZoomIn()
+                            zoom.zoomIn()
                             true
                         }
 
                         Key.Minus, Key.NumPadSubtract -> {
-                            onZoomOut()
+                            zoom.zoomOut()
                             true
                         }
 
@@ -96,7 +94,7 @@ fun FolderGrid(
             }
     ) {
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(gridColumnSize),
+            columns = GridCells.Adaptive(zoom.columnSize),
             state = gridState,
             modifier = Modifier.fillMaxSize(),
             horizontalArrangement = Arrangement.spacedBy(28.dp),
@@ -137,7 +135,7 @@ fun FolderGrid(
                         } else {
                             DropdownItem("Open") { dismiss(); onOpenMedia(item.file.absolutePath) }
                         }
-                        DropdownItem("Rename") { dismiss(); onRenameItem(item.file.absolutePath) }
+                        DropdownItem("Rename") { dismiss(); overlays.itemToRename = item.file.absolutePath }
                         DropdownItem("Copy") {
                             dismiss()
                             val dest = openDirectoryPicker("Copy to...", path)

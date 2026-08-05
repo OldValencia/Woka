@@ -5,7 +5,6 @@ import androidx.compose.runtime.DisposableEffect
 import com.woka.app.shell.LocalDockAccessories
 import com.woka.core.data.PinnedSession
 import com.woka.core.data.SettingsRepository
-import com.woka.core.data.ViewLayout
 import com.woka.core.utils.openDirectoryPicker
 import com.woka.feature.library.LibraryTopAccessory
 
@@ -14,30 +13,28 @@ fun FolderDockSetup(
     path: String,
     state: FolderState,
     isPinned: Boolean,
-    layout: ViewLayout,
+    zoom: FolderZoom,
     gridScrollIndex: Int,
     gridScrollOffset: Int,
     viewModel: FolderViewModel,
-    settingsRepo: SettingsRepository,
-    onZoomIn: () -> Unit,
-    onZoomOut: () -> Unit
+    settingsRepo: SettingsRepository
 ) {
     val dockAccessories = LocalDockAccessories.current
-    DisposableEffect(state, isPinned, layout, state.sort, path) {
+    DisposableEffect(state, isPinned, zoom, state.sort, path) {
         val dockKey = "folder_$path"
         dockAccessories.setLeft(dockKey) {
             LibraryLeftAccessory(
                 isPinned = isPinned,
                 isSelectMode = state.isSelectMode,
-                layout = layout,
+                layout = zoom.layout,
                 sort = state.sort,
                 onTogglePin = {
                     if (isPinned) settingsRepo.removePinnedSession(path)
                     else settingsRepo.addPinnedSession(PinnedSession(path, gridScrollIndex, gridScrollOffset))
                 },
                 onToggleSelectMode = { viewModel.toggleSelectMode() },
-                onZoomIn = onZoomIn,
-                onZoomOut = onZoomOut,
+                onZoomIn = zoom.zoomIn,
+                onZoomOut = zoom.zoomOut,
                 onSortChange = { viewModel.setSort(it) }
             )
         }

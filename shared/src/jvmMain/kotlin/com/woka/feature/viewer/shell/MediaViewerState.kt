@@ -26,16 +26,16 @@ class MediaViewerState(initialId: String) {
     // lives in the top bar and needs them to resolve a preset into a percentage.
     var containerSize by mutableStateOf(IntSize.Zero)
     var nativeSize by mutableStateOf(IntSize.Zero)
-    // Bumped when the wheel or the keyboard changes the zoom, to flash the HUD.
-    var zoomHudTrigger by mutableStateOf(0L)
+    // Raised when the wheel or the keyboard changes the zoom, to flash the HUD.
+    val zoomHudEvent = ViewerEvent()
     var activeItemPath by mutableStateOf<String?>(null)
-    
-    var playPauseTrigger by mutableStateOf(0L)
-    var skipTrigger by mutableStateOf(0L)
+
+    val playPauseEvent = ViewerEvent()
+    val skipEvent = ViewerEvent()
     var skipDirection by mutableStateOf(1)
-    
-    var volumeTrigger by mutableStateOf(0L)
-    var volumeTriggerTimer by mutableStateOf(0)
+
+    // Also opens the volume popover for a moment; see rememberEventFlag.
+    val volumeEvent = ViewerEvent()
     // Single source of truth for the Volume/Subtitle hover popovers (see
     // PopoverHoverState) — replaces the four separate hover booleans that used to
     // reset each other and caused the popover flicker loop.

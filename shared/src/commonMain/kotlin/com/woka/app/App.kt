@@ -133,22 +133,8 @@ fun App(
             SettingsOverlay(
                 isOpen = isSettingsOpen,
                 onClose = { isSettingsOpen = false },
-                currentTheme = settings.theme,
-                onThemeChange = { settingsRepo.setTheme(it) },
-                globalShowTitles = settings.showTitles,
-                onGlobalShowTitlesChange = { settingsRepo.setShowTitles(it) },
-                showHiddenFiles = settings.showHiddenFiles,
-                onShowHiddenFilesChange = { settingsRepo.setShowHiddenFiles(it) },
-                carouselMode = settings.mediaViewerCarouselMode,
-                onCarouselModeChange = { settingsRepo.setCarouselMode(it) },
-                rememberSizeState = settings.rememberSizeState,
-                onRememberSizeStateChange = { settingsRepo.setRememberSizeState(it) },
-                defaultUseZoom = settings.defaultUseZoom,
-                onDefaultUseZoomChange = { settingsRepo.setDefaultUseZoom(it) },
-                defaultPreset = settings.scalePreset,
-                onDefaultPresetChange = { settingsRepo.setScalePreset(it) },
-                defaultZoomPercent = settings.defaultZoomPercent,
-                onDefaultZoomPercentChange = { settingsRepo.setDefaultZoomPercent(it) }
+                settings = settings,
+                repo = settingsRepo
             )
 
             // Search Overlay

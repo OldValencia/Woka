@@ -42,14 +42,3 @@ internal fun PlayerSpeedHeader(speed: Float) {
         )
     }
 }
-
-/**
- * Left edge of a marker of [markerPx] whose centre sits at [fraction] along the
- * usable track. Both markers share this, so the detent lines up under the knob
- * instead of drifting by half the size difference.
- */
-internal fun markerLeft(trackWidthPx: Int, knobPx: Float, fraction: Float, markerPx: Float): Int {
-    val usable = (trackWidthPx - knobPx).coerceAtLeast(0f)
-    val centre = knobPx / 2f + fraction * usable
-    return (centre - markerPx / 2f).toInt()
-}

@@ -29,6 +29,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.woka.core.data.CarouselVisibility
 import com.woka.core.data.ScalePreset
+import com.woka.core.data.SettingsRepository
+import com.woka.core.data.WokaSettings
 import com.woka.core.ui.theme.Theme
 import com.woka.core.ui.components.SegmentedControl
 
@@ -37,30 +39,19 @@ import com.woka.core.ui.components.SegmentedControl
  * Split out of `SettingsPanels.kt` per the §2 file-size mandate.
  */
 @Composable
-fun MediaViewerSettingsPanel(
-    carouselMode: CarouselVisibility,
-    onCarouselModeChange: (CarouselVisibility) -> Unit,
-    rememberSizeState: Boolean,
-    onRememberSizeStateChange: (Boolean) -> Unit,
-    defaultUseZoom: Boolean,
-    onDefaultUseZoomChange: (Boolean) -> Unit,
-    defaultPreset: ScalePreset,
-    onDefaultPresetChange: (ScalePreset) -> Unit,
-    defaultZoomPercent: Int,
-    onDefaultZoomPercentChange: (Int) -> Unit
-) {
+fun MediaViewerSettingsPanel(settings: WokaSettings, repo: SettingsRepository) {
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         SectionLabel("Carousel")
         Spacer(modifier = Modifier.height(10.dp))
         SegmentedControl(
             options = listOf("Auto Hide", "Always On", "Hidden"),
-            selected = when (carouselMode) {
+            selected = when (settings.mediaViewerCarouselMode) {
                 CarouselVisibility.AUTO -> "Auto Hide"
                 CarouselVisibility.ALWAYS_ON -> "Always On"
                 CarouselVisibility.HIDDEN -> "Hidden"
             },
             onSelect = { selectedStr ->
-                onCarouselModeChange(when (selectedStr) {
+                repo.setCarouselMode(when (selectedStr) {
                     "Always On" -> CarouselVisibility.ALWAYS_ON
                     "Hidden" -> CarouselVisibility.HIDDEN
                     else -> CarouselVisibility.AUTO
@@ -74,33 +65,33 @@ fun MediaViewerSettingsPanel(
         SettingsToggleRow(
             title = "Remember zoom & size",
             subtitle = "Restore the last zoom/preset you used; otherwise open at the default below",
-            checked = rememberSizeState,
-            onCheckedChange = onRememberSizeStateChange
+            checked = settings.rememberSizeState,
+            onCheckedChange = { repo.setRememberSizeState(it) }
         )
         Spacer(modifier = Modifier.height(12.dp))
         SegmentedControl(
             options = listOf("Preset", "Zoom"),
-            selected = if (defaultUseZoom) "Zoom" else "Preset",
-            onSelect = { onDefaultUseZoomChange(it == "Zoom") }
+            selected = if (settings.defaultUseZoom) "Zoom" else "Preset",
+            onSelect = { repo.setDefaultUseZoom(it == "Zoom") }
         )
         Spacer(modifier = Modifier.height(10.dp))
-        if (defaultUseZoom) {
+        if (settings.defaultUseZoom) {
             BasicText(
                 text = "Percent of actual size — 100% is native 1:1",
                 style = TextStyle(color = Theme.colors.textSecondary, fontSize = 11.sp)
             )
             Spacer(modifier = Modifier.height(6.dp))
-            ZoomDefaultStepper(defaultZoomPercent, onDefaultZoomPercentChange)
+            ZoomDefaultStepper(settings.defaultZoomPercent) { repo.setDefaultZoomPercent(it) }
         } else {
             SegmentedControl(
                 options = listOf("Fit", "Fill", "Actual"),
-                selected = when (defaultPreset) {
+                selected = when (settings.scalePreset) {
                     ScalePreset.Fit -> "Fit"
                     ScalePreset.Fill -> "Fill"
                     ScalePreset.Original -> "Actual"
                 },
                 onSelect = { sel ->
-                    onDefaultPresetChange(when (sel) {
+                    repo.setScalePreset(when (sel) {
                         "Fill" -> ScalePreset.Fill
                         "Actual" -> ScalePreset.Original
                         else -> ScalePreset.Fit

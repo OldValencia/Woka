@@ -14,30 +14,31 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
-import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.HdrImagePainter
 import com.woka.feature.viewer.video.SubtitleBitmapLayer
 
 /**
  * The drawn frame itself: picks the tone-mapping painter for HDR video, applies the
- * zoom/pan transform and hosts the context menu. Split out of [MediaViewerContent]
- * per the §2 file-size mandate.
+ * zoom/pan transform and hosts the context menu.
+ *
+ * [targetPoster] is the poster belonging to this copy of the enter/exit animation,
+ * which during a file change is not the same as [media]'s — that is what the
+ * outgoing copy is for.
  */
 @Composable
 fun MediaViewerFrame(
-    targetBitmap: ImageBitmap,
-    videoState: VideoPlayerState?,
+    media: ViewerMedia,
+    targetPoster: ImageBitmap,
     renderScale: Float,
     offsetX: Float,
     offsetY: Float,
     subtitleBottomPadding: Dp,
-    onEdit: () -> Unit,
-    onCopy: () -> Unit,
-    onInfo: () -> Unit
+    actions: ViewerActions
 ) {
-    val frameToDraw = if (videoState != null) videoState.currentFrame ?: targetBitmap else targetBitmap
-    val hdrInfo = if (videoState != null && frameToDraw === videoState.currentFrame) {
-        videoState.currentFrameHdrInfo
+    val video = media as? ViewerMedia.Video
+    val frameToDraw = video?.player?.currentFrame ?: targetPoster
+    val hdrInfo = if (frameToDraw === video?.player?.currentFrame) {
+        video.player.currentFrameHdrInfo
     } else {
         null
     }
@@ -51,9 +52,9 @@ fun MediaViewerFrame(
     ContextMenuArea(
         items = {
             listOf(
-                ContextMenuItem("Edit") { onEdit() },
-                ContextMenuItem("Copy") { onCopy() },
-                ContextMenuItem("Info") { onInfo() }
+                ContextMenuItem("Edit") { actions.onEdit() },
+                ContextMenuItem("Copy") { actions.onCopy() },
+                ContextMenuItem("Info") { actions.onInfo() }
             )
         }
     ) {
@@ -76,7 +77,7 @@ fun MediaViewerFrame(
             // Bitmap subtitles carry their own placement, so they are drawn here —
             // inside the zoom/pan transform — rather than by the panel-anchored
             // text overlay (Step 10 / §2.2).
-            videoState?.activeCue?.image?.let { image ->
+            video?.player?.activeCue?.image?.let { image ->
                 SubtitleBitmapLayer(
                     image = image,
                     frameSize = IntSize(frameToDraw.width, frameToDraw.height),

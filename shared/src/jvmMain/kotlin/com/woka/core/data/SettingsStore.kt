@@ -19,8 +19,7 @@ import kotlin.time.Duration.Companion.milliseconds
  * file-size mandate, leaving the repository holding only the setters.
  */
 internal class SettingsStore(private val scope: CoroutineScope) {
-    private val settingsDir = File(System.getProperty("user.home"), "Documents/OldValencia/Woka")
-    private val settingsFile = File(settingsDir, "settings.json")
+    private val settingsFile = WokaStorage.settingsFile
 
     private val json = Json { ignoreUnknownKeys = true; prettyPrint = true }
 
@@ -81,11 +80,11 @@ internal class SettingsStore(private val scope: CoroutineScope) {
 
     private fun writeToDisk(current: WokaSettings) = synchronized(writeLock) {
         try {
-            if (!settingsDir.exists()) settingsDir.mkdirs()
+            if (!WokaStorage.root.exists()) WokaStorage.root.mkdirs()
             val text = json.encodeToString(current)
             // Write to a temp file then atomically replace, so a reader (or a crash
             // mid-write) can never see a half-written / duplicated file.
-            val tmp = File(settingsDir, "settings.json.tmp")
+            val tmp = File(WokaStorage.root, "settings.json.tmp")
             tmp.writeText(text)
             try {
                 Files.move(

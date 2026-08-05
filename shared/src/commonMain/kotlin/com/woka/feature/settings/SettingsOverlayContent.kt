@@ -22,8 +22,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.woka.core.data.CarouselVisibility
-import com.woka.core.data.ScalePreset
+import com.woka.core.data.SettingsRepository
+import com.woka.core.data.WokaSettings
 import com.woka.core.ui.icons.Icons
 import com.woka.core.ui.theme.Theme
 import org.jetbrains.compose.resources.DrawableResource
@@ -42,22 +42,8 @@ internal fun SettingsOverlayContent(
     selectedCategory: String,
     onSelectCategory: (String) -> Unit,
     onClose: () -> Unit,
-    currentTheme: String,
-    onThemeChange: (String) -> Unit,
-    globalShowTitles: Boolean,
-    onGlobalShowTitlesChange: (Boolean) -> Unit,
-    showHiddenFiles: Boolean,
-    onShowHiddenFilesChange: (Boolean) -> Unit,
-    carouselMode: CarouselVisibility,
-    onCarouselModeChange: (CarouselVisibility) -> Unit,
-    rememberSizeState: Boolean,
-    onRememberSizeStateChange: (Boolean) -> Unit,
-    defaultUseZoom: Boolean,
-    onDefaultUseZoomChange: (Boolean) -> Unit,
-    defaultPreset: ScalePreset,
-    onDefaultPresetChange: (ScalePreset) -> Unit,
-    defaultZoomPercent: Int,
-    onDefaultZoomPercentChange: (Int) -> Unit
+    settings: WokaSettings,
+    repo: SettingsRepository
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
@@ -92,18 +78,9 @@ internal fun SettingsOverlayContent(
                 ) { category ->
                     Column(modifier = Modifier.fillMaxSize()) {
                         when (category) {
-                            "Appearance" -> AppearanceSettingsPanel(currentTheme, onThemeChange)
-                            "Library" -> LibrarySettingsPanel(
-                                globalShowTitles, onGlobalShowTitlesChange,
-                                showHiddenFiles, onShowHiddenFilesChange
-                            )
-                            "Media Viewer" -> MediaViewerSettingsPanel(
-                                carouselMode, onCarouselModeChange,
-                                rememberSizeState, onRememberSizeStateChange,
-                                defaultUseZoom, onDefaultUseZoomChange,
-                                defaultPreset, onDefaultPresetChange,
-                                defaultZoomPercent, onDefaultZoomPercentChange
-                            )
+                            "Appearance" -> AppearanceSettingsPanel(settings, repo)
+                            "Library" -> LibrarySettingsPanel(settings, repo)
+                            "Media Viewer" -> MediaViewerSettingsPanel(settings, repo)
                             // Reads the repository itself, so nothing new is
                             // threaded through SettingsOverlay or App.
                             "Video Player" -> VideoPlayerSettingsPanel()

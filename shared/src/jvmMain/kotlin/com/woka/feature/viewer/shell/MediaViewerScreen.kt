@@ -99,19 +99,21 @@ fun MediaViewerScreen(
         copyAction = copyAction,
         infoAction = infoAction,
         onSizeModeChange = onSizeModeChange,
-        onVolumeChange = { vol -> mediaVolume = vol; state.volumeTrigger = System.currentTimeMillis() }
+        onVolumeChange = { vol -> mediaVolume = vol; state.volumeEvent.raise() }
     )
+
+    val media = rememberViewerMedia(state.imageBitmap, videoState)
 
     val playerContent = @Composable {
         MediaViewerPlayer(
             modifier = playerModifier,
             state = state,
-            videoState = videoState,
+            media = media,
             mediaItems = mediaItems,
             activeItem = activeItem,
             mediaVolume = mediaVolume,
-            carouselMode = settings.mediaViewerCarouselMode,
-            isFullscreen = isFullscreen,
+            chrome = ViewerChromeState(settings.mediaViewerCarouselMode, isFullscreen),
+            actions = ViewerActions(editAction, copyAction, infoAction),
             showInfoDialog = showInfoDialog,
             onShowInfoDialogChange = { showInfoDialog = it },
             onVolumeChange = { mediaVolume = it },
@@ -122,10 +124,7 @@ fun MediaViewerScreen(
                     onClose(state.currentId)
                 }
             },
-            loadThumbnail = loadThumbnail,
-            editAction = editAction,
-            copyAction = copyAction,
-            infoAction = infoAction
+            loadThumbnail = loadThumbnail
         )
     }
 

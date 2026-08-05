@@ -20,8 +20,6 @@ sealed class MediaItem {
 }
 
 class LocalMediaRepository {
-    private val supportedImageExtensions = setOf("jpg", "jpeg", "png", "webp", "bmp")
-    private val supportedVideoExtensions = setOf("mp4", "mkv", "avi", "mov", "webm")
 
     suspend fun getItems(directoryPath: String): List<MediaItem> = withContext(Dispatchers.IO) {
         val dir = File(directoryPath)
@@ -36,12 +34,7 @@ class LocalMediaRepository {
             if (file.isDirectory) {
                 folders.add(MediaItem.Folder(file))
             } else {
-                val ext = file.extension.lowercase()
-                if (supportedImageExtensions.contains(ext)) {
-                    media.add(MediaItem.Image(file))
-                } else if (supportedVideoExtensions.contains(ext)) {
-                    media.add(MediaItem.Video(file))
-                }
+                mediaItemOrNull(file)?.let { media.add(it) }
             }
         }
 

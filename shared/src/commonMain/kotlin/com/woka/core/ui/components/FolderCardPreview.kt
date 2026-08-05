@@ -18,6 +18,8 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import com.woka.core.data.MediaKind
+import com.woka.core.data.mediaKind
 import com.woka.core.ui.icons.Icons
 import com.woka.core.ui.theme.Theme
 import org.jetbrains.compose.resources.painterResource
@@ -96,9 +98,8 @@ fun FolderCardPreview(
         }
     } else {
         Box(modifier = modifier.fillMaxSize().background(Theme.colors.surfaceElevated)) {
-            val ext = file.extension.lowercase()
-            val isVideo = ext in listOf("mp4", "mkv", "avi", "mov", "webm")
-            
+            val isVideo = file.mediaKind() == MediaKind.Video
+
             if (isVideo) {
                 var bitmap by remember(file.absolutePath) { mutableStateOf<ImageBitmap?>(null) }
                 LaunchedEffect(file.absolutePath) {

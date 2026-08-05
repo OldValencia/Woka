@@ -1,7 +1,9 @@
 package com.woka.core.data
 
+import androidx.compose.runtime.Stable
 import kotlinx.coroutines.flow.StateFlow
 
+@Stable
 interface SettingsRepository {
     val settings: StateFlow<WokaSettings>
     fun addLinkedFolder(path: String)

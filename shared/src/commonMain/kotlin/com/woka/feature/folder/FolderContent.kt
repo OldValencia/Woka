@@ -7,8 +7,6 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
 import com.woka.app.AppDependencies
 import com.woka.core.data.PinnedSession
 import com.woka.core.data.ViewLayout
@@ -16,19 +14,12 @@ import com.woka.core.data.ViewLayout
 @Composable
 fun FolderContent(
     path: String,
-    highlightFile: String? = null,
     state: FolderState,
     viewModel: FolderViewModel,
+    overlays: FolderOverlayState,
     onNavigateToFolder: (String) -> Unit,
     onOpenMedia: (String) -> Unit,
-    itemToRename: String?,
-    showCreateFolderDialog: Boolean,
-    showBgContextMenu: Boolean,
-    bgContextMenuOffset: IntOffset,
-    onRenameItemChange: (String?) -> Unit,
-    onShowCreateFolderDialogChange: (Boolean) -> Unit,
-    onShowBgContextMenuChange: (Boolean) -> Unit,
-    onBgContextMenuOffsetChange: (IntOffset) -> Unit,
+    highlightFile: String? = null,
     scrollToMediaId: String? = null,
     onScrollToMediaIdConsumed: () -> Unit = {}
 ) {
@@ -56,30 +47,11 @@ fun FolderContent(
         }
     }
 
-    val layout = settings.folderLayouts[path] ?: ViewLayout.Grid
-    val gridColumnSize = when (layout) {
-        ViewLayout.SmallGrid -> 120.dp
-        ViewLayout.Grid -> 240.dp
-        ViewLayout.BigGrid -> 400.dp
-    }
-
-    val zoomIn = {
-        val newLayout = when (layout) {
-            ViewLayout.SmallGrid -> ViewLayout.Grid
-            ViewLayout.Grid -> ViewLayout.BigGrid
-            ViewLayout.BigGrid -> ViewLayout.BigGrid
-        }
-        if (newLayout != layout) settingsRepo.setFolderLayout(path, newLayout)
-    }
-
-    val zoomOut = {
-        val newLayout = when (layout) {
-            ViewLayout.BigGrid -> ViewLayout.Grid
-            ViewLayout.Grid -> ViewLayout.SmallGrid
-            ViewLayout.SmallGrid -> ViewLayout.SmallGrid
-        }
-        if (newLayout != layout) settingsRepo.setFolderLayout(path, newLayout)
-    }
+    val zoom = rememberFolderZoom(
+        layout = settings.folderLayouts[path] ?: ViewLayout.Grid,
+        path = path,
+        settingsRepo = settingsRepo
+    )
 
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
@@ -101,59 +73,31 @@ fun FolderContent(
             path = path,
             state = state,
             isPinned = isPinned,
-            layout = layout,
+            zoom = zoom,
             gridScrollIndex = gridState.firstVisibleItemIndex,
             gridScrollOffset = gridState.firstVisibleItemScrollOffset,
             viewModel = viewModel,
-            settingsRepo = settingsRepo,
-            onZoomIn = zoomIn,
-            onZoomOut = zoomOut
+            settingsRepo = settingsRepo
         )
 
         FolderGrid(
             state = state,
             viewModel = viewModel,
             gridState = gridState,
-            gridColumnSize = gridColumnSize,
+            zoom = zoom,
             path = path,
             highlightFile = highlightFile,
             focusRequester = focusRequester,
             onNavigateToFolder = onNavigateToFolder,
-            onShowBgContextMenu = { offset ->
-                onBgContextMenuOffsetChange(offset)
-                onShowBgContextMenuChange(true)
-            },
-            onZoomIn = zoomIn,
-            onZoomOut = zoomOut,
-            onRenameItem = { onRenameItemChange(it) },
+            overlays = overlays,
             onOpenMedia = onOpenMedia,
             modifier = Modifier.fillMaxWidth().weight(1f)
         )
     }
 
     FolderOverlays(
-        itemToRename = itemToRename,
-        showCreateFolderDialog = showCreateFolderDialog,
-        showBgContextMenu = showBgContextMenu,
-        bgContextMenuOffset = bgContextMenuOffset,
-        onDismissRename = { onRenameItemChange(null) },
-        onConfirmRename = { renamePath, finalName ->
-            viewModel.renameFile(renamePath, finalName)
-            onRenameItemChange(null)
-        },
-        onDismissCreateFolder = { onShowCreateFolderDialogChange(false) },
-        onConfirmCreateFolder = { newName ->
-            viewModel.createFolder(newName)
-            onShowCreateFolderDialogChange(false)
-        },
-        onDismissBgContextMenu = { onShowBgContextMenuChange(false) },
-        onCreateFolderClick = {
-            onShowCreateFolderDialogChange(true)
-            onShowBgContextMenuChange(false)
-        },
-        onPinFolderClick = {
-            viewModel.pinFolder(path)
-            onShowBgContextMenuChange(false)
-        }
+        overlays = overlays,
+        viewModel = viewModel,
+        path = path
     )
 }

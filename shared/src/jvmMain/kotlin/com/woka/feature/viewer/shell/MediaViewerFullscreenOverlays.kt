@@ -1,10 +1,6 @@
 package com.woka.feature.viewer.shell
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
@@ -14,18 +10,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.woka.core.data.CarouselVisibility
 import com.woka.core.data.SettingsRepository
+import com.woka.core.ui.theme.Theme
 import com.woka.feature.viewer.pip.PipManager
-import com.woka.feature.viewer.video.engine.VideoPlayerState
-import com.woka.feature.viewer.video.engine.selectAudioTrack
 import com.woka.feature.viewer.video.MediaViewerVideoControls
-import com.woka.feature.viewer.video.VolumeVerticalOverlay
 import com.woka.feature.viewer.video.PlayerSettingsOverlay
 import com.woka.feature.viewer.video.SubtitleVerticalOverlay
+import com.woka.feature.viewer.video.VolumeVerticalOverlay
+import com.woka.feature.viewer.video.engine.VideoPlayerState
+import com.woka.feature.viewer.video.engine.decode.selectAudioTrack
 
 /**
  * Toolbar popovers (Volume / Subtitles / Settings) and the bottom control bar of
@@ -59,14 +55,14 @@ fun BoxScope.MediaViewerFullscreenOverlays(
             isVisible = hover.visibleTarget == HoverTarget.Subtitle,
             bottomPadding = bottomPadding,
             alignment = alignment,
-            videoState = videoState,
+            player = videoState,
             onHover = { hover.setHovered(HoverTarget.Subtitle, it) }
         )
         PlayerSettingsOverlay(
             isVisible = hover.visibleTarget == HoverTarget.Settings,
             bottomPadding = bottomPadding,
             alignment = alignment,
-            videoState = videoState,
+            player = videoState,
             onHover = { hover.setHovered(HoverTarget.Settings, it) }
         )
     }
@@ -106,7 +102,7 @@ fun BoxScope.MediaViewerFullscreenTopControls(
     ) {
         Row(
             modifier = Modifier
-                .background(Color.Black.copy(alpha = 0.5f), shape = RoundedCornerShape(8.dp))
+                .background(Theme.viewer.hudScrim, shape = RoundedCornerShape(8.dp))
                 .padding(4.dp)
         ) {
             MediaViewerFullscreenControls(

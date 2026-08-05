@@ -44,19 +44,11 @@ internal fun buildFolderState(
         sortedItems.filter { !it.file.isHidden }
     }
 
+    // Filtering on the item type, not on the extension again: the listing already
+    // resolved every file through `mediaKind()`, so an image IS a MediaItem.Image.
     val filteredItems = when (settings.mediaFilter) {
-        "Photos" -> visibleItems.filter {
-            it is MediaItem.Folder || it.file.extension.lowercase() in listOf(
-                "jpg", "jpeg", "png", "gif", "webp", "bmp", "heic"
-            )
-        }
-
-        "Videos" -> visibleItems.filter {
-            it is MediaItem.Folder || it.file.extension.lowercase() in listOf(
-                "mp4", "mkv", "avi", "mov", "webm"
-            )
-        }
-
+        "Photos" -> visibleItems.filter { it is MediaItem.Folder || it is MediaItem.Image }
+        "Videos" -> visibleItems.filter { it is MediaItem.Folder || it is MediaItem.Video }
         else -> visibleItems
     }
     // Folders first

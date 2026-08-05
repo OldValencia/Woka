@@ -22,12 +22,12 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.woka.feature.viewer.video.engine.SYNC_STEP_MS
+import com.woka.feature.viewer.video.engine.sync.SYNC_STEP_MS
 import com.woka.feature.viewer.video.engine.VideoPlayerState
-import com.woka.feature.viewer.video.engine.formatSyncOffset
-import com.woka.feature.viewer.video.engine.resetSync
-import com.woka.feature.viewer.video.engine.setAudioDelay
-import com.woka.feature.viewer.video.engine.setSubtitleDelay
+import com.woka.feature.viewer.video.engine.sync.formatSyncOffset
+import com.woka.feature.viewer.video.engine.sync.resetSync
+import com.woka.feature.viewer.video.engine.sync.setAudioDelay
+import com.woka.feature.viewer.video.engine.sync.setSubtitleDelay
 import com.woka.feature.viewer.shell.PopoverSectionLabel
 
 /**

@@ -16,7 +16,6 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.unit.dp
 import com.woka.core.data.MediaItem
 import com.woka.core.ui.theme.Theme
-import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.MediaViewerVideoControls
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -24,23 +23,17 @@ import com.woka.feature.viewer.video.MediaViewerVideoControls
 fun MediaViewerToolbar(
     currentId: String,
     mediaItems: List<MediaItem>,
-    imageBitmap: ImageBitmap,
-    scale: Float,
-    offsetX: Float,
-    offsetY: Float,
+    media: ViewerMedia,
+    backdrop: BackdropTransform,
+    chrome: ViewerChromeState,
+    hover: PopoverHoverState,
+    isVisible: Boolean,
     onPrev: () -> Unit,
     onNext: () -> Unit,
     onSelectMedia: (String) -> Unit,
-    onVolumeHoverChange: (Boolean) -> Unit,
-    onSubtitlesHoverChange: (Boolean) -> Unit = {},
-    onSettingsHoverChange: (Boolean) -> Unit = {},
-    isVisible: Boolean,
-    isCarouselEnabled: Boolean,
     loadThumbnail: suspend (MediaItem) -> ImageBitmap?,
     mediaVolume: Float,
     onVolumeChange: (Float) -> Unit,
-    videoState: VideoPlayerState?,
-    isFullscreen: Boolean,
     onToggleFullscreen: () -> Unit
 ) {
     val currentItem = mediaItems.find { it.file.absolutePath == currentId }
@@ -60,24 +53,24 @@ fun MediaViewerToolbar(
                 animationProgress = animationProgress,
                 hasPrev = hasPrev,
                 hasNext = hasNext,
-                hasCarousel = isCarouselEnabled && mediaItems.size > 1 && !isFullscreen,
+                hasCarousel = chrome.isCarouselEnabled && mediaItems.size > 1 && !chrome.isFullscreen,
                 isVideo = currentItem is MediaItem.Video
             )
             .background(Theme.colors.background.copy(alpha = 0.35f)),
         contentAlignment = Alignment.TopCenter
     ) {
         Image(
-            bitmap = videoState?.currentFrame ?: imageBitmap,
+            bitmap = (media as? ViewerMedia.Video)?.frame ?: media.poster,
             contentDescription = null,
             colorFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(1.4f) }),
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer(
-                    scaleX = scale * 1.05f,
-                    scaleY = scale * 1.05f,
-                    translationX = offsetX,
-                    translationY = offsetY,
-                    renderEffect = BlurEffect(50f / scale, 50f / scale)
+                    scaleX = backdrop.scale * 1.05f,
+                    scaleY = backdrop.scale * 1.05f,
+                    translationX = backdrop.offsetX,
+                    translationY = backdrop.offsetY,
+                    renderEffect = BlurEffect(50f / backdrop.scale, 50f / backdrop.scale)
                 )
         )
         Box(modifier = Modifier.fillMaxSize().background(Theme.colors.background.copy(alpha = 0.4f)))
@@ -109,18 +102,18 @@ fun MediaViewerToolbar(
         ) {
             if (currentItem is MediaItem.Video) {
                 MediaViewerVideoControls(
-                    videoState = videoState,
+                    videoState = media.player,
                     mediaVolume = mediaVolume,
                     onVolumeChange = onVolumeChange,
-                    onVolumeHoverChange = onVolumeHoverChange,
-                    onSubtitlesHoverChange = onSubtitlesHoverChange,
-                    onSettingsHoverChange = onSettingsHoverChange,
-                    isFullscreen = isFullscreen,
+                    onVolumeHoverChange = { hover.setHovered(HoverTarget.Volume, it) },
+                    onSubtitlesHoverChange = { hover.setHovered(HoverTarget.Subtitle, it) },
+                    onSettingsHoverChange = { hover.setHovered(HoverTarget.Settings, it) },
+                    isFullscreen = chrome.isFullscreen,
                     onToggleFullscreen = onToggleFullscreen
                 )
             }
 
-            if (isCarouselEnabled && !isFullscreen) {
+            if (chrome.isCarouselEnabled && !chrome.isFullscreen) {
                 MediaViewerCarousel(
                     mediaItems = mediaItems,
                     currentId = currentId,

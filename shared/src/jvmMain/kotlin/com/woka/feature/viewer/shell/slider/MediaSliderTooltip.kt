@@ -11,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.woka.core.ui.theme.Theme
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -39,8 +40,8 @@ internal fun MediaSliderTooltip(x: Float, timeText: String, chapterTitle: String
         Column(
             modifier = Modifier
                 .widthIn(max = 240.dp)
-                .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(6.dp))
-                .padding(horizontal = 8.dp, vertical = 4.dp),
+                .background(Theme.viewer.tooltipScrim, RoundedCornerShape(Theme.viewer.tooltipCornerRadius))
+                .padding(Theme.viewer.tooltipPadding),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (chapterTitle != null) {
