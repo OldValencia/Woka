@@ -14,8 +14,7 @@ private const val END_THRESHOLD_MS = 200L
 fun VideoPlayerState.seek(progressMs: Long) {
     val safeProgress = progressMs.coerceIn(0L, durationMs)
     clearReachedEnd()
-    seekGeneration++
-    seekTargetMs = safeProgress
+    generation.requestSeek(safeProgress)
     currentPositionMs = safeProgress
 
     // Seeking to (or past) the very end is treated as reaching the end:

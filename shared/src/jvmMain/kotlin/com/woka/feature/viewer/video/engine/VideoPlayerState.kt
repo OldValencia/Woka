@@ -13,6 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ImageBitmap
 import com.woka.core.data.PlaybackSpeed
 import com.woka.core.data.RepeatMode
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import java.io.File
@@ -53,10 +54,6 @@ class VideoPlayerState(
     // and the audio path runs an `atempo` filter so the pitch stays put.
     var playbackSpeed by mutableStateOf(PlaybackSpeed.NORMAL)
 
-    // Bumped on every speed change so the audio loop rebuilds its filter graph.
-    @Volatile
-    internal var speedGeneration: Int = 0
-
     // True while the video grabber is being swapped onto another track (§2.3).
     // Re-opening a 4K HEVC stream and decoding back to the play head takes
     // seconds, so the UI shows a spinner over the last frame and the audio loop
@@ -78,12 +75,11 @@ class VideoPlayerState(
     var subtitleDelayMs by mutableStateOf(0L)
     var audioDelayMs by mutableStateOf(0L)
 
-    // Bumped whenever audioDelayMs changes. The audio loop re-seeks on it instead
-    // of stalling on the lead throttle: shifting the target backwards would
-    // otherwise just make the loop wait in silence for the clock to catch up.
-    @Volatile
-    internal var audioDelayGeneration: Int = 0
-    
+    // The seek / speed / audio-offset handshake between the three playback
+    // coroutines. Was six loose @Volatile fields here, with the rules only in
+    // comments; see PlaybackGeneration.
+    internal val generation = PlaybackGeneration()
+
     internal var soundLineInstance: SourceDataLine? = null
     internal var isPlayingBeforeSeek = false
 
@@ -91,12 +87,12 @@ class VideoPlayerState(
     internal var audioDecodeJob: Job? = null   // audio decode loop (separate grabber)
     internal var presenterJob: Job? = null
     internal var audioJob: Job? = null          // sound-line writer
-    internal var isSeeking = false
 
-    // Authoritative seek target; both decode loops seek their grabber to it when
-    // seekGeneration changes. Never -1 (the loops trigger on generation, not this).
+    // Volatile: written on the UI thread by pauseForSeek/resumeAfterSeek and read
+    // from all three decode coroutines. It was a plain Boolean, which the JMM lets
+    // a loop hoist out and never re-read.
     @Volatile
-    internal var seekTargetMs: Long = 0L
+    internal var isSeeking = false
 
     // Set by selectAudioTrack; the audio loop reopens its grabber on this absolute
     // stream index and clears it (§2.1). Video is untouched, so it never freezes.
@@ -109,32 +105,12 @@ class VideoPlayerState(
     @Volatile
     internal var pendingVideoReopenIndex: Int? = null
 
-    // Set when the decode pipeline restarts underneath the presenter (§2.3). The
-    // wall clock spent swapping is not playback time: measured against the old
-    // baseline every incoming frame looks ~1s late, which is under the 1000ms
-    // discontinuity threshold, so the presenter took the drop-to-catch-up path
-    // and froze the picture for seconds while the decoder slowly made the gap up.
-    @Volatile
-    internal var rebasePresenterClock: Boolean = false
-
-    // The generation the VIDEO loop has finished seeking to. The audio loop gates
-    // playback on this so, after a seek, audio never starts before the frame has
-    // actually landed on the target (no audio-before-video on slider scrubs).
-    @Volatile
-    internal var videoReadyGen: Int = 0
-
-    // Set once the video grabber has started and enumerated tracks. The audio loop
-    // waits for this before opening its own grabber, so the two grabbers never do
-    // a concurrent first-open of the same file (which intermittently returned
-    // incomplete stream info — no duration / no audio channels).
-    @Volatile
-    internal var tracksProbed: Boolean = false
-
-    // Incremented on every seek. Frames carry the generation they were decoded
-    // under; the presenter discards any frame whose generation is stale, so a
-    // seek issued while playing can't be overwritten by buffered old frames.
-    @Volatile
-    internal var seekGeneration: Int = 0
+    // Completed once the video grabber has started and enumerated tracks. The audio
+    // loop awaits it before opening its own grabber, so the two never do a
+    // concurrent first-open of the same file (which intermittently returned
+    // incomplete stream info — no duration / no audio channels). A one-shot latch
+    // is what this always was; it used to be a Boolean polled every 10ms.
+    internal val tracksProbed = CompletableDeferred<Unit>()
 
     init {
         startPlayback()

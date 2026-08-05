@@ -36,7 +36,7 @@ fun VideoPlayerState.setAudioDelay(delayMs: Long) {
     val clamped = delayMs.coerceIn(-SYNC_LIMIT_MS, SYNC_LIMIT_MS)
     if (clamped == audioDelayMs) return
     audioDelayMs = clamped
-    audioDelayGeneration++
+    generation.requestAudioDelayChange()
     tracks.markChosen(TrackChoice.Sync)
     persistTrackPrefs()
 }

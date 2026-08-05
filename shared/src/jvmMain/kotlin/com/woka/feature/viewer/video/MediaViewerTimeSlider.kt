@@ -25,10 +25,16 @@ import org.jetbrains.compose.resources.painterResource
 import com.woka.feature.viewer.shell.slider.MediaSlider
 import com.woka.feature.viewer.shell.slider.defaultMediaSliderStyle
 
+/**
+ * [position] stays a lambda through this whole function: invoking it here would
+ * put the play-head read in this scope and recompose the skip buttons and their
+ * `painterResource` lookups on every presented frame (§10.5). It is called only
+ * inside [TimeLabel] and inside [MediaSlider], the two places that move.
+ */
 @Composable
 fun MediaViewerTimeSlider(
     videoState: VideoPlayerState?,
-    currentMs: Long,
+    position: () -> Long,
     durationMs: Long,
     modifier: Modifier = Modifier
 ) {
@@ -47,11 +53,9 @@ fun MediaViewerTimeSlider(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
     ) {
-        Text(
-            formatTime(currentMs),
-            color = Theme.colors.textPrimary,
-            style = TextStyle(fontSize = 13.sp, color = Theme.colors.textPrimary)
-        )
+        // Deliberately the player's own position, not the drag target: while
+        // scrubbing the label holds and the tooltip shows where the release lands.
+        TimeLabel(position)
 
         if (durationMs >= 6000L) {
             Box(
@@ -76,10 +80,15 @@ fun MediaViewerTimeSlider(
         var sliderValue by remember { mutableStateOf(0f) }
 
         MediaSlider(
-            value = if (isDragging) sliderValue else if (durationMs > 0) (currentMs.toFloat() / durationMs.toFloat()).coerceIn(
-                0f,
-                1f
-            ) else 0f,
+            value = {
+                if (isDragging) {
+                    sliderValue
+                } else if (durationMs > 0) {
+                    (position().toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
+                } else {
+                    0f
+                }
+            },
             onValueChange = {
                 if (!isDragging) {
                     isDragging = true
@@ -119,12 +128,18 @@ fun MediaViewerTimeSlider(
             }
         }
 
-        Text(
-            formatTime(durationMs),
-            color = Theme.colors.textPrimary,
-            style = TextStyle(fontSize = 13.sp, color = Theme.colors.textPrimary)
-        )
+        TimeLabel { durationMs }
     }
+}
+
+/** Calls [position] in its own scope, so a moving play head recomposes only this. */
+@Composable
+private fun TimeLabel(position: () -> Long) {
+    Text(
+        formatTime(position()),
+        color = Theme.colors.textPrimary,
+        style = TextStyle(fontSize = 13.sp, color = Theme.colors.textPrimary)
+    )
 }
 
 internal fun formatTime(ms: Long): String {

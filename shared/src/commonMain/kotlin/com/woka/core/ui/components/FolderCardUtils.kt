@@ -6,6 +6,7 @@ import com.woka.core.data.canDecode
 import com.woka.core.data.isMedia
 import com.woka.core.data.mediaKind
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.log10
 import kotlin.math.pow
 import kotlinx.coroutines.Dispatchers
@@ -31,8 +32,25 @@ fun getFolderCardSubtitle(isDir: Boolean, file: File): String {
 
 data class FolderStateData(val itemCount: Int, val previews: List<File>)
 
+private data class FolderStateStamp(val directory: Long, val thumbnails: Long)
+
+private val folderStateCache = ConcurrentHashMap<String, Pair<FolderStateStamp, FolderStateData>>()
+
+/**
+ * The directory's own mtime is not enough on its own: a video preview appears only
+ * once its poster frame has been written, which does not touch the folder. So the
+ * thumbnail directory's mtime is part of the key — otherwise a card would keep its
+ * pre-thumbnail cover until the folder's contents changed (§10.3).
+ */
+private fun stampOf(file: File) = FolderStateStamp(file.lastModified(), WokaStorage.thumbnailsDir.lastModified())
+
 suspend fun fetchFolderStateData(file: File): FolderStateData {
     return withContext(Dispatchers.IO) {
+        val key = file.absolutePath
+        val stamp = stampOf(file)
+        folderStateCache[key]?.let { (cached, data) ->
+            if (cached == stamp) return@withContext data
+        }
         val allFiles = file.listFiles() ?: emptyArray()
         val count = allFiles.count { f -> f.isDirectory || f.isMedia }
         val previews = allFiles.mapNotNull { f ->
@@ -44,6 +62,6 @@ suspend fun fetchFolderStateData(file: File): FolderStateData {
                 null -> null
             }
         }.take(3)
-        FolderStateData(count, previews)
+        FolderStateData(count, previews).also { folderStateCache[key] = stamp to it }
     }
 }

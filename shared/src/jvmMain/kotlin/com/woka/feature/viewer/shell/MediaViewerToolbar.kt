@@ -3,11 +3,11 @@ package com.woka.feature.viewer.shell
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -36,11 +36,19 @@ fun MediaViewerToolbar(
     onVolumeChange: (Float) -> Unit,
     onToggleFullscreen: () -> Unit
 ) {
-    val currentItem = mediaItems.find { it.file.absolutePath == currentId }
-    val currentIndex = mediaItems.indexOfFirst { it.file.absolutePath == currentId }
+    // Two linear scans over the playlist; unremembered they ran on every
+    // recomposition, which — before the backdrop moved out below — meant on every
+    // presented video frame (§10.4).
+    val currentItem = remember(currentId, mediaItems) {
+        mediaItems.find { it.file.absolutePath == currentId }
+    }
+    val currentIndex = remember(currentId, mediaItems) {
+        mediaItems.indexOfFirst { it.file.absolutePath == currentId }
+    }
     val hasPrev = currentIndex > 0
     val hasNext = currentIndex != -1 && currentIndex < mediaItems.lastIndex
-    
+
+
     val animationProgress by animateFloatAsState(
         targetValue = if (isVisible) 0f else 1f,
         animationSpec = tween(300, easing = LinearOutSlowInEasing)
@@ -59,20 +67,7 @@ fun MediaViewerToolbar(
             .background(Theme.colors.background.copy(alpha = 0.35f)),
         contentAlignment = Alignment.TopCenter
     ) {
-        Image(
-            bitmap = (media as? ViewerMedia.Video)?.frame ?: media.poster,
-            contentDescription = null,
-            colorFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(1.4f) }),
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer(
-                    scaleX = backdrop.scale * 1.05f,
-                    scaleY = backdrop.scale * 1.05f,
-                    translationX = backdrop.offsetX,
-                    translationY = backdrop.offsetY,
-                    renderEffect = BlurEffect(50f / backdrop.scale, 50f / backdrop.scale)
-                )
-        )
+        ViewerBackdrop(media = media, backdrop = backdrop)
         Box(modifier = Modifier.fillMaxSize().background(Theme.colors.background.copy(alpha = 0.4f)))
 
 

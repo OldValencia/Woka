@@ -20,10 +20,7 @@ import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.woka.core.data.MediaItem
-import com.woka.core.ui.components.DropdownItem
 import com.woka.core.ui.components.FolderCard
-import com.woka.core.ui.theme.Theme
-import com.woka.core.utils.openDirectoryPicker
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -126,30 +123,15 @@ fun FolderGrid(
                         }
                     },
                     contextMenuContent = { dismiss ->
-                        if (isDir) {
-                            DropdownItem("Open") { dismiss(); onNavigateToFolder(item.file.absolutePath) }
-                            DropdownItem(
-                                "Pin to Library",
-                                textColor = Theme.colors.accentFolders
-                            ) { dismiss(); viewModel.pinFolder(item.file.absolutePath) }
-                        } else {
-                            DropdownItem("Open") { dismiss(); onOpenMedia(item.file.absolutePath) }
-                        }
-                        DropdownItem("Rename") { dismiss(); overlays.itemToRename = item.file.absolutePath }
-                        DropdownItem("Copy") {
-                            dismiss()
-                            val dest = openDirectoryPicker("Copy to...", path)
-                            if (dest != null) viewModel.copyFiles(listOf(item.file.absolutePath), dest)
-                        }
-                        DropdownItem("Move") {
-                            dismiss()
-                            val dest = openDirectoryPicker("Move to...", path)
-                            if (dest != null) viewModel.moveFiles(listOf(item.file.absolutePath), dest)
-                        }
-                        DropdownItem("Delete", textColor = Theme.colors.danger) {
-                            dismiss()
-                            viewModel.deleteFiles(listOf(item.file.absolutePath))
-                        }
+                        FolderItemContextMenu(
+                            item = item,
+                            path = path,
+                            viewModel = viewModel,
+                            overlays = overlays,
+                            onNavigateToFolder = onNavigateToFolder,
+                            onOpenMedia = onOpenMedia,
+                            dismiss = dismiss
+                        )
                     }
                 )
             }

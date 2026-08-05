@@ -70,10 +70,16 @@ fun FolderScreen(
         }
     }
 
+    // Remembered, not filtered inline: a fresh list every recomposition changes
+    // identity and invalidates everything the viewer keys on it (§10.8).
+    val viewerItems = remember(state.items) {
+        state.items.filter { it is MediaItem.Image || it is MediaItem.Video }
+    }
+
     if (viewerMediaId != null) {
         NativeMediaViewer(
             initialId = viewerMediaId!!,
-            mediaItems = state.items.filter { it is MediaItem.Image || it is MediaItem.Video },
+            mediaItems = viewerItems,
             onClose = { lastMediaId ->
                 viewerMediaId = null
                 scrollToMediaId = lastMediaId

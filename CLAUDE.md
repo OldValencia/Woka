@@ -35,15 +35,17 @@ A file's package is its directory; nothing lives outside these three roots.
 
 ```
 com.woka/
-  app/        App.kt (+AppDependencies) · di/ · navigation/Router.kt
+  app/        App.kt (+AppDependencies, SettingsProjection) · di/
+              navigation/ Router.kt, ScreenHost.kt
     shell/    MainShell, GlobalTopBar, WinControls, SmartBreadcrumbs, FloatingDock,
-              DockItem, DockAccessories, TopBarAccessories
+              DockItem, DockSecondaryItem, DockAccessories, TopBarAccessories
   core/
-    data/     MediaItem, LocalMediaRepository, Settings{Repository,Store,Mutations},
-              WokaSettings, PlaybackMode, TrackPrefs
+    data/     MediaItem, LocalMediaRepository, MediaKind, WokaStorage,
+              Settings{Repository,Store,Mutations}, WokaSettings, PlaybackMode, TrackPrefs
     system/   SystemMediaControls + AWT media keys                        (jvm)
-    ui/       theme/ · icons/ · components/ (Marquee, IosSwitch, SegmentedControl,
-              DropdownItem, FolderCard*, GridScrollbarAdapter, RenameDialog)
+    ui/       theme/ (+ViewerChrome) · icons/ · components/ (Marquee, IosSwitch,
+              SegmentedControl, DropdownItem, DetentSlider, FolderCard*, FolderCoverMosaic,
+              GridScrollbarAdapter + GridLineMetrics, RenameDialog)
               dialogs/ AWT FileDialog (jvm) · image/ ImageBitmapCache (jvm)
     utils/    DesktopUtils, VideoThumbnail                                (expect/actual)
   feature/
@@ -51,13 +53,17 @@ com.woka/
     viewer/   NativeMediaViewer                                          (expect/actual)
       shell/  screen, state, effects, content, frame, gestures, keys, layout, toolbar,
               carousel, fullscreen, playlist, FileInfo*, Popover*, MediaThumbnails,
-              and the sizing model: SizeMode, ScaleMath, ZoomScale, PanBounds
+              ViewerBackdrop, TransientOverlay, ToolbarPopover, and the types the shell
+              speaks in: ViewerMedia, ViewerContext, ViewerEvents
+              plus the sizing model: SizeMode, ScaleMath, ZoomScale, PanBounds
         zoom/   zoom *menu UI* only: SizeControl, SizeIndicatorButton, ZoomMenu*
-        slider/ MediaSlider*, MediaVerticalSlider
+        slider/ MediaSlider*, MediaSliderTrack/Style, MediaVerticalSlider
       image/  ImageLoader
       video/  controls, Subtitle* UI, PlayerSettings*, PlayerSpeed*, chapters, volume
         model/  Cue, MediaTrack(s), MediaChapter, SubtitleSelection…    (commonMain)
-        engine/ JavaCV decode, audio, seek, tracks, subtitles, HDR probe (jvmMain)
+        engine/ VideoPlayerState + the UI-facing command surface        (jvmMain)
+          decode/ grabber, decode loop, pacer, presenter, renderScale
+          audio/ · subtitle/ · track/ · sync/ (A/V offsets, seek) · probe/ (HDR, chapters)
       pip/    PipManager, GlobalPipWindow, Pip*
     editor/   reserved for roadmap Phase 5
 desktopApp/   launcher: main(), window, CLI args

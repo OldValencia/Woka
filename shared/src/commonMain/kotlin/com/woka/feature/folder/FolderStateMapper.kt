@@ -17,31 +17,58 @@ data class FolderState(
 )
 
 /**
+ * The six settings values this folder actually depends on. The mapper used to take
+ * the whole [WokaSettings], so it re-ran on every write to any setting — including
+ * the volume slider and the 5-second resume position (§10.2). Projecting first and
+ * comparing on this type instead means those writes stop reaching the folder.
+ */
+internal data class FolderSettings(
+    val layout: ViewLayout,
+    val sort: SortType,
+    val showTitles: Boolean,
+    val showFolders: Boolean,
+    val showHiddenFiles: Boolean,
+    val mediaFilter: String
+)
+
+internal fun WokaSettings.folderSettings(path: String): FolderSettings = FolderSettings(
+    layout = folderLayouts[path] ?: ViewLayout.Grid,
+    sort = folderSorts[path] ?: SortType.NameAsc,
+    showTitles = folderShowTitles[path] ?: showTitles,
+    showFolders = showFolders,
+    showHiddenFiles = showHiddenFiles,
+    mediaFilter = mediaFilter
+)
+
+private val foldersFirst = compareBy<MediaItem> { if (it is MediaItem.Folder) 0 else 1 }
+
+/**
+ * One comparator instead of a sort followed by a second stable "folders first"
+ * sort — the old pair copied the whole list twice (§10.8). The dates come off
+ * [MediaItem.lastModified], captured at listing time, so no syscall runs here.
+ */
+private fun itemComparator(sort: SortType): Comparator<MediaItem> = when (sort) {
+    SortType.NameAsc, SortType.Custom -> foldersFirst.thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }
+    SortType.NameDesc -> foldersFirst.thenByDescending(String.CASE_INSENSITIVE_ORDER) { it.name }
+    SortType.DateAsc -> foldersFirst.thenBy { it.lastModified }
+    SortType.DateDesc -> foldersFirst.thenByDescending { it.lastModified }
+}
+
+/**
  * Derives the folder's visible state from the raw listing plus settings, split
  * out of [FolderViewModel] per the §2 file-size mandate. Pure, so the ViewModel
  * is left holding only the flow wiring.
  */
 internal fun buildFolderState(
-    path: String,
     rawItems: List<MediaItem>,
-    settings: WokaSettings,
+    settings: FolderSettings,
     isSelectMode: Boolean,
     selectedPaths: Set<String>
 ): FolderState {
-    val layout = settings.folderLayouts[path] ?: ViewLayout.Grid
-    val sort = settings.folderSorts[path] ?: SortType.NameAsc
-
-    val sortedItems = when (sort) {
-        SortType.NameAsc, SortType.Custom -> rawItems.sortedBy { it.file.name.lowercase() }
-        SortType.NameDesc -> rawItems.sortedByDescending { it.file.name.lowercase() }
-        SortType.DateAsc -> rawItems.sortedBy { it.file.lastModified() }
-        SortType.DateDesc -> rawItems.sortedByDescending { it.file.lastModified() }
-    }
-
     val visibleItems = if (settings.showHiddenFiles) {
-        sortedItems
+        rawItems
     } else {
-        sortedItems.filter { !it.file.isHidden }
+        rawItems.filter { !it.isHidden }
     }
 
     // Filtering on the item type, not on the extension again: the listing already
@@ -51,14 +78,12 @@ internal fun buildFolderState(
         "Videos" -> visibleItems.filter { it is MediaItem.Folder || it is MediaItem.Video }
         else -> visibleItems
     }
-    // Folders first
-    val foldersFirst = filteredItems.sortedBy { if (it is MediaItem.Folder) 0 else 1 }
 
     return FolderState(
-        items = foldersFirst,
-        layout = layout,
-        sort = sort,
-        showTitles = settings.folderShowTitles[path] ?: settings.showTitles,
+        items = filteredItems.sortedWith(itemComparator(settings.sort)),
+        layout = settings.layout,
+        sort = settings.sort,
+        showTitles = settings.showTitles,
         showFolders = settings.showFolders,
         mediaFilter = settings.mediaFilter,
         isSelectMode = isSelectMode,

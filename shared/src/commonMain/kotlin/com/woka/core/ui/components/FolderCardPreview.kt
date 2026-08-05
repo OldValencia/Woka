@@ -2,7 +2,10 @@ package com.woka.core.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -27,6 +30,10 @@ import java.io.File
 import com.woka.core.utils.generateVideoThumbnail
 import coil3.compose.AsyncImage
 
+/**
+ * What a card shows above its title. The two branches share nothing but the
+ * surface behind them, so the folder side lives in [FolderCoverMosaic] (§11).
+ */
 @Composable
 fun FolderCardPreview(
     isDir: Boolean,
@@ -39,89 +46,15 @@ fun FolderCardPreview(
             modifier = modifier.fillMaxSize().background(Theme.colors.surfaceElevated),
             contentAlignment = Alignment.Center
         ) {
-            if (previews.isNotEmpty()) {
-                if (previews.size >= 3) {
-                    Row(modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(1.dp)) {
-                        AsyncImage(
-                            model = previews[0],
-                            contentDescription = null,
-                            modifier = Modifier.weight(1f).fillMaxHeight(),
-                            contentScale = ContentScale.Crop
-                        )
-                        Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                            AsyncImage(
-                                model = previews[1],
-                                contentDescription = null,
-                                modifier = Modifier.weight(1f).fillMaxWidth(),
-                                contentScale = ContentScale.Crop
-                            )
-                            AsyncImage(
-                                model = previews[2],
-                                contentDescription = null,
-                                modifier = Modifier.weight(1f).fillMaxWidth(),
-                                contentScale = ContentScale.Crop
-                            )
-                        }
-                    }
-                } else if (previews.size == 2) {
-                    Row(modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(1.dp)) {
-                        AsyncImage(
-                            model = previews[0],
-                            contentDescription = null,
-                            modifier = Modifier.weight(1f).fillMaxHeight(),
-                            contentScale = ContentScale.Crop
-                        )
-                        AsyncImage(
-                            model = previews[1],
-                            contentDescription = null,
-                            modifier = Modifier.weight(1f).fillMaxHeight(),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
-                } else {
-                    AsyncImage(
-                        model = previews[0],
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                }
-            } else {
-                Image(
-                    painter = painterResource(Icons.Static.Folder),
-                    contentDescription = null,
-                    modifier = Modifier.size(64.dp),
-                    alpha = 0.5f,
-                    colorFilter = ColorFilter.tint(Theme.colors.textPrimary)
-                )
-            }
+            FolderCoverMosaic(previews)
         }
     } else {
         Box(modifier = modifier.fillMaxSize().background(Theme.colors.surfaceElevated)) {
             val isVideo = file.mediaKind() == MediaKind.Video
 
             if (isVideo) {
-                var bitmap by remember(file.absolutePath) { mutableStateOf<ImageBitmap?>(null) }
-                LaunchedEffect(file.absolutePath) {
-                    bitmap = generateVideoThumbnail(file)
-                }
-                
-                if (bitmap != null) {
-                    Image(
-                        bitmap = bitmap!!,
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Image(
-                        painter = painterResource(Icons.Static.Video),
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp).align(Alignment.Center),
-                        alpha = 0.5f,
-                        colorFilter = ColorFilter.tint(Theme.colors.textPrimary)
-                    )
-                }
+                VideoCover(file)
+                PlayBadge(modifier = Modifier.align(Alignment.Center))
             } else {
                 AsyncImage(
                     model = file,
@@ -130,24 +63,51 @@ fun FolderCardPreview(
                     contentScale = ContentScale.Crop
                 )
             }
-            
-            if (isVideo) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.5f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Image(
-                        painter = painterResource(Icons.Static.PlayFill),
-                        contentDescription = "Video",
-                        colorFilter = ColorFilter.tint(Color.White),
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
         }
+    }
+}
+
+/** Poster frame for a video, with the video glyph standing in until it decodes. */
+@Composable
+private fun BoxScope.VideoCover(file: File) {
+    var bitmap by remember(file.absolutePath) { mutableStateOf<ImageBitmap?>(null) }
+    LaunchedEffect(file.absolutePath) {
+        bitmap = generateVideoThumbnail(file)
+    }
+
+    val frame = bitmap
+    if (frame != null) {
+        Image(
+            bitmap = frame,
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+    } else {
+        Image(
+            painter = painterResource(Icons.Static.Video),
+            contentDescription = null,
+            modifier = Modifier.size(64.dp).align(Alignment.Center),
+            alpha = 0.5f,
+            colorFilter = ColorFilter.tint(Theme.colors.textPrimary)
+        )
+    }
+}
+
+@Composable
+private fun PlayBadge(modifier: Modifier) {
+    Box(
+        modifier = modifier
+            .size(48.dp)
+            .clip(CircleShape)
+            .background(Color.Black.copy(alpha = 0.5f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Image(
+            painter = painterResource(Icons.Static.PlayFill),
+            contentDescription = "Video",
+            colorFilter = ColorFilter.tint(Color.White),
+            modifier = Modifier.size(24.dp)
+        )
     }
 }

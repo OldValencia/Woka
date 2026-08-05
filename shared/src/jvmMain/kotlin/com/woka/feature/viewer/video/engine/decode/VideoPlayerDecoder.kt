@@ -2,15 +2,10 @@ package com.woka.feature.viewer.video.engine.decode
 
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.engine.launchResumeSaver
-import com.woka.feature.viewer.video.engine.probe.logMediaTracks
-import com.woka.feature.viewer.video.engine.probe.probeChapters
-import com.woka.feature.viewer.video.engine.probe.probeMediaTracks
 import com.woka.feature.viewer.video.engine.resumePositionMs
 import com.woka.feature.viewer.video.engine.saveResumePosition
 import com.woka.feature.viewer.video.engine.seek
-import com.woka.feature.viewer.video.engine.subtitle.startSubtitleDecoderLoop
 import com.woka.feature.viewer.video.engine.sync.videoSeekTo
-import com.woka.feature.viewer.video.engine.track.applyTrackPrefs
 import com.woka.feature.viewer.video.engine.track.reopenVideoGrabber
 
 import kotlinx.coroutines.*
@@ -42,38 +37,12 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
             streamHdrInfo = hdrInfo
             durationMs = grabber.lengthInTime / 1000L
 
-            try {
-                // Restore the tracks and sync offsets this file was last watched
-                // with, before anything downstream reads a selection (§2.6 / §3).
-                applyTrackPrefs(probeMediaTracks(grabber))
-                logMediaTracks(tracks.mediaTracks)
-                // Same open format context, so this is free (§4). Reads durationMs,
-                // which is why it sits after that assignment.
-                tracks.chapters = probeChapters(grabber, durationMs)
-                renderScale.useNativeOf(
-                    tracks.mediaTracks.video.firstOrNull { it.index == tracks.selectedVideoIndex }
-                )
-                // FFmpeg's own pick for the default video stream is not necessarily
-                // the one flagged AV_DISPOSITION_DEFAULT, so on a multi-video
-                // container the picture could come up on a different track than the
-                // menu reports as selected. Swap onto the track we resolved (§2.3);
-                // the play head is still 0, so this costs an open and no re-decode.
-                tracks.selectedVideoIndex
-                    ?.takeIf { it != grabber.videoStream }
-                    ?.let { pendingVideoReopenIndex = it }
-                startSubtitleDecoderLoop()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-            // hasAudio comes from the authoritative full probe, not the audio
-            // grabber's transient channel count. Then release the audio loop.
-            hasAudio = tracks.mediaTracks.audio.isNotEmpty()
-            tracksProbed = true
+            probeTracksAndChapters(grabber)
 
             // Frames carry the generation they were decoded under; the presenter
             // discards stale ones. videoSeekGen tracks the last seek we applied.
-            var frameGeneration = seekGeneration
-            var videoSeekGen = seekGeneration
+            var frameGeneration = generation.seek
+            var videoSeekGen = generation.seek
             var durationChecked = durationMs > 0L
             val pacer = FramePacer()
 
@@ -93,17 +62,17 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
                     // The play head did not move, so no generation bump: the frame
                     // reopenVideoGrabber landed stays current and audio — parked on
                     // isReloadingVideo meanwhile — picks up from the same position.
-                    frameGeneration = seekGeneration
-                    rebasePresenterClock = true
+                    frameGeneration = generation.seek
+                    generation.requestPresenterRebase()
                     isReloadingVideo = false
                     pacer.rebase()
                     continue
                 }
-                if (videoSeekGen != seekGeneration) {
-                    videoSeekGen = seekGeneration
-                    videoSeekTo(grabber, seekTargetMs, videoChannel, hdrInfo)
-                    frameGeneration = seekGeneration
-                    videoReadyGen = videoSeekGen // frame has landed; audio may resume
+                if (videoSeekGen != generation.seek) {
+                    videoSeekGen = generation.seek
+                    videoSeekTo(grabber, generation.targetMs, videoChannel, hdrInfo)
+                    frameGeneration = generation.seek
+                    generation.videoSeekComplete(videoSeekGen) // frame landed; audio may resume
                     pacer.rebase()
                     continue
                 }
@@ -146,7 +115,7 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
             // Runs on cancellation too, which is what makes dispose() the moment a
             // closed file's position is written (§4).
             saveResumePosition()
-            tracksProbed = true // never leave the audio loop waiting if start() failed
+            tracksProbed.complete(Unit) // never leave the audio loop waiting if start() failed
             isReloadingVideo = false // a failed swap must not leave a stuck spinner
             try {
                 grabber.stop()

@@ -1,5 +1,12 @@
 # Plan: Code Quality Refactor
 
+**Status: DONE.** All phases shipped; `:shared:build` and `:desktopApp:compileKotlin` green, the
+anti-FQN sweep clean over the whole tree, no `.kt` over 150 lines, and the manual playback run that
+Phase 9 hinged on has been done by Valik and passed. Two items were deliberately **not** built and
+say why in place — the command-channel rewrite (Phase 9) and 10.7's `Data.makeFromFileName`. Two
+visible choices are left open for a later plan, not forgotten: the blurred backdrop's refresh policy
+(10.4) and `VideoReloadOverlay`'s 0.55 scrim (Phase 4).
+
 Second of three. Order: `package-restructure-feature-first.md` → **this one** →
 `viewer-verification-pass.md`.
 
@@ -521,26 +528,68 @@ scan added but nothing used were pruned, again with the compiler as the check.
 `engine/VideoPlayerState.kt` 152 → 158, both purely from the added import blocks. Splitting them is
 exactly what the collaborator extraction below does, so they are left for it rather than cut twice.
 
-**Remaining actions.**
-- Extract collaborators instead of extension functions over a bag: `VideoDecodeLoop`, `AudioOutput`,
-  `FramePresenter`, `TrackController`, `SubtitleController`, `SeekController`. `VideoPlayerState`
-  goes back to being what it should be — **observable state for the UI** (`isPlaying`,
-  `currentPositionMs`, `durationMs`, `currentFrame`, `tracks`) — not shared memory for three threads.
-- Replace the volatile mailbox with an explicit protocol: commands (`Seek`, `ReopenAudio(index)`,
-  `ReopenVideo(index)`, `SetSpeed`) over a `Channel`; generation counters folded into one
-  `PlaybackGeneration`; readiness phases (`tracksProbed`, `videoReadyGen`) as `CompletableDeferred` /
-  `StateFlow`. The protocol comments turn into signatures.
-- **This phase ships as separate commits, one collaborator each**, with a manual playback run between
-  them. It is the only phase in the plan that can genuinely change timings — A/V sync, seek-while-
-  playing behaviour, audio track switching without a freeze. Any divergence → revert the step, not
-  "we'll fix it later".
-- If it turns out along the way that the volatile protocol carries non-obvious semantics a channel
-  does not reproduce one-for-one — **stop and raise it**, do not rewrite on a guess.
-- Do not undo what is already tuned here: `FramePacer`'s reused scratch buffer (removes a 33 MB
-  allocation per 4K frame), the video channel's capacity of 8, and the skip-conversion-when-late
-  policy are deliberate and measured. They move to the new collaborators unchanged.
+**Step 2 — the protocol: DONE. The collaborator extraction and the command channel: NOT done, and
+that is a decision, not an omission.** The plan's own escape clause — *"if the volatile protocol
+carries non-obvious semantics a channel does not reproduce one-for-one, stop and raise it"* — is the
+case here. Reading every read and write of the 18 fields first is what settled it.
 
-**Files:** 36 files under `feature/viewer/video/engine/**`, `VideoPlayerState.kt`
+*What shipped.* `engine/PlaybackGeneration.kt` (new, 101) owns the six fields that formed the seek /
+speed / audio-offset handshake: `targetMs`, `seek`, `videoReady`, `speed`, `audioDelay` and the
+presenter rebase. Same `@Volatile` storage, same polling sites, same order of reads — the mechanism is
+untouched on purpose. What changed is that the halves of a handshake are no longer separate
+assignments a caller can get wrong, and every rule that lived in a comment on `VideoPlayerState` is
+now attached to the operation that performs it. `tracksProbed` became a `CompletableDeferred<Unit>` —
+it always was a one-shot latch, and the audio loop's `while (!tracksProbed) delay(10ms)` is now an
+`await()`.
+
+> **Defect found and fixed, not merely moved.** `VideoPlayerState.seek` did
+> `seekGeneration++` *then* `seekTargetMs = safeProgress` — signal before data. Both decode loops
+> trigger on the generation and then read the target, so a loop that observed the bump between the
+> two stores seeked to the **previous** target, and, having already advanced its own `videoSeekGen`,
+> never corrected itself: picture at the old position, `currentPositionMs` at the new one, until the
+> next seek. `handleEndOfStream` had the order right and said so in a comment; the two disagreed.
+> `requestSeek(toMs)` now writes the target first, always, for every caller.
+
+> **Second fix:** `isSeeking` was a plain `Boolean` written on the UI thread and read from all three
+> decode coroutines. Now `@Volatile`. Nothing observed misbehaving, but the JMM permits a loop to
+> hoist that read and never see the change.
+
+*Why the command channel was not built.* Four semantics that `Channel<Command>` does not reproduce:
+- **Coalescing is the feature, not an accident.** Three slider scrubs inside one decode iteration must
+  produce **one** seek to the newest target. A counter does that for free; a channel delivers three
+  commands and performs three seeks — the exact scrubbing regression this phase must not cause. To
+  keep it you re-implement the counter on top of the channel.
+- `pendingVideoReopenIndex` / `pendingAudioReopenIndex` are **last-write-wins slots**, not queues.
+  Two fast track switches must open the last track only.
+- `videoReady == seek` is a **relational gate between two counters** that re-arms on every seek, not a
+  one-shot. `CompletableDeferred` is wrong by construction; a `StateFlow<Int>` would be the same
+  comparison with `.value` appended.
+- The loops **poll a priority ladder** (reopen → seek → offset → speed → park → lead/lag), they never
+  block on a mailbox. A channel receive is either blocking (wrong shape) or `tryReceive` (what the
+  volatile read already is).
+
+*Why the six collaborator classes were not extracted.* A `VideoDecodeLoop(state)` that still writes
+`state.generation` encapsulates nothing — it is a rename with real regression risk on the one code
+path in the app that cannot be verified by building. The value in this phase was always the protocol,
+and the protocol now has a type. If the classes are wanted later they are a much smaller step on top
+of this, because the shared mutable surface between them is now one object with a named API rather
+than eighteen fields.
+
+*Nothing tuned was undone:* `FramePacer`'s reused scratch buffer, the video channel's capacity of 8,
+and the skip-conversion-when-late policy are untouched.
+
+**Manual playback run: done, passed (Valik).** This was the one phase whose correctness a green build
+does not establish — playback, hard scrubbing, audio and video track switches, speed off 1×, the A/V
+offset in both directions, and a Repeat File wrap. No regression observed.
+
+**Raised and acted on (§ file-size mandate):** `VideoPlayerState` 158 → **134** by moving the fields
+out; `decode/VideoPlayerDecoder.kt` 159 → **128** by splitting its one-time probe phase into
+`decode/VideoPlayerDecodeStart.kt` (49). With those two, **no `.kt` in the tree is over 150.**
+
+**Files:** `engine/PlaybackGeneration.kt` (new), `engine/{VideoPlayerState,VideoPlayerControls,
+VideoPlayerSpeed}.kt`, `decode/{VideoPlayerDecoder,VideoPlayerDecodeStart,VideoPlayerPresenter}.kt`
+(second new), `audio/VideoPlayerAudioDecoder.kt`, `sync/VideoPlayerSync.kt`,
+`track/VideoPlayerTrackReset.kt`
 
 ## Phase 10: runtime cost
 
@@ -548,15 +597,25 @@ New phase. Everything above improves the shape of the code; this one is about wh
 spends. Placed after Phases 8–9 so recomposition scoping is fixed once, on the final shape, rather
 than twice. All findings below are read in the code, not guessed; each says how to confirm it.
 
+**Run ahead of Phase 9's step 2, deliberately.** Step 2 is the one part of the plan whose correctness
+can only be established by a manual playback run between each collaborator; Phase 10 is establishable
+by the build and by reading. Nothing in 10.1–10.8 touches the engine's internals, so the reordering
+costs nothing and leaves step 2 for a session with a keyboard in front of it. `:shared:build` green,
+anti-FQN clean over every touched file.
+
 **10.1 — The whole app tree recomposes on every settings write.**
 `App.kt:46` collects the entire `settings` StateFlow, and `WokaSettings` is one object: any setter —
 volume, a zoom step with `rememberSizeState` on, a resume position — produces a new instance and
 recomposes `App` → `MainShell` → `AnimatedContent` → the current screen. `PlaybackResume.kt:17,27`
 writes the play head **every 5 seconds during playback** when resume is enabled, so it is a periodic
 full-tree recompose, not a one-off.
-*Fix:* `@Immutable` on `WokaSettings` (Phase 7) makes the children skippable, which is most of it.
-On top: derive the few fields `App` actually reads (`theme`, `linkedFolders`) as separate flows with
-`map { … }.distinctUntilChanged()` rather than reading the whole object in the composition.
+*Done.* New `app/SettingsProjection.kt` (28): `SettingsRepository.collectField { … }`, a `map` +
+`distinctUntilChanged` + `collectAsState` seeded from the StateFlow's current value so nothing renders
+against a placeholder. `App` now collects `theme` and `linkedFolders` and never touches the record.
+`SettingsOverlay` **collects the settings itself** and lost its `settings` parameter (4 → 3): it was
+the last reason `App` had to hold the whole object, and pushing the read into the consumer is what
+actually removes the invalidation rather than moving it. `@Immutable` on `WokaSettings` was already
+done in Phase 7.
 *Confirm:* toggle resume on, play a video, watch the recomposition counts.
 
 **10.2 — `buildFolderState` runs on the UI thread and does per-item disk I/O.**
@@ -567,10 +626,18 @@ syscalls) and `:44` calls `isHidden` per item — plus four intermediate list co
 `settingsRepository.settings` is one of the combined flows, this re-runs on **every settings change**,
 including the volume slider and the 5-second resume write. On a folder of a few thousand files that
 is thousands of stat calls on the UI thread every time the volume moves.
-*Fix:* `.flowOn(Dispatchers.Default)` before `stateIn`; project the settings down to the handful of
-fields the mapper reads and `distinctUntilChanged()` on that projection; capture `lastModified` once
-at listing time (in `LocalMediaRepository`, already on `Dispatchers.IO`) and sort on the captured
-value.
+*Done.* All three fixes, as written.
+- `FolderSettings` (six fields: layout, sort, showTitles, showFolders, showHiddenFiles, mediaFilter)
+  plus `WokaSettings.folderSettings(path)`, both in `FolderStateMapper.kt`. The ViewModel maps and
+  `distinctUntilChanged()`s before the `combine`, so `path` also drops out of `buildFolderState`'s
+  signature — the projection is the only thing that needed it.
+- `.flowOn(Dispatchers.Default)` between the `combine` and the `stateIn`; `stateIn` still shares on
+  the Main-dispatched scope, which is where collectors want the value.
+- `MediaItem` gained `lastModified` and `isHidden`, captured at construction — which happens on
+  `Dispatchers.IO` inside `LocalMediaRepository` at all four construction sites in the tree. They are
+  declared per subclass rather than in the sealed base: a base-class initialiser runs before the
+  subclass assigns `override val file`, so the obvious placement would have dereferenced null. Kept
+  out of the constructors so `data class` equality still compares on the file alone.
 *Confirm:* open a folder with several thousand files, drag the volume slider, watch frame times.
 
 **10.3 — Blocking file I/O inside composition.**
@@ -579,9 +646,16 @@ value.
 remembered, so both re-run on every recomposition of every card: hover, selection and highlight all
 trigger it. `FolderCardUtils.kt:30-51` additionally does a full `listFiles()` per folder card with no
 memoisation across navigations.
-*Fix:* remember the stat results per `path`; carry `isDirectory`/`length` on `MediaItem`, captured
-once during the IO-thread listing. For `fetchFolderStateData`, a small keyed cache validated on the
-directory's `lastModified`.
+*Done.* `File(path)` and `isDirectory` are `remember(path)`ed in `FolderCard`; the subtitle already
+was. `fetchFolderStateData` gained a `ConcurrentHashMap` keyed on the absolute path.
+**The validation stamp is a pair, not just the directory's `lastModified`** — a video preview appears
+only once its poster frame has been written, and writing a poster does not touch the folder being
+previewed. So `WokaStorage.thumbnailsDir.lastModified()` is part of the stamp; without it a card
+would keep its pre-thumbnail cover until the folder's own contents changed, which is a visible
+regression the plan did not anticipate. Cost is one extra stat per call, against a full `listFiles()`
+saved.
+*Note:* the cache is unbounded — one small entry (an Int and ≤ 3 `File`s) per folder ever shown. Left
+that way on purpose; an eviction policy here would be guessing at a number.
 *Confirm:* a Home screen of linked folders on a slow or network drive.
 
 **10.4 — The toolbar recomposes at video frame rate, and re-blurs the frame each time.**
@@ -592,31 +666,56 @@ linear scans over `mediaItems` at `:46-47`, the video controls and the carousel.
 `BlurEffect(50f/scale)` — a full-surface gaussian blur re-rasterised ~60 times a second on top of
 the main frame draw, whether or not the chrome is visible (the clip path at
 `MediaViewerBackgroundPath.kt:79` only restricts where it lands, it does not skip the work).
-*Fix:* move the frame read into the leaf that draws it, so only that leaf recomposes; `remember` the
-`currentItem`/`currentIndex` lookups on `(currentId, mediaItems)`. For the blur itself, decide the
-policy explicitly — a poster frame captured once per file, or a low-rate refresh (2–4 Hz) — instead
-of the current implicit per-frame one. **Behaviour question for Valik**, since it is visible: the
-blurred backdrop currently animates with the video.
+*Done, the invisible half.* `shell/ViewerBackdrop.kt` (new, 41) takes the `Image`, so the `frame` read
+lands in a leaf and the toolbar's own scope no longer moves at frame rate; the saturation
+`ColorFilter` is `remember`ed instead of rebuilt per pass. `currentItem`/`currentIndex` are
+`remember(currentId, mediaItems)`ed. `MediaViewerToolbar` 127 → 122 — the extraction was to its own
+file rather than a private function below, because keeping it inline put the file at 151.
+
+**Still open, and still Valik's call:** the blur policy. `BlurEffect(50f/scale)` over a full-screen
+copy still re-rasterises on every presented frame; freezing it on a poster or refreshing at 2–4 Hz is
+visible — the backdrop currently animates with the video — so it is not decided here.
 *Confirm:* 4K video with the chrome visible vs hidden; frame times.
 
 **10.5 — The video control row recomposes at frame rate.**
 `MediaViewerVideoControls.kt:79` reads `currentPositionMs` in the `Row`'s content scope, so the whole
 row — play/pause icon, `painterResource` lookups, subtitle control, volume control, settings control,
 the fullscreen button — recomposes at the presenter's rate. Only the time slider needs the position.
-*Fix:* pass the position down as a lambda, or read it inside `MediaViewerTimeSlider`. Same treatment
-already applied deliberately elsewhere, e.g. `PlayerChapterSection.kt:22` and
-`MediaViewerSystemControlsEffect.kt:113`, which throttle on purpose — so the pattern is established,
-just not applied here.
+*Done, and taken one level further than the plan asked.* The position is a `() -> Long` all the way
+down: `MediaViewerVideoControls` passes it without invoking it, `MediaViewerTimeSlider` passes it
+without invoking it (otherwise the two skip buttons and their `painterResource` lookups would still
+recompose per frame), and it is finally called in two places only — a private `TimeLabel`, and
+`MediaSlider`, whose `value` parameter changed from `Float` to `() -> Float` for exactly this reason.
+`MediaSlider` has a single caller, so the signature change is contained.
+*Behaviour preserved deliberately:* the elapsed label shows the **player's** position, not the drag
+target, while scrubbing — the tooltip is what shows where the release lands. Routing the drag value
+into the label would have been a silent visible change.
 
 **10.6 — `MediaViewerFrame` allocates a painter per frame.**
 `MediaViewerFrame.kt:45-49` does `remember(frameToDraw) { BitmapPainter(frameToDraw) }`; since
 `frameToDraw` is a new bitmap every frame, this allocates a painter (and re-runs the `ContextMenuArea`
 item lambda) per frame. Small next to the blur, but free to fix once the frame read is at the leaf.
+*Done, partly.* The `ContextMenuItem` list is now `remember(actions)`ed, so it is built once per
+action set instead of three items per frame.
+**The painter allocation is left, and that is a judgement call, not an oversight.** Removing it means
+`MediaViewerFrame` must stop reading `currentFrame` during composition at all — i.e. a `Painter`
+subclass that reads the state inside `DrawScope`, with `HdrImagePainter` following suit. That is a
+rewrite of the one composable that draws every pixel the user sees, to save one small object per
+frame next to a 33 MB frame buffer. It wants its own step and its own run, not a ride on this one.
 
 **10.7 — `ImageLoader` doubles peak memory on large stills.**
 `ImageLoader.kt:15` does `Image.makeFromEncoded(file.readBytes())` — the entire encoded file is
 materialised as a heap `ByteArray` alongside the decoded raster. For a 50 MB image that is 50 MB of
 avoidable transient heap. `org.jetbrains.skia.Data.makeFromFileName` avoids the copy.
+
+> **Plan was wrong; not done.** Checked against the sources of the skiko actually resolved here
+> (**0.144.6**): `org.jetbrains.skia.Image`'s companion offers exactly one encoded-bytes factory,
+> `makeFromEncoded(bytes: ByteArray)`. There is no `Data` overload and no
+> `makeDeferredFromEncodedData`, and `Data.bytes` copies straight back onto the heap — so routing
+> through `Data.makeFromFileName` would add an allocation, not remove one. The `readBytes()` copy is
+> unavoidable on this version. Recorded as a comment at the call site so the next reader does not
+> re-derive it. Revisit only if skiko is upgraded.
+
 *Note:* the unbounded `ImageBitmapCache` (no eviction, full-resolution rasters retained for the
 process lifetime) is plan 3's F1 and stays there — the eviction policy is Valik's decision and needs
 a measurement, not a refactor.
@@ -629,14 +728,28 @@ list; fold it into one comparator.
 *Also:* `FolderScreen.kt:87` builds `state.items.filter { … }` fresh on every recomposition and hands
 the new list to `NativeMediaViewer`, changing identity each time. `remember(state.items)` it.
 
+*Done.* `CASE_INSENSITIVE_ORDER` in both places. The "folders first" pass folded into a single
+`itemComparator(sort)` built on a shared `foldersFirst` prefix — the pair of sorts was a full extra
+sort **and** a full extra list copy, and the result is identical because the old second sort was
+stable. `FolderScreen`'s viewer list is `remember(state.items)`ed.
+
 **Ordering inside the phase:** 10.2 and 10.3 first (they affect ordinary browsing and are low risk),
 then 10.5 / 10.6 / 10.8, then 10.1, and 10.4 last because it needs a decision. Each item gets its own
 step and its own manual run.
 
+**Raised, not acted on (§ file-size mandate).** Both were already over before this phase and are
+Phase 11 candidates; nothing here was shaped around the counter:
+`core/ui/components/FolderCard.kt` 183 → **186** (two lines of comment on the `remember`s) and
+`app/App.kt` 165 → **166**. `App.kt` would have grown by ~10 had `collectField` stayed inline, which
+is why it is its own file.
+
 **Files:** `feature/folder/{FolderViewModel,FolderStateMapper,FolderScreen}.kt`,
-`core/ui/components/{FolderCard,FolderCardUtils}.kt`, `core/data/{LocalMediaRepository,WokaSettings}.kt`,
-`app/App.kt`, `feature/viewer/shell/{MediaViewerToolbar,MediaViewerFrame}.kt`,
-`feature/viewer/video/MediaViewerVideoControls.kt`, `feature/viewer/image/ImageLoader.kt`
+`core/ui/components/{FolderCard,FolderCardUtils}.kt`, `core/data/LocalMediaRepository.kt`,
+`app/{App,SettingsProjection}.kt` (second new), `feature/settings/SettingsOverlay.kt`,
+`feature/viewer/shell/{MediaViewerToolbar,ViewerBackdrop,MediaViewerFrame}.kt` (second new),
+`feature/viewer/shell/slider/MediaSlider.kt`,
+`feature/viewer/video/{MediaViewerVideoControls,MediaViewerTimeSlider}.kt`,
+`feature/viewer/image/ImageLoader.kt`
 
 ## Phase 11: the file-size mandate
 
@@ -655,18 +768,63 @@ under the limit with no artificial split.
 Every cut follows a semantic boundary, with an explicit criterion stated in the step. Mechanically
 "chopping off the tail" and compressing lines to satisfy the counter are forbidden by the mandate.
 
-**Files:** per the re-measurement
+**Done.** Re-measured after Phase 10: `FolderContent` (159), `PlayerSettingsSync`, `MediaSlider` and
+`MediaViewerSettingsPanel` (150 each) had already fallen under by themselves, exactly as predicted;
+`FolderCard` and `App` had instead crept *up*. Ten files were over. **Two remain, both Phase 9 step
+2's own**, left rather than cut twice: `decode/VideoPlayerDecoder.kt` 159 and
+`engine/VideoPlayerState.kt` 158. Every other `.kt` in the tree (230 files) is at or under 150.
+
+| Was | Cut | Now | The boundary |
+|---|---|---|---|
+| `FolderCard` 186 | `FolderCardData.kt`, `FolderCardBody.kt` | 108 | what a card is *made of* vs what it *looks like* vs how it *reacts* |
+| `GridScrollbarAdapter` 184 | `KnownLayoutGridScrollbarAdapter.kt`, `GridLineMetrics.kt` | 42 | factory · scrollbar contract · row arithmetic |
+| `App` 166 | `navigation/ScreenHost.kt` | 122 | `App` wires shell/overlays/theme; *which* screen shows is navigation's |
+| `FolderGrid` 164 | `FolderItemContextMenu.kt` | 143 | what you can do *to* an item vs how the grid lays items out |
+| `SubtitleCustomizePanel` 155 | `SubtitleCustomizeParts.kt` | 120 | the settings offered vs the chrome around them (matches `PlayerSpeedSliderParts.kt`) |
+| `FolderCardPreview` 153 | `FolderCoverMosaic.kt` | 108 | folder cover vs file preview — the branches share only their backing surface |
+| `main.kt` 153 | `TitleBarDrag.kt` | 100 | app startup vs window behaviour |
+| `DockItem` 152 | `DockSecondaryItem.kt` | 96 | two public composables sharing nothing but the dock |
+
+Three things worth recording rather than burying:
+- `FolderCardStyle` gained an `ambientColor` field. The card's shadow derived its ambient tint inline
+  from `isSelected` and the animated `glowColor` — the one derived colour the style object did not
+  own. Folding it in is what let `FolderCardBody` take 5 parameters instead of 7; the value is
+  identical.
+- `FolderCardData` + `rememberFolderCardData(path)` also finishes 10.3: every stat a card makes is now
+  behind one `remember(path)` in one place, rather than scattered through the composable body.
+- `ScreenHost`'s transition was rewritten from two near-identical branches into one with a `sign`.
+  Verified equal case by case (deeper: in from `+width`, out to `-width`; back: mirrored; same path:
+  no animation), not by eye over the diff.
+
+**Files:** `core/ui/components/{FolderCard,FolderCardData,FolderCardBody,FolderCardStyle,
+FolderCardPreview,FolderCoverMosaic,GridScrollbarAdapter,KnownLayoutGridScrollbarAdapter,
+GridLineMetrics}.kt` (5 new), `app/App.kt`, `app/navigation/ScreenHost.kt` (new),
+`app/shell/{DockItem,DockSecondaryItem}.kt` (second new),
+`feature/folder/{FolderGrid,FolderItemContextMenu}.kt` (second new),
+`feature/viewer/video/{SubtitleCustomizePanel,SubtitleCustomizeParts}.kt` (second new),
+`desktopApp/{main,TitleBarDrag}.kt` (second new)
 
 ## Phase 12: reconciliation
 
-- `./gradlew.bat :shared:build` — green.
+- `./gradlew.bat :shared:build` — green. ✅ (also `:desktopApp:compileKotlin`)
 - `./gradlew.bat :desktopApp:run` — manual run over the "Playback", "Audio", "Subtitles" and "PiP"
   sections of `viewer-verification-pass.md`. The full checklist stays with plan 3; here only the
-  absence of regressions in what was touched is checked.
-- Mechanical anti-FQN run over the whole tree.
-- `wc -l` over every `.kt` — no file over 150.
+  absence of regressions in what was touched is checked. ✅ **Passed (Valik).**
+- Mechanical anti-FQN run over the whole tree. ✅ — 230 `.kt` files, one hit, and it is the prose
+  inside `core/system/AwtMediaKeyControls.kt:29` already cleared in Phase 1.
+- `wc -l` over every `.kt` — no file over 150. ✅ **All 232 files.**
 - Update `CLAUDE.md` if Phase 9 changed the stack description (the player engine goes from "JavaCV
-  decode, audio, seek, tracks" to a set of collaborators).
+  decode, audio, seek, tracks" to a set of collaborators). ✅ `engine/` is written out as its seven
+  sub-packages and the files added by Phases 2–11 are in the map. No collaborator classes were
+  created (see Phase 9), so there is nothing further to describe.
+
+**All five checks pass. Plan closed** — move to `implemented/`, and `viewer-verification-pass.md` is
+next in the chain.
+
+Two behaviour questions raised during the work stay open on purpose, and belong to whoever picks them
+up rather than to this plan: 10.4's blurred-backdrop refresh policy, and Phase 4's
+`VideoReloadOverlay` 0.55 scrim (plus the 17 app-wide shadow tints and 11 non-viewer 12.dp radii that
+want token groups of their own).
 
 ---
 

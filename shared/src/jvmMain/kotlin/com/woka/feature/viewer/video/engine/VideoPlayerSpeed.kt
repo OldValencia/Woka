@@ -25,11 +25,11 @@ fun VideoPlayerState.setPlaybackSpeed(speed: Float) {
     val snapped = PlaybackSpeed.snap(speed)
     if (snapped == playbackSpeed) return
     playbackSpeed = snapped
-    speedGeneration++
+    generation.requestSpeedChange()
     // The presenter's baseline was anchored under the old speed; without a rebase
     // every incoming frame would read as wildly early or late right after the
     // change and get dropped or slept on.
-    rebasePresenterClock = true
+    generation.requestPresenterRebase()
 }
 
 /**
@@ -42,18 +42,17 @@ internal suspend fun VideoPlayerState.handleEndOfStream(
     frameGeneration: Int
 ) {
     if (repeatMode == RepeatMode.File) {
-        seekTargetMs = 0L
         // Move the play head BEFORE bumping the generation. The audio loop measures
         // itself against currentPositionMs; left at the end it read as ~a whole file
         // behind, re-seeked its own grabber back to the end, and then sat out the
         // entire replay on the lead throttle — a silent second pass.
         currentPositionMs = 0L
-        seekGeneration++ // both loops restart from the beginning
+        generation.requestSeek(0L) // both loops restart from the beginning
         return
     }
     videoChannel.send(VideoFrame(ImageBitmap(1, 1), -2L, frameGeneration))
-    val gen = seekGeneration
-    while (isPlaying && seekGeneration == gen && scope.isActive) {
+    val gen = generation.seek
+    while (isPlaying && generation.seek == gen && scope.isActive) {
         delay(50.milliseconds)
     }
 }

@@ -34,10 +34,15 @@ import androidx.compose.ui.unit.dp
  * never to a boundary. Segments arrive already expressed as fractions, so this
  * genuinely is a shared slider: it no longer calls into the video package to work
  * out what a chapter is.
+ *
+ * [value] is a lambda, not a `Float`, so a caller tracking a fast-moving source
+ * (a play head at the presenter's frame rate) does not perform the state read in
+ * its own scope and drag its whole subtree into every frame (§10.5). The read
+ * lands here, where the moving part actually is.
  */
 @Composable
 fun MediaSlider(
-    value: Float,
+    value: () -> Float,
     onValueChange: (Float) -> Unit,
     style: MediaSliderStyle,
     modifier: Modifier = Modifier,
@@ -53,7 +58,7 @@ fun MediaSlider(
     val currentOnValueChange by rememberUpdatedState(onValueChange)
     val currentOnValueChangeFinished by rememberUpdatedState(onValueChangeFinished)
 
-    val safeValue = value.coerceIn(0f, 1f)
+    val safeValue = value().coerceIn(0f, 1f)
     val displayValue = if (width > 0f) {
         dragX?.let { (it / width).coerceIn(0f, 1f) } ?: safeValue
     } else safeValue

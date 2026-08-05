@@ -71,7 +71,7 @@ fun SubtitleCustomizePanel(onBack: () -> Unit) {
             )
         }
 
-        FieldLabel("Size")
+        SubtitleFieldLabel("Size")
         SubtitlePillGroup(
             options = listOf(
                 "Auto" to SubtitleSize.Auto,
@@ -84,7 +84,7 @@ fun SubtitleCustomizePanel(onBack: () -> Unit) {
             onSelect = { repo.setSubtitleSize(it) }
         )
 
-        FieldLabel("Font")
+        SubtitleFieldLabel("Font")
         SubtitlePillGroup(
             options = listOf(
                 "System" to SubtitleFont.System,
@@ -95,61 +95,25 @@ fun SubtitleCustomizePanel(onBack: () -> Unit) {
             onSelect = { repo.setSubtitleFont(it) }
         )
 
-        FieldLabel("Color")
+        SubtitleFieldLabel("Color")
         SubtitleColorSwatchRow(
             selectedArgb = settings.subtitleColorArgb,
             onSelect = { repo.setSubtitleColor(it) }
         )
 
-        FieldLabel("Background")
+        SubtitleFieldLabel("Background")
         SubtitlePercentStepper(
             percent = (settings.subtitleBoxOpacity * 100).roundToInt(),
             onChange = { repo.setSubtitleBoxOpacity(it / 100f) }
         )
 
-        FieldLabel("Outline")
+        SubtitleFieldLabel("Outline")
         SubtitlePillGroup(
             options = listOf("On" to true, "Off" to false),
             selected = settings.subtitleOutline,
             onSelect = { repo.setSubtitleOutline(it) }
         )
 
-        ResetRow(onClick = { repo.resetSubtitleAppearance() })
+        SubtitleResetRow(onClick = { repo.resetSubtitleAppearance() })
     }
-}
-
-@Composable
-private fun ResetRow(onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 2.dp)
-            .clip(RoundedCornerShape(7.dp))
-            .pointerHoverIcon(PointerIcon.Hand)
-            .clickable(onClick = onClick)
-            .padding(vertical = 6.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = "Reset to defaults",
-            style = TextStyle(
-                color = Color.White.copy(alpha = 0.6f),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium
-            )
-        )
-    }
-}
-
-@Composable
-private fun FieldLabel(text: String) {
-    Text(
-        text = text.uppercase(),
-        style = TextStyle(
-            color = Color.White.copy(alpha = 0.5f),
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 0.6.sp
-        )
-    )
 }

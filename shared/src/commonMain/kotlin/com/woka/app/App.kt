@@ -1,8 +1,5 @@
 package com.woka.app
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -16,8 +13,7 @@ import androidx.compose.ui.unit.dp
 import com.woka.core.data.SettingsRepository
 import com.woka.app.navigation.Router
 import com.woka.app.navigation.Screen
-import com.woka.feature.folder.FolderScreen
-import com.woka.feature.home.HomeScreen
+import com.woka.app.navigation.ScreenHost
 import com.woka.app.shell.DockTab
 import com.woka.app.shell.MainShell
 import com.woka.feature.search.SearchOverlay
@@ -43,10 +39,12 @@ fun App(
 ) {
     val router = remember { AppDependencies.router }
     val settingsRepo = remember { AppDependencies.settingsRepository }
-    val settings by settingsRepo.settings.collectAsState()
+    // Two projections, not the whole record: see `collectField` (§10.1).
+    val theme by settingsRepo.collectField { it.theme }
+    val linkedFolders by settingsRepo.collectField { it.linkedFolders }
 
     val isSystemDark = isSystemInDarkTheme()
-    val isDark = when (settings.theme) {
+    val isDark = when (theme) {
         "Light" -> false
         "Dark" -> true
         else -> isSystemDark
@@ -89,51 +87,18 @@ fun App(
                 onOpenSearch = { isSearchOpen = true },
                 onNavigateBack = if (stack.size > 1) { { router.pop() } } else null,
                 onBreadcrumbClick = { path -> router.navigateTo(Screen.Folder(path)) },
-                linkedFolders = settings.linkedFolders
+                linkedFolders = linkedFolders
             ) {
-            AnimatedContent(
-                targetState = currentScreen,
-                transitionSpec = {
-                    val targetDepth = if (targetState is Screen.Folder) (targetState as Screen.Folder).path.length else 0
-                    val initialDepth = if (initialState is Screen.Folder) (initialState as Screen.Folder).path.length else 0
-    
-                    val targetFolder = targetState as? Screen.Folder
-                    val initialFolder = initialState as? Screen.Folder
-                    
-                    if (targetFolder != null && initialFolder != null && targetFolder.path == initialFolder.path) {
-                        EnterTransition.None togetherWith ExitTransition.None
-                    } else if (targetDepth > initialDepth) {
-                        (slideInHorizontally(animationSpec = tween(220, easing = FastOutSlowInEasing)) { width -> width } + fadeIn(animationSpec = tween(220))).togetherWith(
-                            slideOutHorizontally(animationSpec = tween(220, easing = FastOutSlowInEasing)) { width -> -width } + fadeOut(animationSpec = tween(220))
-                        )
-                    } else {
-                        (slideInHorizontally(animationSpec = tween(220, easing = FastOutSlowInEasing)) { width -> -width } + fadeIn(animationSpec = tween(220))).togetherWith(
-                            slideOutHorizontally(animationSpec = tween(220, easing = FastOutSlowInEasing)) { width -> width } + fadeOut(animationSpec = tween(220))
-                        )
-                    }
-                }
-            ) { screen ->
-                when (screen) {
-                    is Screen.Home -> HomeScreen(
-                        onNavigateToFolder = { path -> router.navigateTo(Screen.Folder(path)) }
-                    )
-                    is Screen.Folder -> {
-                        FolderScreen(
-                            path = screen.path,
-                            highlightFile = screen.highlightFile,
-                            openViewerForId = screen.openViewerForId,
-                            onNavigateToFolder = { path -> router.navigateTo(Screen.Folder(path)) }
-                        )
-                    }
-                }
-            }
+            ScreenHost(
+                currentScreen = currentScreen,
+                onNavigateToFolder = { path -> router.navigateTo(Screen.Folder(path)) }
+            )
             }
 
             // Settings Overlay
             SettingsOverlay(
                 isOpen = isSettingsOpen,
                 onClose = { isSettingsOpen = false },
-                settings = settings,
                 repo = settingsRepo
             )
 
@@ -141,8 +106,8 @@ fun App(
             SearchOverlay(
                 isOpen = isSearchOpen,
                 onClose = { isSearchOpen = false },
-                linkedFolders = settings.linkedFolders,
-                onResultClick = { path -> 
+                linkedFolders = linkedFolders,
+                onResultClick = { path ->
                     val file = File(path)
                     val parent = file.parent
                     if (parent != null) {

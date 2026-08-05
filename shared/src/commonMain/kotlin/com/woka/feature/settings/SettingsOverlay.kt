@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,14 +45,17 @@ import com.woka.core.ui.theme.Theme
  * Safe for recomposition because [WokaSettings] is `@Immutable` and
  * [SettingsRepository] is `@Stable` — without that the panels below would become
  * non-skippable and recompose on every parent pass.
+ *
+ * The settings are collected here rather than passed in, so that a write does not
+ * invalidate the caller's scope — in `App` that scope is the whole tree (§10.1).
  */
 @Composable
 fun SettingsOverlay(
     isOpen: Boolean,
     onClose: () -> Unit,
-    settings: WokaSettings,
     repo: SettingsRepository
 ) {
+    val settings by repo.settings.collectAsState()
     // Owned here, outside the AnimatedVisibility, so closing and reopening Settings
     // returns to the category the user was last on.
     var selectedCategory by remember { mutableStateOf("Appearance") }

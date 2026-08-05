@@ -12,6 +12,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.io.File
@@ -34,14 +37,20 @@ class FolderViewModel(
     private val _selectedPaths = MutableStateFlow<Set<String>>(emptySet())
     private var lastSelectedPath: String? = null
 
+    /**
+     * Projected down to [FolderSettings] and de-duplicated before the combine, so
+     * an unrelated write (volume, resume position) no longer rebuilds the listing;
+     * `flowOn` keeps the sort and filter off the UI thread (§10.2). `stateIn` still
+     * shares on [scope], which is where collectors want the value.
+     */
     val state: StateFlow<FolderState> = combine(
         _rawItems,
-        settingsRepository.settings,
+        settingsRepository.settings.map { it.folderSettings(path) }.distinctUntilChanged(),
         _isSelectMode,
         _selectedPaths
     ) { rawItems, settings, isSelectMode, selectedPaths ->
-        buildFolderState(path, rawItems, settings, isSelectMode, selectedPaths)
-    }.stateIn(scope, SharingStarted.WhileSubscribed(5000), FolderState())
+        buildFolderState(rawItems, settings, isSelectMode, selectedPaths)
+    }.flowOn(Dispatchers.Default).stateIn(scope, SharingStarted.WhileSubscribed(5000), FolderState())
 
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()

@@ -36,10 +36,10 @@ internal fun VideoPlayerState.startPresenterLoop(videoChannel: Channel<VideoFram
         var lastPauseTimeMs = 0L
         var droppedInARow = 0
 
-        for ((bitmap, frameTsMs, generation, hdrInfo) in videoChannel) {
+        for ((bitmap, frameTsMs, frameGeneration, hdrInfo) in videoChannel) {
             // Drop frames decoded before the latest seek so they can't overwrite
             // the post-seek position/frame with stale data.
-            if (generation != seekGeneration) continue
+            if (frameGeneration != generation.seek) continue
 
             if (frameTsMs == -2L) {
                 isPlaying = false
@@ -61,8 +61,7 @@ internal fun VideoPlayerState.startPresenterLoop(videoChannel: Channel<VideoFram
             // took is not playback time, so rebase rather than bill it to these
             // frames as lateness — otherwise they get dropped to "catch up" and the
             // picture stalls until the decoder claws the gap back at ~1.07x.
-            if (rebasePresenterClock) {
-                rebasePresenterClock = false
+            if (generation.consumePresenterRebase()) {
                 firstVideoTsMs = -1L
             }
 
@@ -96,7 +95,7 @@ internal fun VideoPlayerState.startPresenterLoop(videoChannel: Channel<VideoFram
                 // the picture never comes back, so a run of drops rebases too.
                 if (++droppedInARow >= MAX_DROPS_IN_A_ROW) firstVideoTsMs = -1L
                 // Frame is more than 50ms late, drop it to catch up with audio
-                if (generation != seekGeneration) continue
+                if (frameGeneration != generation.seek) continue
                 if (frameTsMs >= currentPositionMs || abs(currentPositionMs - frameTsMs) > 1000) {
                     currentPositionMs = frameTsMs
                 }
@@ -107,7 +106,7 @@ internal fun VideoPlayerState.startPresenterLoop(videoChannel: Channel<VideoFram
             // If so this frame is stale — dropping it here stops it from dragging
             // the play head back to the pre-seek position (visible only while
             // playing, when the presenter is mid-sleep rather than parked).
-            if (generation != seekGeneration) continue
+            if (frameGeneration != generation.seek) continue
 
             if (frameTsMs >= currentPositionMs || abs(currentPositionMs - frameTsMs) > 1000) {
                 currentPositionMs = frameTsMs

@@ -49,15 +49,18 @@ fun MediaViewerFrame(
         remember(frameToDraw) { BitmapPainter(frameToDraw) }
     }
 
-    ContextMenuArea(
-        items = {
-            listOf(
-                ContextMenuItem("Edit") { actions.onEdit() },
-                ContextMenuItem("Copy") { actions.onCopy() },
-                ContextMenuItem("Info") { actions.onInfo() }
-            )
-        }
-    ) {
+    // Built once per action set. This composable recomposes on every presented
+    // frame (it reads `currentFrame` above), and the list was rebuilt each time
+    // (§10.6).
+    val menuItems = remember(actions) {
+        listOf(
+            ContextMenuItem("Edit") { actions.onEdit() },
+            ContextMenuItem("Copy") { actions.onCopy() },
+            ContextMenuItem("Info") { actions.onInfo() }
+        )
+    }
+
+    ContextMenuArea(items = { menuItems }) {
         Box(
             modifier = Modifier
                 .fillMaxSize()

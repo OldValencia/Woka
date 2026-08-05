@@ -2,31 +2,21 @@ package com.woka.core.ui.components
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 import kotlin.time.Duration.Companion.milliseconds
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
-import androidx.compose.ui.unit.dp
-import com.woka.core.ui.theme.Theme
-import java.io.File
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
@@ -35,8 +25,12 @@ import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.input.pointer.PointerButton
 import kotlinx.coroutines.delay
 
-
-
+/**
+ * A grid tile for one folder or media file. This function owns interaction —
+ * hover, modifier-clicks, the right-click menu and the post-navigation highlight;
+ * what it draws is [FolderCardBody] and what it draws *from* is
+ * [rememberFolderCardData].
+ */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun FolderCard(
@@ -50,12 +44,8 @@ fun FolderCard(
     onRemove: (() -> Unit)? = null,
     onModifierClick: ((Boolean, Boolean) -> Unit)? = null
 ) {
-    val file = File(path)
-    val name = file.name.takeIf { it.isNotEmpty() } ?: path
-    val isDir = file.isDirectory
-    
-    val subtitleText = remember(path) { getFolderCardSubtitle(isDir, file) }
-    
+    val data = rememberFolderCardData(path)
+
     var activeHighlight by remember(isHighlighted) { mutableStateOf(isHighlighted) }
     LaunchedEffect(isHighlighted) {
         if (isHighlighted) {
@@ -67,30 +57,13 @@ fun FolderCard(
 
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
-    
+
     val style = rememberFolderCardStyle(
         isHovered = isHovered,
         activeHighlight = activeHighlight,
         isSelected = isSelected,
-        isDir = isDir
+        isDir = data.isDir
     )
-
-    var itemCount by remember(path) { mutableStateOf(0) }
-    var previews by remember(path) { mutableStateOf<List<File>>(emptyList()) }
-    
-    LaunchedEffect(path) {
-        if (isDir) {
-            val data = fetchFolderStateData(file)
-            itemCount = data.itemCount
-            previews = data.previews
-        }
-    }
-
-    val dynamicBadgeText = if (isDir) {
-        if (itemCount > 0) "$itemCount ITEMS" else "EMPTY"
-    } else {
-        file.extension.uppercase().takeIf { it.isNotEmpty() } ?: "FILE"
-    }
 
     var altPressed by remember { mutableStateOf(false) }
     var shiftPressed by remember { mutableStateOf(false) }
@@ -122,55 +95,13 @@ fun FolderCard(
                 }
             }
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(16f / 10f)
-                .shadow(
-                    elevation = style.shadowElev, 
-                    shape = RoundedCornerShape(10.dp), 
-                    spotColor = style.glowColor,
-                    ambientColor = if (isSelected) style.glowColor.copy(alpha = 0.5f) else Color.Black.copy(alpha = 0.1f)
-                )
-                .background(Theme.colors.surfaceElevated, RoundedCornerShape(10.dp))
-                .border(style.borderWidth, style.borderColor, RoundedCornerShape(10.dp))
-                .clip(RoundedCornerShape(10.dp))
-        ) {
-            // Background/Preview
-            FolderCardPreview(
-                isDir = isDir,
-                file = file,
-                previews = previews,
-                modifier = Modifier.fillMaxSize()
-            )
-
-            // Badge
-            FolderCardBadge(
-                isDir = isDir,
-                dynamicBadgeText = dynamicBadgeText,
-                modifier = Modifier.align(Alignment.BottomEnd)
-            )
-
-            if (onRemove != null && isHovered) {
-                FolderCardRemoveButton(
-                    onRemove = onRemove,
-                    modifier = Modifier.align(Alignment.TopEnd)
-                )
-            }
-        }
-
-        if (showTitle) {
-            FolderCardTitle(
-                name = name,
-                subtitleText = subtitleText,
-                titleColor = style.titleColor
-            )
-        }
-        }
+        FolderCardBody(
+            data = data,
+            style = style,
+            showTitle = showTitle,
+            isHovered = isHovered,
+            onRemove = onRemove
+        )
 
         if (showContextMenu && contextMenuContent != null) {
             FolderCardContextMenu(

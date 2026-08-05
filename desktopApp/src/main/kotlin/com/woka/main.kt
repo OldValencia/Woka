@@ -11,9 +11,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -23,7 +20,6 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.woka.app.di.initKoin
-import java.awt.MouseInfo
 import java.awt.Point
 import com.woka.app.App
 import java.awt.Dimension
@@ -81,63 +77,12 @@ fun main() {
                 App(
                     topBarArea = { content ->
                         Box(
-                            modifier = Modifier.pointerInput(Unit) {
-                                awaitPointerEventScope {
-                                    var lastPressTime = 0L
-                                    var windowAnchor: Point? = null
-                                    var mouseAnchor: Point? = null
-                                    while (true) {
-                                        val event = awaitPointerEvent(PointerEventPass.Main)
-                                        when (event.type) {
-                                            PointerEventType.Press -> {
-                                                if (event.changes.any { it.isConsumed }) {
-                                                    // Press landed on a button/breadcrumb — not a title bar gesture
-                                                    windowAnchor = null
-                                                    mouseAnchor = null
-                                                } else {
-                                                    val now = System.currentTimeMillis()
-                                                    if (now - lastPressTime < 300) {
-                                                        lastPressTime = 0L
-                                                        toggleMaximize()
-                                                    } else {
-                                                        lastPressTime = now
-                                                    }
-                                                    windowAnchor = window.location
-                                                    mouseAnchor = MouseInfo.getPointerInfo()?.location
-                                                }
-                                            }
-                                            PointerEventType.Move -> {
-                                                val mAnchor = mouseAnchor
-                                                val wAnchor = windowAnchor
-                                                val mouse = MouseInfo.getPointerInfo()?.location
-                                                if (mAnchor != null && wAnchor != null && mouse != null &&
-                                                    event.changes.any { it.pressed }
-                                                ) {
-                                                    if (windowState.placement == WindowPlacement.Maximized) {
-                                                        val dx = mouse.x - mAnchor.x
-                                                        val dy = mouse.y - mAnchor.y
-                                                        if (dx * dx + dy * dy > 25) {
-                                                            // Re-anchor so the continuing drag moves the
-                                                            // restored window instead of the maximized origin
-                                                            windowAnchor = restoreUnderCursor(mouse)
-                                                            mouseAnchor = mouse
-                                                        }
-                                                    } else {
-                                                        window.setLocation(
-                                                            wAnchor.x + (mouse.x - mAnchor.x),
-                                                            wAnchor.y + (mouse.y - mAnchor.y)
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                            PointerEventType.Release -> {
-                                                windowAnchor = null
-                                                mouseAnchor = null
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                            modifier = Modifier.titleBarWindowDrag(
+                                window = window,
+                                isMaximized = { windowState.placement == WindowPlacement.Maximized },
+                                onDoubleClick = { toggleMaximize() },
+                                onRestoreUnderCursor = { mouse -> restoreUnderCursor(mouse) }
+                            )
                         ) {
                             content()
                         }

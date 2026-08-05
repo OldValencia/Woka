@@ -76,13 +76,15 @@ fun MediaViewerVideoControls(
             )
         }
         
-        val currentMs = videoState?.currentPositionMs ?: 0L
+        // The play head is handed over as a lambda, never read here: `durationMs`
+        // changes once per file, `currentPositionMs` changes at the presenter's
+        // rate and used to recompose this entire row with it (§10.5).
         val durationMs = videoState?.durationMs ?: 0L
-        
+
         if (durationMs > 0L) {
             MediaViewerTimeSlider(
                 videoState = videoState,
-                currentMs = currentMs,
+                position = { videoState?.currentPositionMs ?: 0L },
                 durationMs = durationMs,
                 modifier = Modifier.weight(1f)
             )

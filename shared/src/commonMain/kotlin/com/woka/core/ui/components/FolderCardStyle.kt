@@ -17,6 +17,8 @@ data class FolderCardStyle(
     val borderWidth: Dp,
     val shadowElev: Dp,
     val glowColor: Color,
+    /** Shadow's ambient tint. Derived from the same two inputs as [glowColor]. */
+    val ambientColor: Color,
     val titleColor: Color
 )
 
@@ -46,7 +48,8 @@ fun rememberFolderCardStyle(
         targetValue = if (isSelected) (if (isDir) Theme.colors.accentFolders else Theme.colors.accent) else Color.Black.copy(alpha = 0.35f),
         animationSpec = tween(300)
     )
+    val ambientColor = if (isSelected) glowColor.copy(alpha = 0.5f) else Color.Black.copy(alpha = 0.1f)
     val titleColor by animateColorAsState(targetValue = if (isHovered || isSelected || activeHighlight) Theme.colors.textPrimary else Theme.colors.textSecondary, animationSpec = tween(200))
 
-    return FolderCardStyle(translateY, borderColor, borderWidth, shadowElev, glowColor, titleColor)
+    return FolderCardStyle(translateY, borderColor, borderWidth, shadowElev, glowColor, ambientColor, titleColor)
 }

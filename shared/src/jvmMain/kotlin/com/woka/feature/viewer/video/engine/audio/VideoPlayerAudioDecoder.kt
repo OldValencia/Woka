@@ -28,7 +28,7 @@ internal fun VideoPlayerState.startAudioDecodeLoop(audioChannel: Channel<ByteArr
         // Wait for the video grabber to open + probe first, so the two grabbers
         // never do a concurrent first-open (which returned incomplete info). By
         // now hasAudio and the selected track index are set from the probe.
-        while (isActive && !tracksProbed) delay(10.milliseconds)
+        tracksProbed.await()
         // A file with no audio stream at all has nothing to open. The loop below
         // already parks on !hasAudio, but the grabber is started before it is ever
         // reached — and this grabber has video disabled, so with no audio stream
@@ -47,9 +47,9 @@ internal fun VideoPlayerState.startAudioDecodeLoop(audioChannel: Channel<ByteArr
             // build would leave the sound running at 1x under a 2x picture.
             tempo = buildTempoFilter(grabber)
 
-            var audioSeekGen = seekGeneration
-            var audioDelayGen = audioDelayGeneration
-            var audioSpeedGen = speedGeneration
+            var audioSeekGen = generation.seek
+            var audioDelayGen = generation.audioDelay
+            var audioSpeedGen = generation.speed
             var audioTsMs = 0L // last decoded audio position; drives sync, unlike the
             // grabber's timestamp which is stale right after a seek.
             while (isActive) {
@@ -60,31 +60,32 @@ internal fun VideoPlayerState.startAudioDecodeLoop(audioChannel: Channel<ByteArr
                     tempo?.close()
                     tempo = buildTempoFilter(grabber)
                     audioTsMs = audioTimeFor(currentPositionMs)
-                    audioSeekGen = seekGeneration
+                    audioSeekGen = generation.seek
                     continue
                 }
                 // Every branch below goes through audioReseek, which rebuilds the
                 // tempo graph: atempo cannot survive the backwards timestamp jump a
                 // seek produces and would fail over to unfiltered 1x sound (§6).
-                if (audioSeekGen != seekGeneration) {
-                    audioSeekGen = seekGeneration
-                    tempo = audioReseek(grabber, audioTimeFor(seekTargetMs), audioChannel, tempo)
-                    audioTsMs = audioTimeFor(seekTargetMs)
+                if (audioSeekGen != generation.seek) {
+                    audioSeekGen = generation.seek
+                    val target = audioTimeFor(generation.targetMs)
+                    tempo = audioReseek(grabber, target, audioChannel, tempo)
+                    audioTsMs = target
                     continue
                 }
                 // The user moved the audio offset (§3): re-seek to the new target.
                 // Waiting it out would work only when the offset moves forward —
                 // backwards it would just idle on the lead throttle in silence.
-                if (audioDelayGen != audioDelayGeneration) {
-                    audioDelayGen = audioDelayGeneration
+                if (audioDelayGen != generation.audioDelay) {
+                    audioDelayGen = generation.audioDelay
                     tempo = audioReseek(grabber, audioTimeFor(currentPositionMs), audioChannel, tempo)
                     audioTsMs = audioTimeFor(currentPositionMs)
                     continue
                 }
                 // Speed changed: the queued audio was resampled at the old rate, so
                 // it has to go along with the graph that produced it.
-                if (audioSpeedGen != speedGeneration) {
-                    audioSpeedGen = speedGeneration
+                if (audioSpeedGen != generation.speed) {
+                    audioSpeedGen = generation.speed
                     tempo = audioReseek(grabber, audioTimeFor(currentPositionMs), audioChannel, tempo)
                     audioTsMs = audioTimeFor(currentPositionMs)
                     continue
@@ -98,7 +99,7 @@ internal fun VideoPlayerState.startAudioDecodeLoop(audioChannel: Channel<ByteArr
                 }
                 // Wait until the video has finished seeking to the current target,
                 // so audio never starts before the frame lands (slider scrubs).
-                if (videoReadyGen != seekGeneration) {
+                if (!generation.isVideoAtSeekTarget) {
                     delay(10.milliseconds)
                     continue
                 }

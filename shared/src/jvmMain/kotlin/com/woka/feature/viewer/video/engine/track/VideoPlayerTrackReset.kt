@@ -48,6 +48,6 @@ fun VideoPlayerState.resetTracksForThisFile() {
         audioDelayMs = 0L
         // The audio loop only re-seeks on this generation; waiting it out would
         // work forwards but play silence when the offset moves backwards (§3).
-        audioDelayGeneration++
+        generation.requestAudioDelayChange()
     }
 }

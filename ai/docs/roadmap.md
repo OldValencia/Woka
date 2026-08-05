@@ -32,8 +32,15 @@ The app entry point (`main()`) routes based on CLI arguments:
 - **Typography & Spacing:** Adjust fonts (weight, size, color hierarchy) and padding to ensure a clean, uncluttered, professional aesthetic.
 - **Empty States & Settings:** Polish the Settings overlay and empty folder views with engaging graphics or subtle instructions.
 - **Package restructure (done):** moved from layer-first to feature-first (`app/`, `core/`,
-  `feature/<name>/`) per `features/implemented/package-restructure-feature-first.md`. Code-quality
-  refactor and the viewer verification pass follow it, still in `features/pending/`.
+  `feature/<name>/`) per `features/implemented/package-restructure-feature-first.md`.
+- **Code-quality refactor (done):** `features/implemented/code-quality-refactor.md` — a media domain
+  type, one storage root, viewer chrome tokens, overlay/slider deduplication, real events instead of
+  timestamp triggers, collapsed parameter lists, `ViewerMedia`, the player engine split into
+  sub-packages with its cross-thread handshake named as `PlaybackGeneration`, a runtime-cost pass,
+  and the 130–150 line mandate closed across the whole tree. Fixed on the way: disagreeing extension
+  lists, a thumbnail cache keyed on file *name*, events colliding inside one clock tick, and a seek
+  that signalled before it wrote its target.
+- **Viewer verification pass:** next, still in `features/pending/`.
 
 ### Phase 4: The Viewer (Preview & Carousel)
 - **UX:** Clicking a media file in the grid dims the background and opens the Viewer overlay.

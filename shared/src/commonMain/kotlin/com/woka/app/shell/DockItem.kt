@@ -1,7 +1,7 @@
 package com.woka.app.shell
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,7 +19,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.TextStyle
@@ -29,7 +28,6 @@ import androidx.compose.ui.unit.sp
 import com.woka.core.ui.theme.Theme
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
-import androidx.compose.runtime.LaunchedEffect
 
 @Composable
 fun DockItem(
@@ -93,60 +91,6 @@ fun DockItem(
         BasicText(
             text = text,
             style = TextStyle(color = textColor, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-        )
-    }
-}
-
-@Composable
-fun DockSecondaryItem(
-    iconRes: DrawableResource,
-    hoverColor: Color,
-    isWiggle: Boolean = false,
-    onClick: () -> Unit
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isHovered by interactionSource.collectIsHoveredAsState()
-
-    val bgColor by animateColorAsState(
-        targetValue = if (isHovered) Theme.colors.surfaceHover else Color.Transparent,
-        animationSpec = tween(150)
-    )
-    val iconTint by animateColorAsState(
-        targetValue = if (isHovered) hoverColor else Theme.colors.textTertiary,
-        animationSpec = tween(150)
-    )
-
-    val rotation = remember { Animatable(0f) }
-    
-    LaunchedEffect(isHovered, isWiggle) {
-        if (isHovered && isWiggle) {
-            rotation.animateTo(15f, animationSpec = tween(80, easing = LinearOutSlowInEasing))
-            rotation.animateTo(-15f, animationSpec = tween(80, easing = LinearOutSlowInEasing))
-            rotation.animateTo(15f, animationSpec = tween(80, easing = LinearOutSlowInEasing))
-            rotation.animateTo(0f, animationSpec = tween(80, easing = LinearOutSlowInEasing))
-        } else {
-            rotation.animateTo(0f, animationSpec = spring(stiffness = Spring.StiffnessMedium))
-        }
-    }
-
-    Box(
-        modifier = Modifier
-            .size(40.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(bgColor)
-            .pointerHoverIcon(PointerIcon.Hand)
-            .clickable(interactionSource = interactionSource, indication = null, onClick = onClick),
-        contentAlignment = Alignment.Center
-    ) {
-        Image(
-            painter = painterResource(iconRes),
-            contentDescription = null,
-            modifier = Modifier
-                .size(18.dp)
-                .graphicsLayer {
-                    rotationZ = rotation.value
-                },
-            colorFilter = ColorFilter.tint(iconTint)
         )
     }
 }
