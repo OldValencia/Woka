@@ -8,7 +8,9 @@ inside this plan.
 Third of three. Order: `package-restructure-feature-first.md` → `code-quality-refactor.md` →
 **this one**. The first two are done; every path below has been checked against the current tree.
 
-**Progress:** Phase 0 done · Phase 1 done · Phase 2 done · Phase 3 done · Phase 4 next.
+**Progress:** Phases 0–3 done · Phase 5 done · **Phase 4 next, and unblocked** — the feasibility gate
+is green (`ui/ComposeHarnessTest.kt`), the first product file is written
+(`ui/SettingsToggleUiTest.kt`), and the `testTag` production change is approved (2026-08-06).
 
 ---
 
@@ -259,11 +261,65 @@ Directory `jvmTest/kotlin/com/woka/ui/`. `runComposeUiTest` from `compose.uiTest
 driven through `performClick`/`performKeyInput`/`performMouseInput`. What is checked is a
 **scenario**, not a formula: formulas are already covered by Phase 2.
 
-- **Production change, needs its own approval:** the tree currently has **zero** `testTag`. UI tests
-  need anchors. The plan adds `Modifier.testTag` narrowly and only where no textual or semantic
-  anchor exists: the folder grid (container + cell), the viewer frame, the viewer toolbar (size
-  button, `X`), the carousel, the settings overlay. The exact tag list is fixed before the edit;
-  nothing but `testTag` is touched in those files.
+- **Production change — approved by Valik, 2026-08-06.** The tree has **zero** `testTag`. The plan
+  adds `Modifier.testTag` narrowly: the folder grid (container + cell), the viewer frame, the viewer
+  toolbar (size button, `X`), the carousel, the settings overlay. Nothing but `testTag` is touched
+  in those files.
+
+  What the approval rests on: `testTag` writes one string into the semantics tree and does nothing
+  else. It takes no part in measurement, layout, drawing or input, so **not one pixel changes** —
+  it is `data-testid` for Compose, the thing an e2e runner hooks onto. The two honest costs: the
+  string ships in the release binary (nobody strips it) and each tagged element gains one semantics
+  modifier node. Both are immeasurable against composition, but neither is literally zero.
+
+  **The rule still binds: a tag only where no textual or semantic anchor already exists.** The list
+  above is a draft of candidates, not a licence — `SettingsToggleUiTest` already drives a real
+  settings row with no tag at all, because the row has both. Check each candidate against a real
+  anchor first, and tag only what fails that check. Approval removes the blocker; it does not turn
+  the draft into the answer.
+
+  **Do not land tags ahead of the tests that use them.** A tagged tree with nothing exercising it is
+  a production edit no one can justify from the diff — write each `*UiTest` and the tags it needs in
+  the same pass.
+
+- **Anchor check, first candidate — the folder grid.** Done, so `FolderGridUiTest` starts from a
+  verdict rather than a survey:
+
+  | Candidate | Anchor today | Verdict |
+  |-----------|--------------|---------|
+  | grid container, `FolderGrid.kt:93` | a bare `LazyVerticalGrid` — no text, no click action, no content description | **tag needed** |
+  | grid cell, `FolderCard(path, onClick, showTitle = true, …)` | renders `data.name` as the title beneath the cover, and carries `onClick` | **no tag** — `onNodeWithText(fileName)` plus `hasClickAction()` |
+
+  The cell's anchor is **conditional**: the title is drawn only when `showTitle` is on, which the
+  grid feeds from the `showTitles` setting. `FolderGridUiTest` therefore drives `FolderCard`
+  directly with `showTitle = true`, the same way `SettingsToggleUiTest` drives a single row — that
+  keeps the anchor a property of the test's own setup instead of a setting it hopes is enabled. If a
+  later scenario has to go through the real grid with titles off, that cell earns a tag then, and
+  only then.
+
+  `FolderScreen.kt:55` also renders a literal `"Loading..."`, which is a ready-made anchor for the
+  loading state — no tag, and no need to reach into `isLoading`.
+
+  **The list is already smaller than it looked.** `SettingsToggleUiTest` (4 checks) is written and
+  green **without a single tag**: `SettingsToggleRow` renders its title and subtitle as text, and
+  `IosSwitch` carries a click action, so `onNodeWithText` plus `hasClickAction()` cover the row
+  completely. Every toggle-shaped control in Settings is reachable the same way — check each
+  candidate against a real anchor before tagging it, rather than tagging the list as drafted.
+
+- **The entry point is `support/UiHarness.kt`,** so no scenario re-derives the obvious:
+  `onUiWithSettings { repository -> … }` for anything that has to prove a write landed, `onUi { … }`
+  for pure UI. Both go through the v2 runner. Two shapes worth knowing before writing the next file:
+  the v2 `runComposeUiTest` takes a `CoroutineContext` **first**, so a block is called rather than
+  passed through; and the receiver type is still `androidx.compose.ui.test.ComposeUiTest` — there is
+  no v2 `ComposeUiTest`, only the runner moved. A test class using the harness needs
+  `@OptIn(ExperimentalTestApi::class)` because that receiver is experimental.
+
+- **Two things the first product test established, so Phase 4 need not rediscover them:**
+  `SettingsOverlay(isOpen, onClose, repo)` takes its repository as a parameter and does not reach
+  into Koin, so a screen can be driven with a real `SettingsRepositoryImpl` on a throwaway root —
+  no container needed for this one. And `Theme.colors` resolves with **no theme provider wrapped
+  around the composable**: production components render bare in `setContent`, so the tests need no
+  scaffolding composable of their own.
 
 | File | Scenario |
 |------|----------|
@@ -274,14 +330,64 @@ driven through `performClick`/`performKeyInput`/`performMouseInput`. What is che
 | `SettingsOverlayUiTest` | Switching the theme in the overlay reaches `SettingsRepository`; toggles write their value; the overlay closes |
 
 Constraints recorded up front: `App()` pulls in `AppDependencies`, a Koin singleton with cached
-`by inject()` delegates. The UI tests work at the screen and viewer level, and Koin is started
-**once per test class**. If `runComposeUiTest` will not come up headless on Windows, the layer is
-marked `@Ignore` with the reason and its coverage moves to manual cases; dropping the layer silently
-is not an option.
+`by inject()` delegates — Phase 3 established that the container must be started **once for the test
+JVM and never stopped** (`support/KoinOnce.kt`), not per class, or those delegates end up pointing at
+a dead container. The UI tests work at the screen and viewer level.
 
-**Files:** 5 files in `jvmTest/kotlin/com/woka/ui/`, plus narrow `testTag` additions in production UI
+**The feasibility question is answered: the layer is viable, and does not need `@Ignore`.**
+`ui/ComposeHarnessTest.kt` is a gate, not a product test — six checks on composables it owns, no
+production code touched. All six pass headless on Windows:
 
-## Phase 5: Manual test cases — a directory of their own
+| Mechanism | Verdict |
+|-----------|---------|
+| `runComposeUiTest` + `setContent` composes | works |
+| a node is laid out and `assertIsDisplayed` | works |
+| `Modifier.testTag` is a usable anchor | works |
+| `performClick` → state → recomposition | works |
+| `performKeyInput` to a node holding focus via `FocusRequester` | works |
+| `performMouseInput { click() }` | works |
+
+So the fallback in this section is not taken. The gate file stays in the tree: if a toolchain bump
+breaks the layer, it says which mechanism went rather than leaving five product tests failing for an
+unclear reason.
+
+Two things for the next session to inherit rather than rediscover:
+
+- **Use `androidx.compose.ui.test.v2.runComposeUiTest`.** The v1 function of the same name is
+  deprecated; v2 drives the composition on a `StandardTestDispatcher`, so coroutines queue as they
+  do in production rather than running eagerly. All six checks pass unchanged under it — no extra
+  `waitForIdle` was needed — but the product scenarios must be written against v2 so they do not
+  depend on eager execution the app never has.
+- `click()` inside `performMouseInput` needs an explicit `androidx.compose.ui.test.click` import.
+
+The remaining unknown for Phase 4 is **not** the runtime; it is the `testTag` production change
+above, which still needs its own approval before anything is written.
+
+**Files:** 5 in `jvmTest/kotlin/com/woka/ui/`, plus whatever `testTag` additions survive the
+anchor check above. Two exist already, 10 checks, green: `ComposeHarnessTest` (6) as the gate, and
+`SettingsToggleUiTest` (4) as the first product scenario — the "toggles write their value" half of
+`SettingsOverlayUiTest`, done without touching production. Remaining: the theme switch and the
+overlay close for that file, plus `FolderGridUiTest`, `ViewerNavigationUiTest`, `ViewerZoomUiTest`,
+`ViewerChromeUiTest`.
+
+## Phase 5: Manual test cases — a directory of their own — **done**
+
+**`ai/docs/testing/manual/` is written: README + 6 case files + `results/.gitkeep`, 38 cases.**
+Every case carries its mandatory *Why this is not automated* field, and each one names the automated
+test it defers to rather than duplicating it — TC-VID-04 points at `ThumbnailPipelineTest`, TC-SUB-06
+at `SubtitleCharsetTest`, TC-IMG-02 at `ScaleMathTest`, and so on. Four cases are tied to open
+findings: TC-IMG-04 (F3), TC-IMG-05 (produces the input for the F4 scope decision), TC-PERF-04
+(produces the measurement for the F1 policy decision), TC-VID-04 (the claim Phase 3 could not assert
+on this corpus).
+
+**One number to settle in Phase 6.** The estimate below was ~24; the real list is 38, and the
+Definition of Done requires `UI automation > manual`. Phase 4 is 5 files plus the 6-check gate, so
+the two layers will land close together. Either Phase 4 comes in above 38 or some of these cases
+fold together — decide it once Phase 4 is written, and do not pad one layer to satisfy the
+inequality.
+
+The section below is the original plan for this phase, kept for the reasoning.
+
 
 A new directory, `ai/docs/testing/manual/`. Only what automation cannot take goes here: visual
 correctness, how smooth it feels, OS integration, separate native windows, long runs. Anything an
