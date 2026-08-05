@@ -16,6 +16,17 @@ const val BITMAP_SUBS = "WokaSample.BitmapSubs.mkv"
 /** Two video streams — 10-bit PQ/BT.2020 and 8-bit BT.709 — two audio, two subtitle. */
 const val DUAL_VIDEO = "WokaSample.DualVideo.mkv"
 
+/**
+ * Two `subrip` tracks that actually carry packets.
+ *
+ * Added in Phase 3: every other container here was cut to three or four seconds,
+ * which sliced out every subtitle event — `S01E01` and `DualVideo` still *declare*
+ * their `subrip` tracks, and a probe finds them, but a demux pass yields nothing.
+ * Text subtitles are the one thing ffmpeg will happily mux, so the gap is closed
+ * with a real file rather than left as an untested path.
+ */
+const val TEXT_SUBS = "textsubs.mkv"
+
 /** Three chapters at 0–0.8, 0.8–2.0, 2.0–3.0 seconds. */
 const val CHAPTERS = "chapters.mkv"
 

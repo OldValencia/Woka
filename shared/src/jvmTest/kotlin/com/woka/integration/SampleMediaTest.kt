@@ -9,6 +9,7 @@ import com.woka.fixtures.NO_AUDIO
 import com.woka.fixtures.STILL_JPG
 import com.woka.fixtures.STILL_PNG
 import com.woka.fixtures.STILL_WEBP
+import com.woka.fixtures.TEXT_SUBS
 import com.woka.fixtures.SampleMedia
 import kotlin.test.Test
 import kotlin.test.assertTrue
@@ -21,7 +22,7 @@ import kotlin.test.assertTrue
 class SampleMediaTest {
 
     private val declared = listOf(
-        BITMAP_SUBS, DUAL_VIDEO, CHAPTERS, NO_AUDIO, BROKEN,
+        BITMAP_SUBS, DUAL_VIDEO, TEXT_SUBS, CHAPTERS, NO_AUDIO, BROKEN,
         STILL_PNG, STILL_JPG, STILL_WEBP, EXIF_ROTATED
     )
 

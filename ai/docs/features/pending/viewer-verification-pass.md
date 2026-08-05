@@ -8,7 +8,7 @@ inside this plan.
 Third of three. Order: `package-restructure-feature-first.md` → `code-quality-refactor.md` →
 **this one**. The first two are done; every path below has been checked against the current tree.
 
-**Progress:** Phase 0 done · Phase 1 done · Phase 2 next.
+**Progress:** Phase 0 done · Phase 1 done · Phase 2 done · Phase 3 done · Phase 4 next.
 
 ---
 
@@ -41,6 +41,8 @@ states the split up front.
 | F5 | `grabber.stop()`/`release()` sit unguarded in `finally`: if `start()` threw, `stop()` throws on top and masks the original cause | `feature/viewer/video/engine/VideoThumbnailExtractor.kt` | unambiguous |
 | F6 | The only tests in the project are two `assertEquals(3, 1 + 2)` placeholders | `SharedCommonTest.kt`, `SharedLogicDesktopTest.kt` | unambiguous |
 | F7 | `WokaStorage.root` was a `val` pinned to `user.home`, resolved at object init. Any test touching settings or the thumbnail cache would have written into the user's **real** directory | `core/data/WokaStorage.kt:16` | blocked Phase 3 — **fixed in Phase 0** |
+| F8 | `sizeSchemaVersion` defaults to 0 and is **only ever** set to 1 by `migrateSizeSchema` on load. A `settings.json` written by a fresh install therefore carries version 0 and is migrated on the next launch as if it came from the old schema — silently wiping the size defaults chosen in that first session. One line: a state with no file behind it should start at the current version | `core/data/SettingsStore.kt:53` + `WokaSettings.kt:59` | found in Phase 3, unambiguous, `@Ignore`d test written |
+| F9 | `SettingsStore.start` subscribes to its save channel inside a coroutine launched on `Dispatchers.IO`, and the channel has no replay — so a `requestSave()` issued in the moment after the constructor returns reaches a flow with **no collector** and is dropped. Four Phase 3 tests hung on it before `awaitWriterReady` existed. Benign in production (the next change writes, and a shutdown hook flushes on exit), so it delays rather than loses | `core/data/SettingsStore.kt:64` | found in Phase 3, low severity, worked around in the harness |
 
 Inline FQNs, disagreeing extension lists, the thumbnail cache key collision and the timestamp
 triggers were closed by plans 1–2 and are not repeated here.
@@ -120,36 +122,114 @@ two stems must differ. Otherwise a broken checkout would surface as a failing pl
 **Files:** `fixtures/SampleMedia.kt`, `integration/SampleMediaTest.kt`,
 `resources/media/` (20 files + `README.md` + `tools/`)
 
-## Phase 2: Unit tests — the base of the pyramid
+## Phase 2: Unit tests — the base of the pyramid — **done**
 
 Directory `jvmTest/kotlin/com/woka/unit/`. Not one touch of the filesystem, of a process, or of the
 Compose runtime; `IntSize`/`Offset` are used as value types. `internal` is visible from `jvmTest`
-(friend compilation).
+(friend compilation) — confirmed, including `internal` declared in `commonMain`.
+
+**16 files, 172 checks, green.** Three deviations from the table below, each recorded where it bit:
+
+- The subtitle test **was** split, as the table allowed: `SrtParserTest` (12) + `AssParserTest` (14).
+- **Date sorting moved out of `FolderStateMapperTest`.** `MediaItem.lastModified` is stat'd in the
+  constructor, so two items with different timestamps need two real files — the sort physically
+  cannot be exercised on this layer. `NameAsc`/`NameDesc`/`Custom`, folders-first, the hidden and
+  media filters, tie stability and the per-folder settings projection are covered here; the date
+  order moves to `FolderViewModelTest` in Phase 3. Noted in the file's header comment.
+- **`StorageKeyTest` writes files**, as the table already anticipated: the key is `absolutePath |
+  length() | lastModified()`, so it needs something on disk to carry the last two. Everything it
+  writes is under `withTempStorageRoot`.
+
+Two things checked rather than assumed, both clean, so **no new findings**: `formatFps` uses
+`(fps * 1000).toLong()`, and `(long)(29.97 * 1000)` is 29970 on this JVM, not 29969 — the broadcast
+rates are now pinned in the test. `MediaItem` construction on a path that does not exist stats
+nothing that throws.
+
+One fixture bug caught and fixed while writing, not a defect: `clampOffset` on a pinned axis returns
+`-0.0f`, which is the same point on screen but not `assertEquals`-equal to `0f`.
+
+`FileInfoFormat` runs its fractional output through `String.format`, i.e. the default locale, so
+`3.30 MB` is `3,30 MB` in half of Europe. That is correct for a UI, and the assertions accept either
+mark instead of pinning the suite to one machine.
 
 | File | Target | Key checks |
 |------|--------|-----------|
 | `ZoomScaleTest` | `feature/viewer/shell/ZoomScale.kt` | `fitPercent`/`fillPercent` with the container wider and narrower than the media; `presetPercent` for every `ScalePreset`; `zoomBounds` on degenerate sizes (`IntSize.Zero`, 1×1, 16000×16000); `clampPercent`, `stepUp`/`stepDown` at the limits; `snapToPreset` — hit and miss; `sizeModeFor`; `sliderFraction` is monotonic and within `0f..1f` |
 | `ScaleMathTest` | `shell/ScaleMath.kt` | `computeGraphicsScale` for `Preset(Fit/Fill/Actual)` and `Percent`; `contentOverflows` exactly on the boundary |
 | `PanBoundsTest` | `shell/PanBounds.kt` | `panLimits` is 0 when the content does not overflow; `clampOffset` never lets the frame past the edge; `rubberBandOffset` is monotonic, sign-symmetric and decaying |
-| `SizeModeTest` | `shell/SizeMode.kt` | `startSizeMode` with `defaultUseZoom` on and off; `percentIn` for `Preset` and `Percent`. `persistSizeState` needs a repository and moves to `SettingsPersistenceTest` |
+| `SizeModeTest` | `shell/SizeMode.kt` | `startSizeMode` with `defaultUseZoom` on and off, and a stored percentage of 0 or negative; `percentIn` for `Preset` and `Percent`. `persistSizeState` needs a repository and moves to `SettingsPersistenceTest` |
 | `PlaylistWalkTest` | `shell/MediaViewerPlaylist.kt` | `nextPath`: `null` when `repeat != Folder && !shuffle`; `null` with fewer than 2 videos; images stay out of the walk; `Repeat.Folder` wraps to the first; shuffle without folder repeat stops at the end; **`orderFor` is stable across calls** |
 | `TrackMatchingTest` | `video/model/TrackMatching.kt` | `matchRef`: exact match; language-only match; `ref = null`; empty list; two candidates sharing a language |
-| `SubtitleParserTest` | `video/engine/subtitle/SubtitleFileParser.kt`, `SubtitleParser.kt` | SRT: multi-line cue, overlapping timings, empty block, `\r\n`, zero duration. ASS: `Dialogue:` with `{\i1}`, escaped `\N`, commas inside the text. **Split into `SrtParserTest` + `AssParserTest` if one file exceeds 150 lines** |
+| `SrtParserTest` + `AssParserTest` | `video/engine/subtitle/SubtitleFileParser.kt`, `SubtitleParser.kt` | SRT: multi-line cue, overlapping timings, empty block, `\r\n`, zero duration, a short fraction as tenths, `<i>` stripped but `<<SIGN>>` left alone. ASS: `Dialogue:` with `{\i1}`, `{\an8\pos()}`, escaped `\N` and `\h`, commas inside the text, `Comment:` skipped, a malformed timestamp dropping one line and not the file |
 | `HdrInfoTest` | `video/engine/probe/HdrInfo.kt` | (bt709, bt709) → no tone mapping; (smpte2084, bt2020) → tone mapping + wide; HLG/`arib-std-b67`; unknown values do not throw |
 | `WokaSettingsTest` | `core/data/WokaSettings.kt` | JSON round trip; defaults; an unknown field in the file is ignored; malformed JSON does not escape |
 | `TrackPrefsTest` | `core/data/TrackPrefs.kt`, `PlaybackMode.kt` | `TrackRef` serialises and deserialises; `resumeAppliesTo` at the boundaries (very short video, watched almost to the end) |
 | `MediaKindTest` | `core/data/MediaKind.kt` | Classification by extension; case does not matter; unknown extension; file with no extension |
-| `FolderStateMapperTest` | `feature/folder/FolderStateMapper.kt` | Every `SortType`; stable order on equal keys; empty list; selection survives a re-sort |
+| `FolderStateMapperTest` | `feature/folder/FolderStateMapper.kt` | `NameAsc`/`NameDesc`/`Custom`; folders first under every `SortType`; stable order on equal keys; empty list; the Photos/Videos filters; selection survives a re-sort; `folderSettings` per-folder overrides. **Date order needs real mtimes → `FolderViewModelTest`, Phase 3** |
 | `FileInfoFormatTest` | `feature/viewer/shell/FileInfoFormat.kt` | Byte formatting (0, KB, MB, GB), duration (under a minute, hours), dates |
 | `VideoThumbnailHeuristicsTest` | `video/engine/VideoThumbnailHeuristics.kt` | Poster frame selection: very short video, zero duration, rejecting a monochrome frame |
 | `StorageKeyTest` | `core/data/WokaStorage.kt` | `thumbnailFile` is deterministic; differs for same-named files in different directories; safe for non-ASCII paths; changes with mtime or size. Works on `File` objects through `TempStorageRoot`, reading no more than `length()`/`lastModified()` |
 
-**Files:** 14 files in `jvmTest/kotlin/com/woka/unit/` (+1 if the parser test is split)
+**Files:** 16 in `jvmTest/kotlin/com/woka/unit/` — `ZoomScaleTest` (14), `ScaleMathTest` (10),
+`PanBoundsTest` (12), `SizeModeTest` (7), `PlaylistWalkTest` (11), `TrackMatchingTest` (11),
+`SrtParserTest` (12), `AssParserTest` (14), `HdrInfoTest` (7), `WokaSettingsTest` (8),
+`TrackPrefsTest` (13), `MediaKindTest` (10), `FolderStateMapperTest` (11), `FileInfoFormatTest` (12),
+`VideoThumbnailHeuristicsTest` (11), `StorageKeyTest` (9). Every file is under the 150-line mandate.
 
-## Phase 3: Integration tests
+## Phase 3: Integration tests — **done**
 
 Directory `jvmTest/kotlin/com/woka/integration/`. Real filesystem under `TempStorageRoot`, real
 FFmpeg/JavaCV against the Phase 1 corpus, real ViewModels and repositories. No Compose runtime.
+
+**20 files, 152 checks, green** (3 `@Ignore`d: F8, F3, F1). Unit + integration together: **324
+checks, 0 failures.**
+
+What the layer needed beyond the table below:
+
+- **A build change, not a production one.** `shared/build.gradle.kts` now sets `woka.storageRoot` on
+  the `Test` task, pointing at `build/test-storage`. Every `SettingsStore` registers a JVM shutdown
+  hook that writes `settings.json`, and those hooks fire long after a per-test `withTempStorageRoot`
+  has restored the property — without a default for the whole test JVM they would have written into
+  the real `Documents/OldValencia/Woka`. F7 fixed the *reachability*; this makes the safe root the
+  default rather than something each test has to remember. Verified after a full run: the real
+  directory is untouched, `build/test-storage/settings.json` holds what the hooks wrote.
+- **`support/` grew a harness layer** so the split files below share one definition each:
+  `Await` (`waitFor`/`awaitTrue`/`awaitValue`), `HotFlow` (`withCollector` — both ViewModels publish
+  `WhileSubscribed`, so with no collector `state.value` never leaves its initial value and every
+  assertion would pass for the wrong reason), `SettingsWriter` (`awaitWriterReady`, `onSettingsDisk`,
+  `awaitSettingsWrite`), `MediaProbes` (`onGrabber`, `onSubtitleStreams`, `firstCueStart`),
+  `PlayerHarness` (`onPlayer`, `onOpenPlayer`), `FolderHarness`, `MediaCopies`, `KoinOnce`.
+- **Koin is started once for the whole test JVM and never stopped** (`startKoinOnce`). The decode
+  loop reads `AppDependencies.settingsRepository` for playback resume, and `AppDependencies` caches
+  its `by inject()` delegates for the life of the process — restarting the container between tests
+  would leave them pointing at a dead one.
+- **The virtual clock does not reach any of this.** `SettingsStore` debounces on `Dispatchers.IO`,
+  the listing runs on IO, the sort on Default, and frames arrive on the decoder's own threads. The
+  ViewModel tests install an `UnconfinedTestDispatcher` as `Dispatchers.Main` — enough for the scope
+  to exist — and then **poll**, because everything underneath is real.
+
+**A fixture was added, and the corpus README says why.** `textsubs.mkv` (23 KB): every container in
+Phase 1 was cut to three or four seconds, which sliced out every subtitle event. `S01E01` and
+`DualVideo` still *declare* their `subrip` tracks and the probe lists them — the failure message read
+`declares [#9 subrip, #10 subrip, #11 subrip], parsed {}` — so the embedded-text path had no fixture
+at all. Phase 1's "ffmpeg cannot synthesise this" reasoning covers bitmap subtitles, not text ones,
+so it is muxed rather than worked around. The declared-but-empty case is now itself a test.
+
+Two claims from the table below **could not be asserted on this corpus** and are recorded rather than
+faked:
+
+- *"the S01E02 poster is not monochrome"* — every fixture is a few seconds of low-motion footage that
+  `isMonochrome` rejects, including the 1080p one, so the extractor rightly falls back to its first
+  candidate. The pipeline is asserted end to end (size, the file written, the bytes read back);
+  poster *quality* moves to a manual case, TC-VID.
+- *"`broken.mkv` errors"* for the thumbnail path — its first 2 KB still hold a decodable frame, so it
+  is an error path for playback but not for the extractor. A file of pure garbage covers that; the
+  truncated container gets its own test saying the extractor is right to use what it finds.
+
+Two further notes, both checked rather than assumed: `kotlinx.serialization` has `encodeDefaults`
+off, so a `false` reaches `settings.json` by being **absent** — asserting its presence would assert
+the wrong thing. And `ImageLoader.load` does not guard `Image.makeFromEncoded`; it throws on a
+corrupt file, and `MediaThumbnails` is where that becomes a placeholder. Both are tested as they are.
 
 | File | What it integrates | Key checks |
 |------|--------------------|-----------|
@@ -164,7 +244,14 @@ FFmpeg/JavaCV against the Phase 1 corpus, real ViewModels and repositories. No C
 | `ImageLoaderTest` | `ImageLoader` + Skia | `still.png/.jpg/.webp` → 640×480; a broken file returns `null` rather than crashing; **`exif_rot90.jpg` returns 480×640** (the F3 test — red until the fix, which is expected and recorded, not "fixed" by weakening the test) |
 | `ThumbnailPipelineTest` | `VideoThumbnailExtractor` + `WokaStorage` + `ImageBitmapCache` | The `S01E02` poster is not monochrome, is ≤ 400 px on its longer side, and the cache file is created; a second call reads the cache instead of decoding; the F1 test — N successive loads of large images do not grow retained references without bound (written after the eviction policy is decided, Phase 7) |
 
-**Files:** 11 files in `jvmTest/kotlin/com/woka/integration/`
+**Files:** 20 in `jvmTest/kotlin/com/woka/integration/` — the 150-line mandate forced seven splits,
+each along a real boundary: `SettingsPersistenceTest` (9) + `SettingsRecordsTest` (9) +
+`SizeStatePersistenceTest` (3) · `SubtitleStreamTest` (6) + `BitmapSubtitleTest` (8) ·
+`SubtitleFileTest` (10) + `SubtitleCharsetTest` (9) · `MediaProbeTest` (10) +
+`MediaChapterProbeTest` (5) · `FolderViewModelTest` (6) + `FolderSelectionTest` (7) ·
+`VideoSeekTest` (8) + `VideoTransportTest` (8) · `ThumbnailPipelineTest` (7) +
+`ThumbnailCacheTest` (5). Plus `SampleMediaTest` (3), `LocalMediaRepositoryTest` (11),
+`HomeViewModelTest` (9), `ImageLoaderTest` (10), `VideoPlayerEngineTest` (9). Longest file: 146.
 
 ## Phase 4: UI automation — Compose
 
@@ -271,9 +358,16 @@ Order: crashes and leaks → functional defects → the file size mandate.
 - **F3** (EXIF) — apply `Orientation` when decoding a still image; `ImageLoaderTest` goes green. The
   requirement is already written into `pending/media-editor-plan.md` ("EXIF-orientation-aware load"),
   so this fix also closes a precondition of the editor.
+- **F8** (size defaults wiped on the first restart) — a state with no file behind it should start at
+  the current schema version, so `migrateSizeSchema` only ever sees a file that really is old. Drop
+  the `@Ignore` on `SettingsPersistenceTest`'s last case; it then passes.
+- **F9** (first save dropped) — optional, and lower priority than the rest: give the save channel
+  `replay = 1`, or await the collector in `start()`. Nothing is lost today because the shutdown hook
+  flushes; if it is left as is, say so in `SettingsStore` and delete `awaitWriterReady`'s workaround
+  comment rather than leaving the harness implying a bug that was decided against.
 - **F1** (cache) — **Valik decides.** Options: an LRU capped by entry count; an LRU capped by total
   pixels; separate caps for grid posters and full-size viewer frames. The plan records the options,
-  it does not choose. Once decided, the corresponding part of `ThumbnailPipelineTest` is written.
+  it does not choose. Once decided, the corresponding part of `ThumbnailCacheTest` is written.
 - **F4** (HDR for photos) — a scope decision: either extend tone mapping to still images, or state
   explicitly in `implemented/hdr-tonemapping-plan.md` that HDR is video-only.
 - Files pushed past 130–150 lines **during the fix pass** are split here, along a meaningful
@@ -296,10 +390,11 @@ Order: crashes and leaks → functional defects → the file size mandate.
 
 ## Definition of done
 
-- The pyramid holds by check count: unit > integration > UI automation > manual. Target is roughly
-  95 / 55 / 25 / 24.
+- The pyramid holds by check count: unit > integration > UI automation > manual. Target was roughly
+  95 / 55 / 25 / 24; the layers landed at **172 / 152**, so the shape holds with room to spare.
 - `:shared:build` is green; every `@Ignore` carries its reason in the message.
 - `ai/docs/testing/manual/` is filled in, every case has its "why this is not automated" field, and a
   run is recorded under `results/`.
 - Every finding marked unambiguous is closed; F1 and F4 are either closed by Valik's decision or
-  explicitly deferred with a reason.
+  explicitly deferred with a reason. F8 and F9 were found in Phase 3 and join the Phase 7 list —
+  F8 has a red-until-fixed test already written and `@Ignore`d, F9 is worked around in the harness.

@@ -48,3 +48,16 @@ kotlin {
         }
     }
 }
+
+// A safe storage root for the whole test JVM, not just for the tests that ask.
+// Every SettingsStore registers a shutdown hook that writes settings.json, and
+// those hooks fire long after any per-test `withTempStorageRoot` has restored the
+// property — without a default they would land in the real
+// `Documents/OldValencia/Woka`. The literal must match `STORAGE_ROOT_PROPERTY`;
+// Gradle cannot see the Kotlin const.
+tasks.withType<Test>().configureEach {
+    systemProperty(
+        "woka.storageRoot",
+        layout.buildDirectory.dir("test-storage").get().asFile.absolutePath
+    )
+}

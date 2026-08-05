@@ -1,0 +1,146 @@
+package com.woka.integration
+
+import com.woka.core.data.ResumeMode
+import com.woka.core.data.SettingsRepositoryImpl
+import com.woka.core.data.SortType
+import com.woka.core.data.ViewLayout
+import com.woka.core.data.WokaSettings
+import com.woka.core.data.WokaStorage
+import com.woka.feature.viewer.shell.SizeMode
+import com.woka.feature.viewer.shell.persistSizeState
+import com.woka.support.awaitSettingsWrite
+import com.woka.support.awaitTrue
+import com.woka.support.awaitWriterReady
+import com.woka.support.onSettingsDisk
+import com.woka.support.withTempStorageRoot
+import java.io.File
+import kotlin.test.Ignore
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+
+/**
+ * The disk layer: what reaches `settings.json` and what comes back from it. The
+ * setter coercions and the record bookkeeping are in `SettingsRecordsTest`.
+ *
+ * The three fields `migrateSizeSchema` resets on load — `defaultUseZoom`,
+ * `scalePreset`, `defaultZoomPercent` — are asserted **on disk** rather than
+ * through a reopened repository. See F8: a file this suite wrote is migrated as
+ * if it came from the old schema, so a reopen would not see them.
+ */
+class SettingsPersistenceTest {
+
+    @Test
+    fun `a change reaches the file and comes back on the next launch`() {
+        onSettingsDisk { repository ->
+            repository.setTheme("Dark")
+            repository.addLinkedFolder("D:/Photos")
+            awaitSettingsWrite(""""theme": "Dark"""")
+            val reopened = SettingsRepositoryImpl().settings.value
+            assertEquals("Dark", reopened.theme)
+            assertEquals(listOf("D:/Photos"), reopened.linkedFolders)
+        }
+    }
+
+    @Test
+    fun `no file yet means the shipped defaults, and no crash`() {
+        withTempStorageRoot {
+            assertFalse(WokaStorage.settingsFile.exists())
+            assertEquals(WokaSettings(), SettingsRepositoryImpl().settings.value)
+        }
+    }
+
+    @Test
+    fun `a corrupt file falls back to the defaults instead of taking the app down`() {
+        withTempStorageRoot { root ->
+            root.mkdirs()
+            WokaStorage.settingsFile.writeText("{ this was truncated mid-writ")
+            assertEquals(WokaSettings(), SettingsRepositoryImpl().settings.value)
+        }
+    }
+
+    @Test
+    fun `a corrupt file is replaced by the next write rather than kept forever`() {
+        withTempStorageRoot { root ->
+            root.mkdirs()
+            WokaStorage.settingsFile.writeText("not json at all")
+            val repository = SettingsRepositoryImpl()
+            repository.awaitWriterReady()
+            repository.setTheme("Light")
+            awaitSettingsWrite(""""theme": "Light"""")
+            assertEquals("Light", SettingsRepositoryImpl().settings.value.theme)
+        }
+    }
+
+    @Test
+    fun `a coerced value is what lands on disk, not the raw one`() {
+        onSettingsDisk { repository ->
+            repository.setDefaultZoomPercent(9000)
+            repository.setResumeMinDuration(999)
+            repository.setMediaVolume(4f)
+            awaitSettingsWrite(""""defaultZoomPercent": 1600""")
+            assertEquals(240, SettingsRepositoryImpl().settings.value.resumeMinDurationMinutes)
+            assertEquals(1f, SettingsRepositoryImpl().settings.value.mediaVolume)
+        }
+    }
+
+    @Test
+    fun `two folders keep their own layout and sort across a restart`() {
+        onSettingsDisk { repository ->
+            repository.setFolderLayout("D:/Photos", ViewLayout.BigGrid)
+            repository.setFolderSort("D:/Photos", SortType.DateDesc)
+            repository.setFolderLayout("D:/Films", ViewLayout.SmallGrid)
+            repository.setFolderSort("D:/Films", SortType.NameDesc)
+            awaitSettingsWrite("D:/Films")
+            val reopened = SettingsRepositoryImpl().settings.value
+            assertEquals(ViewLayout.BigGrid, reopened.folderLayouts["D:/Photos"])
+            assertEquals(SortType.DateDesc, reopened.folderSorts["D:/Photos"])
+            assertEquals(ViewLayout.SmallGrid, reopened.folderLayouts["D:/Films"])
+            assertEquals(SortType.NameDesc, reopened.folderSorts["D:/Films"])
+        }
+    }
+
+    @Test
+    fun `resume settings survive the round trip`() {
+        onSettingsDisk { repository ->
+            repository.setResumeMode(ResumeMode.LongOnly)
+            repository.setResumeMinDuration(45)
+            repository.setPlaybackPosition("D:/Films/a.mkv", 640_000L)
+            awaitSettingsWrite(""""resumeMode": "LongOnly"""")
+            val reopened = SettingsRepositoryImpl().settings.value
+            assertEquals(ResumeMode.LongOnly, reopened.resumeMode)
+            assertEquals(45, reopened.resumeMinDurationMinutes)
+            assertEquals(640_000L, reopened.playbackPositions["D:/Films/a.mkv"])
+        }
+    }
+
+    @Test
+    fun `a burst of writes is coalesced into one valid file`() {
+        onSettingsDisk { repository ->
+            repeat(60) { repository.setTheme("Theme$it") }
+            awaitSettingsWrite(""""theme": "Theme59"""")
+            assertEquals("Theme59", SettingsRepositoryImpl().settings.value.theme)
+            awaitTrue("the temp file to be cleaned up") {
+                !File(WokaStorage.root, "settings.json.tmp").exists()
+            }
+        }
+    }
+
+    @Test
+    @Ignore(
+        "F8: sizeSchemaVersion defaults to 0 and is only ever set by the migration on " +
+            "load, so a settings.json this build wrote is migrated as if it came from " +
+            "the old schema — wiping the size defaults chosen in the first session. " +
+            "Fix in Phase 7, then drop this annotation."
+    )
+    fun `size defaults chosen on a fresh install survive the first restart`() {
+        onSettingsDisk { repository ->
+            persistSizeState(repository, SizeMode.Zoom(200))
+            awaitSettingsWrite(""""defaultZoomPercent": 200""")
+            val restarted = SettingsRepositoryImpl().settings.value
+            assertTrue(restarted.defaultUseZoom, "the migration ran on a file it wrote itself")
+            assertEquals(200, restarted.defaultZoomPercent)
+        }
+    }
+}

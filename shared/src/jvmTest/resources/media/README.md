@@ -27,6 +27,7 @@ in the file names or in the stream metadata.
 | `WokaSample.S01E04.2160p.HDR.TEST.idx` / `.sub` | VobSub pair | external bitmap subtitles |
 | `WokaSample.BitmapSubs.mkv` | h264 1920×1080, 10:20; embedded `hdmv_pgs_subtitle` **and** `dvd_subtitle` | `BitmapSubtitleSource`, `BitmapSubtitleIndex` |
 | `WokaSample.DualVideo.mkv` | **two video streams** — ffv1 `yuv420p10le` PQ/BT.2020 and h264 8-bit BT.709; audio `aac`(eng) + `ac3`(rus, titled); two `subrip` | video-track switching, `readHdrInfo` on real colour metadata |
+| `textsubs.mkv` | E02's picture and audio plus **two `subrip` tracks that carry packets** — `eng` and `rus` | `decodeEmbeddedSubtitles` on the text path |
 | `chapters.mkv` | 3 chapters: 0–0.8, 0.8–2.0, 2.0–3.0 s | `MediaChapterProbe`, chapter ticks |
 | `noaudio.mkv` | video, no audio stream | volume and media keys on the boundary case |
 | `broken.mkv` | first 2 KB of a valid container | error paths |
@@ -78,6 +79,22 @@ Built from the E02 stand-in:
 "$FF" -y -i "$E2" -f ffmetadata -i chapters.txt -map 0:v:0 -map 0:a:0 \
       -map_metadata 1 -c copy "$D/chapters.mkv"
 head -c 2048 "$E2" > "$D/broken.mkv"
+```
+
+Added in Phase 3. Every container above was cut to three or four seconds, which
+sliced out every subtitle event: `S01E01` and `DualVideo` still *declare* their
+`subrip` tracks and a probe lists them, but a demux pass yields no packets, so
+the embedded-text path had no fixture at all. Text subtitles are the one thing
+ffmpeg will mux happily, so this is muxed rather than worked around:
+
+```sh
+"$FF" -y -i "$D/WokaSample.S01E02.2160p.HDR.TEST.mkv" \
+      -i "$D/WokaSample.S01E02.2160p.HDR.TEST.en.srt" \
+      -i "$D/WokaSample.S01E01.2160p.HDR.TEST.ru.srt" \
+      -map 0:v:0 -map 0:a:0 -map 1:0 -map 2:0 -c:v copy -c:a copy -c:s srt \
+      -metadata:s:s:0 "language=eng" -metadata:s:s:0 "title=English" \
+      -metadata:s:s:1 "language=rus" -metadata:s:s:1 "title=Русские" \
+      "$D/textsubs.mkv"
 ```
 
 Stills:
