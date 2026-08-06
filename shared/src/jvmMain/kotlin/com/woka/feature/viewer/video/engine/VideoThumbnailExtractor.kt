@@ -75,8 +75,10 @@ internal object VideoThumbnailExtractor {
             }
             selectedImage?.let { saveAndDecode(it, previewFile, file) }
         } finally {
-            grabber.stop()
-            grabber.release()
+            // Guarded, or a `start()` that threw is masked by whatever `stop()`
+            // throws on top of it and the real cause never leaves this method (F5).
+            runCatching { grabber.stop() }
+            runCatching { grabber.release() }
         }
     }
 

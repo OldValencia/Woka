@@ -8,8 +8,9 @@ inside this plan.
 Third of three. Order: `package-restructure-feature-first.md` → `code-quality-refactor.md` →
 **this one**. The first two are done; every path below has been checked against the current tree.
 
-**Progress:** Phases 0–5 done. The pyramid stands at **172 / 152 / 40 / 38** and the shape holds.
-**Phase 6 next** — the run.
+**Progress:** Phases 0–5 done, and Phase 7's findings are closed — F1, F2, F5, F8, F9 fixed; F3 and
+F4 closed by measurement (F4 moved to `pending/rare-image-formats-and-frame-sets.md`). The pyramid
+stands at **172 / 158 / 40 / 38** and the shape holds. **Phase 6 next** — the manual run.
 
 ---
 
@@ -35,15 +36,15 @@ states the split up front.
 
 | # | Finding | Where | Status |
 |---|---------|-------|--------|
-| F1 | Full-size bitmaps are cached in a `ConcurrentHashMap` **with no eviction** — every image opened stays in RAM at native resolution for the lifetime of the process. The missing policy is commented in the code as a deferred decision | `core/ui/image/ImageBitmapCache.kt:17` | confirmed by reading, needs a measurement |
-| F2 | The bitmap is loaded twice on every file change: `state.imageBitmap = loadThumbnail(activeItem)` in two consecutive `LaunchedEffect`s | `feature/viewer/shell/MediaViewerScreenEffects.kt:46` and `:83` | confirmed, unambiguous |
-| F3 | EXIF orientation is not applied to still images — `Image.makeFromEncoded` ignores it, so camera photos open sideways | `feature/viewer/image/ImageLoader.kt` | confirm with a fixture |
-| F4 | HDR tone mapping only runs for video frames; HDR photos (HEIF/AVIF/PNG with PQ) never reach it | `feature/viewer/shell/MediaViewerFrame.kt` + `video/HdrImagePainter` | scope decision |
-| F5 | `grabber.stop()`/`release()` sit unguarded in `finally`: if `start()` threw, `stop()` throws on top and masks the original cause | `feature/viewer/video/engine/VideoThumbnailExtractor.kt` | unambiguous |
+| F1 | Full-size bitmaps are cached in a `ConcurrentHashMap` **with no eviction** — every image opened stays in RAM at native resolution for the lifetime of the process. The missing policy is commented in the code as a deferred decision | `core/ui/image/ImageBitmapCache.kt:17` | **fixed in Phase 7** — byte-budget LRU |
+| F2 | The bitmap is loaded twice on every file change: `state.imageBitmap = loadThumbnail(activeItem)` in two consecutive `LaunchedEffect`s | `feature/viewer/shell/MediaViewerScreenEffects.kt:46` and `:83` | **fixed in Phase 7** |
+| F3 | EXIF orientation is not applied to still images — `Image.makeFromEncoded` ignores it, so camera photos open sideways | `feature/viewer/image/ImageLoader.kt` | **not a defect — see Phase 7** |
+| F4 | HDR tone mapping only runs for video frames; HDR photos (HEIF/AVIF/PNG with PQ) never reach it | `feature/viewer/shell/MediaViewerFrame.kt` + `video/HdrImagePainter` | **moved to `pending/rare-image-formats-and-frame-sets.md`** |
+| F5 | `grabber.stop()`/`release()` sit unguarded in `finally`: if `start()` threw, `stop()` throws on top and masks the original cause | `feature/viewer/video/engine/VideoThumbnailExtractor.kt` | **fixed in Phase 7** |
 | F6 | The only tests in the project are two `assertEquals(3, 1 + 2)` placeholders | `SharedCommonTest.kt`, `SharedLogicDesktopTest.kt` | unambiguous |
 | F7 | `WokaStorage.root` was a `val` pinned to `user.home`, resolved at object init. Any test touching settings or the thumbnail cache would have written into the user's **real** directory | `core/data/WokaStorage.kt:16` | blocked Phase 3 — **fixed in Phase 0** |
 | F8 | `sizeSchemaVersion` defaults to 0 and is **only ever** set to 1 by `migrateSizeSchema` on load. A `settings.json` written by a fresh install therefore carries version 0 and is migrated on the next launch as if it came from the old schema — silently wiping the size defaults chosen in that first session. One line: a state with no file behind it should start at the current version | `core/data/SettingsStore.kt:53` + `WokaSettings.kt:59` | found in Phase 3, unambiguous, `@Ignore`d test written |
-| F9 | `SettingsStore.start` subscribes to its save channel inside a coroutine launched on `Dispatchers.IO`, and the channel has no replay — so a `requestSave()` issued in the moment after the constructor returns reaches a flow with **no collector** and is dropped. Four Phase 3 tests hung on it before `awaitWriterReady` existed. Benign in production (the next change writes, and a shutdown hook flushes on exit), so it delays rather than loses | `core/data/SettingsStore.kt:64` | found in Phase 3, low severity, worked around in the harness |
+| F9 | `SettingsStore.start` subscribes to its save channel inside a coroutine launched on `Dispatchers.IO`, and the channel has no replay — so a `requestSave()` issued in the moment after the constructor returns reaches a flow with **no collector** and is dropped. Four Phase 3 tests hung on it before `awaitWriterReady` existed. Benign in production (the next change writes, and a shutdown hook flushes on exit), so it delays rather than loses | `core/data/SettingsStore.kt:64` | **fixed in Phase 7** — `replay = 1` |
 
 Inline FQNs, disagreeing extension lists, the thumbnail cache key collision and the timestamp
 triggers were closed by plans 1–2 and are not repeated here.
@@ -183,7 +184,8 @@ Directory `jvmTest/kotlin/com/woka/integration/`. Real filesystem under `TempSto
 FFmpeg/JavaCV against the Phase 1 corpus, real ViewModels and repositories. No Compose runtime.
 
 **20 files, 152 checks, green** (3 `@Ignore`d: F8, F3, F1). Unit + integration together: **324
-checks, 0 failures.**
+checks, 0 failures.** Phase 7 took this layer to **21 files, 158 checks, no `@Ignore` left**: the
+three annotations came off, and `ImageCacheEvictionTest` replaced the stub F1 had reserved.
 
 What the layer needed beyond the table below:
 
@@ -242,7 +244,7 @@ corrupt file, and `MediaThumbnails` is where that becomes a placeholder. Both ar
 | `VideoPlayerEngineTest` | `VideoPlayerState` + grabber | Opening and closing `S01E02` without leaking a grabber; a double `release()` is safe; a missing file gives a clear error rather than an `NPE`; `broken.mkv` errors instead of hanging |
 | `VideoSeekTest` | The seek subsystem | Seek to 0, to the middle, past the duration, backwards; a frame arrives after each and its timestamp lands within tolerance of the request; seek while paused |
 | `SubtitleIntegrationTest` | Scan, encodings, stream decode, bitmap | Next to `S01E01.mkv` the scan finds `.srt`, `.ru.srt`, `.rus.srt`, and they do **not** attach to `S01E02.mkv`; extension case does not matter; `.rus.srt` in CP1251 reads without mojibake (`SubtitleFileCharset`); `S01E01` — embedded text cues are non-empty with increasing timings; `BitmapSubs.mkv` — `BitmapSubtitleSource` returns a non-empty rectangle for both PGS and VobSub, `BitmapSubtitleIndex` releases a cue after its `end`. **Split into `SubtitleFileTest` + `SubtitleStreamTest` if it exceeds 150 lines** |
-| `ImageLoaderTest` | `ImageLoader` + Skia | `still.png/.jpg/.webp` → 640×480; a broken file returns `null` rather than crashing; **`exif_rot90.jpg` returns 480×640** (the F3 test — red until the fix, which is expected and recorded, not "fixed" by weakening the test) |
+| `ImageLoaderTest` | `ImageLoader` + Skia | `still.png/.jpg/.webp` → 640×480; a broken file returns `null` rather than crashing; **`exif_rot90.jpg` returns 480×640** (written `@Ignore`d as the F3 test, on the assumption it would be red; Phase 7 ran it and it was green — see F3 there) |
 | `ThumbnailPipelineTest` | `VideoThumbnailExtractor` + `WokaStorage` + `ImageBitmapCache` | The `S01E02` poster is not monochrome, is ≤ 400 px on its longer side, and the cache file is created; a second call reads the cache instead of decoding; the F1 test — N successive loads of large images do not grow retained references without bound (written after the eviction policy is decided, Phase 7) |
 
 **Files:** 20 in `jvmTest/kotlin/com/woka/integration/` — the 150-line mandate forced seven splits,
@@ -451,26 +453,66 @@ measurement for F1.
 
 Order: crashes and leaks → functional defects → the file size mandate.
 
+**Done, and `:shared:build` is green with no `@Ignore` anywhere in the suite.** F2, F5, F8, F9 and
+F1 are fixed; F3 and F4 are closed by measurement rather than code — one because the defect was not
+there, the other because nothing it would improve can be opened yet. What is left in this phase is
+the file-size sweep and whatever Phase 6 turns up.
+
 - **F7** (storage root) — already done in Phase 0 as a precondition; here only the check that the
-  production path is unchanged.
-- **F2** (double load) — drop one of the two `LaunchedEffect`s; make sure the `showConflictDialog`
-  branch still reloads the bitmap after the PiP conflict is confirmed.
-- **F5** (`finally` throwing over an exception) — wrap `stop()`/`release()` in `runCatching`.
-- **F3** (EXIF) — apply `Orientation` when decoding a still image; `ImageLoaderTest` goes green. The
-  requirement is already written into `pending/media-editor-plan.md` ("EXIF-orientation-aware load"),
-  so this fix also closes a precondition of the editor.
-- **F8** (size defaults wiped on the first restart) — a state with no file behind it should start at
-  the current schema version, so `migrateSizeSchema` only ever sees a file that really is old. Drop
-  the `@Ignore` on `SettingsPersistenceTest`'s last case; it then passes.
-- **F9** (first save dropped) — optional, and lower priority than the rest: give the save channel
-  `replay = 1`, or await the collector in `start()`. Nothing is lost today because the shutdown hook
-  flushes; if it is left as is, say so in `SettingsStore` and delete `awaitWriterReady`'s workaround
-  comment rather than leaving the harness implying a bug that was decided against.
-- **F1** (cache) — **Valik decides.** Options: an LRU capped by entry count; an LRU capped by total
-  pixels; separate caps for grid posters and full-size viewer frames. The plan records the options,
-  it does not choose. Once decided, the corresponding part of `ThumbnailCacheTest` is written.
-- **F4** (HDR for photos) — a scope decision: either extend tone mapping to still images, or state
-  explicitly in `implemented/hdr-tonemapping-plan.md` that HDR is video-only.
+  production path is unchanged. Confirmed: production still resolves
+  `user.home/Documents/OldValencia/Woka` when the property is unset.
+- **F2** (double load) — **done.** The decode left `LaunchedEffect(activeItem)` entirely; the
+  `LaunchedEffect(activeItem, showConflictDialog)` below it now owns the only call, and it already
+  covered both paths — a plain file change *and* the reload after the PiP conflict is confirmed.
+  `state.activeItemPath` stays where it was, so the video player is still gated before any decode.
+- **F5** (`finally` throwing over an exception) — **done.** `runCatching { grabber.stop() }` and the
+  same for `release()`.
+- **F3** (EXIF) — **not a defect, and nothing was changed.** The `@Ignore`d test had never actually
+  run, so its redness was assumed rather than observed. Instrumented against the fixture:
+  `ExifOrientation` parsed `Orientation=6` correctly, but `Image.makeFromEncoded` **already returns
+  480×640** — skiko's decoder applies the tag itself. The rotation written for this fix was a second
+  one, and turned the photo back. Both it and the probe were deleted; `ImageLoader` is untouched and
+  carries a comment saying why. `ImageLoaderTest`'s case is un-`@Ignore`d and green, kept as the
+  guard for a toolchain that stops doing this.
+  Two things this leaves open: `pending/media-editor-plan.md` still lists "EXIF-orientation-aware
+  load" as a requirement — for the *editor*'s own save path, which is a different question from
+  reading — and the **grid** goes through Coil, not `ImageLoader`, so whether Coil honours the tag is
+  unmeasured. TC-IMG-04 is the place to look at both.
+- **F8** (size defaults wiped on the first restart) — **done.** `SIZE_SCHEMA_VERSION = 1` in
+  `WokaSettings.kt`, and `SettingsRepositoryImpl` seeds `WokaSettings(sizeSchemaVersion =
+  SIZE_SCHEMA_VERSION)`. The **field's** default deliberately stays 0: that is what a `settings.json`
+  written before the field existed decodes to, and it is the only signal such a file is genuinely
+  old — flipping the field default instead would have silently disabled the migration it exists for.
+  `@Ignore` dropped; the case passes. Two neighbouring cases that compared a fresh repository against
+  a literal `WokaSettings()` now compare against a named `freshDefaults`.
+- **F9** (first save dropped) — **done**, `replay = 1` on the save channel. The cache is empty until
+  the first emission, so it cannot manufacture a write, and it lives no longer than the
+  `SettingsStore` instance. `awaitWriterReady` stays but its KDoc no longer describes a bug: what it
+  guards now is the 150 ms debounce, not a lost signal.
+- **F1** (cache) — **done. Valik chose a byte-budget LRU with one shared budget**, 256 MB.
+  `ImageBitmapCache` became a `LinkedHashMap(accessOrder = true)` under a lock, with
+  `retainedBytes` readable for measurement (TC-PERF-04) and the budget overridable through
+  `woka.imageCacheBytes`, the same shape as `woka.storageRoot`.
+  The numbers behind the choice: entries here differ by three orders of magnitude — a video poster
+  is ≤ 400 px (~0.36 MB) while a still is cached at native resolution (48 MB at 12 MP, 96 MB at
+  24 MP, 200 MB at 50 MP) — so a cap on the *count* bounds nothing, being anywhere from 36 MB to
+  20 GB for the same hundred entries. And it is not heap: Skia holds the pixels natively, so `-Xmx`
+  does not bound it and the collector never feels the pressure. Paging a folder of forty 24 MP
+  photos retained ~3.8 GB, and it was not "what you looked at" — the carousel calls the same
+  `loadThumbnail`.
+  One budget rather than a bucket per population, because the eviction that hurts is asymmetric: a
+  poster pushed out is re-read from its PNG in `thumbnailsDir`, while a still has no second-level
+  cache and must be decoded again. The policy that protects recent stills is the one worth having.
+  `ThumbnailCacheTest`'s `@Ignore`d stub is replaced by `ImageCacheEvictionTest` (7 checks) driven at
+  a 3 MB budget, so the cases cost megabytes rather than gigabytes.
+- **F4** (HDR for photos) — **moved out, not deferred silently.** Measured first: the formats that
+  carry HDR stills in practice are HEIC and AVIF, and the app opens neither — `heic` sits in
+  `MediaKind.UNDECODABLE_EXTENSIONS` and `avif` is not listed as an image at all. There is no file
+  today that extending tone mapping would improve. Valik's call was to write a plan covering the
+  rare formats as a whole rather than patch this one symptom, so F4 is now Phase 5 of
+  `pending/rare-image-formats-and-frame-sets.md`, behind the decoders it depends on.
+  `implemented/hdr-tonemapping-plan.md` § 7 records the same, so the video plan states its own
+  boundary instead of leaving it implied.
 - Files pushed past 130–150 lines **during the fix pass** are split here, along a meaningful
   boundary. Files the review did not touch are only listed and **not split without separate
   approval**.
@@ -492,10 +534,11 @@ Order: crashes and leaks → functional defects → the file size mandate.
 ## Definition of done
 
 - The pyramid holds by check count: unit > integration > UI automation > manual. Target was roughly
-  95 / 55 / 25 / 24; the layers landed at **172 / 152 / 40 / 38**, so the shape holds all the way up.
-- `:shared:build` is green; every `@Ignore` carries its reason in the message.
+  95 / 55 / 25 / 24; the layers landed at **172 / 158 / 40 / 38**, so the shape holds all the way up.
+- `:shared:build` is green, and after Phase 7 there is **no `@Ignore` left in the suite** — the rule
+  was that each one carries its reason; all three reasons have since been resolved.
 - `ai/docs/testing/manual/` is filled in, every case has its "why this is not automated" field, and a
   run is recorded under `results/`.
 - Every finding marked unambiguous is closed; F1 and F4 are either closed by Valik's decision or
-  explicitly deferred with a reason. F8 and F9 were found in Phase 3 and join the Phase 7 list —
-  F8 has a red-until-fixed test already written and `@Ignore`d, F9 is worked around in the harness.
+  explicitly deferred with a reason. **F2, F5 and F8 are fixed and F3 is closed as not-a-defect**;
+  what is left is F1, F4 and F9, all three of them decisions rather than work.

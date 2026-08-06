@@ -236,6 +236,12 @@ In `MediaViewerContent.kt` around the `Image(bitmap = frameToDraw, …)` (line 1
 
 - **Dolby Vision Profile 5** (single-layer, IPT/ICtCp, no HDR10 base): needs RPU reshaping (libplacebo or a DV decoder). Our current file is **P8.1**, so this is not needed now. If P5 files appear later, they will look wrong under this plan → route to Option M (libmpv) or add a P5 detector that shows a "unsupported HDR variant" hint. Detection already records `dvProfile`.
 - **HDR display output** (passthrough to an HDR monitor): always tone-map to SDR for now.
+- **Still images.** Tone mapping here is a **video-frame** feature: `HdrInfo` is read from FFmpeg
+  stream ids inside the player, and `MediaViewerFrame` selects `HdrImagePainter` from
+  `video.player.currentFrameHdrInfo`, so a photo has no route to that decision at all. Raised as F4
+  in `viewer-verification-pass.md`, and owned from here on by
+  `pending/rare-image-formats-and-frame-sets.md` § Phase 5 — the decoders have to land first, since
+  the formats that carry HDR stills in practice are HEIC and AVIF and the app opens neither.
 
 ---
 

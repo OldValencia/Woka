@@ -40,7 +40,8 @@ The app entry point (`main()`) routes based on CLI arguments:
   and the 130–150 line mandate closed across the whole tree. Fixed on the way: disagreeing extension
   lists, a thumbnail cache keyed on file *name*, events colliding inside one clock tick, and a seek
   that signalled before it wrote its target.
-- **Viewer verification pass:** next, still in `features/pending/`.
+- **Viewer verification pass:** in `features/pending/` — test pyramid built (172 unit / 158
+  integration / 40 UI automation) plus `ai/docs/testing/manual/`; the manual run is what remains.
 
 ### Phase 4: The Viewer (Preview & Carousel)
 - **UX:** Clicking a media file in the grid dims the background and opens the Viewer overlay.
@@ -50,6 +51,9 @@ The app entry point (`main()`) routes based on CLI arguments:
   - Clicking `X` does **not** close the app. Instead, it transitions to the **Folder View** of that file's parent folder.
   - If the parent folder is not currently linked, the app presents a prompt/button: "Pin this folder to Home Screen?".
 - **Logic:** High-quality rendering via Skia, zoom (scroll), pan (drag), and video playback via JavaCV.
+- **Rare image formats:** `features/pending/rare-image-formats-and-frame-sets.md` — HEIC/HEIF and
+  AVIF decoding, one "frames inside a file" mechanic for bursts, Live Photos and animated
+  GIF/WebP alike, and HDR tone mapping for stills.
 
 ### Phase 5: Media Editor (Editing tools)
 - **UX:** Click `Edit` in the Viewer toolbar.

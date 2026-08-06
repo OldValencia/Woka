@@ -10,7 +10,10 @@ import java.io.File
 
 class SettingsRepositoryImpl : SettingsRepository {
     private val scope = CoroutineScope(Dispatchers.IO)
-    private val _settings = MutableStateFlow(WokaSettings())
+    // Seeded at the current schema version, not at the field's default: with no
+    // file behind it there is nothing to migrate, and leaving it at 0 made the
+    // next launch treat this session's own writes as pre-Step-8b records (F8).
+    private val _settings = MutableStateFlow(WokaSettings(sizeSchemaVersion = SIZE_SCHEMA_VERSION))
     override val settings: StateFlow<WokaSettings> = _settings.asStateFlow()
 
     // Disk access, debouncing and atomic writes live in SettingsStore (§2 size mandate).

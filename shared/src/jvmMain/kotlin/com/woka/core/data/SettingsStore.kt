@@ -26,7 +26,13 @@ internal class SettingsStore(private val scope: CoroutineScope) {
     // Rapid setting changes (e.g. zoom steps while "remember" is on) are coalesced
     // into a single debounced write, collected on ONE coroutine so writes never run
     // concurrently — concurrent writes previously corrupted settings.json.
+    //
+    // `replay = 1` because [start] subscribes from a coroutine on Dispatchers.IO:
+    // a requestSave() in the window before that collector exists reached nobody and
+    // was dropped (F9). The cache is empty until the first emission, so this cannot
+    // manufacture a write of its own, and it lives no longer than this instance.
     private val saveRequests = MutableSharedFlow<Unit>(
+        replay = 1,
         extraBufferCapacity = 1,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
@@ -49,14 +55,18 @@ internal class SettingsStore(private val scope: CoroutineScope) {
      * under the old percent-of-fitted base mean a different size and cannot be
      * converted (the fitted size depends on a panel that does not exist at load
      * time). Reset the default once and move on.
+     *
+     * Only ever reached with a file in hand: a fresh install starts at
+     * [SIZE_SCHEMA_VERSION] (see `SettingsRepositoryImpl`), so the absent-field 0
+     * below means "written before the field existed" and nothing else.
      */
     private fun migrateSizeSchema(loaded: WokaSettings): WokaSettings {
-        if (loaded.sizeSchemaVersion >= 1) return loaded
+        if (loaded.sizeSchemaVersion >= SIZE_SCHEMA_VERSION) return loaded
         return loaded.copy(
             defaultUseZoom = false,
             scalePreset = ScalePreset.Fit,
             defaultZoomPercent = 100,
-            sizeSchemaVersion = 1
+            sizeSchemaVersion = SIZE_SCHEMA_VERSION
         )
     }
 

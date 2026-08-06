@@ -9,18 +9,19 @@ import com.woka.fixtures.SampleMedia
 import com.woka.support.videoCopy
 import com.woka.support.withTempStorageRoot
 import kotlinx.coroutines.runBlocking
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
-import kotlin.test.fail
 
 private fun poster(item: MediaItem.Video) = runBlocking { MediaThumbnails.loadThumbnail(item) }
 
 private fun episodeTwo() = SampleMedia.episode(2, ".mkv")
 
-/** The two caches a poster passes through: `ImageBitmapCache` and the PNG on disk. */
+/**
+ * The two caches a poster passes through: `ImageBitmapCache` and the PNG on disk.
+ * The in-memory one's eviction policy is `ImageCacheEvictionTest` (F1).
+ */
 class ThumbnailCacheTest {
 
     @Test
@@ -71,16 +72,5 @@ class ThumbnailCacheTest {
             assertNotNull(poster(item))
             assertTrue(WokaStorage.thumbnailsDir.isDirectory)
         }
-    }
-
-    @Test
-    @Ignore(
-        "F1: ImageBitmapCache is a ConcurrentHashMap with no eviction, so every " +
-            "full-size bitmap opened stays in RAM for the life of the process. The " +
-            "policy is Valik's decision (Phase 7); this check is written once it is " +
-            "made, and needs the measurement recorded in TC-PERF."
-    )
-    fun `loading many large images does not grow retained memory without bound`() {
-        fail("written once the eviction policy exists; there is nothing to assert against yet")
     }
 }

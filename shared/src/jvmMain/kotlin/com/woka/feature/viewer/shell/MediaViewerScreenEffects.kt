@@ -39,11 +39,11 @@ internal fun MediaViewerActiveItemEffects(
             state.activeItemPath = null
             return@LaunchedEffect
         }
-        // Assigned before the thumbnail loads, not after: this is the gate the
-        // video player is created on, and awaiting a decode first would delay
-        // playback by however long that decode takes.
+        // This is the gate the video player is created on, so it is set here and
+        // the decode is left to the effect below — awaiting one first would delay
+        // playback by however long it takes (F2: both effects used to decode, so
+        // every file change loaded its bitmap twice).
         state.activeItemPath = path
-        state.imageBitmap = loadThumbnail(activeItem)
         // Returning from fullscreen (PiP) is the same file: carry the size state
         // back instead of resetting it to the global preset.
         val fromPip = PipManager.isTransitioningToMain &&
@@ -78,6 +78,8 @@ internal fun MediaViewerActiveItemEffects(
         )
     }
 
+    // The single decode, for both paths: a plain file change, and the reload after
+    // the PiP conflict above is confirmed and `showConflictDialog` goes false.
     LaunchedEffect(activeItem, showConflictDialog) {
         if (!showConflictDialog && activeItem != null) {
             state.imageBitmap = loadThumbnail(activeItem)

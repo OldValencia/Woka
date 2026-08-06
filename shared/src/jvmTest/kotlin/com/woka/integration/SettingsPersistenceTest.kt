@@ -1,6 +1,7 @@
 package com.woka.integration
 
 import com.woka.core.data.ResumeMode
+import com.woka.core.data.SIZE_SCHEMA_VERSION
 import com.woka.core.data.SettingsRepositoryImpl
 import com.woka.core.data.SortType
 import com.woka.core.data.ViewLayout
@@ -14,7 +15,6 @@ import com.woka.support.awaitWriterReady
 import com.woka.support.onSettingsDisk
 import com.woka.support.withTempStorageRoot
 import java.io.File
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -24,11 +24,18 @@ import kotlin.test.assertTrue
  * The disk layer: what reaches `settings.json` and what comes back from it. The
  * setter coercions and the record bookkeeping are in `SettingsRecordsTest`.
  *
- * The three fields `migrateSizeSchema` resets on load — `defaultUseZoom`,
- * `scalePreset`, `defaultZoomPercent` — are asserted **on disk** rather than
- * through a reopened repository. See F8: a file this suite wrote is migrated as
- * if it came from the old schema, so a reopen would not see them.
+ * The three fields `migrateSizeSchema` touches — `defaultUseZoom`, `scalePreset`,
+ * `defaultZoomPercent` — are asserted **on disk**. That began as a way around F8,
+ * which is now fixed; it stays because the file is what the next launch reads, and
+ * the last case here asserts the reopen as well.
  */
+/**
+ * What a repository with nothing behind it holds. Not `WokaSettings()`: the field's
+ * own default stays 0 so a file written before it existed can still be recognised
+ * as old, and the repository seeds the current version instead (F8).
+ */
+private val freshDefaults = WokaSettings(sizeSchemaVersion = SIZE_SCHEMA_VERSION)
+
 class SettingsPersistenceTest {
 
     @Test
@@ -47,7 +54,7 @@ class SettingsPersistenceTest {
     fun `no file yet means the shipped defaults, and no crash`() {
         withTempStorageRoot {
             assertFalse(WokaStorage.settingsFile.exists())
-            assertEquals(WokaSettings(), SettingsRepositoryImpl().settings.value)
+            assertEquals(freshDefaults, SettingsRepositoryImpl().settings.value)
         }
     }
 
@@ -56,7 +63,7 @@ class SettingsPersistenceTest {
         withTempStorageRoot { root ->
             root.mkdirs()
             WokaStorage.settingsFile.writeText("{ this was truncated mid-writ")
-            assertEquals(WokaSettings(), SettingsRepositoryImpl().settings.value)
+            assertEquals(freshDefaults, SettingsRepositoryImpl().settings.value)
         }
     }
 
@@ -128,12 +135,6 @@ class SettingsPersistenceTest {
     }
 
     @Test
-    @Ignore(
-        "F8: sizeSchemaVersion defaults to 0 and is only ever set by the migration on " +
-            "load, so a settings.json this build wrote is migrated as if it came from " +
-            "the old schema — wiping the size defaults chosen in the first session. " +
-            "Fix in Phase 7, then drop this annotation."
-    )
     fun `size defaults chosen on a fresh install survive the first restart`() {
         onSettingsDisk { repository ->
             persistSizeState(repository, SizeMode.Zoom(200))

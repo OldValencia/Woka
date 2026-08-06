@@ -8,19 +8,18 @@ import com.woka.core.data.WokaStorage
 private const val PROBE_THEME = "woka-writer-ready-probe"
 
 /**
- * Blocks until the settings writer is actually listening.
+ * Blocks until the settings writer has actually written something.
  *
- * `SettingsStore.start` subscribes to its save channel inside a coroutine
- * launched on `Dispatchers.IO`, and the channel has no replay — so a
- * `requestSave()` issued in the moment after the constructor returns can reach a
- * flow with no collector and be dropped (**F9**). Production never notices: the
- * next change writes, and a shutdown hook flushes on exit. A test that changes
- * one setting and waits for the file would hang, which is exactly what four of
- * these tests did before this existed.
+ * This began as the workaround for F9 — the save channel had no replay, so a
+ * `requestSave()` issued before `start`'s collector existed was dropped, and four
+ * of these tests hung on it. F9 is fixed (`replay = 1`), so nothing is lost any
+ * more; what remains is *timing*: the writer subscribes on `Dispatchers.IO` and
+ * debounces 150 ms, so a test that changes one setting and immediately reads the
+ * file still races it. This is the "the file is now live" barrier, not a bug
+ * workaround.
  *
- * Asking repeatedly at a cadence slower than the 150 ms debounce, rather than
- * hammering: re-emitting faster than the debounce would keep cancelling the
- * write it is waiting for.
+ * Asking repeatedly at a cadence slower than the debounce, rather than hammering:
+ * re-emitting faster than 150 ms would keep cancelling the write it waits for.
  */
 fun SettingsRepository.awaitWriterReady(timeoutMs: Long = 10_000L) {
     val original = settings.value.theme

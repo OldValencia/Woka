@@ -24,6 +24,16 @@ enum class SubtitleFont { System, Serif, Monospace }
  */
 enum class ResumeMode { Off, LongOnly, Always }
 
+/**
+ * The size-state schema this build writes. The field below still **defaults to 0**
+ * on purpose: that default is what a `settings.json` written before the field
+ * existed decodes to, and it is the only signal that such a file is genuinely old.
+ * A state with no file behind it is not old, so `SettingsRepositoryImpl` starts
+ * from this constant instead — otherwise the very first session's size defaults
+ * were migrated away on the next launch (F8).
+ */
+const val SIZE_SCHEMA_VERSION = 1
+
 @Immutable
 @Serializable
 data class PinnedSession(

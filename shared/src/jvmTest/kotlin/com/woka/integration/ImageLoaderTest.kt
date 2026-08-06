@@ -17,7 +17,6 @@ import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.nio.file.Files
 import javax.imageio.ImageIO
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
@@ -100,12 +99,12 @@ class ImageLoaderTest {
         assertNotNull(ImageBitmapCache[two.absolutePath])
     }
 
+    /**
+     * F3 turned out not to exist: skiko's decoder applies `Orientation` itself, so
+     * this passed the moment the `@Ignore` came off, with no loader change. It is
+     * kept as the regression guard for a toolchain that stops doing it.
+     */
     @Test
-    @Ignore(
-        "F3: ImageLoader goes straight to Image.makeFromEncoded, which ignores the " +
-            "EXIF Orientation tag, so a camera photo shot in portrait opens on its " +
-            "side. Fix in Phase 7, then drop this annotation."
-    )
     fun `an EXIF-rotated photo comes back the way round it was taken`() {
         val bitmap = assertNotNull(ImageLoader.load(SampleMedia.file(EXIF_ROTATED)))
         assertEquals(EXIF_EXPECTED_WIDTH, bitmap.width)

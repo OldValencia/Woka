@@ -19,6 +19,9 @@ object ImageLoader {
         // `makeFromEncoded(ByteArray)` — no `Data` overload, no
         // `makeDeferredFromEncodedData` — so the encoded file is materialised on
         // the heap whatever the caller does (§10.7).
+        // EXIF orientation needs nothing here: skiko's decoder applies the tag
+        // itself, so a photo shot in portrait already comes back in portrait (F3,
+        // measured rather than assumed — `ImageLoaderTest` guards it).
         val bitmap = Image.makeFromEncoded(file.readBytes()).toComposeImageBitmap()
         ImageBitmapCache[file.absolutePath] = bitmap
         return bitmap

@@ -1,27 +1,92 @@
 package com.woka.core.ui.image
 
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.ImageBitmapConfig
 import kotlinx.coroutines.Dispatchers
-import java.util.concurrent.ConcurrentHashMap
+
+/** Overridable for tests, the same way `woka.storageRoot` is (see `WokaStorage`). */
+const val IMAGE_CACHE_BUDGET_PROPERTY = "woka.imageCacheBytes"
+
+/** 256 MB of decoded pixels. See [ImageBitmapCache] for why that number. */
+private const val DEFAULT_BUDGET_BYTES = 256L * 1024 * 1024
 
 /**
  * Decode cache shared by the viewer's still loader and the video poster-frame
  * extractor. Split out of `ThumbnailLoader` when that object was divided between
  * `viewer/image` and `viewer/video/engine`.
  *
- * There is deliberately **no eviction policy** here: that is what the original
- * had, and changing it is a review decision, not a restructure one. See
- * `viewer-verification-pass.md` § F1.
+ * **Least-recently-used, bounded by bytes** (F1). It used to be a
+ * `ConcurrentHashMap` with no eviction at all, and the two populations in here
+ * differ by three orders of magnitude — a video poster is ≤ 400 px (~0.36 MB)
+ * while a still is cached at *native* resolution (96 MB for a 24 MP photo). A cap
+ * on the number of entries would therefore have bounded nothing: a hundred of them
+ * is anywhere between 36 MB and 20 GB. It is also not the JVM heap being spent —
+ * Skia holds the pixels natively, so `-Xmx` does not bound this and the collector
+ * never feels the pressure.
+ *
+ * One shared budget rather than a bucket per population: a poster evicted by a
+ * large photo is re-read from its PNG in `thumbnailsDir`, which is cheap, whereas
+ * a still has no second-level cache and re-decoding it is the expensive case — so
+ * the one policy that keeps recent stills is the one that wants keeping. 256 MB
+ * holds two or three full-size photos, which is what paging back and forth by one
+ * actually asks for, plus several hundred posters.
  */
 object ImageBitmapCache {
-    private val entries = ConcurrentHashMap<String, ImageBitmap>()
+
+    /** True LRU: `accessOrder` moves a read entry to the young end. */
+    private val entries = LinkedHashMap<String, ImageBitmap>(16, 0.75f, true)
+
+    private val lock = Any()
+
+    /** Decoded bytes currently held. Read it to measure — TC-PERF-04 does. */
+    var retainedBytes: Long = 0L
+        get() = synchronized(lock) { field }
+        private set
+
+    val budgetBytes: Long
+        get() = System.getProperty(IMAGE_CACHE_BUDGET_PROPERTY)?.toLongOrNull()
+            ?: DEFAULT_BUDGET_BYTES
 
     /** Two decodes at a time, as the loader has always throttled them. */
     val ioDispatcher = Dispatchers.IO.limitedParallelism(2)
 
-    operator fun get(key: String): ImageBitmap? = entries[key]
+    operator fun get(key: String): ImageBitmap? = synchronized(lock) { entries[key] }
 
-    operator fun set(key: String, bitmap: ImageBitmap) {
-        entries[key] = bitmap
+    operator fun set(key: String, bitmap: ImageBitmap) = synchronized(lock) {
+        entries.put(key, bitmap)?.let { retainedBytes -= it.byteSize }
+        retainedBytes += bitmap.byteSize
+        evictDownToBudget(except = key)
+    }
+
+    /**
+     * Drops the oldest entries until the budget is met. [except] is the entry just
+     * admitted: a single photo larger than the whole budget still has to be
+     * drawable, so it is kept and the cache simply holds nothing else.
+     */
+    private fun evictDownToBudget(except: String) {
+        val oldestFirst = entries.entries.iterator()
+        while (retainedBytes > budgetBytes && oldestFirst.hasNext()) {
+            val entry = oldestFirst.next()
+            if (entry.key == except) continue
+            retainedBytes -= entry.value.byteSize
+            oldestFirst.remove()
+        }
     }
 }
+
+/**
+ * What one entry costs. Everything reaching this cache is `N32Premul` — both
+ * `Image.makeFromEncoded` and the poster's surface snapshot produce it — but the
+ * config is read rather than assumed, so an accounting that silently halves is not
+ * one toolchain change away.
+ */
+private val ImageBitmap.byteSize: Long
+    get() {
+        val bytesPerPixel = when (config) {
+            ImageBitmapConfig.Alpha8 -> 1
+            ImageBitmapConfig.Rgb565 -> 2
+            ImageBitmapConfig.F16 -> 8
+            else -> 4
+        }
+        return width.toLong() * height * bytesPerPixel
+    }
