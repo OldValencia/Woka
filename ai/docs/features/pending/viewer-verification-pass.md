@@ -8,9 +8,8 @@ inside this plan.
 Third of three. Order: `package-restructure-feature-first.md` → `code-quality-refactor.md` →
 **this one**. The first two are done; every path below has been checked against the current tree.
 
-**Progress:** Phases 0–3 done · Phase 5 done · **Phase 4 next, and unblocked** — the feasibility gate
-is green (`ui/ComposeHarnessTest.kt`), the first product file is written
-(`ui/SettingsToggleUiTest.kt`), and the `testTag` production change is approved (2026-08-06).
+**Progress:** Phases 0–5 done. The pyramid stands at **172 / 152 / 40 / 38** and the shape holds.
+**Phase 6 next** — the run.
 
 ---
 
@@ -255,120 +254,118 @@ each along a real boundary: `SettingsPersistenceTest` (9) + `SettingsRecordsTest
 `ThumbnailCacheTest` (5). Plus `SampleMediaTest` (3), `LocalMediaRepositoryTest` (11),
 `HomeViewModelTest` (9), `ImageLoaderTest` (10), `VideoPlayerEngineTest` (9). Longest file: 146.
 
-## Phase 4: UI automation — Compose
+## Phase 4: UI automation — Compose — **done**
 
-Directory `jvmTest/kotlin/com/woka/ui/`. `runComposeUiTest` from `compose.uiTest`, real composables,
-driven through `performClick`/`performKeyInput`/`performMouseInput`. What is checked is a
-**scenario**, not a formula: formulas are already covered by Phase 2.
+Directory `jvmTest/kotlin/com/woka/ui/`. `androidx.compose.ui.test.v2.runComposeUiTest`, real
+composables, driven through `performClick`/`performKeyInput`/`performMouseInput`. What is checked is
+a **scenario**, not a formula: formulas are already covered by Phase 2.
 
-- **Production change — approved by Valik, 2026-08-06.** The tree has **zero** `testTag`. The plan
-  adds `Modifier.testTag` narrowly: the folder grid (container + cell), the viewer frame, the viewer
-  toolbar (size button, `X`), the carousel, the settings overlay. Nothing but `testTag` is touched
-  in those files.
+**7 files, 40 checks, green, and not one line of production code was touched.**
 
-  What the approval rests on: `testTag` writes one string into the semantics tree and does nothing
-  else. It takes no part in measurement, layout, drawing or input, so **not one pixel changes** —
-  it is `data-testid` for Compose, the thing an e2e runner hooks onto. The two honest costs: the
-  string ships in the release binary (nobody strips it) and each tagged element gains one semantics
-  modifier node. Both are immeasurable against composition, but neither is literally zero.
+### The approved `testTag` change was not needed, and was not made
 
-  **The rule still binds: a tag only where no textual or semantic anchor already exists.** The list
-  above is a draft of candidates, not a licence — `SettingsToggleUiTest` already drives a real
-  settings row with no tag at all, because the row has both. Check each candidate against a real
-  anchor first, and tag only what fails that check. Approval removes the blocker; it does not turn
-  the draft into the answer.
+Approval stood (2026-08-06) and the rule attached to it — *a tag only where no textual or semantic
+anchor already exists* — turned out to close every candidate on the list:
 
-  **Do not land tags ahead of the tests that use them.** A tagged tree with nothing exercising it is
-  a production edit no one can justify from the diff — write each `*UiTest` and the tags it needs in
-  the same pass.
+| Candidate | What it turned out to have | Outcome |
+|-----------|---------------------------|---------|
+| settings rows, theme control, categories | their own labels as text | no tag |
+| the settings close button | `contentDescription = "Close settings"` | no tag |
+| viewer Prev / Next | `contentDescription = "Previous"` / `"Next"` on the `Icon` | no tag |
+| the info dialog | renders `"File Information"`, `"Name: …"`, `"Close"` | no tag |
+| folder cell | `FolderCard` draws `data.name` and is `clickable` | no tag |
+| **folder grid container** | a bare `LazyVerticalGrid` — nothing | tag, **handed in by the test** |
+| **viewer player box** | focusable, drawn, but anonymous | tag, **handed in by the test** |
 
-- **Anchor check, first candidate — the folder grid.** Done, so `FolderGridUiTest` starts from a
-  verdict rather than a survey:
+The last two need an anchor and have none, but both composables already take a `modifier`
+parameter — `FolderGrid(modifier = …)` and `MediaViewerPlayer(modifier = …)` — so the test appends
+its own `Modifier.testTag(…)` at the call site. The tag exists only inside the test's composition;
+the shipped tree is byte-for-byte what it was. The plan's own rule ("do not land tags ahead of the
+tests that use them") ended up meaning no tags at all.
 
-  | Candidate | Anchor today | Verdict |
-  |-----------|--------------|---------|
-  | grid container, `FolderGrid.kt:93` | a bare `LazyVerticalGrid` — no text, no click action, no content description | **tag needed** |
-  | grid cell, `FolderCard(path, onClick, showTitle = true, …)` | renders `data.name` as the title beneath the cover, and carries `onClick` | **no tag** — `onNodeWithText(fileName)` plus `hasClickAction()` |
+### What made the anchors work: `clickable` merges
 
-  The cell's anchor is **conditional**: the title is drawn only when `showTitle` is on, which the
-  grid feeds from the `showTitles` setting. `FolderGridUiTest` therefore drives `FolderCard`
-  directly with `showTitle = true`, the same way `SettingsToggleUiTest` drives a single row — that
-  keeps the anchor a property of the test's own setup instead of a setting it hopes is enabled. If a
-  later scenario has to go through the real grid with titles off, that cell earns a tag then, and
-  only then.
+`Modifier.clickable` sets `mergeDescendants`, so in the default merged tree a label *is* the
+clickable box that draws it: `onNodeWithText("Dark").performClick()` hits the segment.
+`onNodeWithText("Dark").onParent()` climbs **past** it to the settings card, whose own `clickable`
+exists only to absorb background clicks — the click then lands and does nothing, which is exactly
+how the first two attempts failed. The merge stops at the next merging node down, which is why the
+full-screen scrim and the card do not swallow every label into one ambiguous match.
 
-  `FolderScreen.kt:55` also renders a literal `"Loading..."`, which is a ready-made anchor for the
-  loading state — no tag, and no need to reach into `isLoading`.
+### The viewer is driven at `MediaViewerPlayer`, not `MediaViewerScreen`
 
-  **The list is already smaller than it looked.** `SettingsToggleUiTest` (4 checks) is written and
-  green **without a single tag**: `SettingsToggleRow` renders its title and subtitle as text, and
-  `IosSwitch` carries a click action, so `onNodeWithText` plus `hasClickAction()` cover the row
-  completely. Every toggle-shaped control in Settings is reachable the same way — check each
-  candidate against a real anchor before tagging it, rather than tagging the list as drafted.
+`MediaViewerScreen` resolves `AppDependencies`, `PipManager`, `LocalGlobalShortcuts` and the system
+media controls. `MediaViewerPlayer` takes every input as a parameter — including `loadThumbnail`,
+which is what keeps `ImageLoader` and FFmpeg out of the layer entirely: the tests hand it a blank
+`ImageBitmap(800, 600)` and the files on disk are never decoded. `support/ViewerHarness.kt` wires it
+the way the screen does (`mediaViewerPlayerModifier` for focus, keys and the pointer-move hook) and
+composes `MediaViewerAmbientEffects` **only on request** — that is where the 2.5 s auto-hide timer
+lives, and it would otherwise put the chrome away in the middle of every other scenario.
 
-- **The entry point is `support/UiHarness.kt`,** so no scenario re-derives the obvious:
-  `onUiWithSettings { repository -> … }` for anything that has to prove a write landed, `onUi { … }`
-  for pure UI. Both go through the v2 runner. Two shapes worth knowing before writing the next file:
-  the v2 `runComposeUiTest` takes a `CoroutineContext` **first**, so a block is called rather than
-  passed through; and the receiver type is still `androidx.compose.ui.test.ComposeUiTest` — there is
-  no v2 `ComposeUiTest`, only the runner moved. A test class using the harness needs
-  `@OptIn(ExperimentalTestApi::class)` because that receiver is experimental.
+Three mechanics worth inheriting rather than rediscovering:
 
-- **Two things the first product test established, so Phase 4 need not rediscover them:**
-  `SettingsOverlay(isOpen, onClose, repo)` takes its repository as a parameter and does not reach
-  into Koin, so a screen can be driven with a real `SettingsRepositoryImpl` on a throwaway root —
-  no container needed for this one. And `Theme.colors` resolves with **no theme provider wrapped
-  around the composable**: production components render bare in `setContent`, so the tests need no
-  scaffolding composable of their own.
+- **The v2 runner's virtual clock drives `delay`.** `waitUntil { !state.isUiVisible }` and
+  `mainClock.advanceTimeBy(6_000)` both fire the auto-hide `LaunchedEffect`, so the suite does not
+  spend 2.5 real seconds per case. This is the concrete payoff of using v2 over the deprecated v1.
+- **A pointer wake needs two moves and no `waitForIdle`.** The first `moveTo` is delivered as
+  `Enter`, and the handler listens for `Move`; then idling would let that same virtual clock run the
+  timer straight back down and hide what was just woken.
+- **`withKeyDown(Key.CtrlLeft) { pressKey(Key.I) }` does reach `event.isCtrlPressed`** — keyboard
+  modifiers survive injection into a *key* event.
 
-| File | Scenario |
-|------|----------|
-| `FolderGridUiTest` | Grid over a temp folder of fixtures: N cells render; clicking a cell in select mode toggles the selection; Ctrl+A selects all; leaving select mode clears the selection |
-| `ViewerNavigationUiTest` | Opening the viewer on a given file; ←/→ change file and do not wrap at the ends; clicking Prev/Next; `Esc` calls `onClose` and does not leak the event to the global shortcuts |
-| `ViewerZoomUiTest` | The wheel changes the percentage; a double click toggles Fit ↔ Actual; dragging moves the frame when it overflows and does nothing when it does not; resizing the container under an active zoom does not let the frame out of bounds |
-| `ViewerChromeUiTest` | The chrome auto-hides on its timer and returns on mouse movement; hovering a popover keeps it visible; the info dialog opens and shows the dimensions |
-| `SettingsOverlayUiTest` | Switching the theme in the overlay reaches `SettingsRepository`; toggles write their value; the overlay closes |
+### Four things the plan expected that the code does not do
 
-Constraints recorded up front: `App()` pulls in `AppDependencies`, a Koin singleton with cached
-`by inject()` delegates — Phase 3 established that the container must be started **once for the test
-JVM and never stopped** (`support/KoinOnce.kt`), not per class, or those delegates end up pointing at
-a dead container. The UI tests work at the screen and viewer level.
+Recorded rather than asserted into existence, in the same spirit as Phase 3's two unassertable
+claims. None is a defect; each is a plan sentence written ahead of the tree.
 
-**The feasibility question is answered: the layer is viable, and does not need `@Ignore`.**
-`ui/ComposeHarnessTest.kt` is a gate, not a product test — six checks on composables it owns, no
-production code touched. All six pass headless on Windows:
+- **Ctrl+A does not select all in the grid.** `selectAll` exists on the ViewModel and
+  `FolderSelectionTest` covers it, but only the dock's select-mode accessory calls it — the grid's
+  `onPreviewKeyEvent` binds Ctrl +/− and nothing else. Asserting the shortcut would have meant
+  writing it.
+- **A double click does not toggle Fit ↔ Actual.** `mediaTapGestures` doubles the current percentage
+  around the cursor, and returns to Fit only once the ceiling is reached. Both halves are asserted
+  against what the code does.
+- **The info dialog shows no dimensions.** `FileMetaBlock` renders name, path, size and date; pixel
+  dimensions come from `StreamInfoSections`, which is reached only when `mediaTracks != null` — a
+  video. "The dialog states the image's dimensions" is a requirement nothing implements.
+- **Ctrl+Scroll cannot be injected.** `mediaViewerGestures` reads `keyboardModifiers.isCtrlPressed`
+  off the *pointer* event, and a held `Ctrl` from `performKeyInput` does not attach itself to a
+  scroll injected separately. The wheel zoom stays covered as arithmetic by `ZoomScaleTest` and by
+  hand as TC-IMG-03.
 
-| Mechanism | Verdict |
-|-----------|---------|
-| `runComposeUiTest` + `setContent` composes | works |
-| a node is laid out and `assertIsDisplayed` | works |
-| `Modifier.testTag` is a usable anchor | works |
-| `performClick` → state → recomposition | works |
-| `performKeyInput` to a node holding focus via `FocusRequester` | works |
-| `performMouseInput { click() }` | works |
+One scenario from the table is **not covered and not faked**: "resizing the container under an active
+zoom does not let the frame out of bounds". Nothing clamps on resize — `settlePan` clamps on drag
+release only — so a test here would either pass vacuously or open a finding this pass has not
+confirmed. It goes to Phase 6 as something to look at by hand, not into the suite as an assertion.
 
-So the fallback in this section is not taken. The gate file stays in the tree: if a toolchain bump
-breaks the layer, it says which mechanism went rather than leaving five product tests failing for an
-unclear reason.
+| File | Scenario | Checks |
+|------|----------|--------|
+| `ComposeHarnessTest` | the feasibility gate: composition, layout, tag, click, key, mouse | 6 |
+| `SettingsToggleUiTest` | a real toggle row writes through a real repository and holds no state | 4 |
+| `SettingsOverlayUiTest` | the whole overlay: closed composes nothing; title and four categories; the theme reaches `SettingsRepository` and follows it back; a category swaps the panel; the close button and the scrim both close it; the chosen category survives a reopen | 8 |
+| `FolderGridUiTest` | grid over a real `FolderViewModel` and a real directory: every item gets a cell; an empty folder still lays out and draws none; a click in select mode selects then deselects; a click outside it opens the media instead; leaving select mode clears | 5 |
+| `ViewerNavigationUiTest` | opens on the file it was given; Next/Previous step one at a time; the ends have no button to walk off; a single file has neither; the arrow keys stop at both ends; `Esc` closes on the file that is *open*, not the one it started on | 6 |
+| `ViewerZoomUiTest` | opens fitted and knows both sizes; a double click doubles the zoom; at the ceiling it returns to Fit and re-centres; a drag pans while the content overflows and does nothing while it fits | 5 |
+| `ViewerChromeUiTest` | the chrome is up on open; the idle timer puts it away; a pointer move brings it back; a hovered popover holds it open past the timer and releases it after; `Ctrl+I` opens the info dialog on the current file and `Close` dismisses it | 6 |
 
-Two things for the next session to inherit rather than rediscover:
+Support added this phase: `support/UiHarness.kt` (`onUi`, `onUiWithSettings` — written in the
+previous session), `support/FolderHarness.kt` grew `onUiWithFolder`, and `support/ViewerHarness.kt`
+is new (`onViewer`, `poster`, `ViewerUnderTest`). `onUiWithFolder` awaits the listing **outside**
+`runComposeUiTest`: it lands on real threads (`getItems` on IO, the sort on Default) that the Compose
+clock knows nothing about, so waiting inside would mean polling from the very thread the runner
+drives. `WhileSubscribed(5000)` carries the value across the handover and the composable becomes the
+next collector.
 
-- **Use `androidx.compose.ui.test.v2.runComposeUiTest`.** The v1 function of the same name is
-  deprecated; v2 drives the composition on a `StandardTestDispatcher`, so coroutines queue as they
-  do in production rather than running eagerly. All six checks pass unchanged under it — no extra
-  `waitForIdle` was needed — but the product scenarios must be written against v2 so they do not
-  depend on eager execution the app never has.
-- `click()` inside `performMouseInput` needs an explicit `androidx.compose.ui.test.click` import.
+`shared/build.gradle.kts`'s `woka.storageRoot` default for the test JVM prints
+`settings.json.tmp … used by another process` from time to time: several `SettingsStore` shutdown
+hooks race for the one shared root as the JVM exits. It is writer-thread noise after every assertion
+has run — no test observes it — and it is the cost of the Phase 3 decision to give the whole test JVM
+one safe root rather than none.
 
-The remaining unknown for Phase 4 is **not** the runtime; it is the `testTag` production change
-above, which still needs its own approval before anything is written.
-
-**Files:** 5 in `jvmTest/kotlin/com/woka/ui/`, plus whatever `testTag` additions survive the
-anchor check above. Two exist already, 10 checks, green: `ComposeHarnessTest` (6) as the gate, and
-`SettingsToggleUiTest` (4) as the first product scenario — the "toggles write their value" half of
-`SettingsOverlayUiTest`, done without touching production. Remaining: the theme switch and the
-overlay close for that file, plus `FolderGridUiTest`, `ViewerNavigationUiTest`, `ViewerZoomUiTest`,
-`ViewerChromeUiTest`.
+**Files:** 7 in `jvmTest/kotlin/com/woka/ui/` — `ComposeHarnessTest` (6), `SettingsToggleUiTest` (4),
+`SettingsOverlayUiTest` (8), `FolderGridUiTest` (5), `ViewerNavigationUiTest` (6), `ViewerZoomUiTest`
+(5), `ViewerChromeUiTest` (6). Plus `support/ViewerHarness.kt` and the addition to
+`support/FolderHarness.kt`. Longest file: 152.
 
 ## Phase 5: Manual test cases — a directory of their own — **done**
 
@@ -380,11 +377,9 @@ findings: TC-IMG-04 (F3), TC-IMG-05 (produces the input for the F4 scope decisio
 (produces the measurement for the F1 policy decision), TC-VID-04 (the claim Phase 3 could not assert
 on this corpus).
 
-**One number to settle in Phase 6.** The estimate below was ~24; the real list is 38, and the
-Definition of Done requires `UI automation > manual`. Phase 4 is 5 files plus the 6-check gate, so
-the two layers will land close together. Either Phase 4 comes in above 38 or some of these cases
-fold together — decide it once Phase 4 is written, and do not pad one layer to satisfy the
-inequality.
+**That number is settled.** The estimate here was ~24 and the real list is 38, which put the
+`UI automation > manual` requirement in doubt. Phase 4 landed at **40 checks** across 7 files
+without padding, so the inequality holds on its own and no manual case was folded to make it.
 
 The section below is the original plan for this phase, kept for the reasoning.
 
@@ -497,7 +492,7 @@ Order: crashes and leaks → functional defects → the file size mandate.
 ## Definition of done
 
 - The pyramid holds by check count: unit > integration > UI automation > manual. Target was roughly
-  95 / 55 / 25 / 24; the layers landed at **172 / 152**, so the shape holds with room to spare.
+  95 / 55 / 25 / 24; the layers landed at **172 / 152 / 40 / 38**, so the shape holds all the way up.
 - `:shared:build` is green; every `@Ignore` carries its reason in the message.
 - `ai/docs/testing/manual/` is filled in, every case has its "why this is not automated" field, and a
   run is recorded under `results/`.
