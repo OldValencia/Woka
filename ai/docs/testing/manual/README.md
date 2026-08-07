@@ -1,6 +1,6 @@
 # Manual test cases
 
-The apex of the pyramid in `ai/docs/features/pending/viewer-verification-pass.md`. Everything below
+The apex of the pyramid in `ai/docs/features/implemented/viewer-verification-pass.md`. Everything below
 is here because **a machine cannot check it**: visual correctness, how smooth something feels, OS
 integration, separate native windows, long runs.
 

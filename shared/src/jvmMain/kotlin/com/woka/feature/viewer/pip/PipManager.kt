@@ -36,6 +36,11 @@ object PipManager {
     var containerSize by mutableStateOf(IntSize.Zero)
     var nativeSize by mutableStateOf(IntSize.Zero)
 
+    // Published by `rememberPipWindowMode`: the window's `alwaysOnTop` parameter
+    // is evaluated before the content scope that owns the AWT frame exists, so the
+    // answer has to be readable from outside that scope.
+    var isPipWindow by mutableStateOf(false)
+
     var isTransitioningToMain = false
 
     fun createOrGetState(item: MediaItem, initialVolume: Float): VideoPlayerState {

@@ -68,6 +68,9 @@ internal fun SettingsOverlayContent(
                 CategoryItem("Library", Icons.Static.Folder, selectedCategory, onSelectCategory)
                 CategoryItem("Media Viewer", Icons.Static.Eye, selectedCategory, onSelectCategory)
                 CategoryItem("Video Player", Icons.Static.Video, selectedCategory, onSelectCategory)
+                // Short label: the column is 140.dp and "Picture in Picture"
+                // clips. The panel carries the full name as its section heading.
+                CategoryItem("PiP", Icons.Static.Collapse, selectedCategory, onSelectCategory)
             }
             Spacer(modifier = Modifier.width(28.dp))
             Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
@@ -84,6 +87,7 @@ internal fun SettingsOverlayContent(
                             // Reads the repository itself, so nothing new is
                             // threaded through SettingsOverlay or App.
                             "Video Player" -> VideoPlayerSettingsPanel()
+                            "PiP" -> PipSettingsPanel(settings, repo)
                         }
                     }
                 }

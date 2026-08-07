@@ -12,19 +12,30 @@ import com.woka.core.data.CarouselVisibility
  * would hide the coupling rather than remove it.
  */
 
+/** One extra right-click entry a surface contributes. */
+@Immutable
+data class ViewerMenuEntry(val label: String, val onClick: () -> Unit)
+
 /**
  * Frame-level commands, unchanged from `MediaViewerScreen` down to the context
  * menu in `MediaViewerFrame` — four levels of pure pass-through.
+ *
+ * [showFileActions] exists because the fullscreen/PiP window has no file open in
+ * the sense the three below mean: it used to be handed three no-op lambdas, and
+ * rendered a menu in which every item did nothing.
  */
 @Immutable
 data class ViewerActions(
     val onEdit: () -> Unit,
     val onCopy: () -> Unit,
-    val onInfo: () -> Unit
+    val onInfo: () -> Unit,
+    val showFileActions: Boolean = true,
+    val extra: List<ViewerMenuEntry> = emptyList()
 )
 
-/** For surfaces with no context menu of their own, such as the fullscreen window. */
-val NO_VIEWER_ACTIONS = ViewerActions(onEdit = {}, onCopy = {}, onInfo = {})
+/** For surfaces with no file actions of their own, such as the fullscreen window. */
+val NO_VIEWER_ACTIONS =
+    ViewerActions(onEdit = {}, onCopy = {}, onInfo = {}, showFileActions = false)
 
 /**
  * Where the media sits: the semantic size mode plus the pan offset. Read by the

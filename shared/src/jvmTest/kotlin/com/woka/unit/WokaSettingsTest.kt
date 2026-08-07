@@ -65,6 +65,15 @@ class WokaSettingsTest {
         assertFalse(defaults.defaultUseZoom)
         assertFalse(defaults.carryTracksAcrossFolder)
         assertTrue(defaults.systemMediaControls)
+        // Not conservative on purpose: a PiP window that falls behind whatever you
+        // clicked next is not doing the one job it exists for.
+        assertTrue(defaults.pipAlwaysOnTop)
+    }
+
+    @Test
+    fun `turning Always on Top off survives the round trip`() {
+        val settings = WokaSettings(pipAlwaysOnTop = false)
+        assertFalse(json.decodeFromString<WokaSettings>(json.encodeToString(settings)).pipAlwaysOnTop)
     }
 
     @Test

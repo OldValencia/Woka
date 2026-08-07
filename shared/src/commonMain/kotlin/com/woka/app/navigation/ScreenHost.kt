@@ -58,6 +58,7 @@ fun ScreenHost(
                 path = screen.path,
                 highlightFile = screen.highlightFile,
                 openViewerForId = screen.openViewerForId,
+                offerPin = screen.offerPin,
                 onNavigateToFolder = onNavigateToFolder
             )
         }

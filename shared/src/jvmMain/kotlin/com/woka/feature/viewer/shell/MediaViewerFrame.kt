@@ -53,11 +53,16 @@ fun MediaViewerFrame(
     // frame (it reads `currentFrame` above), and the list was rebuilt each time
     // (§10.6).
     val menuItems = remember(actions) {
-        listOf(
-            ContextMenuItem("Edit") { actions.onEdit() },
-            ContextMenuItem("Copy") { actions.onCopy() },
-            ContextMenuItem("Info") { actions.onInfo() }
-        )
+        val fileActions = if (actions.showFileActions) {
+            listOf(
+                ContextMenuItem("Edit") { actions.onEdit() },
+                ContextMenuItem("Copy") { actions.onCopy() },
+                ContextMenuItem("Info") { actions.onInfo() }
+            )
+        } else {
+            emptyList()
+        }
+        fileActions + actions.extra.map { ContextMenuItem(it.label, it.onClick) }
     }
 
     ContextMenuArea(items = { menuItems }) {

@@ -42,7 +42,8 @@ fun MediaViewerContent(
     onZoomHud: () -> Unit,
     onPlayPause: () -> Unit,
     onToggleFullscreen: () -> Unit,
-    bottomPadding: Dp = 40.dp
+    bottomPadding: Dp = 40.dp,
+    panRequiresCtrl: Boolean = false
 ) {
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
 
@@ -81,7 +82,8 @@ fun MediaViewerContent(
                 onPanActiveChange = { isPanning = it },
                 onZoomHud = onZoomHud,
                 onPlayPause = onPlayPause,
-                onToggleFullscreen = onToggleFullscreen
+                onToggleFullscreen = onToggleFullscreen,
+                panRequiresCtrl = panRequiresCtrl
             ),
         contentAlignment = Alignment.Center
     ) {

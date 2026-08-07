@@ -130,6 +130,9 @@ class SettingsRepositoryImpl : SettingsRepository {
     override fun setSystemMediaControls(enabled: Boolean) =
         update { it.copy(systemMediaControls = enabled) }
 
+    override fun setPipAlwaysOnTop(enabled: Boolean) =
+        update { it.copy(pipAlwaysOnTop = enabled) }
+
     // The update-copy-save pattern every setter goes through.
     private inline fun update(transform: (WokaSettings) -> WokaSettings) {
         _settings.update { current ->

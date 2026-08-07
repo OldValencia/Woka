@@ -45,7 +45,7 @@ fun ToggleCarouselButton(
     onToggleCarousel: () -> Unit,
     isFullscreen: Boolean = false
 ) {
-    ViewerTooltip(if (isFullscreen) "Авто скрытие в фуллскрин режиме" else "Toggle Carousel") {
+    ViewerTooltip(if (isFullscreen) "Dock auto-hides in fullscreen mode" else "Toggle Carousel") {
         Box(
             modifier = Modifier
                 .size(24.dp)
@@ -72,6 +72,32 @@ fun ToggleCarouselButton(
                     CarouselVisibility.ALWAYS_ON -> Theme.colors.accentFolders
                     else -> Theme.colors.textPrimary
                 },
+                modifier = Modifier.size(16.dp)
+            )
+        }
+    }
+}
+
+/**
+ * Shrinks the fullscreen window into a PiP box, or fills the screen again.
+ *
+ * `photo_on_rectangle_angled` — a small frame over a large one — rather than
+ * `Collapse`/`Expand`: the bottom control bar already uses those in this same
+ * window, for leaving it entirely.
+ */
+@Composable
+fun PipWindowButton(isPipWindow: Boolean, onToggle: () -> Unit) {
+    val label = if (isPipWindow) "Fill the screen" else "Shrink to picture-in-picture"
+    ViewerTooltip(label) {
+        Box(
+            modifier = Modifier.size(24.dp).clip(CircleShape).pointerHoverIcon(PointerIcon.Hand)
+                .clickable { onToggle() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(Icons.Static.Navigation),
+                contentDescription = label,
+                tint = if (isPipWindow) Theme.colors.accentFolders else Theme.colors.textPrimary,
                 modifier = Modifier.size(16.dp)
             )
         }

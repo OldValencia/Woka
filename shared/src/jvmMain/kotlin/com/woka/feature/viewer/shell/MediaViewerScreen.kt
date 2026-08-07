@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import com.woka.app.AppDependencies
 import com.woka.core.data.MediaItem
 import com.woka.app.shell.LocalGlobalShortcuts
+import com.woka.core.utils.copyFilesToClipboard
 import com.woka.feature.viewer.pip.PipManager
 import com.woka.feature.viewer.video.MediaViewerSystemControlsEffect
 
@@ -66,7 +67,7 @@ fun MediaViewerScreen(
 
     var showInfoDialog by remember { mutableStateOf(false) }
     val copyAction = {
-        if (activeItem != null) copyFileToClipboard(activeItem.file)
+        if (activeItem != null) copyFilesToClipboard(listOf(activeItem.file.absolutePath))
     }
     val infoAction = { if (activeItem != null) showInfoDialog = true }
     val editAction = { onClose(state.currentId) }

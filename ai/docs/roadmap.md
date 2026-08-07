@@ -4,10 +4,14 @@ Woka is a minimalist, aesthetic (Apple HIG style) desktop media viewer and edito
 
 ## 📍 Architecture & CLI Routing
 
-The app entry point (`main()`) routes based on CLI arguments:
-- `Woka.exe` ➡️ Opens **Home Screen**.
-- `Woka.exe "D:\Path\To\Folder"` ➡️ Opens **Folder View** (Grid of media in that folder).
-- `Woka.exe "D:\Path\To\File.jpg"` ➡️ Opens **Viewer** directly.
+The app entry point (`main(args)`) routes based on CLI arguments — implemented in
+`app/navigation/StartupRoute.kt`, applied by `initKoin(launchArgs)` before the first composition,
+and asserted row by row by `StartupRouteTest`:
+- `./gradlew.bat :desktopApp:run` ➡️ Opens **Home Screen**.
+- `./gradlew.bat :desktopApp:run --args="D:\Path\To\Folder"` ➡️ Opens **Folder View** (Grid of media in that folder).
+- `./gradlew.bat :desktopApp:run --args="D:\Path\To\File.jpg"` ➡️ Opens **Viewer** directly.
+- A path that is not there, or a file the app cannot show, falls back to Home and to the file's
+  parent folder respectively. A launched folder offers itself for pinning to Home.
 
 ---
 
@@ -40,10 +44,18 @@ The app entry point (`main()`) routes based on CLI arguments:
   and the 130–150 line mandate closed across the whole tree. Fixed on the way: disagreeing extension
   lists, a thumbnail cache keyed on file *name*, events colliding inside one clock tick, and a seek
   that signalled before it wrote its target.
-- **Viewer verification pass:** in `features/pending/` — test pyramid built (172 unit / 158
-  integration / 40 UI automation) plus `ai/docs/testing/manual/`; the manual run is what remains.
+- **Viewer verification pass (done):** `features/implemented/viewer-verification-pass.md` — test
+  pyramid built (172 unit / 167 integration / 42 UI automation, `:shared:build` at 383 checks) plus
+  `ai/docs/testing/manual/`, **a permanent artefact re-run over whatever changes, not a one-off
+  checklist**. Both runs are logged in `manual/results/`. Found and fixed on the way: a PiP drag that
+  panned the video and then registered as a click, no CLI routing at all, and a grid "Copy" that
+  meant copy-into-a-folder.
 
-### Phase 4: The Viewer (Preview & Carousel)
+### Phase 4: The Viewer (Preview & Carousel) — **verified**
+Verified end to end by `features/implemented/viewer-verification-pass.md`: the four-layer test pyramid
+plus the manual pass in `ai/docs/testing/manual/`. The "Direct OS Launch Behavior" below is built as
+of that pass; the rare formats are the one part still outstanding.
+
 - **UX:** Clicking a media file in the grid dims the background and opens the Viewer overlay.
 - **UI:** Image centered, bottom carousel (context of the current folder), top toolbar (Title, Zoom, `X` button).
 - **Direct OS Launch Behavior (Double Click):** 
@@ -51,6 +63,9 @@ The app entry point (`main()`) routes based on CLI arguments:
   - Clicking `X` does **not** close the app. Instead, it transitions to the **Folder View** of that file's parent folder.
   - If the parent folder is not currently linked, the app presents a prompt/button: "Pin this folder to Home Screen?".
 - **Logic:** High-quality rendering via Skia, zoom (scroll), pan (drag), and video playback via JavaCV.
+- **Picture in Picture:** the fullscreen window shrinks to a corner box from its toolbar or by an edge
+  drag, and stays above other apps while it is that size — `pipAlwaysOnTop`, on by default, switchable
+  from the window's right-click menu and from Settings → PiP.
 - **Rare image formats:** `features/pending/rare-image-formats-and-frame-sets.md` — HEIC/HEIF and
   AVIF decoding, one "frames inside a file" mechanic for bursts, Live Photos and animated
   GIF/WebP alike, and HDR tone mapping for stills.

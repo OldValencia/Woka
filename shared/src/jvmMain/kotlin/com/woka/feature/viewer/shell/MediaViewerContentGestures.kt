@@ -6,24 +6,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.isCtrlPressed
-import androidx.compose.ui.input.pointer.isMetaPressed
-import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntSize
 import com.woka.feature.viewer.video.engine.VideoPlayerState
-import kotlin.math.abs
-import kotlin.math.roundToInt
 
 /**
- * Pointer gestures for the media area:
- * - `Ctrl + Scroll` zooms one geometric step — **always**, there is no state in
- *   which the gesture is refused — keeping the point under the cursor in place.
- * - Dragging pans whenever the media overflows the panel (`Ctrl` + right button
- *   still works), with resistance past the edge and a clamp on release.
- * - Taps are handled by [mediaTapGestures].
+ * Pointer gestures for the media area, assembled from three modifiers:
+ * - [mediaZoomAndButtonPan] — `Ctrl + Scroll` zooms one geometric step, and
+ *   `Ctrl` + a held button pans while the media overflows the panel.
+ * - A plain drag pans too, with resistance past the edge and a clamp on release.
+ * - [mediaTapGestures] — tap and double-tap.
+ *
+ * [panRequiresCtrl] drops the plain drag and lets `Ctrl + LMB` pan instead. Only
+ * the PiP/fullscreen window sets it: there a plain left drag moves the window
+ * (`pipWindowDraggable`), and until this gate existed it moved the picture with
+ * it (TC-PIP-02).
  */
 @Composable
 fun Modifier.mediaViewerGestures(
@@ -38,7 +35,8 @@ fun Modifier.mediaViewerGestures(
     onPanActiveChange: (Boolean) -> Unit,
     onZoomHud: () -> Unit,
     onPlayPause: () -> Unit,
-    onToggleFullscreen: () -> Unit
+    onToggleFullscreen: () -> Unit,
+    panRequiresCtrl: Boolean = false
 ): Modifier {
     val curMode by rememberUpdatedState(sizeMode)
     val curOffsetX by rememberUpdatedState(offsetX)
@@ -70,58 +68,10 @@ fun Modifier.mediaViewerGestures(
         onOffsetChange(x, y)
     }
 
-    return this
-        .pointerInput(Unit) {
-            awaitPointerEventScope {
-                var panning = false
-                var lastPos = Offset.Zero
-                while (true) {
-                    // Initial pass so Ctrl+RMB pan is intercepted before the child
-                    // ContextMenuArea; non-Ctrl events are left unconsumed and still
-                    // reach the context menu / tap detector on the Main pass.
-                    val event = awaitPointerEvent(PointerEventPass.Initial)
-                    val change = event.changes.first()
-                    val isCtrl = event.keyboardModifiers.isCtrlPressed ||
-                        event.keyboardModifiers.isMetaPressed
-
-                    if (event.type == PointerEventType.Scroll && isCtrl) {
-                        val delta = change.scrollDelta.y
-                        val bounds = zoomBounds(curContainer, curNative)
-                        var percent = curMode.percentIn(curContainer, curNative)
-                        // Trackpads report several units in one event; repeat the
-                        // geometric step rather than scaling a flat one.
-                        repeat(abs(delta).roundToInt().coerceIn(1, 3)) {
-                            percent = if (delta > 0) {
-                                stepDown(percent, bounds)
-                            } else {
-                                stepUp(percent, bounds)
-                            }
-                        }
-                        applyZoom(percent, change.position)
-                        event.changes.forEach { it.consume() }
-                        continue
-                    }
-
-                    val canPan = contentOverflows(curMode, curContainer, curNative)
-                    if (isCtrl && event.buttons.isSecondaryPressed && canPan) {
-                        if (!panning) {
-                            panning = true
-                            lastPos = change.position
-                            onPanActiveChange(true)
-                        } else {
-                            val moved = change.position - lastPos
-                            lastPos = change.position
-                            pan(moved.x, moved.y)
-                        }
-                        change.consume()
-                    } else if (panning) {
-                        panning = false
-                        settlePan()
-                    }
-                }
-            }
-        }
-        .pointerInput(videoState) {
+    val plainDragPan = if (panRequiresCtrl) {
+        Modifier
+    } else {
+        Modifier.pointerInput(videoState) {
             detectDragGestures(
                 onDragStart = { onPanActiveChange(true) },
                 onDragEnd = { settlePan() },
@@ -133,6 +83,20 @@ fun Modifier.mediaViewerGestures(
                 }
             }
         }
+    }
+
+    return this
+        .mediaZoomAndButtonPan(
+            mode = { curMode },
+            container = { curContainer },
+            native = { curNative },
+            ctrlPrimaryPan = panRequiresCtrl,
+            onZoom = { percent, anchor -> applyZoom(percent, anchor) },
+            onPan = { deltaX, deltaY -> pan(deltaX, deltaY) },
+            onPanStart = { onPanActiveChange(true) },
+            onPanEnd = { settlePan() }
+        )
+        .then(plainDragPan)
         .mediaTapGestures(
             videoState = videoState,
             mode = { curMode },

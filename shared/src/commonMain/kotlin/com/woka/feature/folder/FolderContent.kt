@@ -21,7 +21,9 @@ fun FolderContent(
     onOpenMedia: (String) -> Unit,
     highlightFile: String? = null,
     scrollToMediaId: String? = null,
-    onScrollToMediaIdConsumed: () -> Unit = {}
+    onScrollToMediaIdConsumed: () -> Unit = {},
+    offerPin: Boolean = false,
+    onPinOfferResolved: () -> Unit = {}
 ) {
     val settingsRepo = remember { AppDependencies.settingsRepository }
     val settings by settingsRepo.settings.collectAsState()
@@ -77,7 +79,11 @@ fun FolderContent(
             gridScrollIndex = gridState.firstVisibleItemIndex,
             gridScrollOffset = gridState.firstVisibleItemScrollOffset,
             viewModel = viewModel,
-            settingsRepo = settingsRepo
+            settingsRepo = settingsRepo,
+            // `linkedFolders` is what Home lists; `pinnedSessions` above is the
+            // Library's own concept and does not answer this question.
+            showPinOffer = offerPin && path !in settings.linkedFolders,
+            onPinOfferResolved = onPinOfferResolved
         )
 
         FolderGrid(

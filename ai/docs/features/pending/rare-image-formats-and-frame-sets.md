@@ -26,6 +26,10 @@ is editing, so the two should not be written twice.
 | multi-page `.tiff` | **no** — not listed | — | — |
 | HDR still (PQ/HLG `.png`, `.jpg`) | yes | as SDR | as SDR — F4 |
 
+**Confirmed by hand, 2026-08-07 (dbad022)** — TC-IMG-05 in `ai/docs/testing/manual/`, the run logged
+under `manual/results/`: HEIF, HEIC and AVIF do not open at all, and a PQ PNG opens and renders
+without tone mapping. The table above was read off the code; this is the same answer from the app.
+
 Three separate causes, one shape:
 
 1. **No decoder.** `ImageLoader.load` is `Image.makeFromEncoded`, and skia has no HEIF or AVIF.

@@ -61,6 +61,12 @@ fun MediaViewerNormalControls(
     }
 }
 
+/**
+ * The fullscreen/PiP window's row. Info and Edit are **not** here: this window has
+ * no file open in the sense they mean, and both were wired to no-op lambdas —
+ * buttons that looked live and did nothing. The carousel icon stays as the
+ * deliberately inert indicator its own tooltip describes.
+ */
 @Composable
 fun MediaViewerFullscreenControls(
     sizeMode: SizeMode,
@@ -70,9 +76,8 @@ fun MediaViewerFullscreenControls(
     onOffsetReset: () -> Unit,
     carouselMode: CarouselVisibility,
     onToggleCarousel: () -> Unit,
-    onEdit: () -> Unit,
-    onInfo: () -> Unit,
-    isInfoOpen: Boolean,
+    isPipWindow: Boolean,
+    onTogglePipWindow: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     MediaViewerControlsContainer(modifier) {
@@ -80,11 +85,7 @@ fun MediaViewerFullscreenControls(
 
         Box(modifier = Modifier.height(16.dp).width(1.dp).background(Theme.colors.border))
 
-        InfoButton(isInfoOpen, onInfo)
+        PipWindowButton(isPipWindow, onTogglePipWindow)
         ToggleCarouselButton(carouselMode, onToggleCarousel, isFullscreen = true)
-
-        Box(modifier = Modifier.height(16.dp).width(1.dp).background(Theme.colors.border))
-
-        EditButton(onEdit)
     }
 }

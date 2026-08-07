@@ -2,6 +2,10 @@ package com.woka.core.utils
 
 import java.awt.FileDialog
 import java.awt.Frame
+import java.awt.Toolkit
+import java.awt.datatransfer.DataFlavor
+import java.awt.datatransfer.Transferable
+import java.awt.datatransfer.UnsupportedFlavorException
 import java.io.File
 import java.io.FilenameFilter
 import javax.swing.JFileChooser
@@ -53,4 +57,30 @@ actual fun openFilePicker(
     val matches = extensions.isEmpty() ||
         extensions.any { name.endsWith(".$it", ignoreCase = true) }
     return if (picked.isFile && matches) picked.absolutePath else null
+}
+
+/**
+ * `javaFileListFlavor` is the flavour Explorer reads for a paste-as-file; a plain
+ * string would paste the path as text instead.
+ */
+actual fun copyFilesToClipboard(paths: List<String>) {
+    val files = paths.map { File(it) }
+    if (files.isEmpty()) return
+    try {
+        val transferable = object : Transferable {
+            override fun getTransferDataFlavors(): Array<DataFlavor> =
+                arrayOf(DataFlavor.javaFileListFlavor)
+
+            override fun isDataFlavorSupported(flavor: DataFlavor?): Boolean =
+                flavor == DataFlavor.javaFileListFlavor
+
+            override fun getTransferData(flavor: DataFlavor?): Any {
+                if (flavor == DataFlavor.javaFileListFlavor) return files
+                throw UnsupportedFlavorException(flavor)
+            }
+        }
+        Toolkit.getDefaultToolkit().systemClipboard.setContents(transferable, null)
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
 }

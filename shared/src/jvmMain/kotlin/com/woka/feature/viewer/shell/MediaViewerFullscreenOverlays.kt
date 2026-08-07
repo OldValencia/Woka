@@ -88,10 +88,12 @@ fun BoxScope.MediaViewerFullscreenOverlays(
     }
 }
 
-/** Top-right size/zoom controls of the fullscreen window. */
+/** Top-right size/zoom and window-mode controls of the fullscreen window. */
 @Composable
 fun BoxScope.MediaViewerFullscreenTopControls(
     isUiVisible: Boolean,
+    isPipWindow: Boolean,
+    onTogglePipWindow: () -> Unit,
     onSizeModeChange: (SizeMode) -> Unit
 ) {
     AnimatedVisibility(
@@ -116,9 +118,8 @@ fun BoxScope.MediaViewerFullscreenTopControls(
                 },
                 carouselMode = CarouselVisibility.HIDDEN,
                 onToggleCarousel = { },
-                onEdit = { },
-                onInfo = { },
-                isInfoOpen = false
+                isPipWindow = isPipWindow,
+                onTogglePipWindow = onTogglePipWindow
             )
         }
     }

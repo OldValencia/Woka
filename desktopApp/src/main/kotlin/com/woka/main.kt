@@ -24,8 +24,11 @@ import java.awt.Point
 import com.woka.app.App
 import java.awt.Dimension
 
-fun main() {
-    initKoin()
+fun main(args: Array<String>) {
+    // Resolves the launch route too, before the first composition: the router
+    // publishes its stack as a StateFlow, and a screen changed underneath a live
+    // composition would animate as a navigation the user did not make.
+    initKoin(args.toList())
     application {
         val windowState = rememberWindowState(
             size = DpSize(1100.dp, 720.dp),

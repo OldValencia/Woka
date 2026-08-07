@@ -8,9 +8,11 @@ inside this plan.
 Third of three. Order: `package-restructure-feature-first.md` → `code-quality-refactor.md` →
 **this one**. The first two are done; every path below has been checked against the current tree.
 
-**Progress:** Phases 0–5 done, and Phase 7's findings are closed — F1, F2, F5, F8, F9 fixed; F3 and
-F4 closed by measurement (F4 moved to `pending/rare-image-formats-and-frame-sets.md`). The pyramid
-stands at **172 / 158 / 40 / 38** and the shape holds. **Phase 6 next** — the manual run.
+**Status: done — every phase closed.** F1, F2, F5, F8, F9 fixed; F3 and F4 closed by measurement (F4
+moved to `pending/rare-image-formats-and-frame-sets.md`). Phase 6's run found four more — M1 and M1b
+(PiP drag), M2 (no CLI routing) and M3 (Copy meant the wrong thing in the grid) — all four fixed, and
+confirmed in the app by the Phase 8 re-run. The pyramid stands at **172 / 167 / 42 / 40** and the
+shape holds.
 
 ---
 
@@ -441,13 +443,60 @@ measurement for F1.
 
 **Files:** `ai/docs/testing/manual/README.md` + 6 case files + `results/.gitkeep`
 
-## Phase 6: The run
+## Phase 6: The run — **done**
 
-- `./gradlew.bat :shared:build` — layers 1–3 green, apart from anything explicitly `@Ignore`d with a
-  stated reason.
-- `./gradlew.bat :desktopApp:run` and a pass over the Phase 5 manual cases. The result is a file in
-  `manual/results/`: each case either "ok" or a defect with steps to reproduce.
-- Everything found is merged into one list together with F1–F7.
+`:shared:build` green with nothing `@Ignore`d, and all 38 manual cases walked. The log is
+`manual/results/2026-08-07-dbad022.md`: **34 ok, 3 defects, 1 retired.**
+
+Three findings, numbered M1–M3 so they do not collide with the F-series the code review produced:
+
+| # | Finding | Where | Status |
+|---|---------|-------|--------|
+| M1 | A plain left drag on the PiP window moved the window **and** panned the video inside it. `pipWindowDraggable` stands down only for `Ctrl`, and `mediaViewerGestures` panned on any drag at all, so both fired on the same gesture | `feature/viewer/pip/PipWindowDragModifier.kt` + `shell/MediaViewerContentGestures.kt` | **fixed** — `panRequiresCtrl` |
+| M1b | …and the release of that same drag reached `mediaTapGestures` as a **tap**: playback toggled when the button came up, and a second drag read as a double tap and dropped PiP back into the app | `feature/viewer/pip/PipWindowDragModifier.kt` | **fixed** — `Initial`-pass consume past a screen-pixel slop |
+| M2 | **CLI routing did not exist.** `main()` took no `args` and `Router` hard-coded `[Screen.Home]`, so `Woka.exe <path>` opened Home whatever it was handed — the routing table in `roadmap.md` had never been built | `desktopApp/main.kt`, `app/navigation/Router.kt` | **fixed** — `startupStack` + `Router.start` + the pin offer |
+| M3 | The grid's context menu called copy-into-a-chosen-folder "Copy", which is not what Copy means anywhere else on the desktop | `feature/folder/FolderItemContextMenu.kt` | **fixed** — Copy is the clipboard, Duplicate is the old action |
+| — | TC-IMG-05: HEIF/HEIC/AVIF do not open; a PQ PNG does | `core/data/MediaKind.kt` | **not this plan's** — `pending/rare-image-formats-and-frame-sets.md` |
+| — | TC-SYS-03: the OS Now Playing panel | `core/system/` | **case retired** — the feature was dropped on purpose; SMTC refused its button handler |
+
+### What the fixes cost, and where they land
+
+- **M1.** `MediaViewerContent` gained `panRequiresCtrl`, defaulted off; only
+  `MediaViewerFullscreenSurface` sets it. With it on the plain-drag `pointerInput` is not installed
+  and `Ctrl + LMB` joins `Ctrl + RMB` on the pan path. The main viewer is untouched by construction.
+  The file-size mandate bit here: `MediaViewerContentGestures.kt` was at 148 lines, so the pointer
+  loop moved to `MediaViewerDragGestures.kt` (`mediaZoomAndButtonPan`), the same split
+  `mediaTapGestures` already had. 112 and 87 lines.
+- **M1b.** `pipWindowDraggable` runs on `PointerEventPass.Initial` and consumes once the cursor has
+  travelled more than `DRAG_SLOP_PX` **screen** pixels, which is what cancels the tap detector below
+  it. The slop is measured from `MouseInfo` and deliberately **not** `viewConfiguration.touchSlop`:
+  this modifier drags the window along under the cursor, so the pointer's travel in the composable's
+  own coordinates stays near zero however far the window moves. A first attempt keyed on local
+  distance was written and thrown away for exactly that reason — the control half of the UI test
+  written alongside it went red, which is what exposed the wrong measurement.
+- **M2.** `startupStack(args)` in `app/navigation/StartupRoute.kt` is the whole routing table in one
+  pure function; `Router.start` applies it. It is called from `initKoin(launchArgs)` rather than from
+  `main`, because **`desktopApp` does not carry Koin on its compile classpath** and cannot name
+  `AppDependencies` — a `KoinComponent` — at all. `Screen.Folder` gained `offerPin`, which
+  `FolderPinPrompt` reads in the dock's top accessory slot: the dock is already hidden while the
+  viewer is open and returns exactly when `X` lands the user in Folder View, so the offer appears at
+  the moment the roadmap describes without a new banner in the grid. It pins to `linkedFolders`,
+  which is what Home lists — not `pinnedSessions`, which is the Library's own concept.
+- **M3.** The AWT transferable moved from `MediaViewerUtils.kt` (deleted, it held nothing else) to
+  `core/utils/copyFilesToClipboard`, expect/actual. Layering forced the move: `FolderItemContextMenu`
+  is commonMain and could not see a jvmMain viewer function. The select-mode dock pills are untouched.
+
+### Two tests, placed by the layer rule
+
+- `integration/StartupRouteTest` (9) — every row of the routing table, including the space-joined
+  fallback for an unquoted Windows path. It stats the argument, so it cannot be a unit test.
+- `ui/ViewerPanModeUiTest` (2) — with the gate on a plain drag leaves the picture alone; with it off
+  the same drag pans. Two neighbouring halves **cannot** be injected and stay manual: `Ctrl + LMB`,
+  because `keyboardModifiers` on a pointer event is the limitation Phase 4 recorded for
+  `Ctrl+Scroll`; and M1b's guard, because there is no window to travel under the cursor, so a test
+  of it would pass whether the guard existed or not.
+
+The clipboard gets no test: the suite must not clobber the clipboard of the machine running it.
 
 ## Phase 7: The fix pass
 
@@ -521,24 +570,36 @@ the file-size sweep and whatever Phase 6 turns up.
 
 **Files:** determined by the results of Phases 2–6.
 
-## Phase 8: Closing
+## Phase 8: Closing — **done**
 
-- `:shared:build` again — green.
-- The manual cases re-run over whatever changed, a new file in `manual/results/`.
-- `ai/docs/roadmap.md`: Phase 4 (The Viewer) marked as verified; a pointer added to
-  `ai/docs/testing/manual/` as a permanent artefact rather than a one-off checklist.
-- Requirements that surface along the way go into a new file in `pending/`, not as additions here.
+- `:shared:build` — green. **383 checks, 0 failures, 0 skipped**, up from 370: the M1–M3 fixes cost
+  no test and added thirteen.
+- `ai/docs/roadmap.md` — Phase 4 marked verified, the CLI routing section reads as built rather than
+  intended, the PiP window flag named, and `ai/docs/testing/manual/` recorded as a permanent
+  artefact.
+- The `OK__` filename prefixes from the run are gone: the log under `results/` is the record, the
+  prefix was triage.
+- **The re-run is done** — `manual/results/2026-08-07-dbad022-working-tree.md`, nine cases over every
+  surface the fix pass touched, all ok. It had to be a person: a window drag, a process launch and
+  the system clipboard are exactly what no assertion reaches.
+- Requirements that surfaced along the way went to `pending/`, not here: TC-IMG-05's evidence is
+  recorded in `rare-image-formats-and-frame-sets.md` § 1 rather than becoming a phase of this plan.
 
 ---
 
 ## Definition of done
 
+**Met, all of it.**
+
 - The pyramid holds by check count: unit > integration > UI automation > manual. Target was roughly
-  95 / 55 / 25 / 24; the layers landed at **172 / 158 / 40 / 38**, so the shape holds all the way up.
-- `:shared:build` is green, and after Phase 7 there is **no `@Ignore` left in the suite** — the rule
-  was that each one carries its reason; all three reasons have since been resolved.
-- `ai/docs/testing/manual/` is filled in, every case has its "why this is not automated" field, and a
-  run is recorded under `results/`.
-- Every finding marked unambiguous is closed; F1 and F4 are either closed by Valik's decision or
-  explicitly deferred with a reason. **F2, F5 and F8 are fixed and F3 is closed as not-a-defect**;
-  what is left is F1, F4 and F9, all three of them decisions rather than work.
+  95 / 55 / 25 / 24; the layers landed at **172 / 167 / 42 / 40**, so the shape holds all the way up.
+- `:shared:build` is green — **383 checks, 0 failures** — and after Phase 7 there is **no `@Ignore`
+  left in the suite**; the rule was that each one carries its reason, and all three were resolved.
+- `ai/docs/testing/manual/` is filled in, every case has its "why this is not automated" field, and
+  both runs are recorded: `results/2026-08-07-dbad022.md` and
+  `results/2026-08-07-dbad022-working-tree.md`.
+- Every F-finding is closed: F2, F5, F8, F9 and F1 fixed, F3 closed as not-a-defect, F4 moved to
+  `pending/rare-image-formats-and-frame-sets.md` with a reason. The run's own M1, M1b, M2 and M3 are
+  fixed and confirmed by hand.
+- The directory is not a one-off: it is re-run over whatever changes, which is how M1b and the
+  window-mode defect were caught after the first run had already passed.

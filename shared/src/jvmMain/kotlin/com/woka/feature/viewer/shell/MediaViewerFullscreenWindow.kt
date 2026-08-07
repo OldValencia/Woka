@@ -23,6 +23,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import com.woka.feature.viewer.pip.PipCornerFlash
 import com.woka.feature.viewer.pip.handlePipKeyEvent
 import com.woka.feature.viewer.pip.pipWindowDraggable
+import com.woka.feature.viewer.pip.rememberPipWindowMode
 import com.woka.feature.viewer.video.FullscreenSystemControlsEffect
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -48,6 +49,9 @@ fun MediaViewerFullscreenWindow(
         undecorated = true,
         transparent = true,
         state = windowState,
+        // Only while the window is PiP-sized: over one that fills the screen the
+        // flag would pin the whole desktop.
+        alwaysOnTop = fsSettings.pipAlwaysOnTop && PipManager.isPipWindow,
         title = item.file.name,
         // Preview phase so shortcuts fire before any focused button in the
         // window gets the key (and consume it), matching the main window.
@@ -69,6 +73,8 @@ fun MediaViewerFullscreenWindow(
             window.toFront()
             window.requestFocus()
         }
+
+        val pipMode = rememberPipWindowMode(window, windowState, PipManager.nativeSize)
 
         FullscreenSystemControlsEffect(item, videoState, fsSettings.systemMediaControls)
 
@@ -104,6 +110,7 @@ fun MediaViewerFullscreenWindow(
                     modifier = Modifier.fillMaxSize().pipWindowDraggable(window),
                     videoState = videoState,
                     subtitleBottomPadding = fsSubtitleBottomPadding,
+                    settingsRepo = settingsRepo,
                     onSizeModeChange = onFsSizeModeChange,
                     onZoomHud = { fsZoomHud.raise() }
                 )
@@ -132,6 +139,8 @@ fun MediaViewerFullscreenWindow(
 
                 MediaViewerFullscreenTopControls(
                     isUiVisible = isUiVisible,
+                    isPipWindow = pipMode.isPip,
+                    onTogglePipWindow = pipMode.toggle,
                     onSizeModeChange = onFsSizeModeChange
                 )
             }

@@ -3,6 +3,7 @@ package com.woka.integration
 import com.woka.core.data.PinnedSession
 import com.woka.core.data.TrackPrefs
 import com.woka.core.data.TrackRef
+import com.woka.support.awaitSettingsWrite
 import com.woka.support.onSettingsDisk
 import java.io.File
 import kotlin.test.Test
@@ -124,4 +125,19 @@ class SettingsRecordsTest {
         }
     }
 
+    /**
+     * `encodeDefaults` is off, so the on-disk assertion can only be made for the
+     * value that differs from the default — `true` reaches the file by being
+     * absent, which asserting its presence would get exactly backwards.
+     */
+    @Test
+    fun `turning Always on Top off is written and read back`() {
+        onSettingsDisk { repository ->
+            repository.setPipAlwaysOnTop(false)
+            assertEquals(false, repository.settings.value.pipAlwaysOnTop)
+            awaitSettingsWrite(""""pipAlwaysOnTop": false""")
+            repository.setPipAlwaysOnTop(true)
+            assertEquals(true, repository.settings.value.pipAlwaysOnTop)
+        }
+    }
 }

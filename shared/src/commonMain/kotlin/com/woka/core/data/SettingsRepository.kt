@@ -50,4 +50,5 @@ interface SettingsRepository {
     fun clearPlaybackPosition(filePath: String)
     fun setCarryTracksAcrossFolder(enabled: Boolean)
     fun setSystemMediaControls(enabled: Boolean)
+    fun setPipAlwaysOnTop(enabled: Boolean)
 }

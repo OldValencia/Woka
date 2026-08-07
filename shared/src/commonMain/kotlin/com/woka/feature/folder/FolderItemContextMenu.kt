@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import com.woka.core.data.MediaItem
 import com.woka.core.ui.components.DropdownItem
 import com.woka.core.ui.theme.Theme
+import com.woka.core.utils.copyFilesToClipboard
 import com.woka.core.utils.openDirectoryPicker
 
 /**
@@ -37,9 +38,15 @@ internal fun FolderItemContextMenu(
     }
 
     DropdownItem("Rename") { dismiss(); overlays.itemToRename = target }
+    // Copy means the clipboard, the way it does everywhere else on the desktop;
+    // copying into a chosen folder is Duplicate below (TC-SYS-06).
     DropdownItem("Copy") {
         dismiss()
-        val dest = openDirectoryPicker("Copy to...", path)
+        copyFilesToClipboard(listOf(target))
+    }
+    DropdownItem("Duplicate") {
+        dismiss()
+        val dest = openDirectoryPicker("Duplicate to...", path)
         if (dest != null) viewModel.copyFiles(listOf(target), dest)
     }
     DropdownItem("Move") {

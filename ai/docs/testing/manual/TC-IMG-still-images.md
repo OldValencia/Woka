@@ -86,6 +86,12 @@ close to the reference, and whether the file opens at all (HEIF has no decoder y
 or HDR stays video-only. This case produces the evidence for that decision; there is no expected
 value to assert against until it is made.
 
+**Recorded 2026-08-07 (dbad022):** HEIF, HEIC and AVIF do not open at all; a PQ PNG does open and
+renders. That is the whole of the evidence F4 was waiting for, and it matches
+`pending/rare-image-formats-and-frame-sets.md` § 1 line for line — HEIC has no decoder, AVIF is not
+even listed, and an HDR still is drawn as SDR. The case stays open as the re-check for when that
+plan ships; nothing in this pass changes it.
+
 ---
 
 ### TC-IMG-06 — a broken file shows a placeholder, not a crash

@@ -78,6 +78,7 @@ class SettingsOverlayUiTest {
         onNodeWithText("Library").assertIsDisplayed()
         onNodeWithText("Media Viewer").assertIsDisplayed()
         onNodeWithText("Video Player").assertIsDisplayed()
+        onNodeWithText("PiP").assertIsDisplayed()
     }
 
     @Test
@@ -107,6 +108,15 @@ class SettingsOverlayUiTest {
         waitForIdle()
         onNodeWithText("Show Item Titles").assertIsDisplayed()
         onNodeWithText("System").assertDoesNotExist()
+
+        // The sidebar label is short because the column is 140.dp; the panel is
+        // what carries the full name, and that pairing is the thing to hold.
+        // `SectionLabel` upper-cases what it is given, so that is what is on screen.
+        onNodeWithText("PiP").performClick()
+        waitForIdle()
+        onNodeWithText("PICTURE IN PICTURE").assertIsDisplayed()
+        onNodeWithText("Always on Top").assertIsDisplayed()
+        onNodeWithText("Show Item Titles").assertDoesNotExist()
     }
 
     @Test

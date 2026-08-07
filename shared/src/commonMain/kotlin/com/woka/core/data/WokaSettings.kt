@@ -101,7 +101,12 @@ data class WokaSettings(
     // OS media session (§4): hardware media keys plus the system Now Playing
     // panel. On by default — with the session registered the OS routes the keys
     // to whichever app is playing, so Woka never takes them from anything else.
-    val systemMediaControls: Boolean = true
+    val systemMediaControls: Boolean = true,
+    // Keeps the picture-in-picture window above other apps. On by default: a PiP
+    // window that falls behind the app you just clicked is not doing the one job
+    // it exists for. Applied only while the window is PiP-sized — over a window
+    // that fills the screen it would pin the whole desktop.
+    val pipAlwaysOnTop: Boolean = true
 )
 
 /**

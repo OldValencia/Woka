@@ -7,12 +7,32 @@ import kotlinx.coroutines.flow.update
 
 sealed class Screen {
     data object Home : Screen()
-    data class Folder(val path: String, val highlightFile: String? = null, val openViewerForId: String? = null, val nonce: Long = 0L) : Screen()
+
+    /**
+     * [offerPin] marks a folder the app was *launched* into rather than navigated
+     * to, so Folder View can offer to put it on Home — see `startupStack`.
+     */
+    data class Folder(
+        val path: String,
+        val highlightFile: String? = null,
+        val openViewerForId: String? = null,
+        val nonce: Long = 0L,
+        val offerPin: Boolean = false
+    ) : Screen()
 }
 
 class Router {
     private val _stack = MutableStateFlow<List<Screen>>(listOf(Screen.Home))
     val stack: StateFlow<List<Screen>> = _stack.asStateFlow()
+
+    /**
+     * Replaces the whole stack with the launch route. Called once, before the
+     * first composition; an empty list is ignored so a bad argument cannot leave
+     * the app with no screen at all.
+     */
+    fun start(screens: List<Screen>) {
+        if (screens.isNotEmpty()) _stack.value = screens
+    }
 
     fun navigateTo(screen: Screen) {
         _stack.update { it + screen }

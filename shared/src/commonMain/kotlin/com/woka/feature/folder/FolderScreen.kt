@@ -27,6 +27,7 @@ fun FolderScreen(
     path: String,
     highlightFile: String? = null,
     openViewerForId: String? = null,
+    offerPin: Boolean = false,
     onNavigateToFolder: (String) -> Unit
 ) {
     val dependencies = remember(path) { FolderDependencies(path) }
@@ -36,6 +37,8 @@ fun FolderScreen(
     val overlays = remember { FolderOverlayState() }
     var viewerMediaId by remember { mutableStateOf<String?>(openViewerForId) }
     var scrollToMediaId by remember { mutableStateOf<String?>(null) }
+    // Taken or dismissed, the offer does not come back for this screen.
+    var pinOfferOpen by remember(path) { mutableStateOf(offerPin) }
 
     LaunchedEffect(openViewerForId) {
         if (openViewerForId != null) {
@@ -64,7 +67,9 @@ fun FolderScreen(
                     onOpenMedia = { id -> viewerMediaId = id },
                     highlightFile = highlightFile,
                     scrollToMediaId = scrollToMediaId,
-                    onScrollToMediaIdConsumed = { scrollToMediaId = null }
+                    onScrollToMediaIdConsumed = { scrollToMediaId = null },
+                    offerPin = pinOfferOpen,
+                    onPinOfferResolved = { pinOfferOpen = false }
                 )
             }
         }
