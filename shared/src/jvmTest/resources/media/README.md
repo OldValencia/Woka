@@ -33,7 +33,15 @@ in the file names or in the stream metadata.
 | `broken.mkv` | first 2 KB of a valid container | error paths |
 | `still.png` / `still.jpg` / `still.webp` | 640×480 | `ImageLoader` |
 | `exif_rot90.jpg` | `still.jpg` with EXIF `Orientation=6` | **F3**: a correct loader returns 480×640 |
+| `burst.heic` | **5** HEIC images in one container, 320×240 | frame sets: the HEIC burst case |
+| `livephoto.heic` / `livephoto.mov` | still plus a 1.5 s hevc clip sharing a stem | Live Photo — the motion frame is a **sibling file**, not a track |
+| `still.avif` | single-frame AVIF, 640×480, SDR | can anything open AVIF at all |
+| `anim.gif` / `anim.webp` | **8** frames, 320×240, 120 ms each | animated stills that must not freeze on frame 1 |
+| `multipage.tif` | **3** pages, 320×240, deflate | multi-page TIFF |
+| `hdr_pq.avif` / `hdr_hlg.avif` | 640×480 10-bit, BT.2020 with PQ and HLG transfers | Phase 5: HLG cannot be settled without an HLG file |
+| `hdr_pq.png` | 640×480 `rgb48be` with a `cICP` chunk | an HDR still on the one path that already decodes |
 | `tools/pgs_gen.py`, `tools/vobsub_idx.py` | generators for the `.sup` and `.idx`/`.sub` pair | how the bitmap subtitle files were produced |
+| `tools/frameset_gen.py` | generator for every frame-set fixture above | how the HEIC/AVIF/animation/HDR files were produced |
 
 ## Provenance
 
@@ -116,3 +124,28 @@ printf 'FFE100224578696600004D4D002A0000000800010112000300000001000600000000' \
   | xxd -r -p >> "$D/exif_rot90.jpg"
 tail -c +3 "$D/still.jpg" >> "$D/exif_rot90.jpg"
 ```
+
+## Frame sets
+
+Added for `rare-image-formats-and-frame-sets.md` Phase 0. These are the one
+group **not** built by the Bytedeco ffmpeg, because it cannot build them: no
+avif muxer, and no video encoder past openh264. `tools/frameset_gen.py` writes
+all ten from `pillow` + `pillow-heif` (whose wheel carries an x265 HEIF
+encoder) and a system ffmpeg with `libaom-av1` and `libx265`:
+
+```sh
+python tools/frameset_gen.py "$D"
+```
+
+Total 148 KB. Two things the script had to work out, kept here so the next
+person does not:
+
+- `-color_trc`/`-color_primaries` as **output** options reach neither the AVIF
+  `colr` box nor the PNG `cICP` chunk — libaom and the png encoder both read
+  the frame's own side data, and only `setparams` in the filter chain puts it
+  there. Tagged the output way, `hdr_pq.avif` and `hdr_hlg.avif` come out
+  byte-identical and both say `color_transfer=unknown`.
+- A **Live Photo is two files**. Apple exports a HEIC and a MOV sharing a stem;
+  there is no motion track inside the container to find. `livephoto.heic` and
+  `livephoto.mov` are that pair, so whatever resolves the `Motion` frame is
+  tested against the shape it actually meets on disk.

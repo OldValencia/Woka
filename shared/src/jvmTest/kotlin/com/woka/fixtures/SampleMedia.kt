@@ -46,6 +46,40 @@ const val EXIF_ROTATED = "exif_rot90.jpg"
 const val STILL_WIDTH = 640
 const val STILL_HEIGHT = 480
 
+/**
+ * Frame sets: one file, more than one picture inside it.
+ *
+ * Every plate carries its own index painted across it, so a strip that shows
+ * the wrong frame is wrong at a glance. Counts are asserted, not guessed —
+ * [BURST_FRAME_COUNT] and friends are what the generator wrote.
+ */
+const val BURST_HEIC = "burst.heic"
+const val ANIM_GIF = "anim.gif"
+const val ANIM_WEBP = "anim.webp"
+const val MULTIPAGE_TIFF = "multipage.tif"
+
+const val BURST_FRAME_COUNT = 5
+const val ANIM_FRAME_COUNT = 8
+const val TIFF_PAGE_COUNT = 3
+const val FRAME_WIDTH = 320
+const val FRAME_HEIGHT = 240
+
+/**
+ * A Live Photo is a **pair on disk**, not one file — Apple exports the still and
+ * its motion clip side by side, sharing a stem. Whatever finds the motion frame
+ * has to look at the directory, not inside the container.
+ */
+const val LIVE_PHOTO_STILL = "livephoto.heic"
+const val LIVE_PHOTO_MOTION = "livephoto.mov"
+
+/** Single-frame AVIF, SDR: the format is the question, not the colour. */
+const val STILL_AVIF = "still.avif"
+
+/** HDR stills. `hdr_pq.png` exists so the skia path has one even if AVIF fails. */
+const val HDR_PQ_AVIF = "hdr_pq.avif"
+const val HDR_HLG_AVIF = "hdr_hlg.avif"
+const val HDR_PQ_PNG = "hdr_pq.png"
+
 /** A loader that honours the tag turns the 640×480 source portrait. */
 const val EXIF_EXPECTED_WIDTH = 480
 const val EXIF_EXPECTED_HEIGHT = 640

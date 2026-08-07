@@ -1,11 +1,21 @@
 package com.woka.integration
 
+import com.woka.fixtures.ANIM_GIF
+import com.woka.fixtures.ANIM_WEBP
 import com.woka.fixtures.BITMAP_SUBS
 import com.woka.fixtures.BROKEN
+import com.woka.fixtures.BURST_HEIC
 import com.woka.fixtures.CHAPTERS
 import com.woka.fixtures.DUAL_VIDEO
 import com.woka.fixtures.EXIF_ROTATED
+import com.woka.fixtures.HDR_HLG_AVIF
+import com.woka.fixtures.HDR_PQ_AVIF
+import com.woka.fixtures.HDR_PQ_PNG
+import com.woka.fixtures.LIVE_PHOTO_MOTION
+import com.woka.fixtures.LIVE_PHOTO_STILL
+import com.woka.fixtures.MULTIPAGE_TIFF
 import com.woka.fixtures.NO_AUDIO
+import com.woka.fixtures.STILL_AVIF
 import com.woka.fixtures.STILL_JPG
 import com.woka.fixtures.STILL_PNG
 import com.woka.fixtures.STILL_WEBP
@@ -23,7 +33,10 @@ class SampleMediaTest {
 
     private val declared = listOf(
         BITMAP_SUBS, DUAL_VIDEO, TEXT_SUBS, CHAPTERS, NO_AUDIO, BROKEN,
-        STILL_PNG, STILL_JPG, STILL_WEBP, EXIF_ROTATED
+        STILL_PNG, STILL_JPG, STILL_WEBP, EXIF_ROTATED,
+        BURST_HEIC, LIVE_PHOTO_STILL, LIVE_PHOTO_MOTION, STILL_AVIF,
+        ANIM_GIF, ANIM_WEBP, MULTIPAGE_TIFF,
+        HDR_PQ_AVIF, HDR_HLG_AVIF, HDR_PQ_PNG
     )
 
     @Test

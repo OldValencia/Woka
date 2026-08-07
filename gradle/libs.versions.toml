@@ -9,8 +9,8 @@ koin = "4.0.0"
 kotlinx-serialization = "1.7.3"
 coil3 = "3.0.4"
 filekit = "0.8.7"
-javacv = "1.5.10"
-ffmpeg = "6.1.1-1.5.10"
+javacv = "1.5.13"
+ffmpeg = "8.0.1-1.5.13"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }

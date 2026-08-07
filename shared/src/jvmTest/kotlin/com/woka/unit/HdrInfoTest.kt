@@ -1,6 +1,6 @@
 package com.woka.unit
 
-import com.woka.feature.viewer.video.engine.probe.TransferKind
+import com.woka.core.data.TransferKind
 import com.woka.feature.viewer.video.engine.probe.readHdrInfo
 import org.bytedeco.ffmpeg.global.avutil.AVCOL_PRI_BT2020
 import org.bytedeco.ffmpeg.global.avutil.AVCOL_PRI_BT709

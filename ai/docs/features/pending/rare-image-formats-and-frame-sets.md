@@ -7,7 +7,11 @@
 > This plan builds **one** "frames inside a file" mechanic covering every such type at once, rather
 > than a special case bolted on for HEIC. F4 — HDR tone mapping for stills — moves here too.
 
-Status: ⏳ Pending — planned, not implemented.
+Status: 🚧 In progress — **Phase 0 done (2026-08-07)**, Phases 1–6 not started. The probe forced a
+dependency upgrade (`ffmpeg` → `8.0.1-1.5.13`, `javacv` → `1.5.13`) which is **taken and verified
+against the suite**; HEIC and AVIF both decode on it. See
+[the Phase 0 verdict](#the-verdict-the-dependency-was-bumped-and-it-holds) and the amendments it
+forces on Phases 2b, 3 and 5.
 
 Sits after `viewer-verification-pass.md`. Extends roadmap Phase 4 (The Viewer); nothing here blocks
 Phase 5 (Editor), but Phase 1's frame-set model is what an editor would need to know which frame it
@@ -78,6 +82,172 @@ Two outcomes are acceptable and the plan branches on them:
 **Files:** `jvmTest/.../probe/DecoderCapabilityProbe.kt`, fixtures in
 `jvmTest/resources/media/` (+ `README.md` provenance entries), this document
 
+### ✅ Done — measured 2026-08-07
+
+`com.woka.probe.DecoderCapabilityProbe` reports and always passes; `SkiaCapability`,
+`FfmpegCapability`, `ImageIoCapability` and `CapabilityReport` are its parts. Ten fixtures were
+authored for it (`tools/frameset_gen.py`, 148 KB, provenance in `resources/media/README.md`): a
+5-image HEIC burst, a HEIC + MOV Live Photo pair, an AVIF still, PQ and HLG AVIFs, a PQ PNG, an
+8-frame GIF and WebP, a 3-page TIFF. The three stills that already work are in the corpus as
+controls — a probe with no known-good row cannot tell a broken format from a broken probe.
+
+`ImageIO` was added to the probe beyond what this phase asked for, because it is the one decoder
+that costs nothing to adopt. It earned its place: see TIFF below.
+
+**Exact output on the dependency as it stood — `ffmpeg 6.1.1-1.5.10`, `javacv 1.5.10`.** This is
+the "before" table; it is kept because it is what justified the upgrade recorded below.
+
+| File             | skia `Codec`                                         | skia `Image`                                                     | bundled FFmpeg                                                                    | JDK `ImageIO`           | colour metadata                                         |
+|------------------|------------------------------------------------------|------------------------------------------------------------------|-----------------------------------------------------------------------------------|-------------------------|---------------------------------------------------------|
+| `burst.heic`     | **✗** IllegalArgumentException: Unsupported format   | **✗** IllegalArgumentException: Failed to Image::makeFromEncoded | **✗** Exception: avformat_open_input() error -1094995529: Could not open input …. | **✗** no reader         | skia `—` · ffmpeg `—`                                   |
+| `livephoto.heic` | **✗** IllegalArgumentException: Unsupported format   | **✗** IllegalArgumentException: Failed to Image::makeFromEncoded | **✗** Exception: avformat_open_input() error -1094995529: Could not open input …. | **✗** no reader         | skia `—` · ffmpeg `—`                                   |
+| `livephoto.mov`  | **✗** IllegalArgumentException: Unsupported format   | **✗** IllegalArgumentException: Failed to Image::makeFromEncoded | hevc, 23 frames, 320×240, yuv420p                                                 | **✗** no reader         | skia `—` · ffmpeg `SDR`                                 |
+| `still.avif`     | **✗** IllegalArgumentException: Unsupported format   | **✗** IllegalArgumentException: Failed to Image::makeFromEncoded | av1, 1 frames, 640×480, yuv420p                                                   | **✗** no reader         | skia `—` · ffmpeg `SDR`                                 |
+| `hdr_pq.avif`    | **✗** IllegalArgumentException: Unsupported format   | **✗** IllegalArgumentException: Failed to Image::makeFromEncoded | av1, 1 frames, 640×480, yuv420p10le                                               | **✗** no reader         | skia `—` · ffmpeg `PQ + wide`                           |
+| `hdr_hlg.avif`   | **✗** IllegalArgumentException: Unsupported format   | **✗** IllegalArgumentException: Failed to Image::makeFromEncoded | av1, 1 frames, 640×480, yuv420p10le                                               | **✗** no reader         | skia `—` · ffmpeg `HLG + wide`                          |
+| `hdr_pq.png`     | 1 frames, 640×480                                    | ok                                                               | png, 1 frames, 640×480, rgb48be                                                   | png, 1 images, 640×480  | skia `≈sRGB gamma, non-sRGB gamut` · ffmpeg `PQ + wide` |
+| `anim.gif`       | 8 frames, 320×240, [120, 120, 120, 120, 120, 120] ms | ok                                                               | gif, 8 frames, 320×240, bgra                                                      | gif, 8 images, 320×240  | skia `sRGB` · ffmpeg `SDR`                              |
+| `anim.webp`      | 8 frames, 320×240, [120, 120, 120, 120, 120, 120] ms | ok                                                               | webp, 0 frames, 0×0, bgr24                                                        | **✗** no reader         | skia `sRGB` · ffmpeg `SDR`                              |
+| `multipage.tif`  | **✗** IllegalArgumentException: Unsupported format   | **✗** IllegalArgumentException: Failed to Image::makeFromEncoded | tiff, 1 frames, 320×240, rgb24                                                    | tif, 3 images, 320×240  | skia `—` · ffmpeg `SDR`                                 |
+| `still.png`      | 1 frames, 640×480                                    | ok                                                               | png, 1 frames, 640×480, rgb24                                                     | png, 1 images, 640×480  | skia `sRGB` · ffmpeg `SDR`                              |
+| `still.jpg`      | 1 frames, 640×480                                    | ok                                                               | mjpeg, 1 frames, 640×480, yuvj420p                                                | JPEG, 1 images, 640×480 | skia `sRGB` · ffmpeg `SDR`                              |
+| `still.webp`     | 1 frames, 640×480                                    | ok                                                               | webp, 1 frames, 640×480, yuv420p                                                  | **✗** no reader         | skia `sRGB` · ffmpeg `SDR`                              |
+
+| Kind    | Name                      | Present |
+|---------|---------------------------|---------|
+| decoder | `hevc`                    | **yes** |
+| decoder | `av1`                     | **yes** |
+| decoder | `libdav1d`                | **no**  |
+| decoder | `libaom-av1`              | **yes** |
+| decoder | `webp`                    | **yes** |
+| decoder | `gif`                     | **yes** |
+| decoder | `tiff`                    | **yes** |
+| demuxer | `avif`                    | **no**  |
+| demuxer | `heif`                    | **no**  |
+| demuxer | `image2`                  | **yes** |
+| demuxer | `mov,mp4,m4a,3gp,3g2,mj2` | **yes** |
+| demuxer | `gif`                     | **yes** |
+
+### What the numbers say
+
+1. **AVIF already works** on the bundled build, through the `mov` demuxer and the native `av1`
+   decoder, and it carries its colour description intact — `hdr_pq.avif` reads `PQ + wide` and
+   `hdr_hlg.avif` reads `HLG + wide` straight out of `readHdrInfo`, unchanged. Phase 2b's
+   `FfmpegStillDecoder` covers AVIF today with no dependency of any kind.
+2. **HEIC does not open, and the reason is not the codec.** `hevc` is present and decodes the Live
+   Photo's MOV fine. `avformat_open_input` fails with `-1094995529` — `AVERROR_INVALIDDATA` — and
+   the bundled CLI names it exactly: `moov atom not found`. A HEIC still is an item collection in a
+   `meta` box with no `moov` at all, and FFmpeg 6.1's `mov` demuxer requires one. Item-based HEIF
+   parsing landed in FFmpeg **7.1**.
+3. **The fix for that is a version bump, not a new dependency.** Bytedeco publishes
+   `org.bytedeco:ffmpeg` up to **8.0.1-1.5.13**. Its `ffprobe.exe`, run against these same fixtures,
+   opens `burst.heic` as **five `hevc` streams — one per burst frame** — and `livephoto.heic` as
+   one. So the burst's frame set falls out of the demuxer for free; no grid parsing, no `libheif`.
+   Same build also reads the AVIF colour tags, and **carries `zscale`**, which 6.1.1 does not —
+   see the Phase 5 note below.
+4. **Multi-page TIFF is `ImageIO`'s, and nothing else's.** skia has no TIFF codec at all, and
+   FFmpeg's `tiff_pipe` demuxer reports one frame for a three-page file on *both* versions. The
+   JDK's TIFF plugin reports `3 images` with no dependency added. It reads animated GIF too
+   (`8 images`), though skia already does that better — it reports per-frame durations, which
+   `ImageIO` does not surface.
+5. **skia cannot answer the colour question for a still.** `hdr_pq.png` carries a valid `cICP`
+   chunk — FFmpeg reads `PQ + wide` off it — and skia describes its colour space as
+   `≈sRGB gamma, non-sRGB gamut`. There is no transfer function on that path: `ColorSpace` exposes
+   `isSRGB`, `isGammaLinear`, `isGammaCloseToSRGB` and nothing more. **Phase 5 must take
+   `StillColorInfo` from the FFmpeg path**, which also means an HDR still is only tone-mappable
+   once it is routed through `FfmpegStillDecoder`.
+6. **Animated WebP is skia's alone.** FFmpeg opens it and grabs `0 frames, 0×0`
+   (`image data not found`) on both versions; skia reports all 8 with durations. No loss — but the
+   routing table must not send `.webp` to FFmpeg on the strength of it handling the *static* case.
+7. **A Live Photo is two files.** There is no motion track inside `livephoto.heic` to find; the
+   `Motion` frame is the sibling `.mov`, resolved by stem. Phase 3's "branch in `FrameStripState`"
+   is therefore a **directory** lookup, not a container one — see the amended Phase 3 note.
+
+### The verdict: the dependency was bumped, and it holds
+
+The plan's Phase 0 branch was binary and reality was not — **AVIF was branch one, HEIC was branch
+two, and branch two had a third option the plan did not anticipate.** Bytedeco publishes the same
+artifact up to `8.0.1-1.5.13`, and item-based HEIF parsing landed in FFmpeg 7.1. So the HEIC fix
+was a version bump, not a new dependency.
+
+**Taken, measured, kept:**
+
+| | |
+|---|---|
+| `org.bytedeco:ffmpeg-platform` | `6.1.1-1.5.10` → **`8.0.1-1.5.13`** |
+| `org.bytedeco:javacv` | `1.5.10` → **`1.5.13`** |
+
+JavaCV moves in step by necessity: the JNI stubs shipped inside the ffmpeg artifact are locked to
+the presets version, so the two cannot move apart.
+
+**Evidence it holds.** `:shared:jvmTest --rerun-tasks`, three runs on the new versions: **385
+tests, two runs fully green.** One run failed twice in `HomeViewModelTest` with
+`IllegalStateException: Dispatchers.Main is used concurrently with setting it`. That is a
+**pre-existing race in the test harness**, not a regression: `withCollector` calls `scope.cancel()`
+without joining, so `SharingStarted.WhileSubscribed`'s stop-timeout `delay` is still resuming on
+`Dispatchers.Main` when `MainDispatcherRule.finished()` runs `resetMain()`. Nothing in either
+stack trace touches FFmpeg. A control run on the **old** versions was green, and two further runs
+on the new ones were green, so the failure tracks scheduling, not the dependency. **It is worth
+fixing on its own terms** — `withCollector` should join its collector — and is deliberately left
+alone here rather than folded into a dependency change.
+
+**Exact output on the new versions — `ffmpeg 8.0.1-1.5.13`, `javacv 1.5.13`:**
+
+| File             | skia `Codec`                                         | skia `Image`                                                     | bundled FFmpeg                                           | JDK `ImageIO`           | colour metadata                                         |
+|------------------|------------------------------------------------------|------------------------------------------------------------------|----------------------------------------------------------|-------------------------|---------------------------------------------------------|
+| `burst.heic`     | **✗** IllegalArgumentException: Unsupported format   | **✗** IllegalArgumentException: Failed to Image::makeFromEncoded | hevc, **5 video streams**, 1 frames, 320×240, yuvj420p   | **✗** no reader         | skia `—` · ffmpeg `SDR`                                 |
+| `livephoto.heic` | **✗** IllegalArgumentException: Unsupported format   | **✗** IllegalArgumentException: Failed to Image::makeFromEncoded | hevc, **1 video streams**, 1 frames, 320×240, yuvj420p   | **✗** no reader         | skia `—` · ffmpeg `SDR`                                 |
+| `livephoto.mov`  | **✗** IllegalArgumentException: Unsupported format   | **✗** IllegalArgumentException: Failed to Image::makeFromEncoded | hevc, **1 video streams**, 23 frames, 320×240, yuv420p   | **✗** no reader         | skia `—` · ffmpeg `SDR`                                 |
+| `still.avif`     | **✗** IllegalArgumentException: Unsupported format   | **✗** IllegalArgumentException: Failed to Image::makeFromEncoded | av1, **1 video streams**, 1 frames, 640×480, yuv420p     | **✗** no reader         | skia `—` · ffmpeg `SDR`                                 |
+| `hdr_pq.avif`    | **✗** IllegalArgumentException: Unsupported format   | **✗** IllegalArgumentException: Failed to Image::makeFromEncoded | av1, **1 video streams**, 1 frames, 640×480, yuv420p10le | **✗** no reader         | skia `—` · ffmpeg `PQ + wide`                           |
+| `hdr_hlg.avif`   | **✗** IllegalArgumentException: Unsupported format   | **✗** IllegalArgumentException: Failed to Image::makeFromEncoded | av1, **1 video streams**, 1 frames, 640×480, yuv420p10le | **✗** no reader         | skia `—` · ffmpeg `HLG + wide`                          |
+| `hdr_pq.png`     | 1 frames, 640×480                                    | ok                                                               | png, **1 video streams**, 1 frames, 640×480, rgb48be     | png, 1 images, 640×480  | skia `≈sRGB gamma, non-sRGB gamut` · ffmpeg `PQ + wide` |
+| `anim.gif`       | 8 frames, 320×240, [120, 120, 120, 120, 120, 120] ms | ok                                                               | gif, **1 video streams**, 8 frames, 320×240, bgra        | gif, 8 images, 320×240  | skia `sRGB` · ffmpeg `SDR`                              |
+| `anim.webp`      | 8 frames, 320×240, [120, 120, 120, 120, 120, 120] ms | ok                                                               | webp, **1 video streams**, 0 frames, 0×0, bgr24          | **✗** no reader         | skia `sRGB` · ffmpeg `SDR`                              |
+| `multipage.tif`  | **✗** IllegalArgumentException: Unsupported format   | **✗** IllegalArgumentException: Failed to Image::makeFromEncoded | tiff, **1 video streams**, 1 frames, 320×240, rgb24      | tif, 3 images, 320×240  | skia `—` · ffmpeg `SDR`                                 |
+| `still.png`      | 1 frames, 640×480                                    | ok                                                               | png, **1 video streams**, 1 frames, 640×480, rgb24       | png, 1 images, 640×480  | skia `sRGB` · ffmpeg `SDR`                              |
+| `still.jpg`      | 1 frames, 640×480                                    | ok                                                               | mjpeg, **1 video streams**, 1 frames, 640×480, yuvj420p  | JPEG, 1 images, 640×480 | skia `sRGB` · ffmpeg `SDR`                              |
+| `still.webp`     | 1 frames, 640×480                                    | ok                                                               | webp, **1 video streams**, 1 frames, 640×480, yuv420p    | **✗** no reader         | skia `sRGB` · ffmpeg `SDR`                              |
+
+The decoder/demuxer table is unchanged between the two versions and is not repeated.
+
+### The finding that decides how Phase 2b is written
+
+**A HEIC burst is five video streams, not one stream of five frames.**
+
+`burst.heic` reads `hevc, **5 video streams**, 1 frames`. HEIF stores each image as its own
+stream, and `FFmpegFrameGrabber` decodes exactly one of them — whichever `videoStream` points at.
+So the obvious implementation, looping `grabImage()` the way `VideoThumbnailExtractor` does,
+reports **one** frame for a five-shot burst and silently throws the frame set away. That is the
+same class of bug as `Image.makeFromEncoded` collapsing an animated GIF, arrived at from the
+other direction.
+
+The stream count is now a column in the probe so this cannot be rediscovered by accident.
+`FfmpegStillDecoder` must **enumerate the container's video streams** and set `videoStream` per
+frame — `VideoPlayerVideoTrack.kt` already does exactly that swap for multi-video containers and
+is the thing to read first.
+
+Note what this also means: the frame *count* for a HEIC comes from the demuxer without decoding
+anything. `MediaThumbnails.frameSet` can answer cheaply; only rendering a chosen frame costs.
+
+### Amendments this phase forces on the phases below
+
+- **Phase 2b:** the routing table is `.heic`/`.heif`/`.avif` → FFmpeg, `.tif`/`.tiff` →
+  `ImageIO`, `.gif`/`.webp`/`.png`/`.jpg`/`.bmp` → skia. `ImageIO` was not in the plan and is now
+  a fourth decoder in `StillDecoders`. `.webp` must **not** be routed to FFmpeg on the strength of
+  it handling the static case — FFmpeg grabs `0 frames` from an animated one on both versions,
+  while skia reports all 8 with durations.
+- **Phase 2b, second amendment:** `FfmpegStillDecoder` walks video streams, per the finding above.
+- **Phase 3:** the Live Photo `Motion` frame comes from a **sibling file**, not a track —
+  `livephoto.heic` reports one stream and the motion lives in `livephoto.mov`. `FrameStripState`
+  needs a stem-matched directory lookup, the same shape as the external-subtitle scan, which
+  already solves "find the files sharing this stem" and should be read before it is written twice.
+- **Phase 5:** `StillColorInfo` comes from FFmpeg, never from skia (finding 5). And **fact 1 of
+  Phase 5 is now out of date**: the 8.0.1 build carries `zscale`, so the filter-graph route it
+  records as closed is open again. That is not a reason to take it — the shader ships and works —
+  but "the bundled build ships `tonemap` but not `zscale`" is no longer true, and Phase 5 must not
+  be read as if it were.
+
 ## Phase 1: The frame-set model
 
 One type for "what is inside an image file", in `commonMain` so the editor can speak it later.
@@ -103,6 +273,27 @@ One type for "what is inside an image file", in `commonMain` so the editor can s
 `core/data/TransferKind.kt` (moved), `feature/viewer/video/engine/probe/HdrInfo.kt`,
 `feature/viewer/shell/MediaThumbnails.kt`
 
+### ✅ Done — 2026-08-07
+
+`ImageFrameSet.kt` (`ImageFrame`, `FrameKind`, `ImageFrameSet` with `isSingle`, `viewable`,
+`primary` and a `Single` constant), `StillColorInfo.kt`, and `TransferKind` moved to `core/data`.
+`HdrInfo` keeps its FFmpeg-id mapping and imports the moved enum. `:shared:build` green.
+
+Two decisions the plan left open, settled:
+
+- **The tone-map rule is one function, not two properties.** `TransferKind.kt` carries a top-level
+  `needsToneMap(transfer, isWideGamut)`; `HdrInfo` and `StillColorInfo` both defer to it. Copying
+  the predicate into the new type would have been the same mistake as declaring a second
+  `TransferKind`, one level down.
+- **`MediaThumbnails.frameSet` is deferred to Phase 2a**, deliberately. Until a decoder exists it
+  could only ever return `ImageFrameSet.Single` — which is *true* for a JPEG and a **lie for
+  exactly the HEIC, GIF and TIFF files this feature exists for**. A stub that answers "one frame"
+  for a five-shot burst is the bug the plan was written to remove, not a step towards removing it.
+  `MediaThumbnails.kt` is untouched.
+
+`ImageFrame.index` is documented as decoder-local: skia counts animation frames, `ImageIO` counts
+TIFF pages, FFmpeg counts video streams. Phase 2's routing is what gives the number meaning.
+
 ## Phase 2: Decoder routing
 
 ### 2a — skia's multi-frame path (unconditional)
@@ -118,6 +309,21 @@ One type for "what is inside an image file", in `commonMain` so the editor can s
   becomes `"$absolutePath#$frameIndex"` for frame > 0, and the bare path for frame 0 so nothing
   already cached is invalidated. The 256 MB LRU budget (F1) then does the right thing on its own:
   paging a burst evicts the frames behind it.
+
+#### ✅ Done — 2026-08-07
+
+`SkiaFrameDecoder.kt` (`frameSet` counts without decoding; `frame(file, index)` decodes one),
+`ImageLoader.load(file, frameIndex = 0)`, `ImageBitmapCache.key(path, frameIndex)`, and
+`MediaThumbnails.frameSet(item)` — which is now truthful, since skia answers for every extension
+the app currently lists. `:shared:build` green.
+
+`readPixels(bitmap, frame)` is called **without** a prior frame: skia decodes whatever earlier
+frames a given one is built on by itself. Passing a prior frame is faster for a forward walk and
+wrong for every other access pattern, and the strip is walked both ways.
+
+⚠️ **Not yet exercised by a test.** The suite passes and the zero-frame path is provably unchanged,
+but nothing yet decodes frame 3 of `anim.gif` and checks it differs from frame 0. `FrameSetDecodeTest`
+and `FrameCacheKeyTest` (Phase 6) are the first things that will actually run this code.
 
 ### 2b — HEIF/AVIF, per the Phase 0 verdict
 
@@ -239,9 +445,11 @@ cannot be written on the one below.
   paged end to end stays inside the `ImageBitmapCache` budget.
 - **UI:** `FrameStripUiTest` — a multi-frame file renders the strip and a single-frame one does not;
   clicking a frame changes `state.frameIndex`; `PageDown` steps and stops at the last frame.
-- **Manual:** new cases in `ai/docs/testing/manual/` — TC-IMG for what a HEIC burst and a Live Photo
-  actually look like, and one for an HDR still next to the same shot in macOS Preview. Each needs
-  its *Why this is not automated* field, as all of them do.
+- **Manual:** TC-IMG cases for what a HEIC burst and a Live Photo actually look like, and one for an
+  HDR still next to the same shot in macOS Preview. Each needs its *Why this is not automated*
+  field, as all of them do. **`ai/docs/testing/manual/` no longer exists** — it was deleted in
+  `ef874d5` after the verification pass, so this bullet is asking for a directory to come back, not
+  for files to be added to one. Decide that before writing them.
 
 **Files:** `jvmTest/.../unit/ImageFrameSetTest.kt`, `StillColorInfoTest.kt`,
 `jvmTest/.../integration/FrameSetDecodeTest.kt`, `StillDecoderRoutingTest.kt`,

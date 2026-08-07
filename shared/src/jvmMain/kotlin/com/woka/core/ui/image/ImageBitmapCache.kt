@@ -50,6 +50,19 @@ object ImageBitmapCache {
     /** Two decodes at a time, as the loader has always throttled them. */
     val ioDispatcher = Dispatchers.IO.limitedParallelism(2)
 
+    /**
+     * The cache key for one frame of one file.
+     *
+     * Keyed by absolute path alone, a twelve-frame burst at native resolution
+     * would be twelve collisions on one key — every frame overwriting the last
+     * and the strip showing whichever decoded most recently. **Frame 0 keeps the
+     * bare path** so nothing already cached is invalidated and every existing
+     * caller is untouched. The LRU budget then does the right thing without
+     * being told: paging through a burst evicts the frames behind it.
+     */
+    fun key(path: String, frameIndex: Int): String =
+        if (frameIndex == 0) path else "$path#$frameIndex"
+
     operator fun get(key: String): ImageBitmap? = synchronized(lock) { entries[key] }
 
     operator fun set(key: String, bitmap: ImageBitmap) = synchronized(lock) {
