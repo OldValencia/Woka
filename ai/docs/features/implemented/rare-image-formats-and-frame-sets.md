@@ -7,8 +7,9 @@
 > This plan builds **one** "frames inside a file" mechanic covering every such type at once, rather
 > than a special case bolted on for HEIC. F4 — HDR tone mapping for stills — moves here too.
 
-Status: 🚧 In progress — **Phases 0–5 done (0–2 on 2026-08-07, 3–5 on 2026-08-08)**; only Phase 6
-(tests) is left, and most of it was written alongside the phases it covers. The frame strip ships: a burst, a multi-page TIFF and an animation are walked frame by
+Status: ✅ **All six phases done** — 0–2 on 2026-08-07, 3–6 on 2026-08-08. `:shared:build` green at
+**450 tests, 0 failures** (385 when this started). Three checks are owed by eye and listed at the
+end; **move this file to `implemented/` once they have been looked at.** The frame strip ships: a burst, a multi-page TIFF and an animation are walked frame by
 frame, and a Live Photo's motion clip plays from it. The grid draws all of them and badges the
 count, and every frame exports to PNG. HEIC, HEIF, AVIF
 and multi-page TIFF open in the viewer; animated GIF, WebP and AVIF report every frame; and tiled
@@ -842,26 +843,53 @@ plan's own manual case, and `ai/docs/testing/manual/` still does not exist.
 Placed by the pyramid rule from `viewer-verification-pass.md` — a test moves up a layer only when it
 cannot be written on the one below.
 
-- **Unit:** `ImageFrameSetTest` (frame filtering by `FrameKind`, `isSingle`, `primaryIndex` out of
-  range) is still outstanding. ~~`StillColorInfoTest`~~ **written in Phase 5** as
-  `ColorManagementRuleTest`, beside `HdrInfoTest` and sharing the one rule.
+- **Unit:** ~~`ImageFrameSetTest`~~ and ~~`StillColorInfoTest`~~ — the first written here, the
+  second in Phase 5 as `ColorManagementRuleTest`, beside `HdrInfoTest` and sharing the one rule.
 - **Integration:** ~~`FrameSetDecodeTest`~~ and ~~`StillDecoderRoutingTest`~~ **already written —
   pulled forward into Phase 2b**, which had no other way to show its decoders worked.
-  `FrameCacheKeyTest` — frame 0 uses the bare path, frames above it do not collide, and a burst
-  paged end to end stays inside the `ImageBitmapCache` budget — is the one still outstanding.
+  ~~`FrameCacheKeyTest`~~ is written too.
 - **UI:** ~~`FrameStripUiTest`~~ **written as part of Phase 3** — a multi-frame file renders the
   strip and a single-frame one does not, clicking a frame changes `state.frameIndex`, `PageDown`
   and `PageUp` step and stop at the ends, and the arrows still change file.
-- **Manual:** TC-IMG cases for what a HEIC burst and a Live Photo actually look like, and one for an
-  HDR still next to the same shot in macOS Preview. Each needs its *Why this is not automated*
-  field, as all of them do. **`ai/docs/testing/manual/` no longer exists** — it was deleted in
-  `ef874d5` after the verification pass, so this bullet is asking for a directory to come back, not
-  for files to be added to one. Decide that before writing them.
+- **Manual:** ~~TC-IMG cases~~ — **decided against, see the Phase 6 verdict.** The directory stays
+  deleted and the three checks it would have held are listed under *Still owed by eye*.
 
 **Files:** `jvmTest/.../unit/ImageFrameSetTest.kt`, `StillColorInfoTest.kt`,
 `jvmTest/.../integration/FrameSetDecodeTest.kt`, `StillDecoderRoutingTest.kt`,
 `FrameCacheKeyTest.kt`, `jvmTest/.../ui/FrameStripUiTest.kt`,
 `ai/docs/testing/manual/TC-IMG-*.md`
+
+### ✅ Done — 2026-08-08
+
+**`:shared:build` green, 450 tests, 0 failures** — up from 385 when this feature started.
+
+Most of this phase was written beside the code it covers, which is why the list above is mostly
+struck through. What was left and is now done: `ImageFrameSetTest` (the type the whole feature
+rests on — `isSingle` including the empty case, `viewable` filtering `Depth`/`Auxiliary` while the
+set keeps recording them, file order preserved, and the out-of-range `primaryIndex` falling back
+rather than throwing) and `FrameCacheKeyTest` (frame 0 keeps the bare path so every pre-frame-set
+caller still hits, later frames never collide, a preview never shares a key with the full picture,
+each frame of `anim.gif` really lands under its own key, and a burst paged end to end stays inside
+the budget).
+
+**The manual directory is not coming back, and that is the decision the plan asked for.**
+`ai/docs/testing/manual/` was deleted in `ef874d5` when the verification pass retired; recreating
+it for three cases would leave a directory with no process around it, which is how documentation
+rots. The un-automatable checks live in this file instead, where whoever picks the feature up is
+already reading — see **Still owed by eye** below.
+
+### Still owed by eye
+
+Three things no test can settle, listed here rather than in a manual-test directory:
+
+1. **A tone-mapped HDR still against macOS Preview on the same file.** Phase 5's maths is right and
+   the tests prove the right signal reaches the right branch, but nobody has looked at the result.
+   `hdr_pq.avif` and `hdr_hlg.avif` are the fixtures; the HLG branch especially has never been seen.
+2. **A real Live Photo.** The sibling lookup is unit-tested and the still→video switch is correct by
+   construction, but no Live Photo exists in the test corpus beyond a synthetic pair, and none was
+   ever opened in the app.
+3. **The vertical frame strip's width against a real burst.** 80 dp was chosen, not measured
+   against how it feels beside a photograph.
 
 ---
 
