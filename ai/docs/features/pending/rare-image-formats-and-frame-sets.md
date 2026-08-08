@@ -7,8 +7,8 @@
 > This plan builds **one** "frames inside a file" mechanic covering every such type at once, rather
 > than a special case bolted on for HEIC. F4 — HDR tone mapping for stills — moves here too.
 
-Status: 🚧 In progress — **Phases 0–4 done (0–2 on 2026-08-07, 3–4 on 2026-08-08)**; 5 and 6 not
-started. The frame strip ships: a burst, a multi-page TIFF and an animation are walked frame by
+Status: 🚧 In progress — **Phases 0–5 done (0–2 on 2026-08-07, 3–5 on 2026-08-08)**; only Phase 6
+(tests) is left, and most of it was written alongside the phases it covers. The frame strip ships: a burst, a multi-page TIFF and an animation are walked frame by
 frame, and a Live Photo's motion clip plays from it. The grid draws all of them and badges the
 count, and every frame exports to PNG. HEIC, HEIF, AVIF
 and multi-page TIFF open in the viewer; animated GIF, WebP and AVIF report every frame; and tiled
@@ -784,13 +784,67 @@ so they are stated here rather than left to be rediscovered:
 `feature/viewer/video/HdrImagePainter.kt`, `feature/viewer/video/engine/probe/HdrInfo.kt`,
 `feature/viewer/image/StillDecoders.kt`
 
+### ✅ Done — 2026-08-08
+
+HDR stills are tone mapped, and **fact 3 was resolved as neither of the two options offered** —
+by a third that the two were both working around.
+
+**Selection was never the bug; the name was.** `needsToneMap` correctly caught everything that
+cannot go straight to an sRGB display. What was wrong is that all of it was fed to one PQ chain,
+and three physically different signals arrive:
+
+| signal | EOTF | tone curve | gamut matrix |
+|---|---|---|---|
+| PQ | PQ | yes | if BT.2020 |
+| HLG | ARIB STD-B67 inverse OETF + OOTF | yes | if BT.2020 |
+| **wide-gamut SDR** | ordinary gamma | **no** | yes |
+
+Narrowing to PQ (the plan's option b) abandons HLG. Adding only an HLG branch (option a) leaves
+wide-gamut SDR under a tone curve — and that is the *most* wrong of the three, because it is not
+HDR at all and has no extra range to compress. **Tone mapping and gamut mapping are two operations
+and the code had fused them.** So the predicate keeps its selection job under an honest name
+(`needsColorManagement`, with `needsToneCurve` and `needsGamutMap` beside it) and the painter
+learnt to tell the three apart.
+
+- **The shader is three branches** (`HdrShader.kt`), carrying every signal into one common space —
+  linear light in units of 100-nit reference white — so 1.0 is SDR white whichever transfer it
+  arrived on. That is what lets one Hable operator serve both HDR transfers and lets the SDR branch
+  skip it with nothing else changing. HLG gets its real inverse OETF: two pieces, the lower a
+  square, nothing like PQ's — which is precisely why feeding HLG to PQ's curve crushed everything
+  below half signal.
+- **`transfer` and `isWideGamut` are passed to the painter**, not a boolean. A boolean is what
+  made the three indistinguishable in the first place.
+- **A still's colour comes from FFmpeg for every format**, `readStillColor`, deliberately *not*
+  following the pixel path — skia decodes `hdr_pq.png` and calls its colour "gamma close to sRGB"
+  while the `cICP` chunk says PQ. Following the decoder would have left the one HDR still on the
+  skia path unmanaged.
+- **And that needed `find_stream_info` after all** — for PNG and JPEG only. Phase 0 measured
+  `hdr_pq.png` as `PQ + wide` through the *grabber*, which calls it; the raw open this feature
+  added does not, and the first run of `StillColorTest` read SDR. A PNG keeps its colour tags in
+  the codec header rather than a container box, so only a decoder's look finds them. The deep probe
+  is now taken exactly for the formats FFmpeg does not decode here — which are the small files, so
+  the 220 ms Catalina saving stands.
+
+`MediaViewerFrame` asks the media for its colour instead of reaching into the player: a decoded
+video frame still answers per frame, because a track switch changes it, and everything else is the
+still's own description.
+
+`ColorManagementRuleTest` pins the split — wide-gamut SDR converted but never tone mapped, HDR over
+BT.709 tone mapped but never converted — and `StillColorTest` reads the real fixtures, including
+HLG being told apart from PQ rather than merely from SDR.
+
+**Not verified by eye.** The maths is right and the tests say the right signal reaches the right
+branch, but nothing has compared a tone-mapped still against macOS Preview on the same file — the
+plan's own manual case, and `ai/docs/testing/manual/` still does not exist.
+
 ## Phase 6: Tests
 
 Placed by the pyramid rule from `viewer-verification-pass.md` — a test moves up a layer only when it
 cannot be written on the one below.
 
 - **Unit:** `ImageFrameSetTest` (frame filtering by `FrameKind`, `isSingle`, `primaryIndex` out of
-  range), `StillColorInfoTest` (the transfer/gamut → tone-map decision, shared with `HdrInfoTest`).
+  range) is still outstanding. ~~`StillColorInfoTest`~~ **written in Phase 5** as
+  `ColorManagementRuleTest`, beside `HdrInfoTest` and sharing the one rule.
 - **Integration:** ~~`FrameSetDecodeTest`~~ and ~~`StillDecoderRoutingTest`~~ **already written —
   pulled forward into Phase 2b**, which had no other way to show its decoders worked.
   `FrameCacheKeyTest` — frame 0 uses the bare path, frames above it do not collide, and a burst

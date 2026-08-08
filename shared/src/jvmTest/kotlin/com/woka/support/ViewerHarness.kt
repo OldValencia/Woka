@@ -17,6 +17,7 @@ import androidx.compose.ui.test.v2.runComposeUiTest
 import com.woka.core.data.CarouselVisibility
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.MediaItem
+import com.woka.core.data.StillColorInfo
 import com.woka.core.data.SettingsRepository
 import com.woka.feature.viewer.shell.MediaViewerAmbientEffects
 import com.woka.feature.viewer.shell.MediaViewerPlayer
@@ -122,5 +123,6 @@ private object FakeViewerThumbnails : ViewerThumbnails {
     override suspend fun full(item: MediaItem, frameIndex: Int) = poster(64, 48)
     override suspend fun preview(item: MediaItem, frameIndex: Int) = poster(64, 48)
     override suspend fun sourceSize(item: MediaItem) = IntSize.Zero
+    override suspend fun stillColor(item: MediaItem) = StillColorInfo.Sdr
     override fun cachedFull(item: MediaItem, frameIndex: Int) = null
 }

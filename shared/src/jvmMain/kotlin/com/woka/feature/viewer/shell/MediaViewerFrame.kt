@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
+import com.woka.core.data.StillColorInfo
 import com.woka.feature.viewer.video.HdrImagePainter
 import com.woka.feature.viewer.video.SubtitleBitmapLayer
 
@@ -37,14 +38,19 @@ fun MediaViewerFrame(
 ) {
     val video = media as? ViewerMedia.Video
     val frameToDraw = video?.player?.currentFrame ?: targetPoster
-    val hdrInfo = if (frameToDraw === video?.player?.currentFrame) {
-        video.player.currentFrameHdrInfo
+    // A decoded video frame answers for itself, per frame, because a track
+    // switch changes it. Anything else is the still's own description — which
+    // a photograph had no way of supplying at all until Phase 5.
+    val color = if (frameToDraw === video?.player?.currentFrame) {
+        video.player.currentFrameHdrInfo?.let { StillColorInfo(it.transfer, it.isWideGamut) }
     } else {
-        null
-    }
+        (media as? ViewerMedia.Still)?.color
+    } ?: StillColorInfo.Sdr
 
-    val painter = if (hdrInfo?.needsToneMap == true) {
-        remember(frameToDraw) { HdrImagePainter(frameToDraw) }
+    val painter = if (color.needsColorManagement) {
+        remember(frameToDraw, color) {
+            HdrImagePainter(frameToDraw, color.transfer, color.isWideGamut)
+        }
     } else {
         remember(frameToDraw) { BitmapPainter(frameToDraw) }
     }

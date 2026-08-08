@@ -97,6 +97,7 @@ internal fun MediaViewerActiveItemEffects(
         if (showConflictDialog || activeItem == null) return@LaunchedEffect
         val frame = state.frameIndex
         state.sourceSize = thumbnails.sourceSize(activeItem)
+        state.stillColor = thumbnails.stillColor(activeItem)
         val alreadyDecoded = thumbnails.cachedFull(activeItem, frame)
         if (alreadyDecoded != null) {
             // Going back to a picture still in the cache: showing the preview

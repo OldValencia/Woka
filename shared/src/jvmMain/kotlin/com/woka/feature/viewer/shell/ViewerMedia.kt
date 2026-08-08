@@ -6,6 +6,7 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.IntSize
+import com.woka.core.data.StillColorInfo
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 
 /**
@@ -46,7 +47,9 @@ sealed interface ViewerMedia {
     @Immutable
     data class Still(
         override val poster: ImageBitmap,
-        val sourceSize: IntSize = IntSize.Zero
+        val sourceSize: IntSize = IntSize.Zero,
+        /** How its pixels are encoded; SDR sRGB unless a decoder said otherwise. */
+        val color: StillColorInfo = StillColorInfo.Sdr
     ) : ViewerMedia {
         override val nativeSize: IntSize
             get() = sourceSize.takeIf { it != IntSize.Zero }
@@ -95,12 +98,13 @@ val ViewerMedia.player: VideoPlayerState?
 fun rememberViewerMedia(
     poster: ImageBitmap?,
     player: VideoPlayerState?,
-    sourceSize: IntSize = IntSize.Zero
+    sourceSize: IntSize = IntSize.Zero,
+    color: StillColorInfo = StillColorInfo.Sdr
 ): ViewerMedia? =
-    remember(poster, player, sourceSize) {
+    remember(poster, player, sourceSize, color) {
         when {
             poster == null -> null
             player != null -> ViewerMedia.Video(player, poster)
-            else -> ViewerMedia.Still(poster, sourceSize)
+            else -> ViewerMedia.Still(poster, sourceSize, color)
         }
     }

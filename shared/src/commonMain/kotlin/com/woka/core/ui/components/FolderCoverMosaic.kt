@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.woka.core.ui.icons.Icons
 import com.woka.core.ui.theme.Theme

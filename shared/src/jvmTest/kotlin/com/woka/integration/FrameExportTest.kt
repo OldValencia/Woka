@@ -8,7 +8,6 @@ import com.woka.fixtures.BURST_FRAME_COUNT
 import com.woka.fixtures.BURST_HEIC
 import com.woka.fixtures.MULTIPAGE_TIFF
 import com.woka.fixtures.STILL_JPG
-import com.woka.fixtures.STILL_PNG
 import com.woka.fixtures.SampleMedia
 import com.woka.fixtures.TIFF_PAGE_COUNT
 import kotlinx.coroutines.runBlocking

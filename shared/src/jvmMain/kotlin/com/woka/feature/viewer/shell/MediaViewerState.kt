@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.ScalePreset
+import com.woka.core.data.StillColorInfo
 
 @Stable
 class MediaViewerState(initialId: String) {
@@ -39,6 +40,9 @@ class MediaViewerState(initialId: String) {
     // zoom presets mean native pixels even while a preview stands in for the
     // picture, that one is published outward once the media exists.
     var sourceSize by mutableStateOf(IntSize.Zero)
+    // How the current still's pixels are encoded, so the frame can be drawn
+    // through the right colour path. A video carries its own per-frame answer.
+    var stillColor by mutableStateOf(StillColorInfo.Sdr)
     // Raised when the wheel or the keyboard changes the zoom, to flash the HUD.
     val zoomHudEvent = ViewerEvent()
     var activeItemPath by mutableStateOf<String?>(null)

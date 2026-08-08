@@ -3,6 +3,7 @@ package com.woka.feature.viewer.shell
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.MediaItem
+import com.woka.core.data.StillColorInfo
 
 /**
  * The two different pictures the viewer needs of one file, kept apart.
@@ -33,6 +34,13 @@ interface ViewerThumbnails {
      * [IntSize.Zero] when it cannot be read, which falls back to the poster.
      */
     suspend fun sourceSize(item: MediaItem): IntSize
+
+    /**
+     * The still's transfer function and gamut, so the frame can be drawn
+     * through the right colour path. SDR for a video, whose frames carry their
+     * own per-frame description on the player.
+     */
+    suspend fun stillColor(item: MediaItem): StillColorInfo
 
     /**
      * [full] if it is already decoded and in memory, else null — without

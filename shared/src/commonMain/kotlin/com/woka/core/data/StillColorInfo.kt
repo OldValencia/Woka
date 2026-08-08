@@ -25,8 +25,8 @@ data class StillColorInfo(
     val transfer: TransferKind = TransferKind.SDR,
     val isWideGamut: Boolean = false
 ) {
-    val needsToneMap: Boolean
-        get() = needsToneMap(transfer, isWideGamut)
+    val needsColorManagement: Boolean
+        get() = needsColorManagement(transfer, isWideGamut)
 
     companion object {
         /** What a file that never said anything about its colour is taken to be. */

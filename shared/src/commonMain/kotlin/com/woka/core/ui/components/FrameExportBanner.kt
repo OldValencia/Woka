@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import com.woka.core.ui.theme.Theme
 import com.woka.core.utils.FrameExportStatus
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 /** How long a finished message stays up before it takes itself away. */
 private const val SETTLE_MS = 2600L
@@ -47,7 +48,7 @@ fun FrameExportBanner() {
     // update replaces it, however long that takes.
     LaunchedEffect(message) {
         if (message != null && !message.startsWith("Exporting")) {
-            delay(SETTLE_MS)
+            delay(SETTLE_MS.milliseconds)
             FrameExportStatus.clear()
         }
     }

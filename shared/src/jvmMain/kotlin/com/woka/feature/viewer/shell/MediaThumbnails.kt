@@ -3,10 +3,12 @@ package com.woka.feature.viewer.shell
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.ImageFrameSet
+import com.woka.core.data.StillColorInfo
 import com.woka.core.data.MediaItem
 import com.woka.core.ui.image.ImageBitmapCache
 import com.woka.feature.viewer.image.ImageLoader
 import com.woka.feature.viewer.image.StillPreview
+import com.woka.feature.viewer.image.readStillColor
 import com.woka.feature.viewer.image.stillDecoderFor
 import com.woka.feature.viewer.video.engine.VideoThumbnailExtractor
 import com.woka.feature.viewer.video.engine.quietFfmpegLogs
@@ -75,6 +77,15 @@ object MediaThumbnails {
                 runCatching { stillDecoderFor(item.file).nativeSize(item.file, 0) }
                     .getOrDefault(IntSize.Zero)
             }
+        }
+
+    /**
+     * A still's transfer function and gamut. Read from FFmpeg for every format
+     * — see [readStillColor] for why it does not follow the pixel path.
+     */
+    suspend fun stillColor(item: MediaItem): StillColorInfo =
+        withContext(ImageBitmapCache.ioDispatcher) {
+            if (item is MediaItem.Video) StillColorInfo.Sdr else readStillColor(item.file)
         }
 
     /**

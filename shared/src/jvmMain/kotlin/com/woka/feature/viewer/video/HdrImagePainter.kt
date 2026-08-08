@@ -7,69 +7,62 @@ import androidx.compose.ui.graphics.asComposeShader
 import androidx.compose.ui.graphics.asSkiaBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.painter.Painter
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
+import com.woka.core.data.TransferKind
 import org.jetbrains.skia.Data
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.RuntimeEffect
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
-class HdrImagePainter(private val bitmap: ImageBitmap) : Painter() {
+/** `vec2 scale` then two floats — declaration order is the packing order. */
+private const val UNIFORM_BYTES = 16
 
-    private val effect by lazy {
-        RuntimeEffect.makeForShader("""
-            uniform vec2 scale;
-            uniform shader image;
-            const float m1 = 0.1593017578125, m2 = 78.84375;
-            const float c1 = 0.8359375, c2 = 18.8515625, c3 = 18.6875;
-            vec3 pqEotf(vec3 e) {                    
-                vec3 p = pow(e, vec3(1.0/m2));
-                vec3 num = max(p - c1, 0.0);
-                vec3 den = c2 - c3 * p;
-                return pow(num / den, vec3(1.0/m1));
-            }
-            const mat3 bt2020to709 = mat3(
-                 1.6605, -0.1246, -0.0182,
-                -0.5876,  1.1329, -0.1006,
-                -0.0728, -0.0083,  1.1187);
-            vec3 hable(vec3 x){                      
-                const float A=0.15,B=0.50,C=0.10,D=0.20,E=0.02,F=0.30;
-                return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F;
-            }
+/**
+ * Draws a picture that cannot go straight to an sRGB display, doing the right
+ * thing for **which** kind of picture it is.
+ *
+ * [transfer] and [isWideGamut] are passed rather than a "needs tone mapping"
+ * boolean because the two are separate operations: an HDR transfer wants a tone
+ * curve, BT.2020 primaries want a matrix, and a wide-gamut SDR photograph wants
+ * the second without the first. See [HDR_SHADER].
+ *
+ * It serves stills as well as video frames now. The maths was tuned against 4K
+ * HDR10 video and has never been checked against a photograph — if a still ever
+ * wants different tuning, the operator, the peak and the desaturation should
+ * become uniforms rather than the shader being forked.
+ */
+class HdrImagePainter(
+    private val bitmap: ImageBitmap,
+    private val transfer: TransferKind = TransferKind.PQ,
+    private val isWideGamut: Boolean = true
+) : Painter() {
 
-            half4 main(float2 coord){
-                vec3 e = image.eval(coord * scale).rgb;
-                
-                vec3 lin = pqEotf(e);                
-                lin *= (10000.0/100.0);             
-                lin = bt2020to709 * lin;             
-                const float W = 11.2;
-                vec3 mapped = hable(lin) / hable(vec3(W));
-                vec3 srgb = pow(clamp(mapped, 0.0, 1.0), vec3(1.0/2.2)); 
-                
-                return half4(srgb, 1.0);
-            }
-        """)
-    }
+    private val effect by lazy { RuntimeEffect.makeForShader(HDR_SHADER) }
 
     override val intrinsicSize: Size
         get() = Size(bitmap.width.toFloat(), bitmap.height.toFloat())
 
     override fun DrawScope.onDraw() {
-        val scaleX = intrinsicSize.width / size.width
-        val scaleY = intrinsicSize.height / size.height
-        
-        val dataBytes = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN)
-            .putFloat(scaleX).putFloat(scaleY).array()
-            
-        val skiaImage = Image.makeFromBitmap(bitmap.asSkiaBitmap())
-        val skiaShader = skiaImage.makeShader()
-        
-        val shader = effect.makeShader(Data.makeFromBytes(dataBytes), arrayOf(skiaShader), null)
-        val shaderBrush = ShaderBrush(shader.asComposeShader())
-        
-        drawRect(
-            brush = shaderBrush,
-            size = size
+        val uniforms = ByteBuffer.allocate(UNIFORM_BYTES).order(ByteOrder.LITTLE_ENDIAN)
+            .putFloat(intrinsicSize.width / size.width)
+            .putFloat(intrinsicSize.height / size.height)
+            .putFloat(transferCode())
+            .putFloat(if (isWideGamut) 1f else 0f)
+            .array()
+
+        val image = Image.makeFromBitmap(bitmap.asSkiaBitmap())
+        val shader = effect.makeShader(
+            Data.makeFromBytes(uniforms),
+            arrayOf(image.makeShader()),
+            null
         )
+        drawRect(brush = ShaderBrush(shader.asComposeShader()), size = size)
+    }
+
+    /** Floats rather than an int uniform: every Skia build takes these. */
+    private fun transferCode(): Float = when (transfer) {
+        TransferKind.SDR -> 0f
+        TransferKind.PQ -> 1f
+        TransferKind.HLG -> 2f
     }
 }

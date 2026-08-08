@@ -94,9 +94,9 @@ class MediaProbeTest {
         val file = SampleMedia.file(DUAL_VIDEO)
         val first = onGrabber(file, video[0].index) { it.readStreamHdrInfo() }
         val second = onGrabber(file, video[1].index) { it.readStreamHdrInfo() }
-        assertTrue(first.needsToneMap, "the PQ/BT.2020 stream was read as SDR")
+        assertTrue(first.needsColorManagement, "the PQ/BT.2020 stream was read as SDR")
         assertTrue(first.isWideGamut)
-        assertTrue(!second.needsToneMap, "the BT.709 stream was read as HDR")
+        assertTrue(!second.needsColorManagement, "the BT.709 stream was read as HDR")
     }
 
     @Test

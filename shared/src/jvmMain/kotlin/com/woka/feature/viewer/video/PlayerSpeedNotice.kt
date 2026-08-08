@@ -44,7 +44,7 @@ internal fun PlayerSpeedNotice(videoState: VideoPlayerState, speed: Float) {
     val isHeavy = width != null && height != null && width * height >= HEAVY_FRAME_PIXELS
     val quality = buildString {
         append("${height}p")
-        if (videoState.streamHdrInfo?.needsToneMap == true) append(" HDR")
+        if (videoState.streamHdrInfo?.needsColorManagement == true) append(" HDR")
     }
 
     AnimatedVisibility(

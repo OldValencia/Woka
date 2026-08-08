@@ -14,6 +14,7 @@ private object RealViewerThumbnails : ViewerThumbnails {
     override suspend fun preview(item: MediaItem, frameIndex: Int) =
         MediaThumbnails.loadPreview(item, frameIndex)
     override suspend fun sourceSize(item: MediaItem) = MediaThumbnails.sourceSize(item)
+    override suspend fun stillColor(item: MediaItem) = MediaThumbnails.stillColor(item)
     override fun cachedFull(item: MediaItem, frameIndex: Int) =
         ImageBitmapCache[ImageBitmapCache.key(item.file.absolutePath, frameIndex)]
 }

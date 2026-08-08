@@ -103,7 +103,7 @@ fun MediaViewerScreen(
     // strip already knows, so nothing is opened twice to find out.
     val exportEntries = rememberFrameExportEntry(activeItem, strip)
 
-    val media = rememberViewerMedia(state.imageBitmap, videoState, state.sourceSize)
+    val media = rememberViewerMedia(state.imageBitmap, videoState, state.sourceSize, state.stillColor)
 
     val playerContent = @Composable {
         MediaViewerPlayer(

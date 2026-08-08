@@ -15,15 +15,29 @@ package com.woka.core.data
 enum class TransferKind { SDR, PQ, HLG }
 
 /**
- * Whether a picture with this colour description has to be tone mapped to reach
- * an SDR display. **One rule, one place** — `HdrInfo` (video) and
- * [StillColorInfo] (stills) both defer to it rather than each spelling it out.
+ * True when this picture cannot go straight to an sRGB display untouched.
  *
- * Wide gamut alone counts: BT.2020 primaries through an sRGB pipeline are wrong
- * even when the transfer is plain. Note that the shader this selects is PQ-only
- * today, so an HLG source reaches the wrong maths — a pre-existing defect
- * recorded in Phase 5 of `rare-image-formats-and-frame-sets.md`, not one this
- * function introduces.
+ * **This was called `needsToneMap`, and the name was the bug.** It selects
+ * correctly — anything that is not plain SDR BT.709 needs handling — but what
+ * it selected was fed to one PQ tone-mapping shader, and only one of the three
+ * cases it catches wants that:
+ *
+ * - **PQ** — a different transfer function *and* HDR luminance. Needs
+ *   linearising by the PQ EOTF and a tone curve to fit an SDR display.
+ * - **HLG** — a different transfer function again, and not remotely PQ's. Sent
+ *   through the PQ EOTF, as it was, its shadows crush and its highlights lie.
+ * - **Wide-gamut SDR** — BT.2020 primaries with an ordinary transfer. **Not HDR
+ *   at all.** It needs the gamut matrix and nothing else; a tone curve here
+ *   flattens a picture that had nothing wrong with its luminance.
+ *
+ * So the selection stayed and the *painter* learnt to tell the three apart —
+ * see `HdrImagePainter`. [needsToneCurve] and [needsGamutMap] are what it asks.
  */
-fun needsToneMap(transfer: TransferKind, isWideGamut: Boolean): Boolean =
-    transfer != TransferKind.SDR || isWideGamut
+fun needsColorManagement(transfer: TransferKind, isWideGamut: Boolean): Boolean =
+    needsToneCurve(transfer) || needsGamutMap(isWideGamut)
+
+/** Only a genuinely high-dynamic-range transfer gets a tone curve. */
+fun needsToneCurve(transfer: TransferKind): Boolean = transfer != TransferKind.SDR
+
+/** Only BT.2020 primaries need converting to BT.709. */
+fun needsGamutMap(isWideGamut: Boolean): Boolean = isWideGamut
