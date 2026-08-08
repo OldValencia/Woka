@@ -3,7 +3,6 @@ package com.woka.feature.viewer.shell
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.graphics.ImageBitmap
 import com.woka.core.data.MediaItem
 import com.woka.core.data.SettingsRepository
 import com.woka.core.data.WokaSettings

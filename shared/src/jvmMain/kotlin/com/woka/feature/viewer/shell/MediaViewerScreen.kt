@@ -4,7 +4,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.graphics.ImageBitmap
 import com.woka.app.AppDependencies
 import com.woka.core.data.MediaItem
 import com.woka.app.shell.LocalGlobalShortcuts

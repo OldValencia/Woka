@@ -12,7 +12,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.*
 import androidx.compose.ui.unit.dp
 import com.woka.core.data.MediaItem
 import com.woka.core.ui.theme.Theme
