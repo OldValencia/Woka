@@ -2,7 +2,7 @@ package com.woka.unit
 
 import com.woka.core.data.MediaItem
 import com.woka.core.data.MediaKind
-import com.woka.core.data.canDecodeInGrid
+import com.woka.core.data.needsWokaCover
 import com.woka.core.data.isMedia
 import com.woka.core.data.mediaItemOrNull
 import com.woka.core.data.mediaKind
@@ -75,18 +75,20 @@ class MediaKindTest {
     }
 
     /**
-     * The viewer opens all five through `StillDecoders`; Coil, which is what the
-     * grid draws with, opens none of them. The flag is about the grid alone.
+     * Coil reads neither HEIF, AVIF nor TIFF, so the grid draws those five with
+     * Woka's own decoders. `.gif` and `.webp` are absent because Coil does read
+     * them, animation included — routing those away would lose the animation.
      */
     @Test
-    fun `the formats the grid cannot preview are listed all the same`() {
+    fun `the formats Coil cannot read take the grid's other road`() {
         listOf("heic", "heif", "avif", "tif", "tiff").forEach { extension ->
             val file = named("photo.$extension")
             assertEquals(MediaKind.Image, file.mediaKind(), extension)
-            assertFalse(file.canDecodeInGrid, extension)
+            assertTrue(file.needsWokaCover, extension)
         }
-        assertTrue(named("photo.png").canDecodeInGrid)
-        assertTrue(named("clip.mkv").canDecodeInGrid)
+        listOf("png", "jpg", "gif", "webp", "bmp").forEach {
+            assertFalse(named("photo.$it").needsWokaCover, it)
+        }
     }
 
     @Test

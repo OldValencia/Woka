@@ -28,7 +28,6 @@ import com.woka.core.ui.theme.Theme
 import org.jetbrains.compose.resources.painterResource
 import java.io.File
 import com.woka.core.utils.generateVideoThumbnail
-import coil3.compose.AsyncImage
 
 /**
  * What a card shows above its title. The two branches share nothing but the
@@ -56,12 +55,7 @@ fun FolderCardPreview(
                 VideoCover(file)
                 PlayBadge(modifier = Modifier.align(Alignment.Center))
             } else {
-                AsyncImage(
-                    model = file,
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
+                StillCoverImage(file)
             }
         }
     }

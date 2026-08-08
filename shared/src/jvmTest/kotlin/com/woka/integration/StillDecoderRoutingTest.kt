@@ -1,7 +1,7 @@
 package com.woka.integration
 
 import com.woka.core.data.MediaKind
-import com.woka.core.data.canDecodeInGrid
+import com.woka.core.data.needsWokaCover
 import com.woka.core.data.mediaKind
 import com.woka.feature.viewer.image.FfmpegStillDecoder
 import com.woka.feature.viewer.image.ImageIoStillDecoder
@@ -11,8 +11,8 @@ import com.woka.feature.viewer.image.stillDecoderFor
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertSame
+import kotlin.test.assertTrue
 
 /** Routing is by name only — nothing here opens a file. */
 private fun named(name: String) = File("routing-fixture", name)
@@ -72,12 +72,15 @@ class StillDecoderRoutingTest {
         assertSame(SkiaFrameDecoder, stillDecoderFor(named("anim.webp")))
     }
 
-    /** The viewer reads all five; the grid, which is Coil, still reads none. */
+    /**
+     * The formats only Woka's decoders can open are exactly the ones the grid
+     * has to draw for itself. If the two lists drift, a tile goes grey again.
+     */
     @Test
-    fun `the formats only the viewer can open are the ones the grid skips`() {
-        val viewerOnly = expected.filterValues { it != SkiaFrameDecoder }.keys
-        viewerOnly.forEach { extension ->
-            assertFalse(named("photo.$extension").canDecodeInGrid, extension)
+    fun `the formats only Woka can open are the ones the grid draws itself`() {
+        val wokaOnly = expected.filterValues { it != SkiaFrameDecoder }.keys
+        wokaOnly.forEach { extension ->
+            assertTrue(named("photo.$extension").needsWokaCover, extension)
         }
     }
 }

@@ -14,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import com.woka.core.ui.icons.Icons
 import com.woka.core.ui.theme.Theme
 import org.jetbrains.compose.resources.painterResource
@@ -69,10 +68,5 @@ private fun MosaicRow(content: @Composable RowScope.() -> Unit) {
 
 @Composable
 private fun PreviewTile(file: File, modifier: Modifier) {
-    AsyncImage(
-        model = file,
-        contentDescription = null,
-        modifier = modifier,
-        contentScale = ContentScale.Crop
-    )
+    StillCoverImage(file, modifier)
 }

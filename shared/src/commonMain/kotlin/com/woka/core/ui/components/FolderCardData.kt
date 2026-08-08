@@ -7,6 +7,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.woka.core.data.mayHoldFrames
+import com.woka.core.utils.countFrames
 import java.io.File
 
 /** Everything a card draws, resolved from its path. */
@@ -37,19 +39,28 @@ fun rememberFolderCardData(path: String): FolderCardData {
 
     var itemCount by remember(path) { mutableStateOf(0) }
     var previews by remember(path) { mutableStateOf<List<File>>(emptyList()) }
+    var frameCount by remember(path) { mutableStateOf(1) }
 
     LaunchedEffect(path) {
         if (isDir) {
             val data = fetchFolderStateData(file)
             itemCount = data.itemCount
             previews = data.previews
+        } else if (file.mayHoldFrames) {
+            // Only for the formats that can hold a set — every other file would
+            // be opened to be told what its name already said.
+            frameCount = countFrames(file)
         }
     }
 
-    val badge = if (isDir) {
-        if (itemCount > 0) "$itemCount ITEMS" else "EMPTY"
-    } else {
-        file.extension.uppercase().takeIf { it.isNotEmpty() } ?: "FILE"
+    val badge = when {
+        isDir -> if (itemCount > 0) "$itemCount ITEMS" else "EMPTY"
+        // "12 FRAMES" says the same thing about a file that "12 ITEMS" says
+        // about a folder: there is more inside this than one thing. It replaces
+        // the extension rather than joining it — the cover already looks like a
+        // photograph, and which container it arrived in is the lesser fact.
+        frameCount > 1 -> "$frameCount FRAMES"
+        else -> file.extension.uppercase().takeIf { it.isNotEmpty() } ?: "FILE"
     }
 
     return FolderCardData(file, name, isDir, subtitle, badge, previews)

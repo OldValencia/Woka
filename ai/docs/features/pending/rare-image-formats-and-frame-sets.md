@@ -7,9 +7,10 @@
 > This plan builds **one** "frames inside a file" mechanic covering every such type at once, rather
 > than a special case bolted on for HEIC. F4 — HDR tone mapping for stills — moves here too.
 
-Status: 🚧 In progress — **Phases 0–3 done (0–2 on 2026-08-07, 3 on 2026-08-08)**; 4–6 not
+Status: 🚧 In progress — **Phases 0–4 done (0–2 on 2026-08-07, 3–4 on 2026-08-08)**; 5 and 6 not
 started. The frame strip ships: a burst, a multi-page TIFF and an animation are walked frame by
-frame, and a Live Photo's motion clip plays from it. HEIC, HEIF, AVIF
+frame, and a Live Photo's motion clip plays from it. The grid draws all of them and badges the
+count, and every frame exports to PNG. HEIC, HEIF, AVIF
 and multi-page TIFF open in the viewer; animated GIF, WebP and AVIF report every frame; and tiled
 HEIF — which is what every real-world HEIC turned out to be — is assembled from its tiles. The probe forced a
 dependency upgrade (`ffmpeg` → `8.0.1-1.5.13`, `javacv` → `1.5.13`) which is **taken and verified
@@ -702,6 +703,37 @@ default — every preview ever written paid it too, in proportion to its size.
 
 **Files:** `core/ui/components/WokaImageDecoder.kt`, `core/ui/components/FolderCardOverlays.kt`,
 `core/ui/components/FolderCardData.kt`
+
+### ✅ Done — 2026-08-08
+
+The grid draws HEIF, AVIF and TIFF, and a frame set says how many pictures are in it.
+**`:shared:build` green, 427 tests, 0 failures.**
+
+**Not a `coil3.decode.Decoder`, and that is a deliberate departure from this phase as written.**
+A Coil decoder would have to be told the target size and honour it, or it would decode a
+36-megapixel HEIC to fill a 200 dp tile — the mistake the carousel made, that `StillPreview` was
+built to stop, and that would have been reintroduced one layer down. What ships instead is
+`StillCoverImage`: Coil for everything it can read, `loadStillCover` for the rest, which returns
+the *already scaled, already disk-cached* 400 px preview. **The video cover sitting beside it in
+the same composable has always worked exactly this way**, so this is the file's existing idiom
+rather than a new one — and unlike Coil's memory cache, the preview survives a restart.
+
+- **`GRID_UNDECODABLE_EXTENSIONS` was renamed, not emptied.** The plan expected it gone; the honest
+  state is that Coil still cannot read those five, so the set now means "Coil is blind to this one,
+  use ours" (`COIL_BLIND_EXTENSIONS` / `File.needsWokaCover`). Nothing is hidden from the grid any
+  more, which was the point — the *filter* in `fetchFolderStateData` is what actually went, so a
+  folder of HEICs now gets a real cover mosaic instead of an empty one.
+- **`.gif` and `.webp` stay with Coil**, which reads both including animation. Routing them to
+  Woka's decoders would have traded a moving thumbnail for a still one.
+- **The badge replaces the extension rather than joining it.** `"9 FRAMES"` where a folder says
+  `"12 ITEMS"` — the same "there is more inside this than one thing" signal. A single-picture file
+  keeps its extension, because `"1 FRAMES"` says nothing.
+- **Only a name that could hold a set is opened to count.** `mayHoldFrames` gates it, or every
+  JPEG in a folder would be opened to draw a badge that its extension already determined.
+
+`GridCoverTest` covers both halves against the real fixtures: the blind formats produce a cover, a
+cover is never bigger than a preview, the counts match per format, and an ordinary photograph
+counts one.
 
 ## Phase 5: HDR for stills
 

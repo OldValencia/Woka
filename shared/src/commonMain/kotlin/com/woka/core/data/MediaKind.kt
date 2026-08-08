@@ -20,19 +20,17 @@ private val IMAGE_EXTENSIONS = setOf(
 private val VIDEO_EXTENSIONS = setOf("mp4", "mkv", "avi", "mov", "webm")
 
 /**
- * Formats the **grid** cannot draw. The viewer opens every one of them.
+ * Formats **Coil** cannot read, and the grid draws with `AsyncImage`.
  *
- * This set used to mean "no decoder anywhere in the app", and `.heic` was in it
- * because nothing could read a HEIF. That is no longer the case — `StillDecoders`
- * routes HEIF and AVIF to FFmpeg and TIFF to `ImageIO` — but the grid does not go
- * through `StillDecoders`. It goes through Coil, which decodes what the platform
- * decodes and so still draws an empty tile for all five. They stay in
- * [IMAGE_EXTENSIONS] deliberately: being consistently "an image the grid cannot
- * preview" beats being inconsistently invisible.
+ * The set has meant three different things in three days, and only the last one
+ * is true: first "no decoder anywhere in the app", then "the grid cannot show
+ * these at all", and now — since the grid falls back to `loadStillCover` for
+ * them — simply "Coil is blind to this one, use ours". Nothing is hidden from
+ * the grid any more; these just take a different road to the same tile.
  *
- * Emptied by the `WokaImageDecoder` step, which puts Coil on the same routing.
+ * `.gif` and `.webp` are absent because Coil reads both, animation included.
  */
-private val GRID_UNDECODABLE_EXTENSIONS = setOf("heic", "heif", "avif", "tif", "tiff")
+private val COIL_BLIND_EXTENSIONS = setOf("heic", "heif", "avif", "tif", "tiff")
 
 fun File.mediaKind(): MediaKind? = when (extension.lowercase()) {
     in IMAGE_EXTENSIONS -> MediaKind.Image
@@ -44,12 +42,12 @@ val File.isMedia: Boolean
     get() = mediaKind() != null
 
 /**
- * False for a format the grid lists but cannot preview — see
- * [GRID_UNDECODABLE_EXTENSIONS]. Not a question about the viewer, which opens
- * every listed format; ask `stillDecoderFor` about that one.
+ * True when a grid tile must be drawn by Woka's own decoders rather than by
+ * Coil — see [COIL_BLIND_EXTENSIONS]. Not a question about the viewer, which
+ * opens every listed format; ask `stillDecoderFor` about that one.
  */
-val File.canDecodeInGrid: Boolean
-    get() = extension.lowercase() !in GRID_UNDECODABLE_EXTENSIONS
+val File.needsWokaCover: Boolean
+    get() = extension.lowercase() in COIL_BLIND_EXTENSIONS
 
 /**
  * Formats that *can* hold more than one picture — a burst, an animation, pages.
