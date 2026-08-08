@@ -1,20 +1,18 @@
 package com.woka.feature.viewer.shell
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.woka.core.data.CarouselVisibility
 import com.woka.core.data.MediaItem
-import com.woka.feature.viewer.video.engine.decode.selectAudioTrack
-import com.woka.feature.viewer.video.VolumeVerticalOverlay
-import com.woka.feature.viewer.video.PlayerSettingsOverlay
-import com.woka.feature.viewer.video.SubtitleVerticalOverlay
-
-/** How long a volume change keeps the volume popover on screen by itself. */
-private const val VOLUME_FLASH_MS = 2000L
+import com.woka.feature.viewer.shell.frames.FRAME_STRIP_WIDTH
+import com.woka.feature.viewer.shell.frames.FrameStrip
+import com.woka.feature.viewer.shell.frames.FrameStripModel
 
 @Composable
 fun MediaViewerPlayer(
@@ -31,7 +29,8 @@ fun MediaViewerPlayer(
     onVolumeChange: (Float) -> Unit,
     onSizeModeChange: (SizeMode) -> Unit,
     onToggleFullscreen: () -> Unit,
-    thumbnails: ViewerThumbnails
+    thumbnails: ViewerThumbnails,
+    strip: FrameStripModel = FrameStripModel()
 ) {
     Box(modifier = modifier) {
         val hasCarousel = chrome.isCarouselEnabled && mediaItems.size > 1 && !chrome.isFullscreen
@@ -43,6 +42,10 @@ fun MediaViewerPlayer(
         val subtitleBottomPadding = if (state.isUiVisible) {
             if (hasCarousel) 180.dp else 100.dp
         } else 40.dp
+        // The strip owns the left edge while it is up, so the Prev arrow — which
+        // is anchored there too — steps aside rather than sitting under it.
+        val showStrip = !strip.isSingle && state.isUiVisible
+        val navStartInset = if (showStrip) FRAME_STRIP_WIDTH else 0.dp
 
         if (media != null) {
             MediaViewerContent(
@@ -86,60 +89,38 @@ fun MediaViewerPlayer(
                 thumbnails = thumbnails,
                 mediaVolume = mediaVolume,
                 onVolumeChange = onVolumeChange,
-                onToggleFullscreen = onToggleFullscreen
+                onToggleFullscreen = onToggleFullscreen,
+                navStartInset = navStartInset
             )
         } else {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         }
 
-        // Read unconditionally: inside the `||` below it would be a conditional
-        // composable call, which Compose cannot key.
-        val volumeFlash = rememberEventFlag(state.volumeEvent, VOLUME_FLASH_MS)
-        val video = media as? ViewerMedia.Video
+        // Only for a file that has more than one picture in it, so an ordinary
+        // photograph composes byte for byte the tree it always did.
+        LaunchedEffect(strip) { state.frameCount = strip.frames.size.coerceAtLeast(1) }
+        if (activeItem != null && showStrip) {
+            FrameStrip(
+                item = activeItem,
+                frames = strip.frames,
+                selectedIndex = state.frameIndex,
+                loadPreview = { item, frame -> thumbnails.preview(item, frame) },
+                onSelectFrame = { state.frameIndex = it },
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(start = 12.dp, top = 72.dp, bottom = bottomOverlayPadding)
+            )
+        }
 
-        PlayPauseOverlay(event = state.playPauseEvent, isPlaying = video?.player?.isPlaying == true)
-        SkipOverlay(event = state.skipEvent, direction = state.skipDirection)
-        ZoomHudOverlay(
-            event = state.zoomHudEvent,
-            label = "${state.sizeMode.percentIn(state.containerSize, state.nativeSize)}%"
-        )
-        VolumeVerticalOverlay(
-            isVisible = state.hover.visibleTarget == HoverTarget.Volume || volumeFlash,
-            volume = mediaVolume,
+        MediaViewerPlayerOverlays(
+            state = state,
+            media = media,
+            activeItem = activeItem,
+            mediaVolume = mediaVolume,
             bottomPadding = bottomOverlayPadding,
-            alignment = if (state.isUiVisible) Alignment.BottomEnd else Alignment.CenterEnd,
-            audioTracks = video?.player?.tracks?.mediaTracks?.audio ?: emptyList(),
-            selectedAudioIndex = video?.player?.tracks?.selectedAudioIndex,
-            onSelectAudio = { index -> video?.player?.selectAudioTrack(index) },
-            onVolumeChange = onVolumeChange,
-            onHover = { state.hover.setHovered(HoverTarget.Volume, it) }
+            showInfoDialog = showInfoDialog,
+            onShowInfoDialogChange = onShowInfoDialogChange,
+            onVolumeChange = onVolumeChange
         )
-        // Rendered on the type match rather than early-returning inside: a still
-        // has no subtitles and no player settings, and now says so in the types.
-        if (video != null) {
-            SubtitleVerticalOverlay(
-                isVisible = state.hover.visibleTarget == HoverTarget.Subtitle,
-                bottomPadding = bottomOverlayPadding,
-                alignment = if (state.isUiVisible) Alignment.BottomEnd else Alignment.CenterEnd,
-                player = video.player,
-                onHover = { state.hover.setHovered(HoverTarget.Subtitle, it) }
-            )
-            PlayerSettingsOverlay(
-                isVisible = state.hover.visibleTarget == HoverTarget.Settings,
-                bottomPadding = bottomOverlayPadding,
-                alignment = if (state.isUiVisible) Alignment.BottomEnd else Alignment.CenterEnd,
-                player = video.player,
-                onHover = { state.hover.setHovered(HoverTarget.Settings, it) }
-            )
-        }
-        if (showInfoDialog && activeItem != null) {
-            FileInfoDialog(
-                activeItem,
-                onDismiss = { onShowInfoDialogChange(false) },
-                mediaTracks = video?.player?.tracks?.mediaTracks,
-                durationMs = video?.player?.durationMs,
-                selectedAudioIndex = video?.player?.tracks?.selectedAudioIndex
-            )
-        }
     }
 }

@@ -51,6 +51,20 @@ val File.isMedia: Boolean
 val File.canDecodeInGrid: Boolean
     get() = extension.lowercase() !in GRID_UNDECODABLE_EXTENSIONS
 
+/**
+ * Formats that *can* hold more than one picture — a burst, an animation, pages.
+ *
+ * Deliberately by name and not by opening the file: this decides whether a
+ * context menu offers "Export Frames", and a grid would otherwise open every
+ * HEIC in the folder to draw one menu. A file that turns out to hold a single
+ * picture exports a single PNG, which is the honest answer rather than an error.
+ */
+private val FRAME_CAPABLE_EXTENSIONS =
+    setOf("heic", "heif", "avif", "gif", "webp", "tif", "tiff")
+
+val File.mayHoldFrames: Boolean
+    get() = extension.lowercase() in FRAME_CAPABLE_EXTENSIONS
+
 /** The only place a [MediaItem] learns whether it is an image or a video. */
 fun mediaItemOrNull(file: File): MediaItem? = when (file.mediaKind()) {
     MediaKind.Image -> MediaItem.Image(file)

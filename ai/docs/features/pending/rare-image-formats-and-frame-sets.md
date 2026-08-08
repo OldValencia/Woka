@@ -7,7 +7,9 @@
 > This plan builds **one** "frames inside a file" mechanic covering every such type at once, rather
 > than a special case bolted on for HEIC. F4 — HDR tone mapping for stills — moves here too.
 
-Status: 🚧 In progress — **Phases 0, 1 and 2 done (2026-08-07)**; 3–6 not started. HEIC, HEIF, AVIF
+Status: 🚧 In progress — **Phases 0–3 done (0–2 on 2026-08-07, 3 on 2026-08-08)**; 4–6 not
+started. The frame strip ships: a burst, a multi-page TIFF and an animation are walked frame by
+frame, and a Live Photo's motion clip plays from it. HEIC, HEIF, AVIF
 and multi-page TIFF open in the viewer; animated GIF, WebP and AVIF report every frame; and tiled
 HEIF — which is what every real-world HEIC turned out to be — is assembled from its tiles. The probe forced a
 dependency upgrade (`ffmpeg` → `8.0.1-1.5.13`, `javacv` → `1.5.13`) which is **taken and verified
@@ -580,6 +582,115 @@ overlay stack (`PlayPauseOverlay`, `SkipOverlay`, `ZoomHudOverlay`, the three ve
 of `MediaViewerPlayer` into `MediaViewerPlayerOverlays.kt`, and the zoom/volume key cases out of
 `MediaViewerKeyHandler` into `MediaViewerNavigationKeys.kt`.
 
+### ✅ Done — 2026-08-08
+
+The strip ships. **`:shared:build` green, 414 tests, 0 failures**; `FrameStripUiTest` is 8 of them.
+
+`FrameStrip.kt` is a `LazyRow` in the carousel's own idiom — 8 dp radius, 1 dp border, unselected
+dimmed rather than shrunk away — so the two read as one family and it is plain that one holds
+frames and the other files. `FrameStripState.kt` carries `FrameStripModel`: the decoder's viewable
+frames plus a Live Photo's motion clip. `MediaViewerState` gained `frameIndex` and `frameCount`,
+and the strip publishes the count so `PageUp`/`PageDown` can stop at the ends without the key
+handler knowing how a frame set is read. `←`/`→` still mean **file** — asserted, not assumed.
+
+Three splits rather than the two planned. The two named above, and one the plan did not foresee:
+hoisting the strip into `MediaViewerScreen` — which the Live Photo branch forces, because the
+player has to be created for a *different file* than the one being viewed — took that file to 153
+lines. `MediaViewerVideoSource.kt` now owns both halves of that question: which item is playing,
+and the player's whole lifecycle (creation, disposal, the two playback effects). Lifting them
+together was deliberate; leaving any one behind is a leak waiting to be reintroduced.
+
+Four decisions the plan left open, settled:
+
+- **The strip is drawn by `MediaViewerPlayer`, not threaded through the toolbar.** It is a
+  bottom-aligned overlay at the padding the vertical popovers already use, so the carousel's
+  column is untouched and `MediaViewerToolbar` gained no parameters.
+- **Frame previews reuse the still-preview path.** `preview(item, frameIndex)` throughout, with the
+  frame folded into both the memory key and `WokaStorage.thumbnailFile`. **Frame 0 hashes exactly
+  as before**, so every poster already on disk stays valid and no schema bump was needed. For a
+  tiled HEIC each thumbnail is an independently assembled *small* grid — Catalina's nine times of
+  day cost about 80 ms each, once ever.
+- **The motion frame's index addresses nothing in a decoder.** It is one past the last real frame,
+  and the only thing that ever reads it is `FrameStripModel.isMotionFrame`, which requires the
+  sibling file to exist as well as the kind to match — a `Motion` kind with no file to play must
+  not switch the player onto a null.
+- **Thumbnails carry a `contentDescription`** — "Frame 3", "Motion" — on the box rather than the
+  image, so it is there while the thumbnail is still loading. It is what a screen reader says and
+  what the UI test queries; neither is a test-only tag.
+
+Not covered: no automated test opens a real Live Photo and checks the clip plays. The fixture pair
+exists (`livephoto.heic` + `livephoto.mov`) and the sibling lookup is unit-tested, but the
+still→video switch is verified by construction, not by a test that watches it happen.
+
+### 3b — the strip went vertical, and frames export to PNG
+
+Two additions after using it. **`:shared:build` green, 422 tests, 0 failures.**
+
+**The strip is a left sidebar now, and the original reasoning was the bug.** The plan chose a
+horizontal strip "because … two vertical lists would fight" — and produced two *horizontal* lists
+instead, stacked at the bottom, identical in shape and adjacent. Nothing but a label could have
+said which was files and which was frames. The fix is to let the **axis carry the meaning**:
+horizontal along the bottom moves *between* files, vertical down the side moves *within* one.
+macOS Preview arrives at the same answer from the same problem.
+
+Left rather than right because the right edge is already spoken for — the Next button and all
+three vertical popovers anchor there. The only thing on the left is the Prev arrow, which now
+takes a `navStartInset` and steps aside while the strip is up.
+
+**Export writes every picture in a file out as PNG**, from the right-click menu in *both* surfaces:
+`FolderItemContextMenu` in the grid and `ViewerActions.extra` in the viewer. Both already had the
+slot; neither needed a new mechanism. Decisions worth keeping:
+
+- **The entry is offered on names alone** (`File.mayHoldFrames`), never by opening the file — a
+  grid would otherwise open every HEIC in the folder to decide whether to draw a menu item. In the
+  viewer the strip has already counted, so it uses the real number and offers nothing on a
+  single-picture file.
+- **A single-frame file exports one PNG under the plain name.** Numbering one picture `_1` reads
+  as a set with the rest missing. Multiple frames are zero-padded to the count's width so the
+  folder sorts the way the pictures were taken.
+- **The motion clip is not exported.** It is a video; "export frames to PNG" has nothing to say
+  about it, and it falls out for free because the export walks the decoder's frame set, which
+  never contained it.
+- **PNG is encoded through Skia**, not `ImageIO` — the bitmap is already a Skia one and
+  `toAwtImage` would copy 138 MB onto the JVM heap on the way out.
+- **`FrameExportStatus` is a global and one banner renders it**, mounted above `ScreenHost` in
+  `App`. An export started in the grid keeps running when the viewer opens over it, and 96
+  pictures take twelve seconds — long enough that silence reads as a hang. The alternative was the
+  same state duplicated into `FolderOverlayState` and `MediaViewerState` and kept in step by hand.
+
+`FrameExportTest` covers the counts per format, the naming, that the PNGs are real images, that
+pages differ from one another, and that an unreadable file reports nothing exported rather than
+throwing. That last one first passed for the wrong reason — a PNG renamed `.heic`, which FFmpeg
+sniffs and opens correctly — so the fixture is now genuine garbage bytes.
+
+#### The export shipped at thirty seconds a frame
+
+Catalina took **265 seconds**. The instrumented run put the whole tile assembly at **90 ms** —
+open 9 ms, packets 10 ms, decode 70 ms, exactly as fast as the viewer — which left 29.9 of every
+30 seconds in the one thing after it: the PNG encode.
+
+**Skia's PNG `quality` is a compression-*effort* knob, not a fidelity one.** PNG is lossless at
+every setting, so it only trades time for bytes — and the default is 100, the maximum. Measured on
+the same 6016×6016 picture:
+
+| quality | time | size |
+|---|---|---|
+| 100 — the default | **33.8 s** | 30.5 MB |
+| 80 | 21.5 s | 30.8 MB |
+| 50 | 2.6 s | 33.7 MB |
+| **20 — taken** | **1.4 s** | 35.3 MB |
+| 0 | 0.7 s | 141.6 MB (no compression at all) |
+| `ImageIO`, for comparison | 2.3 s | 42.5 MB |
+
+Thirty-four seconds to save 14% over a setting that takes one and a half. Twenty sits past the
+cliff at zero and before the wall above fifty, and beats `ImageIO` on speed *and* size without
+copying 144 MB onto the JVM heap to get there.
+
+`core/ui/image/PngEncoding.kt` now owns the number, and `StillPreview` was encoding at the same
+default — every preview ever written paid it too, in proportion to its size.
+
+**Catalina's export: 265 s → 15 s**, 1.6 s a frame.
+
 ## Phase 4: The grid
 
 - Coil 3.0.4 decodes what the platform decodes, so `.heic`/`.avif` in the grid need the same
@@ -652,8 +763,9 @@ cannot be written on the one below.
   pulled forward into Phase 2b**, which had no other way to show its decoders worked.
   `FrameCacheKeyTest` — frame 0 uses the bare path, frames above it do not collide, and a burst
   paged end to end stays inside the `ImageBitmapCache` budget — is the one still outstanding.
-- **UI:** `FrameStripUiTest` — a multi-frame file renders the strip and a single-frame one does not;
-  clicking a frame changes `state.frameIndex`; `PageDown` steps and stops at the last frame.
+- **UI:** ~~`FrameStripUiTest`~~ **written as part of Phase 3** — a multi-frame file renders the
+  strip and a single-frame one does not, clicking a frame changes `state.frameIndex`, `PageDown`
+  and `PageUp` step and stop at the ends, and the arrows still change file.
 - **Manual:** TC-IMG cases for what a HEIC burst and a Live Photo actually look like, and one for an
   HDR still next to the same shot in macOS Preview. Each needs its *Why this is not automated*
   field, as all of them do. **`ai/docs/testing/manual/` no longer exists** — it was deleted in

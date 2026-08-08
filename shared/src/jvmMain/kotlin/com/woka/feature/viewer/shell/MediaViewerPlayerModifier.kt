@@ -53,7 +53,10 @@ internal fun Modifier.mediaViewerPlayerModifier(
         onPlayPause = { state.playPauseEvent.raise() },
         onCopy = copyAction,
         onInfo = infoAction,
-        onZoom = { key -> state.applyZoomKey(key, onSizeModeChange) }
+        onZoom = { key -> state.applyZoomKey(key, onSizeModeChange) },
+        onStepFrame = { step ->
+            state.frameIndex = (state.frameIndex + step).coerceIn(0, state.frameCount - 1)
+        }
     )
     .pointerInput(Unit) {
         awaitPointerEventScope {

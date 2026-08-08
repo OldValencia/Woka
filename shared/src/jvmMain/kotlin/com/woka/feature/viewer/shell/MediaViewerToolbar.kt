@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.woka.core.data.MediaItem
 import com.woka.core.ui.theme.Theme
@@ -33,7 +34,9 @@ fun MediaViewerToolbar(
     thumbnails: ViewerThumbnails,
     mediaVolume: Float,
     onVolumeChange: (Float) -> Unit,
-    onToggleFullscreen: () -> Unit
+    onToggleFullscreen: () -> Unit,
+    /** Left inset for the Prev arrow: the frame strip stands where it does. */
+    navStartInset: Dp = 0.dp
 ) {
     // Two linear scans over the playlist; unremembered they ran on every
     // recomposition, which — before the backdrop moved out below — meant on every
@@ -74,7 +77,7 @@ fun MediaViewerToolbar(
             MediaViewerPrevButton(
                 animationProgress = animationProgress,
                 onPrev = onPrev,
-                modifier = Modifier.align(Alignment.CenterStart)
+                modifier = Modifier.align(Alignment.CenterStart).padding(start = navStartInset)
             )
         }
 

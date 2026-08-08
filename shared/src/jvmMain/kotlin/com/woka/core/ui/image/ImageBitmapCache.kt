@@ -68,7 +68,8 @@ object ImageBitmapCache {
      * its native-resolution one — the viewer draws that same key full screen,
      * and handing it a 400 px preview would show a blurred picture.
      */
-    fun previewKey(path: String): String = "$path#preview"
+    fun previewKey(path: String, frameIndex: Int = 0): String =
+        if (frameIndex == 0) "$path#preview" else "$path#preview$frameIndex"
 
     operator fun get(key: String): ImageBitmap? = synchronized(lock) { entries[key] }
 

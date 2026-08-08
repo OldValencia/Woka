@@ -5,7 +5,7 @@ import androidx.compose.ui.graphics.asSkiaBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import com.woka.core.data.WokaStorage
 import com.woka.core.ui.image.ImageBitmapCache
-import org.jetbrains.skia.EncodedImageFormat
+import com.woka.core.ui.image.encodePng
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.Rect
 import org.jetbrains.skia.Surface
@@ -34,11 +34,11 @@ private const val PREVIEW_MAX_PX = 400
  */
 internal object StillPreview {
 
-    fun load(file: File): ImageBitmap {
-        val key = ImageBitmapCache.previewKey(file.absolutePath)
+    fun load(file: File, frameIndex: Int = 0): ImageBitmap {
+        val key = ImageBitmapCache.previewKey(file.absolutePath, frameIndex)
         ImageBitmapCache[key]?.let { return it }
-        val cached = WokaStorage.thumbnailFile(file)
-        val bitmap = readCached(cached) ?: build(file, cached)
+        val cached = WokaStorage.thumbnailFile(file, frameIndex)
+        val bitmap = readCached(cached) ?: build(file, cached, frameIndex)
         ImageBitmapCache[key] = bitmap
         return bitmap
     }
@@ -53,10 +53,10 @@ internal object StillPreview {
      * The one expensive pass, paid once per file ever: decode at full size,
      * scale down, write the PNG.
      */
-    private fun build(file: File, cached: File): ImageBitmap {
-        val source = decodeSmall(file)
+    private fun build(file: File, cached: File, frameIndex: Int): ImageBitmap {
+        val source = decodeSmall(file, frameIndex)
         val scaled = source.scaledToPreview()
-        runCatching { cached.writeBytes(scaled.encoded()) }
+        runCatching { cached.writeBytes(scaled.encodePng()) }
         return scaled.toComposeImageBitmap()
     }
 
@@ -66,12 +66,12 @@ internal object StillPreview {
      * Every other decoder has no such option and hands over the full picture,
      * which for the formats they read is small enough not to matter.
      */
-    private fun decodeSmall(file: File): ImageBitmap {
+    private fun decodeSmall(file: File, frameIndex: Int): ImageBitmap {
         val decoder = stillDecoderFor(file)
         return if (decoder is FfmpegStillDecoder) {
-            decoder.frame(file, 0, PREVIEW_MAX_PX)
+            decoder.frame(file, frameIndex, PREVIEW_MAX_PX)
         } else {
-            decoder.frame(file, 0)
+            decoder.frame(file, frameIndex)
         }
     }
 }
@@ -96,6 +96,3 @@ private fun ImageBitmap.scaledToPreview(): Image {
         surface.makeImageSnapshot()
     }
 }
-
-private fun Image.encoded(): ByteArray =
-    encodeToData(EncodedImageFormat.PNG)?.bytes ?: error("preview PNG encode failed")

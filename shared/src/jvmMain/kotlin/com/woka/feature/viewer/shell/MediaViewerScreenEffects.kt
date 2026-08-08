@@ -43,6 +43,9 @@ internal fun MediaViewerActiveItemEffects(
         // playback by however long it takes (F2: both effects used to decode, so
         // every file change loaded its bitmap twice).
         state.activeItemPath = path
+        // Before the decode below is keyed on it, and with no suspension in
+        // between, so the load never asks for frame 4 of a file that has one.
+        state.frameIndex = 0
         // Returning from fullscreen (PiP) is the same file: carry the size state
         // back instead of resetting it to the global preset.
         val fromPip = PipManager.isTransitioningToMain &&
@@ -87,18 +90,25 @@ internal fun MediaViewerActiveItemEffects(
     // read or a cache hit, and `ContentScale.Fit` draws it in exactly the
     // rectangle the full picture will occupy. `sourceSize` is read first so the
     // zoom presets mean native pixels from the very first paint.
-    LaunchedEffect(activeItem, showConflictDialog) {
+    //
+    // Keyed on the frame too, so stepping through a burst goes through the same
+    // two stages as opening a file does.
+    LaunchedEffect(activeItem, showConflictDialog, state.frameIndex) {
         if (showConflictDialog || activeItem == null) return@LaunchedEffect
+        val frame = state.frameIndex
         state.sourceSize = thumbnails.sourceSize(activeItem)
-        val alreadyDecoded = thumbnails.cachedFull(activeItem)
+        val alreadyDecoded = thumbnails.cachedFull(activeItem, frame)
         if (alreadyDecoded != null) {
-            // Going back to a file still in the cache: showing the preview first
-            // would be a frame of blur bought for nothing.
+            // Going back to a picture still in the cache: showing the preview
+            // first would be a frame of blur bought for nothing.
             state.imageBitmap = alreadyDecoded
             return@LaunchedEffect
         }
-        thumbnails.preview(activeItem)?.let { state.imageBitmap = it }
-        state.imageBitmap = thumbnails.full(activeItem)
+        thumbnails.preview(activeItem, frame)?.let { state.imageBitmap = it }
+        // Null means this picture could not be decoded — keep whatever is on
+        // screen rather than blanking it, which is what a frame index left over
+        // from the previous file would otherwise do for one composition.
+        thumbnails.full(activeItem, frame)?.let { state.imageBitmap = it }
     }
 }
 

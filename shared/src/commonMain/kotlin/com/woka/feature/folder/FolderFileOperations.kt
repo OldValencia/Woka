@@ -1,5 +1,8 @@
 package com.woka.feature.folder
 
+import com.woka.core.utils.FrameExportStatus
+import com.woka.core.utils.exportFramesToPng
+import java.io.File
 import kotlinx.coroutines.launch
 
 /**
@@ -58,5 +61,25 @@ fun FolderViewModel.copyFiles(paths: List<String>, destinationPath: String) {
         FolderActions.copyFiles(paths, destinationPath)
         refresh()
         clearSelection()
+    }
+}
+
+/**
+ * Writes every picture inside one file out as PNG. No [refresh] afterwards: the
+ * export lands in a folder the user chose, which is usually not this one.
+ */
+fun FolderViewModel.exportFrames(path: String, destinationPath: String) {
+    scope.launch {
+        val source = File(path)
+        FrameExportStatus.progress(source.name, 0, 1)
+        val result = runCatching {
+            exportFramesToPng(source, File(destinationPath)) { done, total ->
+                FrameExportStatus.progress(source.name, done, total)
+            }
+        }
+        result.fold(
+            onSuccess = { FrameExportStatus.finished(it) },
+            onFailure = { FrameExportStatus.failed(it.message ?: "unknown error") }
+        )
     }
 }

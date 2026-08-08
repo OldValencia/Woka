@@ -2,6 +2,7 @@ package com.woka.feature.folder
 
 import androidx.compose.runtime.Composable
 import com.woka.core.data.MediaItem
+import com.woka.core.data.mayHoldFrames
 import com.woka.core.ui.components.DropdownItem
 import com.woka.core.ui.theme.Theme
 import com.woka.core.utils.copyFilesToClipboard
@@ -35,6 +36,16 @@ internal fun FolderItemContextMenu(
         }
     } else {
         DropdownItem("Open") { dismiss(); onOpenMedia(target) }
+    }
+
+    // Only for the formats that can hold more than one picture — on a JPEG it
+    // would be a "convert to PNG" hiding under the wrong name.
+    if (item.file.mayHoldFrames) {
+        DropdownItem("Export Frames...") {
+            dismiss()
+            val dest = openDirectoryPicker("Export frames to...", path)
+            if (dest != null) viewModel.exportFrames(target, dest)
+        }
     }
 
     DropdownItem("Rename") { dismiss(); overlays.itemToRename = target }

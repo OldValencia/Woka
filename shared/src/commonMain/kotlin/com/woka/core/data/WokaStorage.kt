@@ -70,12 +70,18 @@ object WokaStorage {
      * `name.hashCode()`, which gave two `clip.mp4` files in different folders one
      * shared thumbnail — the second folder showed a frame from the first — could
      * produce negative names, and never noticed a file replaced in place.
+     *
+     * [frameIndex] separates the frames of a frame set, which are different
+     * pictures inside one file. **Zero hashes exactly as it always did**, so
+     * every poster already on disk stays valid and no schema bump is needed.
      */
-    fun thumbnailFile(source: File): File = File(thumbnailsDir, "${cacheKey(source)}.png")
+    fun thumbnailFile(source: File, frameIndex: Int = 0): File =
+        File(thumbnailsDir, "${cacheKey(source, frameIndex)}.png")
 
     /** SHA-256 truncated to 64 bits: deterministic, positive, collision-free in practice. */
-    private fun cacheKey(source: File): String {
-        val input = "${source.absolutePath}|${source.length()}|${source.lastModified()}"
+    private fun cacheKey(source: File, frameIndex: Int): String {
+        val frame = if (frameIndex == 0) "" else "|frame$frameIndex"
+        val input = "${source.absolutePath}|${source.length()}|${source.lastModified()}$frame"
         val digest = MessageDigest.getInstance("SHA-256").digest(input.toByteArray())
         return digest.take(8).joinToString("") { "%02x".format(it.toInt() and 0xFF) }
     }

@@ -22,10 +22,10 @@ import com.woka.core.data.MediaItem
 interface ViewerThumbnails {
 
     /** Native resolution, for the picture the viewer actually draws. */
-    suspend fun full(item: MediaItem): ImageBitmap?
+    suspend fun full(item: MediaItem, frameIndex: Int = 0): ImageBitmap?
 
     /** Small and disk-cached, for the carousel strip and the first paint. */
-    suspend fun preview(item: MediaItem): ImageBitmap?
+    suspend fun preview(item: MediaItem, frameIndex: Int = 0): ImageBitmap?
 
     /**
      * The file's own dimensions, without decoding it — what the zoom presets
@@ -41,5 +41,5 @@ interface ViewerThumbnails {
      * Exists so returning to a file already in the cache does not flash the
      * preview on the way: it would be a frame of blur bought for nothing.
      */
-    fun cachedFull(item: MediaItem): ImageBitmap?
+    fun cachedFull(item: MediaItem, frameIndex: Int = 0): ImageBitmap?
 }

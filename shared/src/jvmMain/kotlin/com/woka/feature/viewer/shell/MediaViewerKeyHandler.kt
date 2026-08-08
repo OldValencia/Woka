@@ -4,7 +4,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.isAltPressed
 import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.key
@@ -12,7 +11,6 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import com.woka.core.data.MediaItem
 import com.woka.feature.viewer.video.engine.VideoPlayerState
-import com.woka.feature.viewer.video.engine.skipBy
 import com.woka.feature.viewer.video.engine.togglePlayPause
 
 fun Modifier.mediaViewerKeyHandler(
@@ -27,11 +25,13 @@ fun Modifier.mediaViewerKeyHandler(
     onPlayPause: () -> Unit,
     onCopy: () -> Unit,
     onInfo: () -> Unit,
-    onZoom: (ZoomKey) -> Unit
+    onZoom: (ZoomKey) -> Unit,
+    onStepFrame: (Int) -> Unit
 ): Modifier = this.onKeyEvent { event ->
     handleMediaViewerKeyEvent(
         event, currentId, mediaItems, videoState, mediaVolume,
-        onClose, onSkip, onNavigate, onVolumeChange, onPlayPause, onCopy, onInfo, onZoom
+        onClose, onSkip, onNavigate, onVolumeChange, onPlayPause, onCopy, onInfo, onZoom,
+        onStepFrame
     )
 }
 
@@ -54,47 +54,19 @@ fun handleMediaViewerKeyEvent(
     onPlayPause: () -> Unit,
     onCopy: () -> Unit,
     onInfo: () -> Unit,
-    onZoom: (ZoomKey) -> Unit
+    onZoom: (ZoomKey) -> Unit,
+    onStepFrame: (Int) -> Unit = {}
 ): Boolean {
     return when (event.key) {
         Key.Escape -> {
-            if (event.type == KeyEventType.KeyDown) {
-                onClose()
-            }
+            if (event.type == KeyEventType.KeyDown) onClose()
             true
         }
-        Key.DirectionLeft -> {
-            if (event.type == KeyEventType.KeyDown) {
-                if (event.isAltPressed) {
-                    videoState?.let { 
-                        it.skipBy(-5000)
-                        onSkip(-1)
-                    }
-                } else {
-                    val idx = mediaItems.indexOfFirst { it.file.absolutePath == currentId }
-                    if (idx > 0) {
-                        onNavigate(-1, mediaItems[idx - 1].file.absolutePath)
-                    }
-                }
-            }
-            true
-        }
-        Key.DirectionRight -> {
-            if (event.type == KeyEventType.KeyDown) {
-                if (event.isAltPressed) {
-                    videoState?.let { 
-                        it.skipBy(5000)
-                        onSkip(1)
-                    }
-                } else {
-                    val idx = mediaItems.indexOfFirst { it.file.absolutePath == currentId }
-                    if (idx in 0 until mediaItems.lastIndex) {
-                        onNavigate(1, mediaItems[idx + 1].file.absolutePath)
-                    }
-                }
-            }
-            true
-        }
+        Key.DirectionLeft ->
+            handleArrowKey(event, currentId, mediaItems, videoState, -1, onSkip, onNavigate)
+        Key.DirectionRight ->
+            handleArrowKey(event, currentId, mediaItems, videoState, 1, onSkip, onNavigate)
+        Key.PageUp, Key.PageDown -> handleFrameKey(event, onStepFrame)
         Key.DirectionUp -> {
             if (event.type == KeyEventType.KeyDown && videoState?.hasAudio != false) {
                 onVolumeChange((mediaVolume + 0.1f).coerceIn(0f, 1f))
@@ -128,22 +100,4 @@ fun handleMediaViewerKeyEvent(
         }
         else -> handleZoomKeyEvent(event, onZoom)
     }
-}
-
-/**
- * `Ctrl +` / `Ctrl −` / `Ctrl 0` (Fit) / `Ctrl 1` (Actual) — the standard set,
- * absent until Step 8b.
- */
-private fun handleZoomKeyEvent(event: KeyEvent, onZoom: (ZoomKey) -> Unit): Boolean {
-    if (event.type != KeyEventType.KeyDown) return false
-    if (!event.isCtrlPressed && !event.isMetaPressed) return false
-    val intent = when (event.key) {
-        Key.Equals, Key.Plus, Key.NumPadAdd -> ZoomKey.In
-        Key.Minus, Key.NumPadSubtract -> ZoomKey.Out
-        Key.Zero, Key.NumPad0 -> ZoomKey.Fit
-        Key.One, Key.NumPad1 -> ZoomKey.Actual
-        else -> return false
-    }
-    onZoom(intent)
-    return true
 }

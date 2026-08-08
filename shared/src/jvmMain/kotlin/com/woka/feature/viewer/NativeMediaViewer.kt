@@ -9,10 +9,13 @@ import com.woka.feature.viewer.shell.ViewerThumbnails
 
 /** The real decoders. Tests substitute their own — see `ViewerHarness`. */
 private object RealViewerThumbnails : ViewerThumbnails {
-    override suspend fun full(item: MediaItem) = MediaThumbnails.loadThumbnail(item)
-    override suspend fun preview(item: MediaItem) = MediaThumbnails.loadPreview(item)
+    override suspend fun full(item: MediaItem, frameIndex: Int) =
+        MediaThumbnails.loadThumbnail(item, frameIndex)
+    override suspend fun preview(item: MediaItem, frameIndex: Int) =
+        MediaThumbnails.loadPreview(item, frameIndex)
     override suspend fun sourceSize(item: MediaItem) = MediaThumbnails.sourceSize(item)
-    override fun cachedFull(item: MediaItem) = ImageBitmapCache[item.file.absolutePath]
+    override fun cachedFull(item: MediaItem, frameIndex: Int) =
+        ImageBitmapCache[ImageBitmapCache.key(item.file.absolutePath, frameIndex)]
 }
 
 @Composable

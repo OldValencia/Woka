@@ -26,14 +26,14 @@ object MediaThumbnails {
         quietFfmpegLogs()
     }
 
-    suspend fun loadThumbnail(item: MediaItem): ImageBitmap? {
-        ImageBitmapCache[item.file.absolutePath]?.let { return it }
+    suspend fun loadThumbnail(item: MediaItem, frameIndex: Int = 0): ImageBitmap? {
+        ImageBitmapCache[ImageBitmapCache.key(item.file.absolutePath, frameIndex)]?.let { return it }
         return withContext(ImageBitmapCache.ioDispatcher) {
             try {
                 if (item is MediaItem.Video) {
                     VideoThumbnailExtractor.load(item)
                 } else {
-                    ImageLoader.load(item.file)
+                    ImageLoader.load(item.file, frameIndex)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -52,13 +52,13 @@ object MediaThumbnails {
      * JPEG and ruinous once one could be a 36-megapixel HEIC — see
      * [StillPreview].
      */
-    suspend fun loadPreview(item: MediaItem): ImageBitmap? =
+    suspend fun loadPreview(item: MediaItem, frameIndex: Int = 0): ImageBitmap? =
         withContext(ImageBitmapCache.ioDispatcher) {
             try {
                 if (item is MediaItem.Video) {
                     VideoThumbnailExtractor.load(item)
                 } else {
-                    StillPreview.load(item.file)
+                    StillPreview.load(item.file, frameIndex)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()

@@ -15,6 +15,14 @@ class MediaViewerState(initialId: String) {
     var currentId by mutableStateOf(initialId)
     var animationDirection by mutableStateOf(0)
     var imageBitmap by mutableStateOf<ImageBitmap?>(null)
+    // Which picture inside the current file is shown. Zero for the overwhelming
+    // majority of files, which contain exactly one; reset on every file change,
+    // because a burst's frame 4 means nothing in the photograph after it.
+    var frameIndex by mutableStateOf(0)
+    // How many pictures the current file holds, published by the frame strip so
+    // PageUp/PageDown can stop at the ends without the key handler having to
+    // know how a frame set is read.
+    var frameCount by mutableStateOf(1)
     // Semantic size state (drives the indicator, clicks, Ctrl+Scroll).
     var sizeMode by mutableStateOf<SizeMode>(SizeMode.Preset(ScalePreset.Fit))
     // Derived graphics-layer scale published by MediaViewerContent, consumed by the

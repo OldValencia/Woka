@@ -16,6 +16,7 @@ import com.woka.app.navigation.Screen
 import com.woka.app.navigation.ScreenHost
 import com.woka.app.shell.DockTab
 import com.woka.app.shell.MainShell
+import com.woka.core.ui.components.FrameExportBanner
 import com.woka.feature.search.SearchOverlay
 import com.woka.feature.settings.SettingsOverlay
 import com.woka.core.ui.theme.Theme
@@ -94,6 +95,10 @@ fun App(
                 onNavigateToFolder = { path -> router.navigateTo(Screen.Folder(path)) }
             )
             }
+
+            // Above every screen, because an export started in the grid keeps
+            // running once the viewer opens on top of it.
+            FrameExportBanner()
 
             // Settings Overlay
             SettingsOverlay(

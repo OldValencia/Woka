@@ -9,7 +9,8 @@ import com.woka.core.data.MediaItem
 import com.woka.app.shell.LocalGlobalShortcuts
 import com.woka.core.utils.copyFilesToClipboard
 import com.woka.feature.viewer.pip.PipManager
-import com.woka.feature.viewer.video.MediaViewerSystemControlsEffect
+import com.woka.feature.viewer.shell.frames.rememberFrameExportEntry
+import com.woka.feature.viewer.shell.frames.rememberFrameStrip
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -48,18 +49,14 @@ fun MediaViewerScreen(
     val itemReady = state.activeItemPath != null &&
         state.activeItemPath == activeItem?.file?.absolutePath
 
-    val videoState = remember(activeItem, itemReady) {
-        if (activeItem is MediaItem.Video && itemReady) {
-            PipManager.createOrGetState(activeItem, mediaVolume)
-        } else null
-    }
+    // Hoisted above the player because a Live Photo's motion frame plays a
+    // *different file* from the one being viewed — see [rememberPlayedItem].
+    val strip = rememberFrameStrip(activeItem)
+    val playedItem = rememberPlayedItem(activeItem, state.frameIndex, strip)
 
-    DisposableEffect(videoState) {
-        onDispose { PipManager.releaseState(videoState) }
-    }
-
-    MediaViewerPlaybackEffects(state, videoState, settings, mediaItems)
-    MediaViewerSystemControlsEffect(state, videoState, mediaItems, settings.systemMediaControls)
+    val videoState = rememberViewerVideoState(
+        playedItem, itemReady, mediaVolume, state, settings, mediaItems
+    )
 
     val focusRequester = remember { FocusRequester() }
     MediaViewerAmbientEffects(state, videoState, mediaVolume, settingsRepo, focusRequester)
@@ -102,6 +99,10 @@ fun MediaViewerScreen(
         onVolumeChange = { vol -> mediaVolume = vol; state.volumeEvent.raise() }
     )
 
+    // Offered only when the file actually holds more than one picture — the
+    // strip already knows, so nothing is opened twice to find out.
+    val exportEntries = rememberFrameExportEntry(activeItem, strip)
+
     val media = rememberViewerMedia(state.imageBitmap, videoState, state.sourceSize)
 
     val playerContent = @Composable {
@@ -113,7 +114,7 @@ fun MediaViewerScreen(
             activeItem = activeItem,
             mediaVolume = mediaVolume,
             chrome = ViewerChromeState(settings.mediaViewerCarouselMode, isFullscreen),
-            actions = ViewerActions(editAction, copyAction, infoAction),
+            actions = ViewerActions(editAction, copyAction, infoAction, extra = exportEntries),
             showInfoDialog = showInfoDialog,
             onShowInfoDialogChange = { showInfoDialog = it },
             onVolumeChange = { mediaVolume = it },
@@ -124,7 +125,8 @@ fun MediaViewerScreen(
                     onClose(state.currentId)
                 }
             },
-            thumbnails = thumbnails
+            thumbnails = thumbnails,
+            strip = strip
         )
     }
 

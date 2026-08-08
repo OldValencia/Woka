@@ -26,6 +26,7 @@ import com.woka.feature.viewer.shell.ViewerActions
 import com.woka.feature.viewer.shell.ViewerChromeState
 import com.woka.feature.viewer.shell.ViewerMedia
 import com.woka.feature.viewer.shell.ViewerThumbnails
+import com.woka.feature.viewer.shell.frames.FrameStripModel
 import com.woka.feature.viewer.shell.mediaViewerPlayerModifier
 import java.nio.file.Files
 
@@ -70,6 +71,8 @@ fun ViewerUnderTest(
     media: ViewerMedia,
     carousel: CarouselVisibility = CarouselVisibility.HIDDEN,
     ambientRepo: SettingsRepository? = null,
+    // Before `onClose`, which callers pass as a trailing lambda.
+    strip: FrameStripModel = FrameStripModel(),
     onClose: (String) -> Unit = {}
 ) {
     val focus = remember { FocusRequester() }
@@ -109,14 +112,15 @@ fun ViewerUnderTest(
         onVolumeChange = {},
         onSizeModeChange = onSizeModeChange,
         onToggleFullscreen = {},
-        thumbnails = FakeViewerThumbnails
+        thumbnails = FakeViewerThumbnails,
+        strip = strip
     )
 }
 
 /** Both sizes are the same painted poster: no test here is about the difference. */
 private object FakeViewerThumbnails : ViewerThumbnails {
-    override suspend fun full(item: MediaItem) = poster(64, 48)
-    override suspend fun preview(item: MediaItem) = poster(64, 48)
+    override suspend fun full(item: MediaItem, frameIndex: Int) = poster(64, 48)
+    override suspend fun preview(item: MediaItem, frameIndex: Int) = poster(64, 48)
     override suspend fun sourceSize(item: MediaItem) = IntSize.Zero
-    override fun cachedFull(item: MediaItem) = null
+    override fun cachedFull(item: MediaItem, frameIndex: Int) = null
 }
