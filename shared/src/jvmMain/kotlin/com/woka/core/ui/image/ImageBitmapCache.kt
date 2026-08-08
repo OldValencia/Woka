@@ -63,6 +63,13 @@ object ImageBitmapCache {
     fun key(path: String, frameIndex: Int): String =
         if (frameIndex == 0) path else "$path#$frameIndex"
 
+    /**
+     * A still's carousel-sized copy, which must **not** share the bare path with
+     * its native-resolution one — the viewer draws that same key full screen,
+     * and handing it a 400 px preview would show a blurred picture.
+     */
+    fun previewKey(path: String): String = "$path#preview"
+
     operator fun get(key: String): ImageBitmap? = synchronized(lock) { entries[key] }
 
     operator fun set(key: String, bitmap: ImageBitmap) = synchronized(lock) {

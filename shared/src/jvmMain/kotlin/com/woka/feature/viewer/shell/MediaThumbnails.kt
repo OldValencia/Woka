@@ -1,11 +1,13 @@
 package com.woka.feature.viewer.shell
 
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.ImageFrameSet
 import com.woka.core.data.MediaItem
 import com.woka.core.ui.image.ImageBitmapCache
 import com.woka.feature.viewer.image.ImageLoader
-import com.woka.feature.viewer.image.SkiaFrameDecoder
+import com.woka.feature.viewer.image.StillPreview
+import com.woka.feature.viewer.image.stillDecoderFor
 import com.woka.feature.viewer.video.engine.VideoThumbnailExtractor
 import com.woka.feature.viewer.video.engine.quietFfmpegLogs
 import kotlinx.coroutines.withContext
@@ -41,23 +43,60 @@ object MediaThumbnails {
     }
 
     /**
+     * A small copy, for the carousel — which loads **every file in the folder**
+     * and draws each 56–72 dp wide.
+     *
+     * Videos already answer this cheaply: [VideoThumbnailExtractor] has always
+     * returned a 400 px poster read from disk. Stills used to come back at
+     * native resolution here, which was survivable while every still was a
+     * JPEG and ruinous once one could be a 36-megapixel HEIC — see
+     * [StillPreview].
+     */
+    suspend fun loadPreview(item: MediaItem): ImageBitmap? =
+        withContext(ImageBitmapCache.ioDispatcher) {
+            try {
+                if (item is MediaItem.Video) {
+                    VideoThumbnailExtractor.load(item)
+                } else {
+                    StillPreview.load(item.file)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
+            }
+        }
+
+    /** A still's own dimensions, read from the decoder without decoding it. */
+    suspend fun sourceSize(item: MediaItem): IntSize =
+        withContext(ImageBitmapCache.ioDispatcher) {
+            if (item is MediaItem.Video) {
+                IntSize.Zero
+            } else {
+                runCatching { stillDecoderFor(item.file).nativeSize(item.file, 0) }
+                    .getOrDefault(IntSize.Zero)
+            }
+        }
+
+    /**
      * What is inside this file — a **separate** call from [loadThumbnail], which
      * keeps its signature and keeps returning the one primary bitmap every
      * existing caller wants. The grid and the carousel never ask this.
      *
-     * Cheap by design: it counts frames without decoding any of them.
+     * Cheap by design: it counts frames without decoding any of them — skia
+     * reads the codec's frame count, `ImageIO` scans for pages, and FFmpeg
+     * reads the demuxer's stream table, so a five-shot HEIC burst answers
+     * without a single pixel being decoded.
      *
-     * Skia answers for every extension the app currently lists, so this is
-     * truthful today rather than a placeholder — `.heic` is still gated by
-     * `canDecode` and `.tif` is not listed at all. Phase 2b replaces the direct
-     * call with the `StillDecoders` routing, at which point those two arrive.
+     * A decoder that throws answers [ImageFrameSet.Single]: a file that cannot
+     * be opened has no frame set to show, and the viewer's placeholder is
+     * already the right thing on screen for it.
      */
     suspend fun frameSet(item: MediaItem): ImageFrameSet =
         withContext(ImageBitmapCache.ioDispatcher) {
             if (item is MediaItem.Video) {
                 ImageFrameSet.Single
             } else {
-                runCatching { SkiaFrameDecoder.frameSet(item.file) }
+                runCatching { stillDecoderFor(item.file).frameSet(item.file) }
                     .getOrDefault(ImageFrameSet.Single)
             }
         }

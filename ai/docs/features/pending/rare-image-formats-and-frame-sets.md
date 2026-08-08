@@ -7,7 +7,9 @@
 > This plan builds **one** "frames inside a file" mechanic covering every such type at once, rather
 > than a special case bolted on for HEIC. F4 — HDR tone mapping for stills — moves here too.
 
-Status: 🚧 In progress — **Phase 0 done (2026-08-07)**, Phases 1–6 not started. The probe forced a
+Status: 🚧 In progress — **Phases 0, 1 and 2 done (2026-08-07)**; 3–6 not started. HEIC, HEIF, AVIF
+and multi-page TIFF open in the viewer; animated GIF, WebP and AVIF report every frame; and tiled
+HEIF — which is what every real-world HEIC turned out to be — is assembled from its tiles. The probe forced a
 dependency upgrade (`ffmpeg` → `8.0.1-1.5.13`, `javacv` → `1.5.13`) which is **taken and verified
 against the suite**; HEIC and AVIF both decode on it. See
 [the Phase 0 verdict](#the-verdict-the-dependency-was-bumped-and-it-holds) and the amendments it
@@ -325,6 +327,13 @@ wrong for every other access pattern, and the strip is walked both ways.
 but nothing yet decodes frame 3 of `anim.gif` and checks it differs from frame 0. `FrameSetDecodeTest`
 and `FrameCacheKeyTest` (Phase 6) are the first things that will actually run this code.
 
+> **Resolved in 2b, and the warning was right.** The first test to read frame 3 of `anim.gif`
+> **crashed the JVM** — `EXCEPTION_ACCESS_VIOLATION` inside `_nReadPixels`, not an exception.
+> `Bitmap().use { … asComposeImageBitmap() }` was a use-after-free: `asComposeImageBitmap` *wraps*
+> the bitmap rather than copying it, so `use` freed the pixels the returned `ImageBitmap` points at.
+> The `.use` is gone; skiko's cleaner frees the bitmap once the `ImageBitmap` is unreachable, which
+> is the point of handing it over. Two phases' worth of "the build is green" never touched it.
+
 ### 2b — HEIF/AVIF, per the Phase 0 verdict
 
 - Add `feature/viewer/image/FfmpegStillDecoder.kt` mirroring `VideoThumbnailExtractor`'s shape:
@@ -341,6 +350,206 @@ and `FrameCacheKeyTest` (Phase 6) are the first things that will actually run th
 
 **Files:** `feature/viewer/image/SkiaFrameDecoder.kt`, `FfmpegStillDecoder.kt`,
 `StillDecoders.kt`, `ImageLoader.kt`, `core/data/MediaKind.kt`, `core/ui/image/ImageBitmapCache.kt`
+
+#### ✅ Done — 2026-08-07
+
+`StillDecoder` is now an interface with three implementations behind one routing function,
+`stillDecoderFor(file)`: `FfmpegStillDecoder` (`.heic`/`.heif`/`.avif`), `ImageIoStillDecoder`
+(`.tif`/`.tiff`) and `SkiaFrameDecoder` as the fallback everything else reaches. `ImageLoader` is
+routing and caching only — it no longer knows how to decode anything. `MediaThumbnails.frameSet`
+asks the routing rather than skia directly. **`:shared:build` green, 397 tests, 0 failures.**
+
+`IMAGE_EXTENSIONS` gained `heif`, `avif`, `tif`, `tiff`. **HEIC, HEIF, AVIF and multi-page TIFF now
+open in the viewer** — measured, not assumed: `ImageLoaderTest` decodes `burst.heic` and
+`multipage.tif` at their native size, and the test that used to assert `.heic` came back null now
+asserts the opposite.
+
+Four things the plan did not anticipate, all of them measured:
+
+- **`canDecode` was two questions wearing one name.** The plan says to empty `UNDECODABLE_EXTENSIONS`
+  once HEIC decodes. Done literally, that regresses the grid: its only other caller is
+  `FolderCardUtils`, picking folder-card covers drawn by **Coil**, which still reads none of these
+  five. So the set is kept and renamed to `GRID_UNDECODABLE_EXTENSIONS`, the property to
+  `canDecodeInGrid`, and it now names what it always measured — a grid limitation, not an app-wide
+  one. Phase 4 empties it when `WokaImageDecoder` puts Coil on the same routing.
+- **`grabber.videoStream` must be set for frame 0 too.** Leaving zero on the container's own default
+  looks harmless and is not: on `burst.heic` JavaCV's default lands on **stream 1**, so frame 0 and
+  frame 1 decoded the same picture and the primary item — the one FFmpeg tags
+  `AV_DISPOSITION_DEFAULT`, i.e. stream 0 — was never reached. A five-shot burst came back as four
+  pictures. Caught by pixel comparison, diagnosed by printing the stream table, not by reasoning.
+- **`.webp` routing is a trap the plan already flagged and the code has to keep flagging.** It is
+  asserted, not just commented: `StillDecoderRoutingTest` fails if `.webp` is ever sent to FFmpeg.
+- **Frame 0 stays on `Image.makeFromEncoded`.** Not for compatibility — because the two skia paths
+  disagree. `makeFromEncoded` applies the EXIF `Orientation` tag and `Codec.readPixels` does not, so
+  routing photographs through the codec would silently un-rotate every portrait shot (F3).
+
+**Two Phase 6 tests were pulled forward**, because nothing else could show 2b works: `frameSet` had
+no caller, so a green build proved only that it compiled. `FrameSetDecodeTest` asserts every fixture
+reports the count the probe recorded *and* that every frame decodes to a different picture;
+`StillDecoderRoutingTest` asserts each extension reaches its decoder. Both found real bugs on their
+first run — the four-distinct-pictures burst above, and 2a's use-after-free.
+
+Still not covered: `FrameCacheKeyTest`.
+
+### 2b, second pass — what real-world HEIC actually is
+
+The synthetic corpus was not wrong, it was **unrepresentative**, and the first real file exposed it:
+`Woka.exe` on `Catalina.heic` threw `avformat_open_input() error -12`. Four real HEICs were probed
+(a folder of macOS-style wallpapers, 11–264 MB). **Not one of them is shaped like `burst.heic`.**
+
+| File | video streams | independent | tile grids |
+|---|---|---|---|
+| `Tech Factory.heic` | 300 | **0** | 5 × `TILE_GRID` 5120×2880, 60 tiles each |
+| `L1011.heic` | 525 | **0** | 35 × `TILE_GRID` 2560×1440, 15 tiles each |
+| `Catalina.heic` | 1296 | **0** | 9 × `TILE_GRID` 6016×6016, 144 tiles each |
+| `…Magical Index….heic` | 5760 | **0** | 96 × `TILE_GRID` 5120×2880, 60 tiles each |
+
+Three facts fall out, and each one broke a model that looked obviously right:
+
+1. **`-12` is `AVERROR(ENOMEM)` from FFmpeg's `max_streams` guard**, default 1000 — not a decode
+   failure and nothing to do with HEIF. Catalina declares 1296 streams and the 264 MB file 5760.
+   `max_streams` is now raised to 65536 on the grabber; both open.
+2. **Those streams are 512×512 *tiles*, not pictures.** A HEIF grid item is stored tiled and FFmpeg
+   exposes every tile as a stream flagged `AV_DISPOSITION_DEPENDENT`. The shipped code would have
+   listed a 300-frame strip of fragments for one photograph. Tiles are now excluded from the layout.
+3. **The assembled pictures exist, and `FFmpegFrameGrabber` cannot reach them.** FFmpeg describes
+   each grid as an `AVStreamGroup` of type `AV_STREAM_GROUP_PARAMS_TILE_GRID`, carrying the display
+   size and per-tile offsets. The grabber has no concept of stream groups.
+
+### 2b, third pass — the tile assembler, built
+
+Phase 0 anticipated this branch as "a real dependency decision (`libheif` JNI, or Coil's
+decoders)". It was reached from a direction Phase 0 did not anticipate — not "FFmpeg cannot decode
+it" but "FFmpeg decodes every piece and JavaCV cannot put them together" — which made a third
+option available, and it is the one taken: **a tile assembler over raw `avformat`/`avcodec`, no new
+dependency.** Four files, in `feature/viewer/image/`:
+
+| | |
+|---|---|
+| `HeifTileGrid.kt` | reads `AVStreamGroupTileGrid` — display size, per-tile stream and offsets |
+| `HeifTilePackets.kt` | raw `avformat` open + one demux pass buffering one packet per tile |
+| `HeifTileDecode.kt` | one codec context per tile, opened and closed around a single packet |
+| `HeifTileConvert.kt` | tile → BGRA |
+| `HeifTileAssembler.kt` | the canvas, the clipping, `Image.makeRaster` |
+
+**It works on all four real files.** Verified by eye, not by exit code: Catalina assembles from
+**144 tiles** into the wallpaper, `L1011.heic` from 15 into the aircraft, no seams and no
+misplacement. And the frame index selects between grids correctly — Catalina's nine grids are the
+**nine times of day** of the macOS dynamic wallpaper, and frames 0, 4 and 8 assemble to dawn,
+midday and night. That is this whole feature's mechanic working on a file that exists.
+
+Three things learned building it, each after a measurement:
+
+- **`sws_scale` is unusable here; `sws_scale_frame` is.** The pointer-array call returns `-22`
+  (`EINVAL`) for every tile: a HEIF tile decodes to `yuvj420p` and **FFmpeg 8's swscale dropped the
+  deprecated YUVJ formats**. Widening the pointer arrays to four slots — the other candidate —
+  changed nothing, which is how the format was identified as the cause rather than assumed to be.
+  The deprecated formats are relabelled to their plain equivalents with `AVCOL_RANGE_JPEG` set;
+  they are byte-identical and the J means only "full range", so dropping the range instead of
+  carrying it would wash the picture out.
+- **Rows are copied one at a time.** `linesize(0)` is padded for alignment and is wider than the
+  picture; a single block copy shears the image progressively down the frame.
+- **Tiles hang off the edge by design.** A grid is coded padded up to whole tiles — 6016×6016 is
+  coded at 6144×6144 — so the last column and row overhang and must be clipped.
+
+### 2b, fourth pass — it was too slow to use, and why
+
+Shipped, it took 1–2 s to open one HEIC and left the UI stuttering. Both were measured before
+anything was changed, and the two causes were unrelated.
+
+**Opening one picture: 1650 ms → ~250 ms.** Three changes, largest first.
+
+1. **`avformat_find_stream_info` is not needed and cost 220 ms of it.** HEIF describes every item —
+   streams, stream groups, extradata — in a `meta` box that `avformat_open_input` has already read;
+   `find_stream_info` exists for streaming formats where the parameters can only be learnt by
+   decoding. Measured both ways on Catalina: identical 1296 streams, identical 9 groups, identical
+   pixels, **1088 ms against 121 ms**. The frame counts that `readStillLayout` reads for bursts and
+   animations survive it — `FrameSetDecodeTest` is what says so, not an assumption.
+2. **Tiles decode in parallel.** 144 of them were 691 ms on one thread. They are independent by
+   construction — a codec context each, a packet each, a disjoint rectangle each — so the only
+   thing serialising them was the loop. `TileJob` resolves each tile's `AVCodecParameters` and
+   packet on one thread first, so the parallel half never touches the format context.
+3. **The layout pass dropped `FFmpegFrameGrabber` for raw `avformat`.** Nothing in it decodes, and
+   the grabber's `start()` opens a decoder and probes for one: ~430 ms against ~260 ms.
+
+**The UI stutter was the carousel, and it was not about HEIC at all.** `MediaViewerCarousel` loads
+**every file in the folder** and draws each 56–72 dp wide — and it was being served the *same*
+native-resolution decode the viewer draws full screen. Four tiled HEICs is 264 MB of pixels against
+a 256 MB cache, so the carousel and the main image evicted each other, every scroll re-ran a tile
+assembly, and each picture was a 36-megapixel texture uploaded to the GPU to be drawn thumbnail
+size. The same bug applied to a folder of 24 MP JPEGs; it was simply survivable there.
+
+`ViewerThumbnails` splits the one injected lambda into `full` and `preview`. `StillPreview` gives
+stills the 400 px disk-cached treatment video posters have always had, keyed by
+`WokaStorage.thumbnailFile` on path, size and mtime, and scaled through Skia rather than
+`toAwtImage` — which would copy 138 MB onto the JVM heap for something about to become 400 px. One
+interface rather than a second parameter because `MediaViewerScreen` (147 lines) and
+`MediaViewerPlayer` (146) are both at the ceiling and this threads through four files.
+
+**Folder of four tiled HEICs: 6461 ms → 544 ms first open, 1 ms afterwards, holding ~0 MB instead
+of 264 MB.** The disk cache survives restarts, so the 544 ms is once per file ever.
+
+### 2b, fifth pass — the first paint, and previews that are never big
+
+Faster, but still not smooth: paging to the next picture left the **previous** one on screen for
+the whole decode and then snapped. The cost was no longer the problem; the absence of an
+intermediate state was.
+
+**The drawn rectangle never depended on the bitmap's resolution.** `MediaViewerFrame` draws with
+`ContentScale.Fit` inside a `graphicsLayer` scale, so a 400 px stand-in occupies exactly the
+rectangle the full picture will — only blurrier. What *did* depend on it was the zoom maths:
+`ViewerMedia.Still.nativeSize` was read off the poster, and every zoom percentage and "Actual size"
+are defined against native 1:1 pixels. A preview would have made them silently wrong.
+
+So the foundation came first: **`StillDecoder.nativeSize(file, frameIndex)`**, answered without
+decoding by all three decoders — skia's `Codec`, `ImageIO`'s reader, FFmpeg's stream table — and
+`ViewerMedia.Still` now carries a `sourceSize` independent of its poster. On that:
+
+- **The viewer paints the preview first, then the picture.** A file already in the memory cache
+  skips the preview entirely (`ViewerThumbnails.cachedFull`) — a frame of blur bought for nothing.
+- **A tiled preview is assembled small, not assembled and shrunk.** `HeifTileGrid.shrunkBy` divides
+  the grid and every tile offset, and swscale scales each tile in the conversion it was already
+  doing. **Powers of two only**: tiles are 512 px at multiples of 512, so halving divides exactly
+  and the shrunken tiles still tessellate — at an arbitrary ratio the rounding shows as seams
+  between them. Catalina's preview is **2.2 MB instead of 138 MB**, and the full-size canvas is
+  never allocated. Verified by eye on all four real files: no seams.
+- **`FfmpegStillLayout` is cached** per path/size/mtime. Three questions — what frames, how big,
+  give me picture *n* — each used to re-open the container.
+
+`FfmpegStillLayout.kt` went to 160 lines doing this and was split: the stream-inspection helpers
+are now `FfmpegStreamFacts.kt`.
+
+Still true: the viewer's own copy of a 6016×6016 picture is 138 MB, so paging between two large
+HEICs evicts — now behind an instant preview, so it is felt as a moment of blur rather than a
+freeze. Capping the *viewer's* copy below native is the remaining idea and is **not done**: it
+needs a cache key that distinguishes capped from native and a reload when zoom asks for more than
+the cap, and it should land after Phase 3 splits `MediaViewerPlayer` and `MediaViewerKeyHandler`.
+
+**No fixture guards the decode half, and none can be made.** `pillow-heif` stores even an
+8192×8192 image as a single item, so nothing available writes a tiled HEIF. What *is* tested is the
+placement maths, which is where a silent wrong answer would come from: `TileGridAssemblyTest` takes
+the decode as a lambda and feeds it synthetic tiles, covering offsets, right-edge and bottom-edge
+clipping, and the fully-off-canvas tile. The decode half is verified by hand against the real
+files, as recorded above.
+
+### 2b, animated AVIF — done
+
+Asked for after the first pass. It broke the stream model from the opposite side: an animated AVIF
+is **two** streams — a one-frame cover item and the eight-frame animation — and both are tagged
+`default`, so nothing but the frame count separates them. Counting streams gives 2; counting the
+first stream's frames gives 1; only the stream with more than one frame gives 8.
+
+So `FfmpegStillDecoder` no longer counts anything. `FfmpegStillLayout.kt` reads the container once
+and decides which of three shapes it is — burst, animation, or tile grid — and `ImageFrame.index`
+is now **a position in that layout**, the *i*-th picture in the file, never a raw stream index.
+Per-frame durations come from the animation stream's `avg_frame_rate`. Cost: `frame()` opens the
+container twice, because `videoStream` cannot be changed after `start()` and the layout has to be
+known first.
+
+New fixture `anim.avif` (2.6 KB, 8 frames in 2 streams), generated by `frameset_gen.py`, in the
+probe corpus and `SampleMediaTest`'s declared list.
+
+**`:shared:build` green after all five passes — 406 tests, 0 failures.**
 
 ## Phase 3: The frame strip in the viewer
 
@@ -439,10 +648,10 @@ cannot be written on the one below.
 
 - **Unit:** `ImageFrameSetTest` (frame filtering by `FrameKind`, `isSingle`, `primaryIndex` out of
   range), `StillColorInfoTest` (the transfer/gamut → tone-map decision, shared with `HdrInfoTest`).
-- **Integration:** `FrameSetDecodeTest` — every Phase 0 fixture reports the frame count the probe
-  recorded; `StillDecoderRoutingTest` — each extension reaches the decoder it should;
+- **Integration:** ~~`FrameSetDecodeTest`~~ and ~~`StillDecoderRoutingTest`~~ **already written —
+  pulled forward into Phase 2b**, which had no other way to show its decoders worked.
   `FrameCacheKeyTest` — frame 0 uses the bare path, frames above it do not collide, and a burst
-  paged end to end stays inside the `ImageBitmapCache` budget.
+  paged end to end stays inside the `ImageBitmapCache` budget — is the one still outstanding.
 - **UI:** `FrameStripUiTest` — a multi-frame file renders the strip and a single-frame one does not;
   clicking a frame changes `state.frameIndex`; `PageDown` steps and stops at the last frame.
 - **Manual:** TC-IMG cases for what a HEIC burst and a Live Photo actually look like, and one for an

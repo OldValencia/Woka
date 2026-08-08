@@ -31,7 +31,7 @@ fun MediaViewerToolbar(
     onPrev: () -> Unit,
     onNext: () -> Unit,
     onSelectMedia: (String) -> Unit,
-    loadThumbnail: suspend (MediaItem) -> ImageBitmap?,
+    thumbnails: ViewerThumbnails,
     mediaVolume: Float,
     onVolumeChange: (Float) -> Unit,
     onToggleFullscreen: () -> Unit
@@ -114,7 +114,7 @@ fun MediaViewerToolbar(
                     currentId = currentId,
                     currentIndex = currentIndex,
                     onSelectMedia = onSelectMedia,
-                    loadThumbnail = loadThumbnail
+                    thumbnails = thumbnails
                 )
             }
         }

@@ -2,7 +2,7 @@ package com.woka.core.ui.components
 
 import com.woka.core.data.MediaKind
 import com.woka.core.data.WokaStorage
-import com.woka.core.data.canDecode
+import com.woka.core.data.canDecodeInGrid
 import com.woka.core.data.isMedia
 import com.woka.core.data.mediaKind
 import java.io.File
@@ -56,8 +56,8 @@ suspend fun fetchFolderStateData(file: File): FolderStateData {
         val previews = allFiles.mapNotNull { f ->
             if (!f.isFile) return@mapNotNull null
             when (f.mediaKind()) {
-                // A format with no decoder would only draw an empty tile (§2).
-                MediaKind.Image -> f.takeIf { it.canDecode }
+                // A format Coil has no decoder for would only draw an empty tile (§2).
+                MediaKind.Image -> f.takeIf { it.canDecodeInGrid }
                 MediaKind.Video -> WokaStorage.thumbnailFile(f).takeIf { it.exists() }
                 null -> null
             }

@@ -18,7 +18,7 @@ fun MediaViewerScreen(
     initialMediaId: String,
     mediaItems: List<MediaItem>,
     onClose: (String) -> Unit,
-    loadThumbnail: suspend (MediaItem) -> ImageBitmap?
+    thumbnails: ViewerThumbnails
 ) {
     val settingsRepo = remember { AppDependencies.settingsRepository }
     val settings by settingsRepo.settings.collectAsState()
@@ -36,7 +36,7 @@ fun MediaViewerScreen(
         showConflictDialog = showConflictDialog,
         onConflictChange = { showConflictDialog = it },
         onClose = onClose,
-        loadThumbnail = loadThumbnail
+        thumbnails = thumbnails
     )
 
     // Restored from settings and written back on change, so the chosen volume
@@ -103,7 +103,7 @@ fun MediaViewerScreen(
         onVolumeChange = { vol -> mediaVolume = vol; state.volumeEvent.raise() }
     )
 
-    val media = rememberViewerMedia(state.imageBitmap, videoState)
+    val media = rememberViewerMedia(state.imageBitmap, videoState, state.sourceSize)
 
     val playerContent = @Composable {
         MediaViewerPlayer(
@@ -125,7 +125,7 @@ fun MediaViewerScreen(
                     onClose(state.currentId)
                 }
             },
-            loadThumbnail = loadThumbnail
+            thumbnails = thumbnails
         )
     }
 

@@ -80,6 +80,20 @@ def still_avif(path):
     plate(0, 1, 640, 480).save(path, format="AVIF", quality=60)
 
 
+def anim_avif(path, tmp):
+    """Animated AVIF, which FFmpeg writes as TWO streams, not one.
+
+    Stream 0 is a one-frame cover item and stream 1 carries the eight animation
+    frames. Both are tagged `default`, so nothing but the frame count tells them
+    apart — which is exactly why this fixture exists.
+    """
+    for index, frame in enumerate(series(ANIM_FRAMES)):
+        frame.save(tmp / f"plate{index:02d}.png")
+    ffmpeg("-framerate", "8", "-i", str(tmp / "plate%02d.png"),
+           "-c:v", "libaom-av1", "-crf", "40", "-cpu-used", "8",
+           "-f", "avif", str(path))
+
+
 def anim_gif(path):
     frames = series(ANIM_FRAMES)
     frames[0].save(path, format="GIF", save_all=True,
@@ -120,6 +134,7 @@ def main():
         ("livephoto.heic",
          lambda: live_photo(out / "livephoto.heic", out / "livephoto.mov")),
         ("still.avif", lambda: still_avif(out / "still.avif")),
+        ("anim.avif", lambda: anim_avif(out / "anim.avif", out)),
         ("anim.gif", lambda: anim_gif(out / "anim.gif")),
         ("anim.webp", lambda: anim_webp(out / "anim.webp")),
         ("multipage.tif", lambda: multipage_tiff(out / "multipage.tif")),

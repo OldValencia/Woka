@@ -33,7 +33,7 @@ fun MediaViewerCarousel(
     currentId: String,
     currentIndex: Int,
     onSelectMedia: (String) -> Unit,
-    loadThumbnail: suspend (MediaItem) -> ImageBitmap?
+    thumbnails: ViewerThumbnails
 ) {
     if (mediaItems.size <= 1) return
 
@@ -81,7 +81,7 @@ fun MediaViewerCarousel(
         items(mediaItems, key = { it.file.absolutePath }) { item ->
             var thumbnailBitmap by remember(item.file.absolutePath) { mutableStateOf<ImageBitmap?>(null) }
             LaunchedEffect(item.file.absolutePath) {
-                thumbnailBitmap = loadThumbnail(item)
+                thumbnailBitmap = thumbnails.preview(item)
             }
             var lastClickTime by remember { mutableStateOf(0L) }
             val isSelected = item.file.absolutePath == currentId

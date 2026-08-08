@@ -32,7 +32,7 @@ fun MediaViewerPlayer(
     onVolumeChange: (Float) -> Unit,
     onSizeModeChange: (SizeMode) -> Unit,
     onToggleFullscreen: () -> Unit,
-    loadThumbnail: suspend (MediaItem) -> ImageBitmap?
+    thumbnails: ViewerThumbnails
 ) {
     Box(modifier = modifier) {
         val hasCarousel = chrome.isCarouselEnabled && mediaItems.size > 1 && !chrome.isFullscreen
@@ -84,7 +84,7 @@ fun MediaViewerPlayer(
                     }
                 },
                 onSelectMedia = { state.animationDirection = 0; state.currentId = it },
-                loadThumbnail = loadThumbnail,
+                thumbnails = thumbnails,
                 mediaVolume = mediaVolume,
                 onVolumeChange = onVolumeChange,
                 onToggleFullscreen = onToggleFullscreen

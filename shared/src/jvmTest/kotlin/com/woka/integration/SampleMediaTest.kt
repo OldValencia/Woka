@@ -1,5 +1,6 @@
 package com.woka.integration
 
+import com.woka.fixtures.ANIM_AVIF
 import com.woka.fixtures.ANIM_GIF
 import com.woka.fixtures.ANIM_WEBP
 import com.woka.fixtures.BITMAP_SUBS
@@ -35,7 +36,7 @@ class SampleMediaTest {
         BITMAP_SUBS, DUAL_VIDEO, TEXT_SUBS, CHAPTERS, NO_AUDIO, BROKEN,
         STILL_PNG, STILL_JPG, STILL_WEBP, EXIF_ROTATED,
         BURST_HEIC, LIVE_PHOTO_STILL, LIVE_PHOTO_MOTION, STILL_AVIF,
-        ANIM_GIF, ANIM_WEBP, MULTIPAGE_TIFF,
+        ANIM_AVIF, ANIM_GIF, ANIM_WEBP, MULTIPAGE_TIFF,
         HDR_PQ_AVIF, HDR_HLG_AVIF, HDR_PQ_PNG
     )
 

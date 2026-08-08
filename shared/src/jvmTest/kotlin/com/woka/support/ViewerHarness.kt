@@ -15,6 +15,7 @@ import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.v2.runComposeUiTest
 import com.woka.core.data.CarouselVisibility
+import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.MediaItem
 import com.woka.core.data.SettingsRepository
 import com.woka.feature.viewer.shell.MediaViewerAmbientEffects
@@ -24,6 +25,7 @@ import com.woka.feature.viewer.shell.SizeMode
 import com.woka.feature.viewer.shell.ViewerActions
 import com.woka.feature.viewer.shell.ViewerChromeState
 import com.woka.feature.viewer.shell.ViewerMedia
+import com.woka.feature.viewer.shell.ViewerThumbnails
 import com.woka.feature.viewer.shell.mediaViewerPlayerModifier
 import java.nio.file.Files
 
@@ -36,7 +38,7 @@ const val VIEWER = "viewer-player"
  * [MediaViewerPlayer] is the level the UI layer works at rather than
  * `MediaViewerScreen`: the screen resolves `AppDependencies`, `PipManager` and the
  * shell's `LocalGlobalShortcuts`, while the player takes every one of its inputs
- * as a parameter — including `loadThumbnail`, which is what keeps `ImageLoader`
+ * as a parameter — including `thumbnails`, which is what keeps `ImageLoader`
  * and FFmpeg out of these tests entirely.
  */
 @OptIn(ExperimentalTestApi::class)
@@ -107,6 +109,14 @@ fun ViewerUnderTest(
         onVolumeChange = {},
         onSizeModeChange = onSizeModeChange,
         onToggleFullscreen = {},
-        loadThumbnail = { poster(64, 48) }
+        thumbnails = FakeViewerThumbnails
     )
+}
+
+/** Both sizes are the same painted poster: no test here is about the difference. */
+private object FakeViewerThumbnails : ViewerThumbnails {
+    override suspend fun full(item: MediaItem) = poster(64, 48)
+    override suspend fun preview(item: MediaItem) = poster(64, 48)
+    override suspend fun sourceSize(item: MediaItem) = IntSize.Zero
+    override fun cachedFull(item: MediaItem) = null
 }

@@ -13,17 +13,26 @@ import java.io.File
  */
 enum class MediaKind { Image, Video }
 
-private val IMAGE_EXTENSIONS = setOf("jpg", "jpeg", "png", "webp", "bmp", "gif", "heic")
+private val IMAGE_EXTENSIONS = setOf(
+    "jpg", "jpeg", "png", "webp", "bmp", "gif", "heic", "heif", "avif", "tif", "tiff"
+)
 
 private val VIDEO_EXTENSIONS = setOf("mp4", "mkv", "avi", "mov", "webm")
 
 /**
- * Listed and counted, but no decoder in the app reads them yet: Skia's
- * `Image.makeFromEncoded` does not do HEIF, and neither does Coil in the grid.
- * Kept in [IMAGE_EXTENSIONS] deliberately — being consistently "an image we cannot
- * open yet" beats being inconsistently invisible. A HEIF decoder is its own plan.
+ * Formats the **grid** cannot draw. The viewer opens every one of them.
+ *
+ * This set used to mean "no decoder anywhere in the app", and `.heic` was in it
+ * because nothing could read a HEIF. That is no longer the case — `StillDecoders`
+ * routes HEIF and AVIF to FFmpeg and TIFF to `ImageIO` — but the grid does not go
+ * through `StillDecoders`. It goes through Coil, which decodes what the platform
+ * decodes and so still draws an empty tile for all five. They stay in
+ * [IMAGE_EXTENSIONS] deliberately: being consistently "an image the grid cannot
+ * preview" beats being inconsistently invisible.
+ *
+ * Emptied by the `WokaImageDecoder` step, which puts Coil on the same routing.
  */
-private val UNDECODABLE_EXTENSIONS = setOf("heic")
+private val GRID_UNDECODABLE_EXTENSIONS = setOf("heic", "heif", "avif", "tif", "tiff")
 
 fun File.mediaKind(): MediaKind? = when (extension.lowercase()) {
     in IMAGE_EXTENSIONS -> MediaKind.Image
@@ -34,9 +43,13 @@ fun File.mediaKind(): MediaKind? = when (extension.lowercase()) {
 val File.isMedia: Boolean
     get() = mediaKind() != null
 
-/** False for a format the app lists but cannot turn into pixels — see [UNDECODABLE_EXTENSIONS]. */
-val File.canDecode: Boolean
-    get() = extension.lowercase() !in UNDECODABLE_EXTENSIONS
+/**
+ * False for a format the grid lists but cannot preview — see
+ * [GRID_UNDECODABLE_EXTENSIONS]. Not a question about the viewer, which opens
+ * every listed format; ask `stillDecoderFor` about that one.
+ */
+val File.canDecodeInGrid: Boolean
+    get() = extension.lowercase() !in GRID_UNDECODABLE_EXTENSIONS
 
 /** The only place a [MediaItem] learns whether it is an image or a video. */
 fun mediaItemOrNull(file: File): MediaItem? = when (file.mediaKind()) {

@@ -26,6 +26,11 @@ class MediaViewerState(initialId: String) {
     // lives in the top bar and needs them to resolve a preset into a percentage.
     var containerSize by mutableStateOf(IntSize.Zero)
     var nativeSize by mutableStateOf(IntSize.Zero)
+    // The file's own dimensions, read from the decoder before it decodes. Flows
+    // the other way to `nativeSize` above: this comes in from the loader so the
+    // zoom presets mean native pixels even while a preview stands in for the
+    // picture, that one is published outward once the media exists.
+    var sourceSize by mutableStateOf(IntSize.Zero)
     // Raised when the wheel or the keyboard changes the zoom, to flash the HUD.
     val zoomHudEvent = ViewerEvent()
     var activeItemPath by mutableStateOf<String?>(null)

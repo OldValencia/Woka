@@ -27,7 +27,7 @@ internal fun MediaViewerActiveItemEffects(
     showConflictDialog: Boolean,
     onConflictChange: (Boolean) -> Unit,
     onClose: (String) -> Unit,
-    loadThumbnail: suspend (MediaItem) -> ImageBitmap?
+    thumbnails: ViewerThumbnails
 ) {
     LaunchedEffect(activeItem) {
         val path = activeItem?.file?.absolutePath
@@ -78,12 +78,28 @@ internal fun MediaViewerActiveItemEffects(
         )
     }
 
-    // The single decode, for both paths: a plain file change, and the reload after
-    // the PiP conflict above is confirmed and `showConflictDialog` goes false.
+    // The decode, for both paths: a plain file change, and the reload after the
+    // PiP conflict above is confirmed and `showConflictDialog` goes false.
+    //
+    // **Two stages, on purpose.** The full decode of a 36-megapixel HEIC is a
+    // quarter of a second plus a 138 MB texture upload, and until it landed the
+    // *previous* file stayed on screen — paging looked like a freeze and then a
+    // jump. The preview is the one the carousel already built, so it is a disk
+    // read or a cache hit, and `ContentScale.Fit` draws it in exactly the
+    // rectangle the full picture will occupy. `sourceSize` is read first so the
+    // zoom presets mean native pixels from the very first paint.
     LaunchedEffect(activeItem, showConflictDialog) {
-        if (!showConflictDialog && activeItem != null) {
-            state.imageBitmap = loadThumbnail(activeItem)
+        if (showConflictDialog || activeItem == null) return@LaunchedEffect
+        state.sourceSize = thumbnails.sourceSize(activeItem)
+        val alreadyDecoded = thumbnails.cachedFull(activeItem)
+        if (alreadyDecoded != null) {
+            // Going back to a file still in the cache: showing the preview first
+            // would be a frame of blur bought for nothing.
+            state.imageBitmap = alreadyDecoded
+            return@LaunchedEffect
         }
+        thumbnails.preview(activeItem)?.let { state.imageBitmap = it }
+        state.imageBitmap = thumbnails.full(activeItem)
     }
 }
 

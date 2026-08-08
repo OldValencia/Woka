@@ -36,6 +36,7 @@ in the file names or in the stream metadata.
 | `burst.heic` | **5** HEIC images in one container, 320×240 | frame sets: the HEIC burst case |
 | `livephoto.heic` / `livephoto.mov` | still plus a 1.5 s hevc clip sharing a stem | Live Photo — the motion frame is a **sibling file**, not a track |
 | `still.avif` | single-frame AVIF, 640×480, SDR | can anything open AVIF at all |
+| `anim.avif` | **8** frames, 320×240, in **two** streams — a 1-frame cover item and the 8-frame animation | animated AVIF: "one stream per picture" is wrong, and only the frame count tells the two streams apart |
 | `anim.gif` / `anim.webp` | **8** frames, 320×240, 120 ms each | animated stills that must not freeze on frame 1 |
 | `multipage.tif` | **3** pages, 320×240, deflate | multi-page TIFF |
 | `hdr_pq.avif` / `hdr_hlg.avif` | 640×480 10-bit, BT.2020 with PQ and HLG transfers | Phase 5: HLG cannot be settled without an HLG file |

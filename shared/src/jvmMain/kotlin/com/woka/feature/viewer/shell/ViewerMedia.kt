@@ -31,10 +31,26 @@ sealed interface ViewerMedia {
     /** The media's own pixel dimensions — what the "Actual size" preset means. */
     val nativeSize: IntSize
 
+    /**
+     * [sourceSize] is the file's own dimensions, which are **not** the poster's
+     * whenever the poster is a stand-in: the viewer draws a small preview while
+     * the picture decodes, and may hold a large one capped below native. Every
+     * zoom percentage and "Actual size" are defined against native 1:1 pixels,
+     * so reading them off the poster made them wrong for as long as it was not
+     * the full thing — and `ContentScale.Fit` means the *drawn* rectangle never
+     * depended on the poster's pixel count anyway, only its aspect ratio.
+     *
+     * [IntSize.Zero] falls back to the poster, which is what every construction
+     * site that does not know better wants.
+     */
     @Immutable
-    data class Still(override val poster: ImageBitmap) : ViewerMedia {
+    data class Still(
+        override val poster: ImageBitmap,
+        val sourceSize: IntSize = IntSize.Zero
+    ) : ViewerMedia {
         override val nativeSize: IntSize
-            get() = IntSize(poster.width, poster.height)
+            get() = sourceSize.takeIf { it != IntSize.Zero }
+                ?: IntSize(poster.width, poster.height)
     }
 
     @Stable
@@ -76,11 +92,15 @@ val ViewerMedia.player: VideoPlayerState?
  * shows its spinner meanwhile, exactly as it did when the bitmap was nullable.
  */
 @Composable
-fun rememberViewerMedia(poster: ImageBitmap?, player: VideoPlayerState?): ViewerMedia? =
-    remember(poster, player) {
+fun rememberViewerMedia(
+    poster: ImageBitmap?,
+    player: VideoPlayerState?,
+    sourceSize: IntSize = IntSize.Zero
+): ViewerMedia? =
+    remember(poster, player, sourceSize) {
         when {
             poster == null -> null
             player != null -> ViewerMedia.Video(player, poster)
-            else -> ViewerMedia.Still(poster)
+            else -> ViewerMedia.Still(poster, sourceSize)
         }
     }

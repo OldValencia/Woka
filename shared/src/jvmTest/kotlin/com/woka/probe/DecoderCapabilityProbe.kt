@@ -1,5 +1,6 @@
 package com.woka.probe
 
+import com.woka.fixtures.ANIM_AVIF
 import com.woka.fixtures.ANIM_GIF
 import com.woka.fixtures.ANIM_WEBP
 import com.woka.fixtures.BURST_HEIC
@@ -43,6 +44,7 @@ class DecoderCapabilityProbe {
         LIVE_PHOTO_STILL,
         LIVE_PHOTO_MOTION,
         STILL_AVIF,
+        ANIM_AVIF,
         HDR_PQ_AVIF,
         HDR_HLG_AVIF,
         HDR_PQ_PNG,

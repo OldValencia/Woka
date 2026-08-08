@@ -4,9 +4,13 @@ import com.woka.core.data.MediaItem
 import com.woka.core.ui.image.ImageBitmapCache
 import com.woka.feature.viewer.image.ImageLoader
 import com.woka.feature.viewer.shell.MediaThumbnails
+import com.woka.fixtures.BURST_HEIC
 import com.woka.fixtures.EXIF_EXPECTED_HEIGHT
 import com.woka.fixtures.EXIF_EXPECTED_WIDTH
 import com.woka.fixtures.EXIF_ROTATED
+import com.woka.fixtures.FRAME_HEIGHT
+import com.woka.fixtures.FRAME_WIDTH
+import com.woka.fixtures.MULTIPAGE_TIFF
 import com.woka.fixtures.STILL_HEIGHT
 import com.woka.fixtures.STILL_JPG
 import com.woka.fixtures.STILL_PNG
@@ -51,10 +55,23 @@ class ImageLoaderTest {
         assertSame(bitmap, ImageBitmapCache[file.absolutePath])
     }
 
+    /**
+     * This test used to assert the opposite — that `.heic` came back null
+     * without the file being read. It is the one line of the suite that records
+     * the whole point of the frame-set work.
+     */
     @Test
-    fun `a format the app lists but cannot decode returns null without being read`() {
-        val pretendHeif = copyOf(STILL_PNG, "photo.heic")
-        assertNull(ImageLoader.load(pretendHeif))
+    fun `a HEIF the loader once refused now decodes through FFmpeg`() {
+        val bitmap = assertNotNull(ImageLoader.load(SampleMedia.file(BURST_HEIC)))
+        assertEquals(FRAME_WIDTH, bitmap.width)
+        assertEquals(FRAME_HEIGHT, bitmap.height)
+    }
+
+    @Test
+    fun `a TIFF page decodes through ImageIO`() {
+        val bitmap = assertNotNull(ImageLoader.load(SampleMedia.file(MULTIPAGE_TIFF)))
+        assertEquals(FRAME_WIDTH, bitmap.width)
+        assertEquals(FRAME_HEIGHT, bitmap.height)
     }
 
     @Test

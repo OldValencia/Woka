@@ -2,7 +2,7 @@ package com.woka.unit
 
 import com.woka.core.data.MediaItem
 import com.woka.core.data.MediaKind
-import com.woka.core.data.canDecode
+import com.woka.core.data.canDecodeInGrid
 import com.woka.core.data.isMedia
 import com.woka.core.data.mediaItemOrNull
 import com.woka.core.data.mediaKind
@@ -20,7 +20,9 @@ class MediaKindTest {
 
     @Test
     fun `every listed image extension classifies as an image`() {
-        listOf("jpg", "jpeg", "png", "webp", "bmp", "gif", "heic").forEach { extension ->
+        val listed =
+            listOf("jpg", "jpeg", "png", "webp", "bmp", "gif", "heic", "heif", "avif", "tif", "tiff")
+        listed.forEach { extension ->
             assertEquals(MediaKind.Image, named("photo.$extension").mediaKind(), extension)
         }
     }
@@ -72,13 +74,19 @@ class MediaKindTest {
         }
     }
 
+    /**
+     * The viewer opens all five through `StillDecoders`; Coil, which is what the
+     * grid draws with, opens none of them. The flag is about the grid alone.
+     */
     @Test
-    fun `HEIF is listed but cannot be turned into pixels yet`() {
-        val heic = named("photo.heic")
-        assertEquals(MediaKind.Image, heic.mediaKind())
-        assertFalse(heic.canDecode)
-        assertTrue(named("photo.png").canDecode)
-        assertTrue(named("clip.mkv").canDecode)
+    fun `the formats the grid cannot preview are listed all the same`() {
+        listOf("heic", "heif", "avif", "tif", "tiff").forEach { extension ->
+            val file = named("photo.$extension")
+            assertEquals(MediaKind.Image, file.mediaKind(), extension)
+            assertFalse(file.canDecodeInGrid, extension)
+        }
+        assertTrue(named("photo.png").canDecodeInGrid)
+        assertTrue(named("clip.mkv").canDecodeInGrid)
     }
 
     @Test

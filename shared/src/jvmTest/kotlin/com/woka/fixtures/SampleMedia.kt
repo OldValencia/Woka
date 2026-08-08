@@ -75,6 +75,14 @@ const val LIVE_PHOTO_MOTION = "livephoto.mov"
 /** Single-frame AVIF, SDR: the format is the question, not the colour. */
 const val STILL_AVIF = "still.avif"
 
+/**
+ * Animated AVIF — and **two** streams, not one: a one-frame cover item plus the
+ * eight-frame animation. Both are tagged `default`, so only the frame count
+ * separates them. It is the fixture that proves "one stream, one picture" wrong
+ * from the opposite direction to [BURST_HEIC].
+ */
+const val ANIM_AVIF = "anim.avif"
+
 /** HDR stills. `hdr_pq.png` exists so the skia path has one even if AVIF fails. */
 const val HDR_PQ_AVIF = "hdr_pq.avif"
 const val HDR_HLG_AVIF = "hdr_hlg.avif"
