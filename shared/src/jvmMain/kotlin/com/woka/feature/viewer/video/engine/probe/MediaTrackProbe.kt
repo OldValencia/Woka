@@ -73,7 +73,7 @@ private fun AVRational.toFps(): Double? {
 
 private fun AVStream.metaValue(key: String): String? {
     val entry: AVDictionaryEntry = av_dict_get(metadata(), key, null, 0) ?: return null
-    return entry.value()?.getString()?.takeIf { it.isNotBlank() }
+    return entry.value()?.string?.takeIf { it.isNotBlank() }
 }
 
 private fun AVCodecParameters.channelInfo(): Pair<Int, String?> {
@@ -83,7 +83,7 @@ private fun AVCodecParameters.channelInfo(): Pair<Int, String?> {
     // The layout text is printable ASCII; getString() reads the whole buffer, so
     // stop at the first non-printable byte to drop the uninitialised tail (which
     // otherwise trails a stray glyph).
-    val description = buffer.getString()
+    val description = buffer.string
         .takeWhile { it.code in 32..126 }
         .trim()
         .takeIf { it.isNotBlank() }
@@ -91,18 +91,9 @@ private fun AVCodecParameters.channelInfo(): Pair<Int, String?> {
 }
 
 private fun codecName(codecId: Int): String =
-    avcodec_get_name(codecId)?.getString()?.takeIf { it.isNotBlank() } ?: "unknown"
+    avcodec_get_name(codecId)?.string?.takeIf { it.isNotBlank() } ?: "unknown"
 
 private fun subtitleIsTextBased(codecId: Int): Boolean {
     val descriptor = avcodec_descriptor_get(codecId) ?: return true
     return descriptor.props() and AV_CODEC_PROP_TEXT_SUB != 0
-}
-
-/** Step 0 verification: dump enumerated tracks to the log. */
-internal fun logMediaTracks(tracks: MediaTracks) {
-    println("[MediaTracks] video=${tracks.video.size} audio=${tracks.audio.size} subtitle=${tracks.subtitle.size}")
-    (tracks.video + tracks.audio + tracks.subtitle).forEach { t ->
-        val extra = listOfNotNull(t.channelLayout, t.isTextBased?.let { "text=$it" }).joinToString(" ")
-        println("  #${t.index} ${t.type} ${t.codec} '${t.label}' lang=${t.language} def=${t.isDefault} $extra")
-    }
 }

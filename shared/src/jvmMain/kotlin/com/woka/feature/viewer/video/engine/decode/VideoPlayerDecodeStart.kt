@@ -1,7 +1,6 @@
 package com.woka.feature.viewer.video.engine.decode
 
 import com.woka.feature.viewer.video.engine.VideoPlayerState
-import com.woka.feature.viewer.video.engine.probe.logMediaTracks
 import com.woka.feature.viewer.video.engine.probe.probeChapters
 import com.woka.feature.viewer.video.engine.probe.probeMediaTracks
 import com.woka.feature.viewer.video.engine.subtitle.startSubtitleDecoderLoop
@@ -23,7 +22,6 @@ internal fun VideoPlayerState.probeTracksAndChapters(grabber: FFmpegFrameGrabber
         // Restore the tracks and sync offsets this file was last watched
         // with, before anything downstream reads a selection (§2.6 / §3).
         applyTrackPrefs(probeMediaTracks(grabber))
-        logMediaTracks(tracks.mediaTracks)
         // Same open format context, so this is free (§4). Reads durationMs,
         // which is why the caller assigns that first.
         tracks.chapters = probeChapters(grabber, durationMs)
