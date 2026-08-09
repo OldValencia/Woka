@@ -15,7 +15,15 @@ import kotlin.math.abs
 private const val MAX_DROPS_IN_A_ROW = 10
 
 /** A decoded video frame tagged with the seek generation it was produced under. */
-internal data class VideoFrame(val bitmap: ImageBitmap, val tsMs: Long, val generation: Int, val hdrInfo: HdrInfo? = null)
+internal data class VideoFrame(
+    val bitmap: ImageBitmap,
+    val tsMs: Long,
+    val generation: Int,
+    val hdrInfo: HdrInfo? = null,
+    // Last, with a default, so the end-of-stream marker in VideoPlayerSpeed.kt —
+    // which carries a 1x1 placeholder that nothing retains — stays as it was.
+    val id: Long = 0L
+)
 
 internal fun VideoPlayerState.startPlayback() {
     // Each queued frame owns a full-size Skia raster — 33MB at 4K — freed only
@@ -36,7 +44,7 @@ internal fun VideoPlayerState.startPresenterLoop(videoChannel: Channel<VideoFram
         var lastPauseTimeMs = 0L
         var droppedInARow = 0
 
-        for ((bitmap, frameTsMs, frameGeneration, hdrInfo) in videoChannel) {
+        for ((bitmap, frameTsMs, frameGeneration, hdrInfo, frameId) in videoChannel) {
             // Drop frames decoded before the latest seek so they can't overwrite
             // the post-seek position/frame with stale data.
             if (frameGeneration != generation.seek) continue
@@ -115,6 +123,7 @@ internal fun VideoPlayerState.startPresenterLoop(videoChannel: Channel<VideoFram
             droppedInARow = 0
             currentFrame = bitmap
             currentFrameHdrInfo = hdrInfo
+            currentFrameId = frameId
         }
     }
 }

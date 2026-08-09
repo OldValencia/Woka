@@ -18,6 +18,15 @@ import java.nio.ByteOrder
 private const val UNIFORM_BYTES = 16
 
 /**
+ * Compiled once per process.
+ *
+ * It used to be a `by lazy` on the painter, and `MediaViewerFrame` mints a painter
+ * per presented frame — so [HDR_SHADER] was parsed and compiled 24 times a second,
+ * on the UI thread, inside `onDraw`.
+ */
+private val HDR_EFFECT: RuntimeEffect by lazy { RuntimeEffect.makeForShader(HDR_SHADER) }
+
+/**
  * Draws a picture that cannot go straight to an sRGB display, doing the right
  * thing for **which** kind of picture it is.
  *
@@ -37,27 +46,42 @@ class HdrImagePainter(
     private val isWideGamut: Boolean = true
 ) : Painter() {
 
-    private val effect by lazy { RuntimeEffect.makeForShader(HDR_SHADER) }
-
     override val intrinsicSize: Size
         get() = Size(bitmap.width.toFloat(), bitmap.height.toFloat())
 
+    /**
+     * Every object made here is a native one, and none of them used to be closed.
+     * The runtime-effect shader holds the image shader, which holds the image,
+     * which shares the bitmap's pixel storage — so every draw left behind a chain
+     * pinning a whole frame of pixels, and it outlived the frame's own wrapper.
+     * Twenty-four of those a second is what turned an eight-deep frame queue into
+     * gigabytes.
+     *
+     * Closing the handles the moment `drawRect` returns is safe: the canvas took
+     * its own references while recording, and they outlive ours.
+     */
     override fun DrawScope.onDraw() {
-        val uniforms = ByteBuffer.allocate(UNIFORM_BYTES).order(ByteOrder.LITTLE_ENDIAN)
+        val image = Image.makeFromBitmap(bitmap.asSkiaBitmap())
+        val imageShader = image.makeShader()
+        val data = Data.makeFromBytes(uniforms())
+        val shader = HDR_EFFECT.makeShader(data, arrayOf(imageShader), null)
+        try {
+            drawRect(brush = ShaderBrush(shader.asComposeShader()), size = size)
+        } finally {
+            shader.close()
+            data.close()
+            imageShader.close()
+            image.close()
+        }
+    }
+
+    private fun DrawScope.uniforms(): ByteArray =
+        ByteBuffer.allocate(UNIFORM_BYTES).order(ByteOrder.LITTLE_ENDIAN)
             .putFloat(intrinsicSize.width / size.width)
             .putFloat(intrinsicSize.height / size.height)
             .putFloat(transferCode())
             .putFloat(if (isWideGamut) 1f else 0f)
             .array()
-
-        val image = Image.makeFromBitmap(bitmap.asSkiaBitmap())
-        val shader = effect.makeShader(
-            Data.makeFromBytes(uniforms),
-            arrayOf(image.makeShader()),
-            null
-        )
-        drawRect(brush = ShaderBrush(shader.asComposeShader()), size = size)
-    }
 
     /** Floats rather than an int uniform: every Skia build takes these. */
     private fun transferCode(): Float = when (transfer) {

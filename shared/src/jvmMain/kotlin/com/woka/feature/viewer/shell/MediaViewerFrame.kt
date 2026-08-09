@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.BitmapPainter
@@ -38,6 +39,9 @@ fun MediaViewerFrame(
 ) {
     val video = media as? ViewerMedia.Video
     val frameToDraw = video?.player?.currentFrame ?: targetPoster
+    // Read here, in the same composition as the bitmap above, so the pair the draw
+    // scope reports is the pair it actually drew (§6).
+    val drawnFrameId = video?.player?.currentFrameId ?: 0L
     // A decoded video frame answers for itself, per frame, because a track
     // switch changes it. Anything else is the still's own description — which
     // a photograph had no way of supplying at all until Phase 5.
@@ -86,7 +90,16 @@ fun MediaViewerFrame(
                 painter = painter,
                 contentDescription = "Image/Video Preview",
                 contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxSize()
+                // Reports the frame this scene has finished with, which is what
+                // lets the decoder free its 15MB the moment it is unreachable
+                // (§6). The id is captured in composition alongside the bitmap it
+                // belongs to, so the two can never be reported out of step.
+                modifier = Modifier
+                    .fillMaxSize()
+                    .drawWithContent {
+                        drawContent()
+                        video?.player?.frameRetention?.acknowledge(drawnFrameId)
+                    }
             )
             // Bitmap subtitles carry their own placement, so they are drawn here —
             // inside the zoom/pan transform — rather than by the panel-anchored

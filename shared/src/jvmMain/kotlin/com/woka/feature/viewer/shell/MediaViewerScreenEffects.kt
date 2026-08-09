@@ -123,6 +123,7 @@ internal fun MediaViewerAmbientEffects(
     focusRequester: FocusRequester
 ) {
     PopoverHoverEffect(state.hover)
+    ViewerNativeSizeEffect(state)
     LaunchedEffect(mediaVolume) {
         settingsRepo.setMediaVolume(mediaVolume)
         videoState?.updateVolume(mediaVolume)

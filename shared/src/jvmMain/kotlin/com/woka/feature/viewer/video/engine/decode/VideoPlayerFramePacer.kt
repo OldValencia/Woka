@@ -1,13 +1,13 @@
 package com.woka.feature.viewer.video.engine.decode
 
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.toComposeImageBitmap
+import androidx.compose.ui.graphics.asComposeImageBitmap
 import org.bytedeco.javacv.Frame
+import org.jetbrains.skia.Bitmap
 import org.jetbrains.skia.ColorAlphaType
 import org.jetbrains.skia.ColorType
 import org.jetbrains.skia.ImageInfo
 import java.nio.ByteBuffer
-import org.jetbrains.skia.Image as SkiaImage
 
 // A frame this far past its wall-clock slot is not worth the conversion cost.
 private const val LATE_DROP_MS = 40L
@@ -16,8 +16,7 @@ private const val LATE_DROP_MS = 40L
 private const val MAX_SKIPS_IN_A_ROW = 4
 
 /**
- * Decides which decoded frames are worth turning into bitmaps, and converts them
- * through a reused scratch buffer.
+ * Decides which decoded frames are worth turning into bitmaps, and converts them.
  *
  * On 4K HDR the RGBA conversion measured ~27ms a frame against ~9ms for the decode
  * itself, so the pipeline caps out just above real time. At 2x the presenter then
@@ -26,15 +25,17 @@ private const val MAX_SKIPS_IN_A_ROW = 4
  *
  * Skipping the conversion for frames already past their slot keeps the media clock
  * (and with it the audio) running at the requested speed and pays for it in
- * displayed frame rate instead, which is what every player does. Reusing the
- * scratch array removes a 33MB allocation per 4K frame on top of that.
+ * displayed frame rate instead, which is what every player does.
  */
-internal class FramePacer {
+/** A converted frame and the id [FrameRetention] tracks its lifetime by. */
+internal class PacedFrame(val bitmap: ImageBitmap, val id: Long)
+
+internal class FramePacer(private val retention: FrameRetention) {
     private var anchorWallMs = -1L
     private var anchorTsMs = -1L
     private var skipsInARow = 0
     private var pacedSpeed = 0f
-    private var scratch = ByteArray(0)
+    private var nextFrameId = 1L
 
     /** Drops the baseline: the next frame anchors a fresh slot schedule. */
     fun rebase() {
@@ -76,22 +77,59 @@ internal class FramePacer {
     }
 
     /**
-     * RGBA frame to a Skia-backed bitmap. Skia copies the array into its own
-     * storage, so handing it the same scratch buffer every time is safe.
+     * RGBA frame to a Skia-backed bitmap, in **one** native buffer and one copy.
+     *
+     * It used to be `Image.makeRaster(…).toComposeImageBitmap()`, which is two
+     * full-size native allocations rather than one: `makeRaster` copies the array,
+     * and `toComposeImageBitmap` then allocates a second bitmap and blits the whole
+     * frame into it through a canvas, converting UNPREMUL RGBA to PREMUL BGRA on
+     * the way. Neither was ever closed. `installPixels` writes the pixels the
+     * decoder already produced straight into the bitmap that gets drawn.
+     *
+     * The bitmap is handed to [FrameRetention], which closes it once the UI has
+     * drawn past it. That is what bounds memory; everything below is the backstop
+     * for when it cannot — a stalled UI, a draw site that does not report.
+     *
+     * **The staging array is deliberately allocated per frame rather than reused.**
+     * It looks like waste and is the opposite. A frame's pixels live in native
+     * memory that the collector cannot see: it weighs 15MB and the Java wrapper
+     * holding it weighs a few dozen bytes, so with a reused buffer the heap grew by
+     * about a kilobyte a second while native memory grew by 350MB a second. The
+     * collector had no reason to run, took twenty seconds to get round to it, and
+     * seven gigabytes accumulated in between — measured, not guessed. Allocating
+     * the staging array per frame makes heap pressure track native pressure
+     * one-for-one, so any GC that keeps the heap bounded keeps the frames bounded
+     * with it. The memcpy underneath is the same either way; only the allocation is
+     * added, and it is short-lived young-gen garbage.
+     *
+     * Together with `-XX:MaxNewSize` in `desktopApp/build.gradle.kts` this is what
+     * held the ceiling before [FrameRetention] existed, and it stays as the path
+     * that catches anything the retention rule deliberately refuses to free.
      */
-    fun convert(frame: Frame): ImageBitmap {
+    fun convert(frame: Frame): PacedFrame {
         val size = frame.imageStride * frame.imageHeight
-        if (scratch.size != size) scratch = ByteArray(size)
+        val staging = ByteArray(size)
         val buffer = frame.image[0] as ByteBuffer
         buffer.rewind()
-        buffer.get(scratch, 0, size)
+        buffer.get(staging, 0, size)
         buffer.rewind()
+        // OPAQUE, not UNPREMUL: swscale writes 255 into every alpha byte, and
+        // saying so spares Skia an un-premultiply pass when it uploads the texture.
         val info = ImageInfo(
             frame.imageWidth,
             frame.imageHeight,
             ColorType.RGBA_8888,
-            ColorAlphaType.UNPREMUL
+            ColorAlphaType.OPAQUE
         )
-        return SkiaImage.makeRaster(info, scratch, frame.imageStride).toComposeImageBitmap()
+        val bitmap = Bitmap()
+        check(bitmap.installPixels(info, staging, frame.imageStride)) {
+            "installPixels rejected ${frame.imageWidth}x${frame.imageHeight} stride ${frame.imageStride}"
+        }
+        // Skia only lets an Image share a bitmap's storage when the bitmap can no
+        // longer change; without this every draw would copy the frame instead.
+        bitmap.setImmutable()
+        val id = nextFrameId++
+        retention.register(id, bitmap)
+        return PacedFrame(bitmap.asComposeImageBitmap(), id)
     }
 }

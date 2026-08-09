@@ -44,7 +44,7 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
             var frameGeneration = generation.seek
             var videoSeekGen = generation.seek
             var durationChecked = durationMs > 0L
-            val pacer = FramePacer()
+            val pacer = FramePacer(frameRetention)
 
             // Resume (§4) goes through the ordinary seek path, and only after
             // videoSeekGen has been captured — set before it, the generation bump
@@ -101,8 +101,10 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
                     // Already past its slot: decoded (the stream needs it) but not
                     // converted, which is where the time actually goes (§6).
                     if (pacer.shouldSkip(frameTsMs, playbackSpeed)) continue
-                    val bitmap = pacer.convert(frame)
-                    videoChannel.send(VideoFrame(bitmap, frameTsMs, frameGeneration, hdrInfo))
+                    val paced = pacer.convert(frame)
+                    videoChannel.send(
+                        VideoFrame(paced.bitmap, frameTsMs, frameGeneration, hdrInfo, paced.id)
+                    )
                 }
             }
 

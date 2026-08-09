@@ -7,6 +7,7 @@ import org.bytedeco.ffmpeg.avutil.AVRational
 import org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_PROP_TEXT_SUB
 import org.bytedeco.ffmpeg.global.avcodec.avcodec_descriptor_get
 import org.bytedeco.ffmpeg.global.avcodec.avcodec_get_name
+import org.bytedeco.ffmpeg.global.avformat.AV_DISPOSITION_ATTACHED_PIC
 import org.bytedeco.ffmpeg.global.avformat.AV_DISPOSITION_DEFAULT
 import org.bytedeco.ffmpeg.global.avformat.AV_DISPOSITION_FORCED
 import org.bytedeco.ffmpeg.global.avutil.AVMEDIA_TYPE_AUDIO
@@ -32,7 +33,17 @@ internal fun probeMediaTracks(grabber: FFmpegFrameGrabber): MediaTracks {
     for (i in 0 until fc.nb_streams()) {
         val stream = fc.streams(i) ?: continue
         when (stream.codecpar()?.codec_type()) {
-            AVMEDIA_TYPE_VIDEO -> video += stream.toMediaTrack(i, video.size + 1, TrackType.Video)
+            // Cover art is a video stream. An MKV poster is AVMEDIA_TYPE_VIDEO
+            // carrying one MJPEG frame and flagged ATTACHED_PIC — measured on the
+            // 2160p test file as a 332x500 still at stream #9. Listed as a track it
+            // offers a "video track" that, once selected, costs a full grabber
+            // re-open and then parks the picture on the artwork forever, because
+            // there is no second frame to decode. Nothing about it is a track the
+            // user can watch, so it never becomes one.
+            AVMEDIA_TYPE_VIDEO ->
+                if (stream.disposition() and AV_DISPOSITION_ATTACHED_PIC == 0) {
+                    video += stream.toMediaTrack(i, video.size + 1, TrackType.Video)
+                }
             AVMEDIA_TYPE_AUDIO -> audio += stream.toMediaTrack(i, audio.size + 1, TrackType.Audio)
             AVMEDIA_TYPE_SUBTITLE ->
                 subtitle += stream.toMediaTrack(i, subtitle.size + 1, TrackType.Subtitle)

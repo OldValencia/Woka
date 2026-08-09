@@ -5,16 +5,21 @@ import com.woka.feature.viewer.video.engine.probe.HdrInfo
 
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.toComposeImageBitmap
+import androidx.compose.ui.graphics.asComposeImageBitmap
 import org.bytedeco.javacv.Frame
+import org.jetbrains.skia.Bitmap
 import org.jetbrains.skia.ColorAlphaType
 import org.jetbrains.skia.ColorType
 import org.jetbrains.skia.ImageInfo
 import java.nio.ByteBuffer
 import javax.sound.sampled.FloatControl
 import javax.sound.sampled.SourceDataLine
-import org.jetbrains.skia.Image as SkiaImage
 
+/**
+ * The seek path's own conversion — one frame per seek rather than one per tick,
+ * so it allocates its array fresh — built the same single-buffer way as
+ * [FramePacer.convert]. See that function for why `makeRaster` was two.
+ */
 internal fun Frame.toComposeBitmap(): ImageBitmap {
     val buffer = this.image[0] as ByteBuffer
     val bytes = ByteArray(this.imageStride * this.imageHeight)
@@ -22,9 +27,13 @@ internal fun Frame.toComposeBitmap(): ImageBitmap {
     buffer.get(bytes)
     buffer.rewind()
 
-    val imageInfo = ImageInfo(this.imageWidth, this.imageHeight, ColorType.RGBA_8888, ColorAlphaType.UNPREMUL)
-    val image = SkiaImage.makeRaster(imageInfo, bytes, this.imageStride)
-    return image.toComposeImageBitmap()
+    val imageInfo = ImageInfo(this.imageWidth, this.imageHeight, ColorType.RGBA_8888, ColorAlphaType.OPAQUE)
+    val bitmap = Bitmap()
+    check(bitmap.installPixels(imageInfo, bytes, this.imageStride)) {
+        "installPixels rejected ${this.imageWidth}x${this.imageHeight} stride ${this.imageStride}"
+    }
+    bitmap.setImmutable()
+    return bitmap.asComposeImageBitmap()
 }
 
 /**

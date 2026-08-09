@@ -1,5 +1,6 @@
 package com.woka.feature.viewer.video.engine
 
+import com.woka.feature.viewer.video.engine.decode.FrameRetention
 import com.woka.feature.viewer.video.engine.decode.RenderScale
 import com.woka.feature.viewer.video.engine.decode.setVolumeInternal
 import com.woka.feature.viewer.video.engine.decode.startPlayback
@@ -32,6 +33,19 @@ class VideoPlayerState(
     var volume by mutableStateOf(initialVolume)
     var currentFrame by mutableStateOf<ImageBitmap?>(null)
     var currentFrameHdrInfo by mutableStateOf<HdrInfo?>(null)
+
+    // Identifies [currentFrame] for [frameRetention]. Published with the bitmap, so
+    // a composition that reads both gets a matched pair; a seek frame leaves it on
+    // the previous value, which only ever makes the retention rule more cautious.
+    var currentFrameId by mutableStateOf(0L)
+        internal set
+
+    /**
+     * Frees a frame's pixels once every scene has drawn past it (§6). Draw sites
+     * must call `acknowledge(currentFrameId)` from their draw scope — a site that
+     * does not simply holds memory back, it can never free a frame early.
+     */
+    internal val frameRetention = FrameRetention()
 
     // The stream's own HDR metadata, written once per opened video track. Unlike
     // [currentFrameHdrInfo] — which is rewritten every frame — this is stable, so
