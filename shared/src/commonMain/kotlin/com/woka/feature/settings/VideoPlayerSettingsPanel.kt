@@ -66,6 +66,27 @@ fun VideoPlayerSettingsPanel() {
             )
         }
 
+        // Under Resume playback because it is fed by it: the marks are drawn from
+        // the records that setting writes, so with resume off there is nothing to
+        // dim and the rows below would be controlling nothing.
+        if (settings.resumeMode != ResumeMode.Off) {
+            Spacer(modifier = Modifier.height(14.dp))
+            SettingsToggleRow(
+                title = "Dim watched videos",
+                subtitle = "Fade the thumbnail of any video you have already started",
+                checked = settings.dimWatchedVideos,
+                onCheckedChange = { repository.setDimWatchedVideos(it) }
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            SettingsDangerRow(
+                label = "Forget watched marks for all videos",
+                confirmLabel = "Forget them",
+                hint = "Every video goes back to looking unwatched",
+                enabled = settings.watchRecords.isNotEmpty(),
+                onConfirm = { repository.clearAllWatchRecords() }
+            )
+        }
+
         Spacer(modifier = Modifier.height(20.dp))
         SectionLabel("System")
         Spacer(modifier = Modifier.height(10.dp))

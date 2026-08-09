@@ -19,11 +19,25 @@ fun FolderViewModel.deleteFiles(paths: List<String>) {
         // (§2.6) nor its resume position (§4).
         paths.forEach {
             settingsRepository.clearTrackPrefsForFile(it)
-            settingsRepository.clearPlaybackPosition(it)
+            settingsRepository.clearWatchRecord(it)
         }
         refresh()
         clearSelection()
     }
+}
+
+/**
+ * Marks a video watched without playing it — the same record a full playthrough
+ * leaves, so the grid draws it identically. No duration is known here and none is
+ * needed: finished fills the bar whatever the length.
+ */
+fun FolderViewModel.markWatched(path: String) {
+    settingsRepository.setWatchFinished(path, durationMs = 0L)
+}
+
+/** Withdraws the mark, and any resume point with it. */
+fun FolderViewModel.markUnwatched(path: String) {
+    settingsRepository.clearWatchRecord(path)
 }
 
 fun FolderViewModel.duplicateFiles(paths: List<String>) {

@@ -23,6 +23,7 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.isAltPressed
 import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.input.pointer.PointerButton
+import com.woka.core.data.WatchRecord
 import kotlinx.coroutines.delay
 
 /**
@@ -42,7 +43,12 @@ fun FolderCard(
     isHighlighted: Boolean = false,
     contextMenuContent: (@Composable (dismissMenu: () -> Unit) -> Unit)? = null,
     onRemove: (() -> Unit)? = null,
-    onModifierClick: ((Boolean, Boolean) -> Unit)? = null
+    onModifierClick: ((Boolean, Boolean) -> Unit)? = null,
+    // Passed in rather than collected here: a card that subscribed to settings
+    // itself would recompose every tile in the folder on any settings change at
+    // all. The grid reads the map once and hands each card its own row.
+    watch: WatchRecord? = null,
+    dimWatched: Boolean = false
 ) {
     val data = rememberFolderCardData(path)
 
@@ -100,7 +106,9 @@ fun FolderCard(
             style = style,
             showTitle = showTitle,
             isHovered = isHovered,
-            onRemove = onRemove
+            onRemove = onRemove,
+            watch = watch,
+            dimWatched = dimWatched
         )
 
         if (showContextMenu && contextMenuContent != null) {

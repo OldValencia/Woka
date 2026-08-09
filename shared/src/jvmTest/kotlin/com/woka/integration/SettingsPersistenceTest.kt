@@ -113,12 +113,15 @@ class SettingsPersistenceTest {
         onSettingsDisk { repository ->
             repository.setResumeMode(ResumeMode.LongOnly)
             repository.setResumeMinDuration(45)
-            repository.setPlaybackPosition("D:/Films/a.mkv", 640_000L)
+            repository.setWatchPosition("D:/Films/a.mkv", 640_000L, 7_200_000L)
             awaitSettingsWrite(""""resumeMode": "LongOnly"""")
             val reopened = SettingsRepositoryImpl().settings.value
             assertEquals(ResumeMode.LongOnly, reopened.resumeMode)
             assertEquals(45, reopened.resumeMinDurationMinutes)
-            assertEquals(640_000L, reopened.playbackPositions["D:/Films/a.mkv"])
+            val record = reopened.watchRecords["D:/Films/a.mkv"]
+            assertEquals(640_000L, record?.positionMs)
+            // The duration rides along, or the grid would have nothing to divide by.
+            assertEquals(7_200_000L, record?.durationMs)
         }
     }
 

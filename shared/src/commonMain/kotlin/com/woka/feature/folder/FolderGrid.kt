@@ -19,8 +19,7 @@ import androidx.compose.ui.input.key.*
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import com.woka.core.data.MediaItem
-import com.woka.core.ui.components.FolderCard
+import com.woka.core.ui.components.rememberWatchMarks
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -45,6 +44,9 @@ fun FolderGrid(
             }
         }
     }
+
+    // Once for the whole grid, not once per card (§10) — see [WatchMarks].
+    val marks = rememberWatchMarks(viewModel.settingsRepository)
 
     Box(
         modifier = modifier
@@ -99,40 +101,16 @@ fun FolderGrid(
             contentPadding = PaddingValues(top = 20.dp, start = 40.dp, end = 40.dp, bottom = 120.dp)
         ) {
             items(state.items, key = { it.file.absolutePath }) { item ->
-                val isDir = item is MediaItem.Folder
-                val isSelected = state.selectedPaths.contains(item.file.absolutePath)
-                val onClickAction = {
-                    if (state.isSelectMode) {
-                        viewModel.toggleSelection(item.file.absolutePath)
-                    } else {
-                        if (isDir) onNavigateToFolder(item.file.absolutePath)
-                        else onOpenMedia(item.file.absolutePath)
-                    }
-                }
-                FolderCard(
-                    path = item.file.absolutePath,
-                    onClick = onClickAction,
-                    showTitle = state.showTitles,
-                    isSelected = isSelected,
-                    isHighlighted = highlightFile == item.file.name,
-                    onModifierClick = { isAlt, isShift ->
-                        if (isShift) {
-                            viewModel.selectRange(item.file.absolutePath)
-                        } else if (isAlt) {
-                            viewModel.toggleSelection(item.file.absolutePath)
-                        }
-                    },
-                    contextMenuContent = { dismiss ->
-                        FolderItemContextMenu(
-                            item = item,
-                            path = path,
-                            viewModel = viewModel,
-                            overlays = overlays,
-                            onNavigateToFolder = onNavigateToFolder,
-                            onOpenMedia = onOpenMedia,
-                            dismiss = dismiss
-                        )
-                    }
+                FolderGridItem(
+                    item = item,
+                    state = state,
+                    viewModel = viewModel,
+                    marks = marks,
+                    path = path,
+                    overlays = overlays,
+                    onNavigateToFolder = onNavigateToFolder,
+                    onOpenMedia = onOpenMedia,
+                    highlightFile = highlightFile
                 )
             }
         }

@@ -22,7 +22,45 @@ internal fun WokaSettings.withoutFolder(path: String, separator: Char): WokaSett
         trackPrefsPerFile = trackPrefsPerFile.filterKeys { !it.startsWith(prefix) },
         trackPrefsPerFolder = trackPrefsPerFolder
             .filterKeys { it != path && !it.startsWith(prefix) },
-        playbackPositions = playbackPositions.filterKeys { !it.startsWith(prefix) }
+        watchRecords = watchRecords.filterKeys { !it.startsWith(prefix) }
+    )
+}
+
+/**
+ * Writes the play head without disturbing [WatchRecord.finished].
+ *
+ * Rewinding to the start clears the position and **keeps** the watched mark: after
+ * finishing a file, `resumePositionMs` returns null, so re-opening it starts at 0
+ * and the saver immediately writes a position under the resume floor. Replacing the
+ * whole record there would erase the mark the moment the file was opened again.
+ */
+internal fun WokaSettings.withWatchPosition(
+    path: String,
+    positionMs: Long,
+    durationMs: Long
+): WokaSettings {
+    val existing = watchRecords[path] ?: WatchRecord()
+    val updated = existing.copy(
+        positionMs = positionMs,
+        durationMs = durationMs.takeIf { it > 0L } ?: existing.durationMs,
+        // Watching on past the resume floor means it is in progress again, whatever
+        // it was before.
+        finished = if (positionMs > 0L) false else existing.finished
+    )
+    return copy(watchRecords = watchRecords + (path to updated))
+}
+
+/** Marks a file watched — by playing it to the end, or by hand from the grid. */
+internal fun WokaSettings.withWatchFinished(path: String, durationMs: Long): WokaSettings {
+    val existing = watchRecords[path] ?: WatchRecord()
+    return copy(
+        watchRecords = watchRecords + (
+            path to existing.copy(
+                positionMs = 0L,
+                durationMs = durationMs.takeIf { it > 0L } ?: existing.durationMs,
+                finished = true
+            )
+            )
     )
 }
 

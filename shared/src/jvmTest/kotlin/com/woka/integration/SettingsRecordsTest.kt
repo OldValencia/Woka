@@ -82,16 +82,20 @@ class SettingsRecordsTest {
             repository.addLinkedFolder(folder)
             repository.setTrackPrefs(inside, folder, TrackPrefs(audio = TrackRef("rus")), TrackPrefs())
             repository.setTrackPrefs(elsewhere, "D:${separator}Other", TrackPrefs(), TrackPrefs())
-            repository.setPlaybackPosition(inside, 90_000L)
-            repository.setPlaybackPosition(elsewhere, 12_000L)
+            repository.setWatchPosition(inside, 90_000L, 5_400_000L)
+            repository.setWatchPosition(elsewhere, 12_000L, 5_400_000L)
             repository.removeLinkedFolder(folder)
 
             val after = repository.settings.value
             assertTrue(after.linkedFolders.isEmpty())
             assertNull(after.trackPrefsPerFile[inside])
             assertNull(after.trackPrefsPerFolder[folder])
-            assertNull(after.playbackPositions[inside])
-            assertEquals(12_000L, after.playbackPositions[elsewhere], "an unrelated folder was swept")
+            assertNull(after.watchRecords[inside])
+            assertEquals(
+                12_000L,
+                after.watchRecords[elsewhere]?.positionMs,
+                "an unrelated folder was swept"
+            )
         }
     }
 

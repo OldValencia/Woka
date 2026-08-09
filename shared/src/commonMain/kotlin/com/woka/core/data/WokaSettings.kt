@@ -92,7 +92,15 @@ data class WokaSettings(
     // are swept by the folder-unlink / file-delete cleanup like the track records.
     val resumeMode: ResumeMode = ResumeMode.Off,
     val resumeMinDurationMinutes: Int = 20,
-    val playbackPositions: Map<String, Long> = emptyMap(),
+    // Resume point plus watched state, per absolute path. One record rather than a
+    // bare position, because the grid's marker needs a duration to divide by and a
+    // "finished" that survives — see [WatchRecord].
+    val watchRecords: Map<String, WatchRecord> = emptyMap(),
+    // Fades the thumbnail of any video already started, so an untouched one stands
+    // out. On by default: the marks are the feature, and a library where everything
+    // looks identical is the state this exists to fix. Videos only — a photograph
+    // has no such thing as partly seen.
+    val dimWatchedVideos: Boolean = true,
     // The per-folder layer of §2.6 — guessing this episode's audio/subtitle tracks
     // from the last file watched in the same folder. Off by default: it is a guess,
     // and a wrong one silently changes the language a file opens in. The per-file

@@ -10,6 +10,7 @@ import com.woka.core.data.SubtitleSize
 import com.woka.core.data.TrackPrefs
 import com.woka.core.data.TrackRef
 import com.woka.core.data.ViewLayout
+import com.woka.core.data.WatchRecord
 import com.woka.core.data.WokaSettings
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
@@ -44,7 +45,7 @@ class WokaSettingsTest {
             repeatMode = RepeatMode.Folder,
             playbackSpeed = 1.25f,
             resumeMode = ResumeMode.LongOnly,
-            playbackPositions = mapOf("D:/Films/a.mkv" to 90_000L)
+            watchRecords = mapOf("D:/Films/a.mkv" to WatchRecord(90_000L, 5_400_000L))
         )
         val back = json.decodeFromString<WokaSettings>(json.encodeToString(settings))
         assertEquals(settings, back)

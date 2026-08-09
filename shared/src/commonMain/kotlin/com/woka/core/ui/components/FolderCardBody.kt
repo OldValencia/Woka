@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.unit.dp
+import com.woka.core.data.WatchRecord
 import com.woka.core.ui.theme.Theme
 
 /**
@@ -28,7 +29,9 @@ internal fun FolderCardBody(
     style: FolderCardStyle,
     showTitle: Boolean,
     isHovered: Boolean,
-    onRemove: (() -> Unit)?
+    onRemove: (() -> Unit)?,
+    watch: WatchRecord?,
+    dimWatched: Boolean
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -52,7 +55,9 @@ internal fun FolderCardBody(
                 isDir = data.isDir,
                 file = data.file,
                 previews = data.previews,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                watch = watch,
+                dimWatched = dimWatched
             )
 
             FolderCardBadge(

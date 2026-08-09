@@ -98,11 +98,9 @@ class SettingsRepositoryImpl : SettingsRepository {
     override fun clearTrackPrefsForFile(filePath: String) =
         update { it.copy(trackPrefsPerFile = it.trackPrefsPerFile - filePath) }
 
-    /**
-     * The escape hatch for a library-wide change of mind (Step 15): without it,
-     * switching a whole season to another dub would mean visiting every file that
-     * ever had an explicit choice.
-     */
+    // The escape hatch for a library-wide change of mind (Step 15): without it,
+    // switching a whole season to another dub would mean visiting every file that
+    // ever had an explicit choice.
     override fun clearAllTrackPrefs() =
         update { it.copy(trackPrefsPerFile = emptyMap(), trackPrefsPerFolder = emptyMap()) }
 
@@ -118,11 +116,17 @@ class SettingsRepositoryImpl : SettingsRepository {
     override fun setResumeMinDuration(minutes: Int) =
         update { it.copy(resumeMinDurationMinutes = minutes.coerceIn(1, 240)) }
 
-    override fun setPlaybackPosition(filePath: String, positionMs: Long) =
-        update { it.copy(playbackPositions = it.playbackPositions + (filePath to positionMs)) }
+    override fun setWatchPosition(filePath: String, positionMs: Long, durationMs: Long) =
+        update { it.withWatchPosition(filePath, positionMs, durationMs) }
 
-    override fun clearPlaybackPosition(filePath: String) =
-        update { it.copy(playbackPositions = it.playbackPositions - filePath) }
+    override fun setWatchFinished(filePath: String, durationMs: Long) =
+        update { it.withWatchFinished(filePath, durationMs) }
+
+    override fun clearWatchRecord(filePath: String) = update { it.copy(watchRecords = it.watchRecords - filePath) }
+
+    override fun clearAllWatchRecords() = update { it.copy(watchRecords = emptyMap()) }
+
+    override fun setDimWatchedVideos(enabled: Boolean) = update { it.copy(dimWatchedVideos = enabled) }
 
     override fun setCarryTracksAcrossFolder(enabled: Boolean) =
         update { it.copy(carryTracksAcrossFolder = enabled) }

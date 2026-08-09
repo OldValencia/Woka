@@ -46,8 +46,16 @@ interface SettingsRepository {
     fun setPlaybackSpeed(speed: Float)
     fun setResumeMode(mode: ResumeMode)
     fun setResumeMinDuration(minutes: Int)
-    fun setPlaybackPosition(filePath: String, positionMs: Long)
-    fun clearPlaybackPosition(filePath: String)
+    /** The play head; leaves [WatchRecord.finished] alone — see `withWatchPosition`. */
+    fun setWatchPosition(filePath: String, positionMs: Long, durationMs: Long)
+
+    /** Played to the end, or marked by hand from the grid. */
+    fun setWatchFinished(filePath: String, durationMs: Long)
+
+    /** Forgets a file entirely: no resume point and no mark. */
+    fun clearWatchRecord(filePath: String)
+    fun clearAllWatchRecords()
+    fun setDimWatchedVideos(enabled: Boolean)
     fun setCarryTracksAcrossFolder(enabled: Boolean)
     fun setSystemMediaControls(enabled: Boolean)
     fun setPipAlwaysOnTop(enabled: Boolean)
