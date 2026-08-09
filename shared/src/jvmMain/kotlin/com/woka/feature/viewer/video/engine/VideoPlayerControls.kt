@@ -1,9 +1,17 @@
 package com.woka.feature.viewer.video.engine
 
 import com.woka.core.data.RepeatMode
+import com.woka.feature.viewer.video.model.Cue
 
 // How close to the end counts as "at the end".
 private const val END_THRESHOLD_MS = 200L
+
+/**
+ * The cue that should be on screen right now, if any. Moved off the state class to
+ * make room there; the sibling `hasSubtitle` went the other way and was dropped —
+ * `tracks.hasAnySubtitle` says the same thing without a forwarding hop.
+ */
+val VideoPlayerState.activeCue: Cue? get() = tracks.activeCue
 
 /**
  * Playback transport for [VideoPlayerState] — seeking and play/pause. Split out

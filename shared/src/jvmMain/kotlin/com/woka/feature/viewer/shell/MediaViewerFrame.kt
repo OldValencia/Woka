@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.StillColorInfo
 import com.woka.feature.viewer.video.HdrImagePainter
+import com.woka.feature.viewer.video.engine.activeCue
 import com.woka.feature.viewer.video.SubtitleBitmapLayer
 
 /**

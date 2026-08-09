@@ -100,7 +100,7 @@ fun MediaViewerVideoControls(
         ) {
             // Hidden entirely when the file has no subtitle tracks (§2.2); the time
             // slider (weight 1f) reclaims the freed space, no empty gap left behind.
-            if (videoState != null && videoState.hasSubtitle) {
+            if (videoState != null && videoState.tracks.hasAnySubtitle) {
                 SubtitleControl(
                     videoState = videoState,
                     onHoverChange = onSubtitlesHoverChange

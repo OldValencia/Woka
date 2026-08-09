@@ -5,6 +5,7 @@ import com.woka.feature.viewer.video.engine.audio.startAudioDecodeLoop
 import com.woka.feature.viewer.video.engine.probe.HdrInfo
 
 import androidx.compose.ui.graphics.ImageBitmap
+import com.woka.feature.viewer.video.engine.recordPresentedFrame
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlin.time.Duration.Companion.milliseconds
@@ -56,6 +57,8 @@ internal fun VideoPlayerState.startPresenterLoop(videoChannel: Channel<VideoFram
                 continue
             }
             while (!isPlaying || isSeeking) {
+                // Nothing is late while nothing is playing (§health).
+                health.suspendMeasuring()
                 if (lastPauseTimeMs == 0L) lastPauseTimeMs = System.nanoTime() / 1_000_000L
                 delay(50.milliseconds)
             }
@@ -71,11 +74,17 @@ internal fun VideoPlayerState.startPresenterLoop(videoChannel: Channel<VideoFram
             // picture stalls until the decoder claws the gap back at ~1.07x.
             if (generation.consumePresenterRebase()) {
                 firstVideoTsMs = -1L
+                // A grabber swap is not the machine struggling (§health).
+                health.suspendMeasuring()
             }
 
             if (firstVideoTsMs == -1L) {
                 firstVideoTsMs = frameTsMs
                 startPlayTimeMs = System.nanoTime() / 1_000_000L
+                // Rebasing means the clock just restarted — a seek, a swap, or the
+                // first frame of the file. The decoder is priming, and every file
+                // looks slow there, so the count starts again from here (§health).
+                health.suspendMeasuring()
             }
 
             var elapsedMs = (System.nanoTime() / 1_000_000L) - startPlayTimeMs
@@ -128,6 +137,7 @@ internal fun VideoPlayerState.startPresenterLoop(videoChannel: Channel<VideoFram
             currentFrame = bitmap
             currentFrameHdrInfo = hdrInfo
             currentFrameId = frameId
+            recordPresentedFrame() // the one hot-path cost of §health
         }
     }
 }

@@ -19,7 +19,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import java.io.File
 import javax.sound.sampled.SourceDataLine
-import com.woka.feature.viewer.video.model.Cue
 
 @Stable
 class VideoPlayerState(
@@ -76,11 +75,11 @@ class VideoPlayerState(
         internal set
 
     val tracks = VideoPlayerTracks()
-    // Sidecar files count (Step 9): the toolbar icon and the SYNC row exist to
-    // control whatever subtitles this file has, wherever they came from.
-    val hasSubtitle: Boolean get() = tracks.hasAnySubtitle
-    val activeCue: Cue? get() = tracks.activeCue
     internal val renderScale = RenderScale() // decode-size policy (§6)
+
+    // Displayed frame rate against the rate the file declares. Read by the notice
+    // that explains a struggling machine; costs one call per presented frame.
+    internal val health = PlaybackHealth()
 
     // Sync offsets (§3). Positive = that stream runs LATER than the video clock,
     // so what belongs at position P is the content originally at P − delay. Both

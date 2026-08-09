@@ -39,7 +39,7 @@ import com.woka.feature.viewer.shell.PopoverSectionLabel
  */
 @Composable
 internal fun PlayerSyncSection(videoState: VideoPlayerState) {
-    val hasSubtitles = videoState.hasSubtitle
+    val hasSubtitles = videoState.tracks.hasAnySubtitle
     val hasAudio = videoState.hasAudio
     if (!hasSubtitles && !hasAudio) return
 

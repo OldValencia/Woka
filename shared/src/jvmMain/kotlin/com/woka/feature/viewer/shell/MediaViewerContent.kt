@@ -26,8 +26,10 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.woka.feature.viewer.video.PlaybackHealthNotice
 import com.woka.feature.viewer.video.SubtitleOverlay
 import com.woka.feature.viewer.video.VideoReloadOverlay
+import com.woka.feature.viewer.video.engine.activeCue
 
 @Composable
 fun MediaViewerContent(
@@ -112,6 +114,9 @@ fun MediaViewerContent(
         if (media is ViewerMedia.Video) {
             SubtitleOverlay(cue = media.player.activeCue, bottomPadding = bottomPadding)
             VideoReloadOverlay(isVisible = media.player.isReloadingVideo)
+            // Here rather than in either window's own overlays, so the main window
+            // and the fullscreen one get it from one call site.
+            PlaybackHealthNotice(videoState = media.player, bottomPadding = bottomPadding)
         }
     }
 }
