@@ -48,6 +48,9 @@ fun MediaSlider(
     modifier: Modifier = Modifier,
     onValueChangeFinished: (() -> Unit)? = null,
     tooltipText: ((Float) -> String)? = null,
+    // Plain data plus a callback, so the slider stays generic — see [SliderPill].
+    tooltipPreview: SliderPreview? = null,
+    onTooltipPositionChange: ((Float?) -> Unit)? = null,
     segments: List<SliderSegment> = WHOLE_TRACK
 ) {
     var dragX by remember { mutableStateOf<Float?>(null) }
@@ -132,15 +135,14 @@ fun MediaSlider(
                 .background(style.thumbColor, CircleShape)
         )
 
-        // Follows the cursor, and falls back to the drag once the pointer has
-        // left the row mid-scrub.
-        val pillX = hoverX ?: dragX
-        if (tooltipText != null && pillX != null && width > 0f) {
-            MediaSliderTooltip(
-                x = pillX.coerceIn(0f, width),
-                timeText = tooltipText((pillX / width).coerceIn(0f, 1f)),
-                chapterTitle = segments.getOrNull(hoveredIndex)?.label
-            )
-        }
+        SliderPill(
+            hoverX = hoverX,
+            dragX = dragX,
+            width = width,
+            tooltipText = tooltipText,
+            chapterTitle = segments.getOrNull(hoveredIndex)?.label,
+            preview = tooltipPreview,
+            onPositionChange = onTooltipPositionChange
+        )
     }
 }

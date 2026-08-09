@@ -1,16 +1,10 @@
 package com.woka.feature.viewer.video
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -18,11 +12,12 @@ import com.woka.core.ui.icons.Icons
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.engine.pauseForSeek
+import com.woka.feature.viewer.video.engine.preview.rememberSeekPreview
 import com.woka.feature.viewer.video.engine.resumeAfterSeek
 import com.woka.feature.viewer.video.engine.seek
 import com.woka.feature.viewer.video.engine.skipBy
-import org.jetbrains.compose.resources.painterResource
 import com.woka.feature.viewer.shell.slider.MediaSlider
+import com.woka.feature.viewer.shell.slider.SliderPreview
 import com.woka.feature.viewer.shell.slider.defaultMediaSliderStyle
 
 /**
@@ -38,15 +33,13 @@ fun MediaViewerTimeSlider(
     durationMs: Long,
     modifier: Modifier = Modifier
 ) {
-    // Knobs for the skip buttons, shared by both. `iconWidth`/`iconHeight` set
-    // the drawn glyph independently — the SVG is stretched to fill them
-    // (ContentScale.FillBounds), so non-equal values distort the shape on
-    // purpose. `hitPadding` is the extra clickable margin around the glyph, so
-    // the click area = icon + 2*padding (the box wraps the padded icon, so the
-    // icon size is never clamped).
-    val iconWidth = 20.dp
-    val iconHeight = 23.dp
-    val hitPadding = 4.dp
+    // Null unless there is a video with a known duration. Owns two grabbers and one
+    // low-priority thread; see the package for why previews can never outrank the
+    // picture.
+    val preview = rememberSeekPreview(videoState, durationMs)
+    val previewAspect = videoState?.previewAspect()
+    // Tone-mapped when the stream is HDR, exactly as the played frame is.
+    val previewPainter = rememberPreviewPainter(videoState, preview?.shown)
 
     Row(
         modifier = modifier,
@@ -58,22 +51,12 @@ fun MediaViewerTimeSlider(
         TimeLabel(position)
 
         if (durationMs >= 6000L) {
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
-                    .clickable(enabled = videoState != null) {
-                        videoState?.skipBy(-5000)
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Image(
-                    painter = painterResource(Icons.Static.SkipBackward5),
-                    contentDescription = "Skip back 5s",
-                    contentScale = ContentScale.FillBounds,
-                    colorFilter = ColorFilter.tint(Theme.colors.textPrimary),
-                    modifier = Modifier.padding(hitPadding).width(iconWidth).height(iconHeight)
-                )
-            }
+            SkipButton(
+                icon = Icons.Static.SkipBackward5,
+                contentDescription = "Skip back 5s",
+                enabled = videoState != null,
+                onClick = { videoState?.skipBy(-5000) }
+            )
         }
 
         var isDragging by remember { mutableStateOf(false) }
@@ -104,32 +87,44 @@ fun MediaViewerTimeSlider(
                 }
             },
             tooltipText = { formatTime((it * durationMs).toLong()) },
+            // The aspect is supplied only once something has been shown, so a file
+            // that never produces a still keeps a plain pill rather than a permanent
+            // empty hole — that field is what turns the pill into a frame window.
+            tooltipPreview = SliderPreview(
+                painter = previewPainter,
+                aspect = previewAspect?.takeIf { preview?.hasShown == true }
+            ),
+            onTooltipPositionChange = { fraction ->
+                preview?.request(fraction?.let { (it * durationMs).toLong() })
+            },
             segments = chapterSegments(videoState?.tracks?.chapters.orEmpty(), durationMs),
             style = defaultMediaSliderStyle(),
             modifier = Modifier.weight(1f)
         )
 
         if (durationMs >= 6000L) {
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
-                    .clickable(enabled = videoState != null) {
-                        videoState?.skipBy(5000)
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Image(
-                    painter = painterResource(Icons.Static.SkipForward5),
-                    contentDescription = "Skip forward 5s",
-                    contentScale = ContentScale.FillBounds,
-                    colorFilter = ColorFilter.tint(Theme.colors.textPrimary),
-                    modifier = Modifier.padding(hitPadding).width(iconWidth).height(iconHeight)
-                )
-            }
+            SkipButton(
+                icon = Icons.Static.SkipForward5,
+                contentDescription = "Skip forward 5s",
+                enabled = videoState != null,
+                onClick = { videoState?.skipBy(5000) }
+            )
         }
 
         TimeLabel { durationMs }
     }
+}
+
+/**
+ * The media's own aspect, so a 2.39:1 film is not letterboxed inside a 16:9 hole.
+ * Null until the tracks are probed, which is also what keeps the pill text-only
+ * before there is anything to show.
+ */
+private fun VideoPlayerState.previewAspect(): Float? {
+    val track = tracks.mediaTracks.video.firstOrNull { it.index == tracks.selectedVideoIndex }
+    val width = track?.width ?: return null
+    val height = track.height ?: return null
+    return if (width > 0 && height > 0) width.toFloat() / height else null
 }
 
 /** Calls [position] in its own scope, so a moving play head recomposes only this. */

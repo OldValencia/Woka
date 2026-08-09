@@ -1,6 +1,8 @@
 package com.woka.feature.viewer.shell.slider
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
@@ -10,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import com.woka.core.ui.theme.Theme
 import androidx.compose.ui.platform.LocalDensity
@@ -26,40 +29,67 @@ import androidx.compose.ui.window.PopupPositionProvider
 
 private val PILL_GAP = 10.dp
 
+/** Wide enough to read a scene from, narrow enough to sit over a control bar. */
+private val PREVIEW_WIDTH = 168.dp
+
 /**
  * The pill above the seek bar (§4). Shown on hover as well as on drag, and on
  * every file: the time alone when there is no chapter under the cursor, the
  * chapter title above it when there is.
+ *
+ * When previewAspect is non-null the same pill *grows upward* into a frame window
+ * rather than a second floating panel appearing beside it — one object that gets
+ * taller, which is why the image is flush to the pill's edges and only the text keeps
+ * its padding. [animateContentSize] makes that growth a move rather than a jump, and
+ * the position provider re-reads the height in the same pass, so the pill stays
+ * anchored to the bar while it grows.
  */
 @Composable
-internal fun MediaSliderTooltip(x: Float, timeText: String, chapterTitle: String?) {
+internal fun MediaSliderTooltip(
+    x: Float,
+    timeText: String,
+    chapterTitle: String?,
+    preview: SliderPreview? = null
+) {
     val gapPx = with(LocalDensity.current) { PILL_GAP.roundToPx() }
     val position = remember(x, gapPx) { SliderTooltipPosition(x, gapPx) }
+    val shape = RoundedCornerShape(Theme.viewer.tooltipCornerRadius)
+    val aspect = preview?.aspect
 
     Popup(popupPositionProvider = position) {
         Column(
             modifier = Modifier
-                .widthIn(max = 240.dp)
-                .background(Theme.viewer.tooltipScrim, RoundedCornerShape(Theme.viewer.tooltipCornerRadius))
-                .padding(Theme.viewer.tooltipPadding),
+                .widthIn(min = if (aspect != null) PREVIEW_WIDTH else 0.dp, max = 240.dp)
+                .clip(shape)
+                .background(Theme.viewer.tooltipScrim)
+                .border(1.dp, Color.White.copy(alpha = 0.12f), shape)
+                .animateContentSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (chapterTitle != null) {
+            if (aspect != null) {
+                SliderPreviewWindow(preview.painter, aspect)
+            }
+            Column(
+                modifier = Modifier.padding(Theme.viewer.tooltipPadding),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                if (chapterTitle != null) {
+                    Text(
+                        text = chapterTitle,
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
                 Text(
-                    text = chapterTitle,
-                    color = Color.White,
+                    text = timeText,
+                    color = Color.White.copy(alpha = if (chapterTitle != null) 0.7f else 1f),
                     fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    fontWeight = FontWeight.Medium
                 )
             }
-            Text(
-                text = timeText,
-                color = Color.White.copy(alpha = if (chapterTitle != null) 0.7f else 1f),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium
-            )
         }
     }
 }

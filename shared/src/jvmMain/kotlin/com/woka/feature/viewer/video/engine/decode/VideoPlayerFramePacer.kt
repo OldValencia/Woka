@@ -37,6 +37,13 @@ internal class FramePacer(private val retention: FrameRetention) {
     private var pacedSpeed = 0f
     private var nextFrameId = 1L
 
+    /**
+     * Two late frames in a row: the machine is not keeping up *right now*. One late
+     * frame is ordinary jitter, which is why this is not `skipsInARow > 0` — a
+     * background job gated on that would flicker on and off constantly.
+     */
+    val isFallingBehind: Boolean get() = skipsInARow >= 2
+
     /** Drops the baseline: the next frame anchors a fresh slot schedule. */
     fun rebase() {
         anchorTsMs = -1L

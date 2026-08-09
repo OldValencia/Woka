@@ -102,6 +102,9 @@ internal fun VideoPlayerState.startPresenterLoop(videoChannel: Channel<VideoFram
                 // 1s discontinuity one. That dead band drops every frame forever and
                 // the picture never comes back, so a run of drops rebases too.
                 if (++droppedInARow >= MAX_DROPS_IN_A_ROW) firstVideoTsMs = -1L
+                // Sustained drops are the other face of "not keeping up"; background
+                // work such as seek-bar previews stands down on it (§preview).
+                if (droppedInARow >= 3) generation.isBehind = true
                 // Frame is more than 50ms late, drop it to catch up with audio
                 if (frameGeneration != generation.seek) continue
                 if (frameTsMs >= currentPositionMs || abs(currentPositionMs - frameTsMs) > 1000) {
@@ -121,6 +124,7 @@ internal fun VideoPlayerState.startPresenterLoop(videoChannel: Channel<VideoFram
             }
 
             droppedInARow = 0
+            generation.isBehind = false
             currentFrame = bitmap
             currentFrameHdrInfo = hdrInfo
             currentFrameId = frameId

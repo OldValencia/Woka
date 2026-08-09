@@ -100,7 +100,11 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
                     val frameTsMs = grabber.timestamp / 1000L
                     // Already past its slot: decoded (the stream needs it) but not
                     // converted, which is where the time actually goes (§6).
-                    if (pacer.shouldSkip(frameTsMs, playbackSpeed)) continue
+                    if (pacer.shouldSkip(frameTsMs, playbackSpeed)) {
+                        generation.isBehind = pacer.isFallingBehind
+                        continue
+                    }
+                    generation.isBehind = false
                     val paced = pacer.convert(frame)
                     videoChannel.send(
                         VideoFrame(paced.bitmap, frameTsMs, frameGeneration, hdrInfo, paced.id)

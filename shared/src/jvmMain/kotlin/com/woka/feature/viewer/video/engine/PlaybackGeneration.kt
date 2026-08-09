@@ -56,6 +56,19 @@ internal class PlaybackGeneration {
     var audioDelay: Int = 0
         private set
 
+    /**
+     * True while the picture is not keeping up — a run of skipped conversions in the
+     * pacer, or a run of drops in the presenter.
+     *
+     * Not a generation, and not part of the seek handshake. It lives here because
+     * this is already the object the playback coroutines publish cross-thread state
+     * through, and the reader — the seek bar's preview decoder — has to be able to
+     * stand down without reaching into the decode loop. The alternative was a field
+     * on [VideoPlayerState], which is at its file-size limit.
+     */
+    @Volatile
+    var isBehind: Boolean = false
+
     @Volatile
     private var rebaseRequested: Boolean = false
 
