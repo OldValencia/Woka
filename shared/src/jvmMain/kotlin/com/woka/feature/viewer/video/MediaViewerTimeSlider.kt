@@ -31,7 +31,10 @@ fun MediaViewerTimeSlider(
     videoState: VideoPlayerState?,
     position: () -> Long,
     durationMs: Long,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // True while the pointer is on the bar, hovering or dragging. The chrome uses it
+    // to stay put: a pointer parked on the seek bar is the UI being read, not idle.
+    onHoverChange: (Boolean) -> Unit = {}
 ) {
     // Null unless there is a video with a known duration. Owns two grabbers and one
     // low-priority thread; see the package for why previews can never outrank the
@@ -95,6 +98,7 @@ fun MediaViewerTimeSlider(
                 aspect = previewAspect?.takeIf { preview?.hasShown == true }
             ),
             onTooltipPositionChange = { fraction ->
+                onHoverChange(fraction != null)
                 preview?.request(fraction?.let { (it * durationMs).toLong() })
             },
             segments = chapterSegments(videoState?.tracks?.chapters.orEmpty(), durationMs),

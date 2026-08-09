@@ -105,6 +105,7 @@ fun MediaViewerToolbar(
                     onVolumeHoverChange = { hover.setHovered(HoverTarget.Volume, it) },
                     onSubtitlesHoverChange = { hover.setHovered(HoverTarget.Subtitle, it) },
                     onSettingsHoverChange = { hover.setHovered(HoverTarget.Settings, it) },
+                    onSeekerHoverChange = { hover.setHovered(HoverTarget.Seeker, it) },
                     isFullscreen = chrome.isFullscreen,
                     onToggleFullscreen = onToggleFullscreen
                 )

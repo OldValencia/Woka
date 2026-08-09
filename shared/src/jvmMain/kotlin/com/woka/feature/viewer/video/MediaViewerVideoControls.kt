@@ -31,6 +31,7 @@ fun MediaViewerVideoControls(
     onVolumeHoverChange: (Boolean) -> Unit,
     onSubtitlesHoverChange: (Boolean) -> Unit = {},
     onSettingsHoverChange: (Boolean) -> Unit = {},
+    onSeekerHoverChange: (Boolean) -> Unit = {},
     isFullscreen: Boolean,
     onToggleFullscreen: () -> Unit
 ) {
@@ -86,6 +87,7 @@ fun MediaViewerVideoControls(
                 videoState = videoState,
                 position = { videoState?.currentPositionMs ?: 0L },
                 durationMs = durationMs,
+                onHoverChange = onSeekerHoverChange,
                 modifier = Modifier.weight(1f)
             )
         } else {

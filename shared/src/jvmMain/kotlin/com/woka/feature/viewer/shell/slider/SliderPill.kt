@@ -1,7 +1,10 @@
 package com.woka.feature.viewer.shell.slider
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 
 /**
  * Decides whether the pill is up, where it sits, and reports that position back.
@@ -31,6 +34,12 @@ internal fun SliderPill(
     // Reported from an effect rather than from composition: the callback starts
     // decode work, and composition can run any number of times for one position.
     LaunchedEffect(fraction) { onPositionChange?.invoke(fraction) }
+
+    // Leaving composition does not run the effect above, so a slider torn down with
+    // the pointer still on it would leave the caller believing it is hovered — which
+    // for a caller using this to hold chrome open means chrome that never hides again.
+    val currentOnPositionChange by rememberUpdatedState(onPositionChange)
+    DisposableEffect(Unit) { onDispose { currentOnPositionChange?.invoke(null) } }
 
     if (tooltipText == null || pillX == null || fraction == null) return
     MediaSliderTooltip(

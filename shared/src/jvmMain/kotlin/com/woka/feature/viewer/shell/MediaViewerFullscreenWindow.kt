@@ -80,9 +80,13 @@ fun MediaViewerFullscreenWindow(
 
         var isUiVisible by remember { mutableStateOf(true) }
         var lastInteractionTime by remember { mutableStateOf(System.currentTimeMillis()) }
+        // Hoisted above the auto-hide, which has to see it: a pointer resting on a
+        // control emits no Move events to keep `lastInteractionTime` alive.
+        val hover = remember { PopoverHoverState() }
+        PopoverHoverEffect(hover)
 
-        LaunchedEffect(lastInteractionTime, videoState?.isPlaying) {
-            if (videoState?.isPlaying == false) {
+        LaunchedEffect(lastInteractionTime, videoState?.isPlaying, hover.rawTarget) {
+            if (videoState?.isPlaying == false || hover.rawTarget != HoverTarget.None) {
                 isUiVisible = true
             } else {
                 delay(2500.milliseconds)
@@ -124,9 +128,6 @@ fun MediaViewerFullscreenWindow(
                         PipManager.nativeSize
                     )}%"
                 )
-
-                val hover = remember { PopoverHoverState() }
-                PopoverHoverEffect(hover)
 
                 MediaViewerFullscreenOverlays(
                     videoState = videoState,

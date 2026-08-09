@@ -9,8 +9,16 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
-/** Which toolbar hover popover the pointer is engaging. */
-enum class HoverTarget { None, Volume, Subtitle, Settings }
+/**
+ * Which piece of hover-driven chrome the pointer is engaging.
+ *
+ * [Seeker] has no popover of its own to open — it is here because this enum is also
+ * what holds the chrome open, and a pointer resting on the seek bar reading a
+ * preview is the clearest case there is of the UI being in use. Without it the bar
+ * hid itself out from under the cursor after the auto-hide delay, since a
+ * *stationary* pointer emits no Move events to keep the timer alive.
+ */
+enum class HoverTarget { None, Volume, Subtitle, Settings, Seeker }
 
 /**
  * Single source of truth for the Volume, Subtitle and Settings hover popovers.
