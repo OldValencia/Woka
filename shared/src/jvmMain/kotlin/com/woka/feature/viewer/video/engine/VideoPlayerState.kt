@@ -30,6 +30,8 @@ class VideoPlayerState(
     var currentPositionMs by mutableStateOf(0L)
     var durationMs by mutableStateOf(0L)
     var volume by mutableStateOf(initialVolume)
+    // Where unmuting comes back to (see `toggleMute`). Nothing draws it, so a plain var.
+    var volumeBeforeMute = initialVolume.takeIf { it > 0f } ?: DEFAULT_UNMUTE_VOLUME
     var currentFrame by mutableStateOf<ImageBitmap?>(null)
     var currentFrameHdrInfo by mutableStateOf<HdrInfo?>(null)
 

@@ -12,6 +12,7 @@ import androidx.compose.ui.input.key.type
 import com.woka.core.data.MediaItem
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.engine.togglePlayPause
+import com.woka.feature.viewer.video.engine.toggleMute
 
 fun Modifier.mediaViewerKeyHandler(
     currentId: String,
@@ -26,12 +27,13 @@ fun Modifier.mediaViewerKeyHandler(
     onCopy: () -> Unit,
     onInfo: () -> Unit,
     onZoom: (ZoomKey) -> Unit,
-    onStepFrame: (Int) -> Unit
+    onStepFrame: (Int) -> Unit,
+    onToggleFullscreen: () -> Unit
 ): Modifier = this.onKeyEvent { event ->
     handleMediaViewerKeyEvent(
         event, currentId, mediaItems, videoState, mediaVolume,
         onClose, onSkip, onNavigate, onVolumeChange, onPlayPause, onCopy, onInfo, onZoom,
-        onStepFrame
+        onStepFrame, onToggleFullscreen
     )
 }
 
@@ -55,7 +57,8 @@ fun handleMediaViewerKeyEvent(
     onCopy: () -> Unit,
     onInfo: () -> Unit,
     onZoom: (ZoomKey) -> Unit,
-    onStepFrame: (Int) -> Unit = {}
+    onStepFrame: (Int) -> Unit = {},
+    onToggleFullscreen: () -> Unit = {}
 ): Boolean {
     return when (event.key) {
         Key.Escape -> {
@@ -95,6 +98,22 @@ fun handleMediaViewerKeyEvent(
         Key.I -> {
             if (event.type == KeyEventType.KeyDown && (event.isCtrlPressed || event.isMetaPressed)) {
                 onInfo()
+                true
+            } else false
+        }
+        // Bare, like Space: Ctrl+F is a find shortcut everywhere else and must not
+        // be swallowed here.
+        Key.F -> {
+            if (event.type == KeyEventType.KeyDown && !event.isCtrlPressed && !event.isMetaPressed) {
+                onToggleFullscreen()
+                true
+            } else false
+        }
+        Key.M -> {
+            if (event.type == KeyEventType.KeyDown && !event.isCtrlPressed && !event.isMetaPressed &&
+                videoState != null && videoState.hasAudio
+            ) {
+                videoState.toggleMute(mediaVolume, onVolumeChange)
                 true
             } else false
         }

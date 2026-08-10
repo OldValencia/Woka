@@ -6,6 +6,28 @@ import com.woka.feature.viewer.video.model.Cue
 // How close to the end counts as "at the end".
 private const val END_THRESHOLD_MS = 200L
 
+/** Where unmuting lands when nothing audible was ever heard in this file. */
+const val DEFAULT_UNMUTE_VOLUME = 0.5f
+
+/**
+ * Mute ↔ the level you were at.
+ *
+ * Takes the level and a setter rather than driving [VideoPlayerState.volume]
+ * directly, because the two windows own the volume differently: the main one
+ * writes the persisted `mediaVolume` through a callback that also flashes the HUD,
+ * the fullscreen window writes the player's own field. The remembered level lives
+ * on the player either way, so muting with the speaker button and unmuting with M
+ * agree instead of each having its own idea of where to return to.
+ */
+fun VideoPlayerState.toggleMute(current: Float, apply: (Float) -> Unit) {
+    if (current > 0f) {
+        volumeBeforeMute = current
+        apply(0f)
+    } else {
+        apply(volumeBeforeMute.takeIf { it > 0f } ?: DEFAULT_UNMUTE_VOLUME)
+    }
+}
+
 /**
  * The cue that should be on screen right now, if any. Moved off the state class to
  * make room there; the sibling `hasSubtitle` went the other way and was dropped —

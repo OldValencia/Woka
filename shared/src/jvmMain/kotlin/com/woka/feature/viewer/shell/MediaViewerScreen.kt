@@ -8,7 +8,6 @@ import com.woka.app.AppDependencies
 import com.woka.core.data.MediaItem
 import com.woka.app.shell.LocalGlobalShortcuts
 import com.woka.core.utils.copyFilesToClipboard
-import com.woka.feature.viewer.pip.PipManager
 import com.woka.feature.viewer.shell.frames.rememberFrameExportEntry
 import com.woka.feature.viewer.shell.frames.rememberFrameStrip
 
@@ -71,6 +70,7 @@ fun MediaViewerScreen(
         state.sizeMode = mode
         if (settings.rememberSizeState) persistSizeState(settingsRepo, mode)
     }
+    val toggleFullscreen = { enterFullscreen(state, videoState, activeItem, onClose) }
 
     MediaViewerShortcutEffect(
         state = state,
@@ -82,7 +82,8 @@ fun MediaViewerScreen(
         onVolumeChange = { mediaVolume = it },
         onCopy = { copyAction() },
         onInfo = { infoAction() },
-        onSizeModeChange = onSizeModeChange
+        onSizeModeChange = onSizeModeChange,
+        onToggleFullscreen = toggleFullscreen
     )
 
     val playerModifier = Modifier.mediaViewerPlayerModifier(
@@ -96,7 +97,8 @@ fun MediaViewerScreen(
         copyAction = copyAction,
         infoAction = infoAction,
         onSizeModeChange = onSizeModeChange,
-        onVolumeChange = { vol -> mediaVolume = vol; state.volumeEvent.raise() }
+        onVolumeChange = { vol -> mediaVolume = vol; state.volumeEvent.raise() },
+        onToggleFullscreen = toggleFullscreen
     )
 
     // Offered only when the file actually holds more than one picture — the
@@ -119,12 +121,7 @@ fun MediaViewerScreen(
             onShowInfoDialogChange = { showInfoDialog = it },
             onVolumeChange = { mediaVolume = it },
             onSizeModeChange = onSizeModeChange,
-            onToggleFullscreen = {
-                if (videoState != null && activeItem != null) {
-                    PipManager.openPip(activeItem, videoState, state.sizeMode, state.offsetX, state.offsetY)
-                    onClose(state.currentId)
-                }
-            },
+            onToggleFullscreen = toggleFullscreen,
             thumbnails = thumbnails,
             strip = strip
         )

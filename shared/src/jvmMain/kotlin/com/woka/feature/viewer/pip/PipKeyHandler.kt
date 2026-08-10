@@ -5,6 +5,7 @@ import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.isMetaPressed
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.engine.skipBy
+import com.woka.feature.viewer.video.engine.toggleMute
 import com.woka.feature.viewer.video.engine.togglePlayPause
 import com.woka.feature.viewer.shell.SizeMode
 import com.woka.feature.viewer.shell.ZoomKey
@@ -48,6 +49,18 @@ fun handlePipKeyEvent(
     return when (event.key) {
         Key.Escape -> {
             PipManager.closePip(returnToMain = true)
+            true
+        }
+
+        // The same key that got here takes you back, so F is a toggle across the
+        // two windows rather than a one-way door.
+        Key.F -> {
+            PipManager.closePip(returnToMain = true)
+            true
+        }
+
+        Key.M -> {
+            videoState?.let { it.toggleMute(it.volume) { vol -> it.updateVolume(vol) } }
             true
         }
 

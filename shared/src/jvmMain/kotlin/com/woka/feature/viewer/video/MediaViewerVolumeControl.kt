@@ -17,6 +17,7 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.woka.feature.viewer.video.engine.VideoPlayerState
+import com.woka.feature.viewer.video.engine.toggleMute
 import com.woka.core.ui.icons.Icons
 import com.woka.core.ui.theme.Theme
 import org.jetbrains.compose.resources.painterResource
@@ -72,12 +73,11 @@ fun MediaViewerVolumeControl(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(RoundedCornerShape(6.dp))
-                    .clickable(enabled = hasAudio) { 
-                        if (mediaVolume > 0f) {
-                            onVolumeChange(0f)
-                        } else {
-                            onVolumeChange(0.5f)
-                        }
+                    // Through the player, so the button and the M shortcut share one
+                    // idea of where unmuting returns to. It used to come back to a
+                    // hardcoded half whatever you had been listening at.
+                    .clickable(enabled = hasAudio) {
+                        videoState?.toggleMute(mediaVolume, onVolumeChange)
                     },
                 contentAlignment = Alignment.Center
             ) {
