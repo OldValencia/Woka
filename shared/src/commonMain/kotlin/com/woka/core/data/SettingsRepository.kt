@@ -15,6 +15,7 @@ interface SettingsRepository {
     fun setShowHiddenFiles(show: Boolean)
     fun setTheme(theme: String)
     fun setCarouselMode(mode: CarouselVisibility)
+    fun setAmbientFill(enabled: Boolean)
     fun setScalePreset(preset: ScalePreset)
     fun setRememberSizeState(remember: Boolean)
     fun setDefaultUseZoom(useZoom: Boolean)

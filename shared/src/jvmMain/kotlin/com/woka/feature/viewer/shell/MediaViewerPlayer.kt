@@ -63,7 +63,8 @@ fun MediaViewerPlayer(
                 },
                 onZoomHud = { state.zoomHudEvent.raise() },
                 onPlayPause = { state.playPauseEvent.raise() },
-                onToggleFullscreen = onToggleFullscreen
+                onToggleFullscreen = onToggleFullscreen,
+                ambientFill = chrome.isFullscreen && chrome.ambientFill
             )
             MediaViewerToolbar(
                 currentId = state.currentId,

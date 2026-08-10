@@ -98,6 +98,9 @@ fun VideoPlayerSettingsPanel() {
         )
 
         Spacer(modifier = Modifier.height(20.dp))
+        AmbientSettingsSection(settings = settings, repo = repository)
+
+        Spacer(modifier = Modifier.height(20.dp))
         SectionLabel("Tracks")
         Spacer(modifier = Modifier.height(10.dp))
         SettingsToggleRow(

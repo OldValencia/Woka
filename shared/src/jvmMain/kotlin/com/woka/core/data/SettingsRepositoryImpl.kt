@@ -55,6 +55,8 @@ class SettingsRepositoryImpl : SettingsRepository {
     override fun setCarouselMode(mode: CarouselVisibility) =
         update { it.copy(mediaViewerCarouselMode = mode) }
 
+    override fun setAmbientFill(enabled: Boolean) = update { it.copy(ambientFill = enabled) }
+
     override fun setScalePreset(preset: ScalePreset) = update { it.copy(scalePreset = preset) }
 
     override fun setRememberSizeState(remember: Boolean) =

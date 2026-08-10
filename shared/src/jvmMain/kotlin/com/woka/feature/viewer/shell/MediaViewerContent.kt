@@ -26,10 +26,12 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.woka.feature.viewer.shell.ambient.AmbientFillLayer
 import com.woka.feature.viewer.video.PlaybackHealthNotice
 import com.woka.feature.viewer.video.SubtitleOverlay
 import com.woka.feature.viewer.video.VideoReloadOverlay
 import com.woka.feature.viewer.video.engine.activeCue
+import kotlin.math.min
 
 @Composable
 fun MediaViewerContent(
@@ -45,7 +47,8 @@ fun MediaViewerContent(
     onPlayPause: () -> Unit,
     onToggleFullscreen: () -> Unit,
     bottomPadding: Dp = 40.dp,
-    panRequiresCtrl: Boolean = false
+    panRequiresCtrl: Boolean = false,
+    ambientFill: Boolean = false
 ) {
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
 
@@ -89,6 +92,11 @@ fun MediaViewerContent(
             ),
         contentAlignment = Alignment.Center
     ) {
+        if (ambientFill && media is ViewerMedia.Video &&
+            hasSideBars(containerSize, nativeSize, renderScale)
+        ) {
+            AmbientFillLayer(media.player)
+        }
         AnimatedContent(
             targetState = media.poster,
             transitionSpec = {
@@ -119,4 +127,22 @@ fun MediaViewerContent(
             PlaybackHealthNotice(videoState = media.player, bottomPadding = bottomPadding)
         }
     }
+}
+
+/**
+ * Whether the drawn picture leaves the container's *sides* empty — a 16:9 file on a
+ * wider panel, which is a monitor mismatch rather than anything the file asked for.
+ * The top/bottom letterbox of 2.39:1 content is graded in and is not this.
+ *
+ * `ContentScale.Fit` sizes the picture, and `renderScale` is the graphics-layer
+ * scale applied on top of it, so the drawn width is the fitted one times that.
+ */
+private fun hasSideBars(container: IntSize, native: IntSize, scale: Float): Boolean {
+    if (container.width <= 0 || container.height <= 0) return false
+    if (native.width <= 0 || native.height <= 0) return false
+    val fit = min(
+        container.width.toFloat() / native.width,
+        container.height.toFloat() / native.height
+    )
+    return native.width * fit * scale < container.width - 2f
 }

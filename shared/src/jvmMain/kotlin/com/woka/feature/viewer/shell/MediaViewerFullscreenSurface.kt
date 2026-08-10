@@ -30,6 +30,9 @@ fun MediaViewerFullscreenSurface(
         // The window's own menu: no file actions, one setting. `ContextMenuItem`
         // carries no checkbox, so the state goes in the label.
         val alwaysOnTop by settingsRepo.collectField { it.pipAlwaysOnTop }
+        // This window serves PiP as well as fullscreen, and a PiP window has no
+        // bars worth filling — it is sized to the picture.
+        val ambientFill by settingsRepo.collectField { it.ambientFill }
         val menuActions = remember(alwaysOnTop) {
             NO_VIEWER_ACTIONS.copy(
                 extra = listOf(
@@ -73,7 +76,8 @@ fun MediaViewerFullscreenSurface(
             // A plain left drag belongs to the window here: `pipWindowDraggable`
             // moves the PiP window with it, and panning the picture at the same
             // time is what TC-PIP-02 caught. Ctrl + LMB pans instead.
-            panRequiresCtrl = true
+            panRequiresCtrl = true,
+            ambientFill = ambientFill && !PipManager.isPipWindow
         )
     }
 }

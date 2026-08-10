@@ -9,8 +9,10 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.painter.Painter
 import com.woka.core.data.TransferKind
 import org.jetbrains.skia.Data
+import org.jetbrains.skia.FilterTileMode
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.RuntimeEffect
+import org.jetbrains.skia.SamplingMode
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -43,7 +45,14 @@ private val HDR_EFFECT: RuntimeEffect by lazy { RuntimeEffect.makeForShader(HDR_
 class HdrImagePainter(
     private val bitmap: ImageBitmap,
     private val transfer: TransferKind = TransferKind.PQ,
-    private val isWideGamut: Boolean = true
+    private val isWideGamut: Boolean = true,
+    /**
+     * Filters the image shader instead of taking Skia's default, which is
+     * nearest-neighbour. A decoded frame is drawn at roughly its own size and does
+     * not care; the ambient fill magnifies a 64-pixel-wide sample across a whole
+     * panel, where nearest turns it into hard-edged blocks.
+     */
+    private val smooth: Boolean = false
 ) : Painter() {
 
     override val intrinsicSize: Size
@@ -62,7 +71,11 @@ class HdrImagePainter(
      */
     override fun DrawScope.onDraw() {
         val image = Image.makeFromBitmap(bitmap.asSkiaBitmap())
-        val imageShader = image.makeShader()
+        val imageShader = if (smooth) {
+            image.makeShader(FilterTileMode.CLAMP, FilterTileMode.CLAMP, SamplingMode.LINEAR, null)
+        } else {
+            image.makeShader()
+        }
         val data = Data.makeFromBytes(uniforms())
         val shader = HDR_EFFECT.makeShader(data, arrayOf(imageShader), null)
         try {

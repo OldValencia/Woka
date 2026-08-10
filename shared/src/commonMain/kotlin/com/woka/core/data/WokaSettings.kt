@@ -55,6 +55,12 @@ data class WokaSettings(
     val mediaFilter: String = "All", // All, Photos, Videos
     val theme: String = "System",
     val mediaViewerCarouselMode: CarouselVisibility = CarouselVisibility.AUTO,
+    // Fills the empty *side* bars of a fullscreen video with a blurred, dimmed
+    // derivative of the picture. Side bars only: a 16:9 file on a 21:9 panel is a
+    // monitor mismatch, while the top/bottom letterbox of 2.39:1 content is how it
+    // was graded and stays black. Off by default — it is a taste feature and it
+    // changes every fullscreen video.
+    val ambientFill: Boolean = false,
     val pinnedSessions: List<PinnedSession> = emptyList(),
     val scalePreset: ScalePreset = ScalePreset.Fit,
     // Default size state applied when a video opens. If [rememberSizeState] is on,

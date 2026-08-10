@@ -113,7 +113,7 @@ fun MediaViewerScreen(
             mediaItems = mediaItems,
             activeItem = activeItem,
             mediaVolume = mediaVolume,
-            chrome = ViewerChromeState(settings.mediaViewerCarouselMode, isFullscreen),
+            chrome = ViewerChromeState(settings.mediaViewerCarouselMode, isFullscreen, settings.ambientFill),
             actions = ViewerActions(editAction, copyAction, infoAction, extra = exportEntries),
             showInfoDialog = showInfoDialog,
             onShowInfoDialogChange = { showInfoDialog = it },

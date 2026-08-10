@@ -65,7 +65,9 @@ data class BackdropTransform(
 @Immutable
 data class ViewerChromeState(
     val carouselMode: CarouselVisibility,
-    val isFullscreen: Boolean
+    val isFullscreen: Boolean,
+    /** The ambient-fill setting; it only does anything while [isFullscreen]. */
+    val ambientFill: Boolean = false
 ) {
     val isCarouselEnabled: Boolean
         get() = carouselMode != CarouselVisibility.HIDDEN

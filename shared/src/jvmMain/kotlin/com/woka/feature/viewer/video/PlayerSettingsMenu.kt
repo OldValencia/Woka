@@ -66,6 +66,14 @@ internal fun PlayerSettingsMenuList(videoState: VideoPlayerState) {
         PlayerSpeedNotice(videoState, settings.playbackSpeed)
         PlayerChapterSection(videoState)
         PlayerSyncSection(videoState)
+        // The same global flag the Settings panel writes — a second way in, not a
+        // per-file override. Only does anything in fullscreen, where the bars are.
+        PopoverSectionLabel("Picture")
+        PopoverListRow(
+            label = "Ambient fill",
+            selected = settings.ambientFill,
+            onClick = { repo.setAmbientFill(!settings.ambientFill) }
+        )
         // The per-file record wins over the folder layer, so a file configured once
         // keeps its choice forever. This is the way back (Step 15) — it lives here
         // rather than in the subtitle popover, which is a list of tracks, not a

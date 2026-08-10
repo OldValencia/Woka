@@ -34,8 +34,20 @@ class Router {
         if (screens.isNotEmpty()) _stack.value = screens
     }
 
+    /**
+     * Pushes [screen], and disarms the screen it is pushed on top of.
+     *
+     * See [withoutArrivalCommand]: without this, returning to that entry re-runs a
+     * command that was carried out long ago.
+     */
     fun navigateTo(screen: Screen) {
-        _stack.update { it + screen }
+        _stack.update { current ->
+            if (current.isEmpty()) {
+                listOf(screen)
+            } else {
+                current.dropLast(1) + current.last().withoutArrivalCommand() + screen
+            }
+        }
     }
 
     fun replaceTop(screen: Screen) {
@@ -52,4 +64,26 @@ class Router {
             if (index != -1) current.take(index + 1) else current
         }
     }
+}
+
+/**
+ * The same folder, with nothing left to do on arrival.
+ *
+ * [Screen.Folder.openViewerForId] is a *command* — "open the viewer on this file
+ * once you are shown" — and [Screen.Folder.nonce] exists only to make that command
+ * fire again when the same folder is re-entered. Both describe a moment, not a
+ * screen, and leaving them in a history entry means history replays them: return to
+ * the main window from fullscreen (which writes the pair), walk into another folder,
+ * press Back, and the video you finished with opens on top of the folder you asked
+ * for. The same holds for a file opened from the command line.
+ *
+ * Disarmed on the way out rather than when the viewer closes: rewriting the entry
+ * that is on screen would swap `ScreenHost`'s `AnimatedContent` key under a live
+ * folder, rebuilding its view model and losing the scroll position the viewer just
+ * handed back.
+ */
+private fun Screen.withoutArrivalCommand(): Screen = when {
+    this !is Screen.Folder -> this
+    openViewerForId == null && nonce == 0L -> this
+    else -> copy(openViewerForId = null, nonce = 0L)
 }
