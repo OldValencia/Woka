@@ -1,4 +1,4 @@
-# Plan: Ambient Fill (Ambilight)
+# Plan: Ambient Fill (Ambilight) - Done
 
 Fills the empty side bars of a fullscreen video with a slow, heavily blurred, dimmed derivative of
 the picture, instead of leaving flat black. Extends Phase 4 (The Viewer); no roadmap phase changes.
