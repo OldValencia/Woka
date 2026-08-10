@@ -86,7 +86,9 @@ internal fun MediaSliderTooltip(
                 Text(
                     text = timeText,
                     color = Color.White.copy(alpha = if (chapterTitle != null) 0.7f else 1f),
-                    fontSize = 12.sp,
+                    // The pill exists to answer "where does this land?", so the time
+                    // is its headline and carries the larger size.
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Medium
                 )
             }

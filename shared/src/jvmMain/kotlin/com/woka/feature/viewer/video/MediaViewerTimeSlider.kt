@@ -137,7 +137,9 @@ private fun TimeLabel(position: () -> Long) {
     Text(
         formatTime(position()),
         color = Theme.colors.textPrimary,
-        style = TextStyle(fontSize = 13.sp, color = Theme.colors.textPrimary)
+        // 15sp against 16–20dp icons in the same row. At 13 the digits read as a
+        // caption beside the controls rather than as part of them.
+        style = TextStyle(fontSize = 15.sp, color = Theme.colors.textPrimary)
     )
 }
 
