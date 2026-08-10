@@ -13,13 +13,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.rememberWindowState
-import kotlinx.coroutines.delay
 import com.woka.core.data.MediaItem
 import com.woka.core.data.SettingsRepository
 import com.woka.feature.viewer.pip.PipManager
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import androidx.compose.ui.ExperimentalComposeUiApi
-import kotlin.time.Duration.Companion.milliseconds
 import com.woka.feature.viewer.pip.PipCornerFlash
 import com.woka.feature.viewer.pip.handlePipKeyEvent
 import com.woka.feature.viewer.pip.pipWindowDraggable
@@ -78,21 +76,9 @@ fun MediaViewerFullscreenWindow(
 
         FullscreenSystemControlsEffect(item, videoState, fsSettings.systemMediaControls)
 
-        var isUiVisible by remember { mutableStateOf(true) }
-        var lastInteractionTime by remember { mutableStateOf(System.currentTimeMillis()) }
-        // Hoisted above the auto-hide, which has to see it: a pointer resting on a
-        // control emits no Move events to keep `lastInteractionTime` alive.
         val hover = remember { PopoverHoverState() }
         PopoverHoverEffect(hover)
-
-        LaunchedEffect(lastInteractionTime, videoState?.isPlaying, hover.rawTarget) {
-            if (videoState?.isPlaying == false || hover.rawTarget != HoverTarget.None) {
-                isUiVisible = true
-            } else {
-                delay(2500.milliseconds)
-                isUiVisible = false
-            }
-        }
+        val chrome = rememberChromeVisibility(videoState, hover)
 
         AnimatedVisibility(
             visible = appear,
@@ -101,14 +87,15 @@ fun MediaViewerFullscreenWindow(
         ) {
             Box(
                 Modifier.fillMaxSize().background(Color.Black)
-                    .onPointerEvent(PointerEventType.Move) {
-                        lastInteractionTime = System.currentTimeMillis()
-                        isUiVisible = true
-                    }
+                    .onPointerEvent(PointerEventType.Move) { chrome.poke() }
+                    // Not while the window is PiP-sized: a small floating window is
+                    // something you aim at, and an invisible pointer over it is a
+                    // window you cannot grab.
+                    .hideCursorWhen(!chrome.isVisible && !pipMode.isPip)
             ) {
 
-                val fsBottomOverlayPadding = if (isUiVisible) 90.dp else 0.dp
-                val fsSubtitleBottomPadding = if (isUiVisible) 72.dp else 40.dp
+                val fsBottomOverlayPadding = if (chrome.isVisible) 90.dp else 0.dp
+                val fsSubtitleBottomPadding = if (chrome.isVisible) 72.dp else 40.dp
 
                 MediaViewerFullscreenSurface(
                     modifier = Modifier.fillMaxSize().pipWindowDraggable(window),
@@ -132,14 +119,14 @@ fun MediaViewerFullscreenWindow(
                 MediaViewerFullscreenOverlays(
                     videoState = videoState,
                     hover = hover,
-                    isUiVisible = isUiVisible,
+                    isUiVisible = chrome.isVisible,
                     bottomPadding = fsBottomOverlayPadding,
                     settingsRepo = settingsRepo,
                     onExitFullscreen = { PipManager.closePip(returnToMain = true) }
                 )
 
                 MediaViewerFullscreenTopControls(
-                    isUiVisible = isUiVisible,
+                    isUiVisible = chrome.isVisible,
                     isPipWindow = pipMode.isPip,
                     onTogglePipWindow = pipMode.toggle,
                     onSizeModeChange = onFsSizeModeChange
