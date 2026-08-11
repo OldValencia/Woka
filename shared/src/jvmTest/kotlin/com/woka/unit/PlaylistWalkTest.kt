@@ -86,6 +86,22 @@ class PlaylistWalkTest {
     }
 
     @Test
+    fun `a shuffled walk without folder repeat still plays every video once`() {
+        val playlist = MediaViewerPlaylist()
+        var current = one.id
+        val played = mutableListOf(current)
+        // The permutation is built here, at the first call, and used to leave the
+        // current file at a random index — everything before it was then dropped.
+        while (true) {
+            val next = playlist.nextPath(current, folder, shuffle = true, repeat = RepeatMode.Off)
+                ?: break
+            played.add(next)
+            current = next
+        }
+        assertEquals(listOf(one.id, two.id, three.id).sorted(), played.sorted())
+    }
+
+    @Test
     fun `exactly one video ends a shuffled walk`() {
         val playlist = MediaViewerPlaylist()
         val ends = listOf(one, two, three).count { item ->

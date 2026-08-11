@@ -75,6 +75,10 @@ fun MediaViewerFullscreenWindow(
         val pipMode = rememberPipWindowMode(window, windowState, PipManager.nativeSize)
 
         FullscreenSystemControlsEffect(item, videoState, fsSettings.systemMediaControls)
+        // The player carried in from the main window keeps its own repeat/speed
+        // fields; without this, changing either in this window's ⚙ popover writes
+        // settings that never reach it (§6).
+        PlaybackModeEffects(videoState, fsSettings)
 
         val hover = remember { PopoverHoverState() }
         PopoverHoverEffect(hover)

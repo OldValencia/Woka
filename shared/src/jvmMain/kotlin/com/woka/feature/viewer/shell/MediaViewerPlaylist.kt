@@ -31,13 +31,27 @@ class MediaViewerPlaylist {
     /**
      * The walk order, recomputed only when the folder contents or the shuffle
      * toggle actually change — otherwise a fresh permutation on every EOF would
-     * make "played once each" impossible to honour.
+     * make "played once each" impossible to honour. [currentId] is deliberately
+     * *not* part of the signature for the same reason.
+     *
+     * It is pinned first instead: the permutation is built at the first EOF, and
+     * left to chance the file being watched landed at a random index — with
+     * repeat off the walk only ever moves forward, so everything before it was
+     * dropped, and one folder in `size` stopped dead on the first file.
      */
-    private fun orderFor(videoPaths: List<String>, shuffle: Boolean): List<String> {
+    private fun orderFor(
+        videoPaths: List<String>,
+        shuffle: Boolean,
+        currentId: String
+    ): List<String> {
         val nextSignature = 31 * videoPaths.hashCode() + shuffle.hashCode()
         if (nextSignature != signature || order.isEmpty()) {
             signature = nextSignature
-            order = if (shuffle) videoPaths.shuffled() else videoPaths
+            order = if (shuffle) {
+                listOf(currentId) + (videoPaths - currentId).shuffled()
+            } else {
+                videoPaths
+            }
         }
         return order
     }
@@ -54,10 +68,13 @@ class MediaViewerPlaylist {
             .filterIsInstance<MediaItem.Video>()
             .map { it.file.absolutePath }
         if (videoPaths.size < 2) return null
+        // Before the order is built, not after: an image or a file from another
+        // folder is not part of this walk, and pinning it would put a path into
+        // the permutation that does not belong to the folder at all.
+        if (currentId !in videoPaths) return null
 
-        val walk = orderFor(videoPaths, shuffle)
+        val walk = orderFor(videoPaths, shuffle, currentId)
         val index = walk.indexOf(currentId)
-        if (index == -1) return null
 
         return when {
             index < walk.lastIndex -> walk[index + 1]
@@ -68,9 +85,30 @@ class MediaViewerPlaylist {
 }
 
 /**
- * Pushes the playback modes from settings into the player and auto-advances at
- * EOF. Repeat File is the decoder's own business; anything that means "play
- * another file" is navigation, so it is resolved here (§6).
+ * The one bridge from settings to the player, so **every** window that shows a
+ * player has to mount it. The fullscreen window did not, and since it keeps the
+ * running [VideoPlayerState] handed over by `enterFullscreen`, the field simply
+ * kept whatever the main window last wrote: turning repeat off in there left the
+ * decoder on Repeat File, looping a file the UI said was set to Off (§6).
+ *
+ * That window has no folder listing on purpose (see `FullscreenSystemControlsEffect`),
+ * so `Repeat.Folder` and shuffle still stop at the end there — a limitation of
+ * what it is handed, not a missing effect.
+ */
+@Composable
+internal fun PlaybackModeEffects(videoState: VideoPlayerState?, settings: WokaSettings) {
+    LaunchedEffect(videoState, settings.repeatMode) {
+        videoState?.repeatMode = settings.repeatMode
+    }
+    LaunchedEffect(videoState, settings.playbackSpeed) {
+        videoState?.setPlaybackSpeed(settings.playbackSpeed)
+    }
+}
+
+/**
+ * The modes plus the EOF auto-advance, for the window that has a folder to walk.
+ * Repeat File is the decoder's own business; anything that means "play another
+ * file" is navigation, so it is resolved here (§6).
  */
 @Composable
 internal fun MediaViewerPlaybackEffects(
@@ -79,12 +117,7 @@ internal fun MediaViewerPlaybackEffects(
     settings: WokaSettings,
     mediaItems: List<MediaItem>
 ) {
-    LaunchedEffect(videoState, settings.repeatMode) {
-        videoState?.repeatMode = settings.repeatMode
-    }
-    LaunchedEffect(videoState, settings.playbackSpeed) {
-        videoState?.setPlaybackSpeed(settings.playbackSpeed)
-    }
+    PlaybackModeEffects(videoState, settings)
 
     val playlist = rememberMediaViewerPlaylist()
     LaunchedEffect(videoState?.reachedEnd) {

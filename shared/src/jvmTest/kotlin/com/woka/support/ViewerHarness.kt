@@ -96,7 +96,8 @@ fun ViewerUnderTest(
         copyAction = {},
         infoAction = infoAction,
         onSizeModeChange = onSizeModeChange,
-        onVolumeChange = {}
+        onVolumeChange = {},
+        onToggleFullscreen = {}
     )
     LaunchedEffect(Unit) { focus.requestFocus() }
     MediaViewerPlayer(
