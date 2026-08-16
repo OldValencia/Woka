@@ -131,8 +131,10 @@ class SettingsPersistenceTest {
             repeat(60) { repository.setTheme("Theme$it") }
             awaitSettingsWrite(""""theme": "Theme59"""")
             assertEquals("Theme59", SettingsRepositoryImpl().settings.value.theme)
+            // `.woka-tmp` since ME-009 lifted the write into `replaceAtomically`.
+            // Watching the old `.tmp` name here would pass by never existing.
             awaitTrue("the temp file to be cleaned up") {
-                !File(WokaStorage.root, "settings.json.tmp").exists()
+                !File(WokaStorage.root, "settings.json.woka-tmp").exists()
             }
         }
     }

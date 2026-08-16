@@ -35,7 +35,7 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-006](tickets/ME-006-tool-registry.md) | Tool registry, enablement, settings | **done** 2026-08-16 |
 | [ME-007](tickets/ME-007-raster-fold.md) | Raster stage and the fold | **done** 2026-08-16 |
 | [ME-008](tickets/ME-008-engine-seam.md) | Editor engine seam | **done** 2026-08-16 |
-| [ME-009](tickets/ME-009-save-targets.md) | Save targets and the atomic write | not started |
+| [ME-009](tickets/ME-009-save-targets.md) | Save targets and the atomic write | **done** 2026-08-17 |
 | [ME-010](tickets/ME-010-probes.md) | Capability probes and the testing artefact | not started |
 | [ME-011](tickets/ME-011-test-harness.md) | Test harness and the fixture tool | not started |
 | [ME-012](tickets/ME-012-mockup-tokens.md) | Editor mockup and tokens | not started |

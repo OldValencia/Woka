@@ -55,3 +55,49 @@ new), `jvmMain feature/editor/save/AtomicWrite.kt`, `save/SourceStamp.kt` (new),
   file leaves no `.woka-tmp`; a failure mid-write leaves the original byte-identical; writing while
   the target is held open by another handle succeeds within the retries or fails cleanly;
 - `jvmTest/integration/SourceStampTest.kt`: a file touched after the stamp was taken does not match.
+
+## Result — 2026-08-17
+
+`./gradlew.bat :shared:build` green. **548 tests, 0 failures, 0 errors** — 530 before, plus eighteen.
+
+### The grep step 3 demanded: `SettingsStore` had it, and lifting it was not a copy
+
+`SettingsStore.writeToDisk` already wrote a temp beside the target and moved it with `ATOMIC_MOVE` +
+`REPLACE_EXISTING`. Two things it does **not** do: retry, and refuse to fall back. On failure it does
+`settingsFile.writeText(text)` — a plain, non-atomic overwrite.
+
+That fallback is right for settings and catastrophic for the editor. A damaged `settings.json` is
+read once and replaced (there is a test for exactly that); a half-written photograph is the destroyed
+original §5 exists to prevent. So what was lifted into `core/data/AtomicFileReplace.kt` is the
+**mechanism** — temp beside the target, one atomic move, temp deleted on every failure path — and
+each caller keeps its own policy:
+
+| | on failure |
+|---|---|
+| `SettingsStore` | falls back to a plain overwrite |
+| `editor/save/AtomicWrite` | 3 attempts 120 ms apart, then reports failure. **Never** a plain write |
+
+### A test that would have stopped testing, silently
+
+The lifted helper names its temp `<name>.woka-tmp`; `SettingsStore` used `settings.json.tmp`. An
+existing assertion in `SettingsPersistenceTest` watches for that temp being cleaned up — against the
+old name it would have passed forever by watching a file that can no longer exist. Updated, with the
+reason in a comment beside it.
+
+### Steps 1 and 6 were already done
+
+`SaveTarget` and `EditSaveResult.Saved(path)` were both created in ME-008, which needed them for the
+`EditorEngine` signature. Nothing to add.
+
+### Why the failure test uses a directory and not an open file handle
+
+The obvious way to force a mid-write failure is to hold the target open. That is **not** portable:
+Windows refuses to replace a file with an open handle, macOS allows it — and Woka targets both, so
+the test would pass here and fail on the other machine. A non-empty directory cannot be replaced by
+a move on any platform, which makes the failure deterministic everywhere.
+
+The retry test asserts the elapsed time is at least 240 ms — two 120 ms gaps between three attempts.
+It is the only thing that can catch the retries quietly disappearing, since a failing write looks
+identical with and without them.
+
+`copyName` numbers from **2**, because `-edited` is itself the first copy.

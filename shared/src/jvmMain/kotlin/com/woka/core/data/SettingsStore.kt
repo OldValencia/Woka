@@ -8,9 +8,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.io.File
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -92,21 +89,17 @@ internal class SettingsStore(private val scope: CoroutineScope) {
         try {
             if (!WokaStorage.root.exists()) WokaStorage.root.mkdirs()
             val text = json.encodeToString(current)
-            // Write to a temp file then atomically replace, so a reader (or a crash
-            // mid-write) can never see a half-written / duplicated file.
-            val tmp = File(WokaStorage.root, "settings.json.tmp")
-            tmp.writeText(text)
             try {
-                Files.move(
-                    tmp.toPath(),
-                    settingsFile.toPath(),
-                    StandardCopyOption.REPLACE_EXISTING,
-                    StandardCopyOption.ATOMIC_MOVE
-                )
+                // Shared with the editor's save path (ME-009): temp beside the
+                // target, then one atomic move, so a reader or a crash mid-write
+                // never sees a half-written file.
+                replaceAtomically(settingsFile, text.toByteArray())
             } catch (_: Exception) {
                 // Fallback if atomic move is unsupported; still serialized, so safe.
+                // The editor deliberately does **not** do this — a plain overwrite
+                // of a photograph is the failure §5 exists to prevent, whereas a
+                // damaged settings.json is read once and replaced.
                 settingsFile.writeText(text)
-                tmp.delete()
             }
         } catch (e: Exception) {
             e.printStackTrace()
