@@ -37,3 +37,30 @@ needed), two `.gitkeep` deletions
 - `./gradlew.bat :shared:compileKotlinJvm` green;
 - a Koin verification test resolves the container with `editorModule` loaded — extend
   `jvmTest/support/KoinOnce.kt`, do not start a second container.
+
+## Result — 2026-08-16
+
+`./gradlew.bat :shared:build` green. **484 tests, 0 failures, 0 errors** — 483 before, plus the one
+added here.
+
+Both `.gitkeep` files deleted with their `image/` and `video/` directories; the wrong axis is gone.
+
+`EditorModule.kt` created in `jvmMain` with `val editorModule = module { }`, empty, and composed into
+`platformModule` via `includes(editorModule)`. Step 4 offered two options and only one of them holds:
+listing both in `initKoin` was impossible, because `initKoin` lives in `commonMain` and cannot name a
+JVM symbol. `Koin.kt` is untouched, as the step asked.
+
+`EditorModuleTest` (`jvmTest/integration/`) starts the shared container through the existing
+`startKoinOnce()` and resolves `Router` and `SettingsRepository`. Koin throws on a missing or
+duplicated definition, so those resolutions are the assertion — `editorModule` is empty until ME-006,
+so what this actually guards is the composition. Without it a broken `includes` would surface as
+every Koin-using test dying at once with no indication of the cause. No second container is started.
+
+**`CLAUDE.md` needed no edit.** Its `feature/editor/` block already lists `core/`, `shell/`, `tools/`,
+`engine/image/`, `save/`, `di/` — the names this ticket creates. Step 5's condition did not fire.
+
+**One thing the ticket asks for that git cannot hold.** Step 2 creates six packages and step 2 also
+forbids `.gitkeep`. Git tracks files, not directories, so the five that received no file —
+`core/`, `shell/`, `tools/`, `engine/image/`, `save/` — exist on disk and in no commit. Only
+`di/EditorModule.kt` is committed. That is the right outcome, not a gap: ME-003 puts the first real
+file in `core/`, and the directory arrives with it.

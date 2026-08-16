@@ -28,7 +28,7 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 |---|---|---|
 | [ME-001](tickets/ME-001-toolchain-refresh.md) | Toolchain and dependency refresh | **done** 2026-08-16 |
 | [ME-013](tickets/ME-013-ffmpeg-8-1-2.md) | JavaCV 1.5.14 / FFmpeg 8.1.2 | **done** 2026-08-16 |
-| [ME-002](tickets/ME-002-package-skeleton.md) | Editor package skeleton and DI seam | not started |
+| [ME-002](tickets/ME-002-package-skeleton.md) | Editor package skeleton and DI seam | **done** 2026-08-16 |
 | [ME-003](tickets/ME-003-param-schema.md) | Parameter schema | not started |
 | [ME-004](tickets/ME-004-document-history-session.md) | Document, history, session | not started |
 | [ME-005](tickets/ME-005-tool-contract.md) | Tool contract | not started |
