@@ -1,5 +1,7 @@
 package com.woka.feature.editor.di
 
+import com.woka.core.data.MediaItem
+import com.woka.feature.editor.core.EditorSession
 import org.koin.dsl.module
 
 /**
@@ -20,4 +22,7 @@ import org.koin.dsl.module
  * cannot name this.
  */
 val editorModule = module {
+    // `factory`, not `single`: a session is per-open, holds the document being
+    // edited, and owns a scope its caller cancels on close (`di.md`).
+    factory { (media: MediaItem) -> EditorSession(media) }
 }

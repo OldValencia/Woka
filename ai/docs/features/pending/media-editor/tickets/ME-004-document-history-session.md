@@ -45,3 +45,50 @@ class, and nothing above it can be written until it exists.
 - `push` after an `undo` truncates the redo tail;
 - 200 `preview` calls followed by one `commit` produce exactly one history entry;
 - `isDirty` is false on a fresh session and false again after undoing back to the start.
+
+## Result — 2026-08-16
+
+`./gradlew.bat :shared:build` green. **506 tests, 0 failures, 0 errors** — 490 before, plus sixteen
+here. Largest new file 110 lines.
+
+### The session does not take `ViewerMedia`
+
+Step 4 requires `EditorSession.kt` in `commonMain` with no `androidx.compose.*` import; step 5
+specifies `factory { (media: ViewerMedia) -> EditorSession(media) }`. Those cannot both hold:
+`ViewerMedia` lives in `jvmMain`, so `commonMain` cannot see it at all, and it carries `ImageBitmap`,
+`IntSize` and `@Composable` members, so accepting it would break the no-Compose rule in the same
+breath.
+
+Resolved in favour of step 4, which has three independent backers against one word in step 5 — step 4
+itself, §3.3 ("the session knows nothing about pixels"), and `code-style/state.md`. The session takes
+**`MediaItem`**: `core/data`, `commonMain`, Compose-free, and already the app's domain type for a
+media file. The factory keeps the shape the step wanted.
+
+### `ToolCardinality` is declared here, not in ME-005
+
+`commitPending(cardinality)` needs the type and the manifest that reads it (§3.4) arrives in ME-005,
+one ticket later. The enum is in `core/ToolCardinality.kt`; ME-005's `ToolManifest` names it rather
+than redeclaring it.
+
+### A test-construction trap worth knowing before ME-101
+
+The first version of `EditorSessionTest` built the session in a **field initialiser** and three
+assertions silently passed for the wrong reason: every derived flow read as its initial `false`.
+A field initialiser runs before `MainDispatcherRule` installs the test dispatcher, so the session
+captured the real `Dispatchers.Main` and its `stateIn(…, Eagerly)` collectors never ran. Only the one
+assertion expecting `true` failed, which is what exposed it.
+
+The fix is the house pattern, not a workaround: `jvmTest/support/EditorHarness.kt` with
+`onEditorSession { }`, constructing inside the block and closing in a `finally` — the same shape and
+the same reason as `onFolder`. Any later test that builds a session must go through it.
+
+### Beyond the ticket
+
+- `EditDocument.clearPending()` and `EditorSession.cancelPending()` — an aborted drag has to leave no
+  trace, and without them the only way to drop an in-flight operation was to commit it and undo,
+  which would put a step in history that the user never took.
+- `EditorSessionTest.kt` — the done-when lists five behaviours under two file names, but the last two
+  are session-level and belong beside the session.
+- `EditorSession.reset()` pushes a history entry, so it is itself undoable. The step lists `reset()`
+  without saying which; making it silent would be the one action in the editor that cannot be taken
+  back.
