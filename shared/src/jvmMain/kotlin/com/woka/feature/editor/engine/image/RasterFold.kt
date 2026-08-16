@@ -1,0 +1,99 @@
+package com.woka.feature.editor.engine.image
+
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.unit.IntSize
+import com.woka.core.data.MediaKind
+import com.woka.feature.editor.core.EditDocument
+import com.woka.feature.editor.core.EditorTool
+import com.woka.feature.editor.core.EditorToolRegistry
+import com.woka.feature.editor.core.ToolOp
+
+/**
+ * Document → [RasterRecipe]. Pure: no canvas, no bitmap, no Compose runtime.
+ *
+ * Separating this from the composable is what makes rendering testable at all —
+ * every ordering and composition rule here is asserted in `RasterFoldTest` without
+ * a window.
+ *
+ * The pending operation folds in exactly like a committed one. A preview that
+ * rendered differently from what committing produces would make every slider lie
+ * about its own result (§3.1).
+ */
+fun fold(
+    document: EditDocument,
+    registry: EditorToolRegistry,
+    sourceSize: IntSize
+): RasterRecipe {
+    val skipped = mutableListOf<ToolOp>()
+    val stages = orderedStages(document, registry, skipped)
+
+    val matrix = Matrix()
+    var outputSize = sourceSize
+    var colorMatrix: ColorMatrix? = null
+    val paints = mutableListOf<RasterStage.Paint>()
+
+    stages.forEach { stage ->
+        when (stage) {
+            is RasterStage.Geometry -> {
+                concat(matrix, stage.matrix)
+                // The last geometry stage decides the frame: each one declares the
+                // size *after* it applies, so a crop following a quarter turn wins
+                // over the turn's swapped dimensions.
+                outputSize = stage.outputSize
+            }
+            is RasterStage.Pixels -> colorMatrix = multiply(colorMatrix, stage.colorMatrix)
+            is RasterStage.Paint -> paints += stage
+        }
+    }
+
+    return RasterRecipe(
+        matrix = matrix,
+        outputSize = outputSize,
+        colorFilter = colorMatrix
+            ?.takeUnless { it.isIdentity() }
+            ?.let { ColorFilter.colorMatrix(it) },
+        paints = paints,
+        skipped = skipped
+    )
+}
+
+/**
+ * Operations in **application** order, not click order (§3.4).
+ *
+ * `sortedBy` is stable, which is the whole point: ranking is by domain, so two
+ * operations of the same domain keep the order the user made them in. An unstable
+ * sort would let two arrows swap places between runs of the same document.
+ *
+ * An operation whose tool is unregistered or switched off contributes no stage and
+ * lands in [skipped] instead — never an exception, and never a silently dropped
+ * edit. A tool returning `null` from `stage()` is different: that is a no-op
+ * configuration, not a missing tool, so it is dropped without being reported.
+ */
+private fun orderedStages(
+    document: EditDocument,
+    registry: EditorToolRegistry,
+    skipped: MutableList<ToolOp>
+): List<RasterStage> {
+    // The raster fold is the image engine's, so enablement is asked for images.
+    val enabled = registry.tools(MediaKind.Image).value
+    return (document.ops + listOfNotNull(document.pending))
+        .mapNotNull { op -> resolve(op, registry, enabled, skipped) }
+        .sortedBy { (_, tool) -> tool.manifest.domain.ordinal }
+        .mapNotNull { (op, tool) -> tool.stage(op.params) as? RasterStage }
+}
+
+private fun resolve(
+    op: ToolOp,
+    registry: EditorToolRegistry,
+    enabled: List<EditorTool>,
+    skipped: MutableList<ToolOp>
+): Pair<ToolOp, EditorTool>? {
+    val tool = registry.toolFor(op)
+    if (tool == null || tool !in enabled) {
+        skipped += op
+        return null
+    }
+    return op to tool
+}

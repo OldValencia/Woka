@@ -10,9 +10,18 @@ package com.woka.feature.editor.core
  * has a stage, and it is not a matrix.
  *
  * `RasterStage` implements this in `jvmMain` (ME-007) because its cases carry
- * Skia types; the video stage joins later. Sealed, so the set of media a tool can
- * describe stays closed and the fold's `when` stays exhaustive — implementations
- * in another source set of the same module are permitted, which is exactly the
- * `commonMain`/`jvmMain` split this relies on.
+ * Skia types; the video stage joins later.
+ *
+ * **Not sealed, and it cannot be** — measured 2026-08-16, ME-005 planned it as
+ * sealed and ME-007 disproved it. The compiler rejects a `jvmMain` implementation
+ * of a `commonMain` sealed interface twice over: *"Extending sealed classes or
+ * interfaces from a different module is prohibited"* — the two source sets count
+ * as separate modules — and *"a class can only extend a sealed class or interface
+ * declared in the same package"*, which `feature/editor/engine/image` is not.
+ *
+ * Nothing is lost. Exhaustiveness was only ever wanted where the fold branches,
+ * and that is over `RasterStage`, which is sealed within its own package. This
+ * marker's job is to keep `EditorTool` in `commonMain`, and an open interface does
+ * that just as well.
  */
-sealed interface ToolStage
+interface ToolStage
