@@ -2,8 +2,10 @@ package com.woka.feature.editor.di
 
 import com.woka.core.data.MediaItem
 import com.woka.feature.editor.core.EditorSession
+import com.woka.feature.editor.core.EditorEngineFactory
 import com.woka.feature.editor.core.EditorTool
 import com.woka.feature.editor.core.EditorToolRegistry
+import com.woka.feature.editor.engine.EditorEngineFactoryImpl
 import org.koin.dsl.module
 
 /**
@@ -31,4 +33,8 @@ val editorModule = module {
     // `single`, because the registry's per-kind flows are built once and every
     // consumer must collect the same ones.
     single { EditorToolRegistry(getAll<EditorTool>(), get()) }
+
+    // The one place that answers "is this file editable" — both Edit entry points
+    // resolve it, so neither can grow its own extension list (§4.1).
+    single<EditorEngineFactory> { EditorEngineFactoryImpl(get()) }
 }
