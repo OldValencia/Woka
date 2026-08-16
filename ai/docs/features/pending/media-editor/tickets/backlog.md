@@ -116,8 +116,8 @@ visible region while zoomed, and drops back to the proxy when it is not.
 *Depends on ME-114.*
 
 ### ME-117 — Housekeeping
-`roadmap.md` Phase 5 updated to "image half shipped, video half pending"; the manual pass for the
-editor added to `ai/docs/testing/manual/` and run once; the `-edited` naming checked against a folder
+`roadmap.md` Phase 5 updated to "image half shipped, video half pending"; the editor exercised by
+hand once and the result dated in this ticket; the `-edited` naming checked against a folder
 that already holds a dozen of them.
 *Depends on ME-108, ME-115.*
 

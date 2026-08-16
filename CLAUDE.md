@@ -28,7 +28,6 @@ Read the relevant doc before planning or implementing; never invent behaviour th
   pointing back here.
 - `docs/features/pending/` — approved but unshipped work; **work comes from here**
 - `docs/features/implemented/` — shipped plans (+ sibling `assets/`)
-- `docs/testing/` — manual pass definitions, dated run results, dated probe results
 - `mockups/design/FINAL_design_mockup.html` — visual truth · `mockups/logos/` — branding
 
 Small feature → `pending/<name>.md` per `docs/conventions/plans.md`. Feature outliving one sitting →

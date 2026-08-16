@@ -31,7 +31,7 @@
 |---|---|---|
 | Mechanical | serialisation, DI, lifecycle patch releases | `:shared:build` green |
 | Compiler | Kotlin, Compose plugin, compose-compiler | `:shared:build` + the app launched |
-| Behavioural | JavaCV/FFmpeg, Coil, Skia-affecting Compose bumps | the manual pass in `ai/docs/testing/manual/` re-run |
+| Behavioural | JavaCV/FFmpeg, Coil, Skia-affecting Compose bumps | the affected paths exercised by hand, and the result dated in the ticket |
 
 A behavioural bump is its own ticket with its own verification. It never rides along with a feature.
 

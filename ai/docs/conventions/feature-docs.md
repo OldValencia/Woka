@@ -97,10 +97,21 @@ are settled by changing the mockup first.
 
 ## 7. Testing artefacts
 
-`ai/docs/testing/manual/` holds the manual pass definitions; `ai/docs/testing/manual/results/` holds
-one dated file per run, and `ai/docs/testing/probes/` one dated file per capability probe. These are
-permanent artefacts re-run against whatever changed — a probe result with no date is worthless,
-because the question it answers is "what did this machine's decoder do, and when".
+**There is no `ai/docs/testing/` tree.** There was one — manual pass definitions, dated run results,
+dated probe results — and it was read, acted on and deleted deliberately. Do not recreate it, and
+treat a document that still refers to it as out of date rather than as an instruction.
+
+Evidence lives next to the question it answers:
+
+- a **probe** prints a table (`code-style/test.md`), and its output is recorded with a date in the
+  ticket or plan that asked for it;
+- a **by-hand check** — the thing a behavioural dependency bump needs (`code-style/build.md`) — is
+  recorded the same way, in the ticket, with a date;
+- the **decision** either one settles goes into the feature's decision log, and is cited in the code.
+
+The date is the part that matters, not the location: a probe result answers "what did this machine's
+decoder do, **and when**". What the separate tree cost was distance — a checklist in a directory
+nobody opens drifts away from the code silently, which is exactly what happened to the last one.
 
 ## 8. Skills
 

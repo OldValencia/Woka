@@ -41,7 +41,7 @@ Decoders, the player, Skia surfaces, JavaCV/FFmpeg, AWT, threads, native memory.
 
 - What a decoder does is **measured**, not assumed. A question about a format, a tag or a colour
   transfer becomes a probe under `jvmTest/probe/` that prints a table, and its answer is recorded with
-  a date in `ai/docs/testing/probes/` and cited in the code (`comments.md`).
+  a date in the ticket or plan that asked for it, and cited in the code (`comments.md`).
 - Feature detection at runtime returns a capability object; the UI reads it and degrades. No
   `try { … } catch (Throwable) { }` standing in for a capability check.
 - FFmpeg and Skia disagree about colour: `StillColorInfo` is filled from the FFmpeg path and never

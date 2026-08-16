@@ -59,10 +59,12 @@ override is restored — do not rely on one without the other.
 
 ## Probes
 
-A probe prints a table and asserts nothing about the machine: its output is evidence, not a gate. It
-is committed with a date under `ai/docs/testing/probes/`, and the decision it settles is written into
-the feature's decision log and cited in the code. `DecoderCapabilityProbe` + `CapabilityReport` is the
-shape to copy.
+A probe prints a table and asserts nothing about the machine: its output is evidence, not a gate. Its
+output is recorded **with a date in the ticket or plan that asked for it**, the decision it settles
+goes into the feature's decision log, and both are cited in the code. There is no separate
+`ai/docs/testing/` tree — evidence lives next to the question it answers, because a dated file in a
+directory nobody opens is how a probe result rots. `DecoderCapabilityProbe` + `CapabilityReport` is
+the shape to copy.
 
 ## What must have a test
 

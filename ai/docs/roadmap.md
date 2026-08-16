@@ -45,15 +45,16 @@ and asserted row by row by `StartupRouteTest`:
   lists, a thumbnail cache keyed on file *name*, events colliding inside one clock tick, and a seek
   that signalled before it wrote its target.
 - **Viewer verification pass (done):** `features/implemented/viewer-verification-pass.md` — test
-  pyramid built (172 unit / 167 integration / 42 UI automation, `:shared:build` at 383 checks) plus
-  `ai/docs/testing/manual/`, **a permanent artefact re-run over whatever changes, not a one-off
-  checklist**. Both runs are logged in `manual/results/`. Found and fixed on the way: a PiP drag that
+  pyramid built (172 unit / 167 integration / 42 UI automation, `:shared:build` at 383 checks) plus a
+  manual pass, run twice. That pass lived in `ai/docs/testing/manual/` and has since been read,
+  acted on and **retired** — a by-hand result is now dated in the ticket that asked for it
+  (`conventions/feature-docs.md` §7). Found and fixed on the way: a PiP drag that
   panned the video and then registered as a click, no CLI routing at all, and a grid "Copy" that
   meant copy-into-a-folder.
 
 ### Phase 4: The Viewer (Preview & Carousel) — **verified**
 Verified end to end by `features/implemented/viewer-verification-pass.md`: the four-layer test pyramid
-plus the manual pass in `ai/docs/testing/manual/`. The "Direct OS Launch Behavior" below is built as
+plus a manual pass, since retired. The "Direct OS Launch Behavior" below is built as
 of that pass; the rare formats are the one part still outstanding.
 
 - **UX:** Clicking a media file in the grid dims the background and opens the Viewer overlay.
