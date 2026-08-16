@@ -31,7 +31,7 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-002](tickets/ME-002-package-skeleton.md) | Editor package skeleton and DI seam | **done** 2026-08-16 |
 | [ME-003](tickets/ME-003-param-schema.md) | Parameter schema | **done** 2026-08-16 |
 | [ME-004](tickets/ME-004-document-history-session.md) | Document, history, session | **done** 2026-08-16 |
-| [ME-005](tickets/ME-005-tool-contract.md) | Tool contract | not started |
+| [ME-005](tickets/ME-005-tool-contract.md) | Tool contract | **done** 2026-08-16 |
 | [ME-006](tickets/ME-006-tool-registry.md) | Tool registry, enablement, settings | not started |
 | [ME-007](tickets/ME-007-raster-fold.md) | Raster stage and the fold | not started |
 | [ME-008](tickets/ME-008-engine-seam.md) | Editor engine seam | not started |
