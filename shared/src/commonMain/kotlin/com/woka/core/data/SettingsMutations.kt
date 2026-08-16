@@ -99,3 +99,15 @@ internal fun WokaSettings.withDefaultSubtitleAppearance(): WokaSettings {
 /** A pinned session replaces any earlier one for the same folder. */
 internal fun WokaSettings.withPinnedSession(session: PinnedSession): WokaSettings =
     copy(pinnedSessions = pinnedSessions.filter { it.path != session.path } + session)
+
+/**
+ * Enabling a tool **removes** its id; disabling adds it (§3.4). Enabling one that
+ * was never disabled is therefore a no-op that still writes an equal record — the
+ * caller's `update` schedules a save either way, which is cheaper than teaching
+ * every setter to detect a no-op.
+ */
+internal fun WokaSettings.withEditorTool(id: String, enabled: Boolean): WokaSettings =
+    copy(
+        editorDisabledTools =
+            if (enabled) editorDisabledTools - id else editorDisabledTools + id
+    )

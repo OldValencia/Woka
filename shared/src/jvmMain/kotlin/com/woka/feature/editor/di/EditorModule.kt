@@ -2,6 +2,8 @@ package com.woka.feature.editor.di
 
 import com.woka.core.data.MediaItem
 import com.woka.feature.editor.core.EditorSession
+import com.woka.feature.editor.core.EditorTool
+import com.woka.feature.editor.core.EditorToolRegistry
 import org.koin.dsl.module
 
 /**
@@ -13,10 +15,9 @@ import org.koin.dsl.module
  * from its manifest, and the registry is built from `getAll<EditorTool>()` — so
  * joining the set is that one line, and leaving it is deleting that one line.
  *
- * Empty until ME-005 defines `EditorTool` and ME-006 builds the registry. It is
- * created now, and composed into `platformModule`, so that the seam exists before
- * anything needs it — a module added later is a module every call site has to be
- * taught about.
+ * No tool is declared yet — the first arrives with the transform tool in ME-105.
+ * The registry below is already wired to collect them, so that ticket adds a line
+ * here and touches nothing else.
  *
  * JVM-only: the editor engines are Skia and ffmpeg, so `appModule` in `commonMain`
  * cannot name this.
@@ -25,4 +26,9 @@ val editorModule = module {
     // `factory`, not `single`: a session is per-open, holds the document being
     // edited, and owns a scope its caller cancels on close (`di.md`).
     factory { (media: MediaItem) -> EditorSession(media) }
+
+    // `getAll` is what makes declaring a tool the only step in joining the set.
+    // `single`, because the registry's per-kind flows are built once and every
+    // consumer must collect the same ones.
+    single { EditorToolRegistry(getAll<EditorTool>(), get()) }
 }

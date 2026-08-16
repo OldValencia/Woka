@@ -3,9 +3,17 @@ package com.woka.core.data
 import androidx.compose.runtime.Stable
 import kotlinx.coroutines.flow.StateFlow
 
+/**
+ * Folders, listing and how things look.
+ *
+ * Split from [PlaybackSettings] when the implementation hit the file-size mandate
+ * for the second time (ME-006). The first split moved the setter *bodies* to
+ * `SettingsMutations`; there was nothing left to move the second time, so the
+ * seam had to be the contract itself. Callers are unaffected — [SettingsRepository]
+ * still extends both, so nothing that holds one has to learn which half it wants.
+ */
 @Stable
-interface SettingsRepository {
-    val settings: StateFlow<WokaSettings>
+interface LibrarySettings {
     fun addLinkedFolder(path: String)
     fun removeLinkedFolder(path: String)
     fun setFolderLayout(path: String, layout: ViewLayout)
@@ -26,9 +34,15 @@ interface SettingsRepository {
     fun setSubtitleBoxOpacity(opacity: Float)
     fun setSubtitleOutline(outline: Boolean)
     fun resetSubtitleAppearance()
-    fun setMediaVolume(volume: Float)
     fun addPinnedSession(session: PinnedSession)
     fun removePinnedSession(path: String)
+}
+
+/** How media plays, which tracks it picks, and what has been watched. */
+@Stable
+interface PlaybackSettings {
+    fun setMediaVolume(volume: Float)
+
     /**
      * Both layers are written on every manual switch, but each gets its own record:
      * the file's is a merge of what was ever chosen there, the folder's carries only
@@ -47,6 +61,7 @@ interface SettingsRepository {
     fun setPlaybackSpeed(speed: Float)
     fun setResumeMode(mode: ResumeMode)
     fun setResumeMinDuration(minutes: Int)
+
     /** The play head; leaves [WatchRecord.finished] alone — see `withWatchPosition`. */
     fun setWatchPosition(filePath: String, positionMs: Long, durationMs: Long)
 
@@ -60,4 +75,12 @@ interface SettingsRepository {
     fun setCarryTracksAcrossFolder(enabled: Boolean)
     fun setSystemMediaControls(enabled: Boolean)
     fun setPipAlwaysOnTop(enabled: Boolean)
+}
+
+@Stable
+interface SettingsRepository : LibrarySettings, PlaybackSettings {
+    val settings: StateFlow<WokaSettings>
+
+    /** Editor tool enablement (§3.4). Writes to `editorDisabledTools`. */
+    fun setEditorToolEnabled(id: String, enabled: Boolean)
 }

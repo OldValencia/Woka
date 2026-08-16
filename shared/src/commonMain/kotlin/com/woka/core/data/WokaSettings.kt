@@ -120,7 +120,14 @@ data class WokaSettings(
     // window that falls behind the app you just clicked is not doing the one job
     // it exists for. Applied only while the window is PiP-sized — over a window
     // that fills the screen it would pin the whole desktop.
-    val pipAlwaysOnTop: Boolean = true
+    val pipAlwaysOnTop: Boolean = true,
+    // Editor tools the user switched **off** (§3.4). A disabled-set rather than an
+    // enabled-set so that a tool shipped in a later release appears for everyone:
+    // an enabled-set written today would not name it, and every existing
+    // `settings.json` would silently hide the new tool until the user found the
+    // switch. The cost is that a removed tool leaves a dead id here, which the
+    // registry ignores.
+    val editorDisabledTools: Set<String> = emptySet()
 )
 
 /**
