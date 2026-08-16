@@ -46,3 +46,37 @@ it. Getting the value representation wrong here is a rewrite of everything above
 - a `FloatValue` read through an `IntParam` returns the default instead of throwing;
 - `with()` does not mutate the receiver;
 - a `ParamSet` holding one of every `ParamValue` round-trips through JSON unchanged.
+
+## Result — 2026-08-16
+
+`./gradlew.bat :shared:build` green. **490 tests, 0 failures, 0 errors** — 484 before, plus the six
+cases in `ParamSetTest`. All five files 21–110 lines.
+
+**The split was planned, not discovered.** Step 3 said to split when `ParamSpec.kt` passes 150 lines;
+at this comment density the two halves are 72 and 110, so one file was never going to fit. The seam
+is the one the step names — scalars in `ParamSpec.kt`, choice/colour/action/object in
+`ParamSpecChoice.kt` — chosen because the halves are read at different times: the scalars while
+writing a tool, the rest while writing a row renderer.
+
+**One decision the ticket left open: `ActionParam`'s type.** §3.4 gives it as
+`ActionParam(key, label, icon)` and it carries no user-set value, but `ParamSpec<T>` requires a
+`default: T`. It is `ParamSpec<Boolean>` meaning *this op exists*, not *the flag is on*; the
+alternative, `ParamSpec<Unit>`, would need a row renderer that special-cases it. Two presses are two
+ops because of the manifest's `Repeating` cardinality, not because of anything in the spec. If ME-005
+finds a tool needing a press **count**, this is the one spec that changes.
+
+Three smaller things settled while writing, each argued in the KDoc rather than here:
+
+- `ChoiceParam` stores the enum constant's `name`, never its ordinal — an ordinal makes reordering an
+  enum a silent rewrite of every saved document. A name that no longer resolves decodes to null and
+  takes the default, which is what retiring an option looks like from an old document's side. There
+  is a test for exactly that.
+- `FloatParam`/`IntParam` clamp to their range on encode *and* decode, so a document written when the
+  range was wider cannot hand a slider a value off its own track. A type mismatch still returns null —
+  clamping is about range, not kind.
+- `TextValue` exists with no scalar spec of its own; it is what `ChoiceParam` and `PreviewChoiceParam`
+  encode to. A `TextParam` arrives when a tool needs free text.
+
+**Added beyond the ticket:** `ParamSet.isSet(spec)`. The schema deliberately collapses *absent* and
+*undecodable* into "read the default", and this is how a caller can still tell that a key was written —
+degrading is not the same as forgetting. It is what the wrong-kind test asserts against.
