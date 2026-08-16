@@ -85,5 +85,8 @@ spelled out — the version still comes from the catalogue. Host detection knows
 on Windows and `x86_64` on macOS, and fails loudly on anything else. `-PjavacppPlatform=macosx-arm64`
 overrides it. `TargetFormat.Deb` is dropped: Woka targets Windows and macOS only.
 
-**Still open:** the by-hand pass — HDR, chapters, subtitles, seek and a long playback session. Not
-run yet; this section is not complete until it is.
+**By hand, 2026-08-16.** Confirmed by the author on Windows 11 against the narrowed build — that is,
+with `windows-x86_64` as the only native set, which is the configuration that ships. HDR, chapters,
+subtitles, seek and a long playback session all behave; no regression from 8.0.1.
+
+Ticket complete.
