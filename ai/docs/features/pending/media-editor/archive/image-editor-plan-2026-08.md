@@ -1,3 +1,10 @@
+> **ARCHIVE — not a source of truth.**
+> Superseded on 2026-08-16 by `../architecture.md` (the design), `../tickets-foundation.md` (the work
+> specified now) and `../tickets-backlog.md` (everything after). Kept because its per-phase detail —
+> tool names, preset lists, shape types, the file breakdown — is a useful sketch when a backlog block
+> is promoted into a ticket. Where it disagrees with `../architecture.md`, it is wrong; see the
+> "What the earlier plan did not account for" section of `../README.md`.
+
 # Plan: Image Editor (Phase 5a)
 
 The first half of the Media Editor (`media-editor-plan.md`). Everything here that is **not** about

@@ -1,3 +1,10 @@
+> **ARCHIVE — not a source of truth.**
+> Written for the earlier clipboard-manager codebase: it talks about `ClipboardRepository`, clipboard
+> item ids and `.media/*-versions/`, none of which exist in Woka. Superseded on 2026-08-16 by
+> `../architecture.md`. Kept **only** for its video decisions — JavaCV/Bytedeco (LGPL) as the engine,
+> stream-copy trim with keyframe-snapped handles, ffmpeg run as a background process — which carry
+> forward into the ME-2xx track.
+
 # Plan: Lightweight Media Editor (Phase 7)
 
 This feature introduces a minimalistic, iOS-style media editor and viewer. The goal is to provide basic, quick editing capabilities directly within the app without needing third-party software.

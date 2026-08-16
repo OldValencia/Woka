@@ -1,7 +1,7 @@
 # Woka — Claude Code Entry Point
 
 Compose Multiplatform **Desktop** (JVM only) media viewer/editor. Apple HIG, minimalist.
-Working mandates — code style, workflow, verification: @./.claude/AGENTS.md
+Working mandates — workflow, verification, the rules that gate a change: @./ai/docs/conventions/mandates.md
 
 ## Hard rules
 
@@ -21,12 +21,20 @@ Read the relevant doc before planning or implementing; never invent behaviour th
 
 - `docs/general_idea.md` — vision, "Linked Folders" paradigm, use cases
 - `docs/roadmap.md` — phases, CLI routing (`Woka.exe [path]`)
-- `docs/features/pending/` — approved but unshipped plans; **work comes from here**
+- `docs/conventions/` — everything about how to work here: `mandates.md` (gates) ·
+  `code-style/README.md` (**router** — open it, then the one file for what you are writing) ·
+  `feature-docs.md` · `plans.md` · `tickets.md`. `.claude/` holds only harness config and
+  three-line skill stubs pointing back here.
+- `docs/features/pending/` — approved but unshipped work; **work comes from here**
 - `docs/features/implemented/` — shipped plans (+ sibling `assets/`)
+- `docs/testing/` — manual pass definitions, dated run results, dated probe results
 - `mockups/design/FINAL_design_mockup.html` — visual truth · `mockups/logos/` — branding
 
-New plan → `pending/<name>.md`, format per `.claude/skills/plan-creation/SKILL.md`. Fully shipped →
-**move** to `implemented/`. Phase state change → update `roadmap.md`.
+Small feature → `pending/<name>.md` per `docs/conventions/plans.md`. Feature outliving one sitting →
+a **folder**: `pending/<feature>/<feature>.md` — the same feature file, named after its folder — plus
+`tickets/` (one file per specified ticket + `backlog.md`, no file lists). See
+`docs/conventions/feature-docs.md` and `docs/conventions/tickets.md`. Fully shipped → **move** to
+`implemented/`. Phase state change → update `roadmap.md`.
 
 ## Layout — package root `com.woka`
 
@@ -65,7 +73,16 @@ com.woka/
           decode/ grabber, decode loop, pacer, presenter, renderScale
           audio/ · subtitle/ · track/ · sync/ (A/V offsets, seek) · probe/ (HDR, chapters)
       pip/    PipManager, GlobalPipWindow, Pip*
-    editor/   reserved for roadmap Phase 5
+    editor/   Phase 5, image + video behind one shell (`ai/docs/features/pending/media-editor/`)
+      core/   media-agnostic: ParamSpec/ParamSet, ToolOp, EditDocument, EditorHistory,
+              EditorSession, ToolManifest, EditorTool/CanvasTool, ToolStage,
+              EditorToolRegistry, EditorEngine + its factory                (commonMain)
+      shell/  the UI every tool inherits: screen, top bar, rail, inspector, param rows,
+              canvas host, shortcuts, EditorTokens
+      tools/  one directory per tool — a manifest, a param schema, a pure stage()
+      engine/ image/ RasterStage, RasterRecipe, RasterFold, surface, renderer  (jvmMain)
+      save/   SaveTarget naming, AtomicWrite, save jobs, cache invalidation   (jvmMain)
+      di/     EditorModule — the single place a tool is declared             (jvmMain)
 desktopApp/   launcher: main(), window, CLI args
 ```
 

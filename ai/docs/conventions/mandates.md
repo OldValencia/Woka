@@ -1,7 +1,12 @@
 # Woka — Working Mandates
 
-Loaded by the `@./.claude/AGENTS.md` import in `CLAUDE.md`, not by its location. `CLAUDE.md` is the
-project map; this file is *how you work*.
+Loaded by the `@./ai/docs/conventions/mandates.md` import in `CLAUDE.md`, not by its location.
+`CLAUDE.md` is the project map; this file is *how you work*.
+
+The mandates below are the rules that **gate** a change — few, strict, checked mechanically. The
+idioms that make new code read like the existing code live in `code-style/`: open its `README.md`,
+which routes you to the one file for what you are about to write. Where a mandate and a rule file
+disagree, this file wins.
 
 ## Mandates (strict)
 
@@ -27,9 +32,9 @@ project map; this file is *how you work*.
 
 ## Workflow
 
-Plan (non-trivial → plan mode, explicit approval; persistent feature → a file in
-`ai/docs/features/pending/` per the `plan-creation` skill) → code only once approved → build **and**
-the anti-FQN check, waiting for both → report what changed and the build outcome → **stop**.
+Plan (non-trivial → plan mode, explicit approval; persistent feature → `ai/docs/features/pending/`
+per `ai/docs/conventions/plans.md`) → code only once approved → build **and** the anti-FQN check,
+waiting for both → report what changed and the build outcome → **stop**.
 Ambiguous request → ask. Never guess, never build a second interpretation "just in case".
 
 ## Anti-FQN self-check — mandatory

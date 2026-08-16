@@ -71,9 +71,16 @@ of that pass; the rare formats are the one part still outstanding.
   GIF/WebP alike, and HDR tone mapping for stills.
 
 ### Phase 5: Media Editor (Editing tools)
-- **UX:** Click `Edit` in the Viewer toolbar.
-- **Features:** Crop, rotate, vector drawing (arrows, shapes, text annotations), and lossless video trimming.
-- **Logic:** Keep an `EditorState` history. On save, overwrite the original file but keep a hidden backup of the initial state.
+Planned in `features/pending/media-editor/` — `media-editor.md` is the feature file, `tickets/` holds
+the fourteen foundation tickets plus `backlog.md` for the image (ME-1xx) and video (ME-2xx) tracks.
+Image editor first (5a), video editor second (5b) on the same shell.
+
+- **UX:** `Edit` in the viewer's control pill and in the grid's context menu.
+- **Features:** Crop, resize, rotate/flip, adjustments, filters, HDR on/off, vector markup (arrows,
+  shapes, text), and lossless video trimming.
+- **Logic:** an immutable `EditDocument` of tool ops, folded into one draw recipe; the same recipe
+  replayed at native resolution on save. **Save a Copy is the default**; overwrite is explicit and
+  confirmed, and there is no hidden backup store.
 
 ### Phase 6: OS Integration
 - Register Woka in Windows Registry to handle `.jpg`, `.png`, `.mp4` file extensions.
