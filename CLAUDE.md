@@ -23,8 +23,9 @@ Read the relevant doc before planning or implementing; never invent behaviour th
 - `docs/roadmap.md` — phases, CLI routing (`Woka.exe [path]`)
 - `docs/conventions/` — everything about how to work here: `mandates.md` (gates) ·
   `code-style/README.md` (**router** — open it, then the one file for what you are writing) ·
-  `feature-docs.md` · `plans.md` · `tickets.md`. `.claude/` holds only harness config and
-  three-line skill stubs pointing back here.
+  `feature-docs.md` · `plans.md` · `tickets.md` · `commits.md` (message style, and the rule that
+  there is no attribution trailer). `.claude/` holds only harness config and three-line skill stubs
+  pointing back here.
 - `docs/features/pending/` — approved but unshipped work; **work comes from here**
 - `docs/features/implemented/` — shipped plans (+ sibling `assets/`)
 - `docs/testing/` — manual pass definitions, dated run results, dated probe results
