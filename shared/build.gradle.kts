@@ -22,13 +22,10 @@ kotlin {
             implementation(libs.koin.core)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.coil.compose)
-            implementation(libs.filekit.compose)
         }
-        val jvmMain by getting {
-            dependencies {
-                implementation(libs.javacv)
-                implementation(libs.ffmpeg.platform)
-            }
+        jvmMain.dependencies {
+            implementation(libs.javacv)
+            implementation(libs.ffmpeg.platform)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -36,15 +33,13 @@ kotlin {
         // `jvmTest` used to inherit from `commonTest` alone, which is enough for
         // pure logic but not for `runTest`, for ViewModels bound to
         // `Dispatchers.Main`, or for Compose UI tests.
-        val jvmTest by getting {
-            dependencies {
-                implementation(libs.kotlin.test)
-                implementation(libs.junit)
-                implementation(libs.kotlinx.coroutinesTest)
-                implementation(libs.kotlinx.coroutinesSwing)
-                implementation(libs.compose.uiTestJUnit4)
-                implementation(compose.desktop.currentOs)
-            }
+        jvmTest.dependencies {
+            implementation(libs.kotlin.test)
+            implementation(libs.junit)
+            implementation(libs.kotlinx.coroutinesTest)
+            implementation(libs.kotlinx.coroutinesSwing)
+            implementation(libs.compose.uiTestJUnit4)
+            implementation(compose.desktop.currentOs)
         }
     }
 }
