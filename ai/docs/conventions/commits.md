@@ -3,6 +3,24 @@
 How a commit is made here. Loaded through the `commit-push` skill; the skill stub under
 `.claude/skills/` exists only because Claude Code discovers skills there.
 
+## Never push. Ever — unless asked in words.
+
+`git push` is **not** part of committing, is never implied by it, and is never the tidy way to finish.
+Valik pushes his own work, when he decides the day is done.
+
+Push only when he says so — "запушь", "push it", "commit and push". Nothing else authorises it, and
+that list has no near-misses:
+
+- "коммить" / "commit this" means commit, and then **stop**;
+- "закоммить всё" is about *scope*, not about pushing;
+- a branch sitting ten commits ahead of `origin` is not a problem to solve. It is the normal state of
+  this repository between his pushes. Do not mention it as though it needed fixing;
+- finishing a ticket, a session, or the last item on a list authorises nothing;
+- being asked to push **once** authorises that one push. It does not stand for the next commit.
+
+If you ever think a push is warranted and were not told to, the correct action is to say the branch is
+ready to push and stop. Ask if genuinely unsure; a push cannot be taken back the way a commit can.
+
 ## When — and only then
 
 **On an explicit instruction, never otherwise.** Invoking this skill is such an instruction. Nothing
@@ -14,8 +32,8 @@ else is:
 - finishing a task, however cleanly, is not permission. Finish, report what a commit would contain,
   stop.
 
-"Commit" means commit. "Push" — or "commit and push" — means both. Told only to commit, do **not**
-push; the user pushes when the user is ready.
+"Commit" means commit, and only commit — see the rule above, which overrides any instinct to finish
+the job by pushing it.
 
 ## What goes in
 
@@ -62,8 +80,8 @@ project; the author is the repository's configured git user, and the history is 
 - Never `--no-verify`. Never `--no-gpg-sign` or `-c commit.gpgsign=false`. A hook that fails is a
   finding to report, not an obstacle to route around.
 - Prefer a new commit over `--amend`.
-- Push is `git push` on the current branch. **Never** `--force` or `--force-with-lease` unless the
-  user asked in those words.
+- When a push **was** asked for: `git push` on the current branch, nothing else. **Never** `--force`
+  or `--force-with-lease` unless the user asked in those words.
 - No upstream on the branch → say so and ask before `git push -u`.
 - This skill covers `add`, `commit`, `push` and read-only `status`/`log`/`diff`. Branch, checkout,
   reset, stash, rm, mv, tag, rebase and merge stay under the `CLAUDE.md` hard rule: not on your own
