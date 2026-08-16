@@ -5,6 +5,40 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
 }
 
+// Which Bytedeco natives to package. `ffmpeg-platform` would pull all seven
+// platforms it knows — 168MB, of which Linux and Android are 97MB this app can
+// neither target nor run on — so the classifier is named instead. jpackage only
+// ever builds for the OS it runs on, which makes the host's set the only one a
+// distribution can use; `-PjavacppPlatform=macosx-arm64` overrides it.
+val javacppPlatform: String = (findProperty("javacppPlatform") as String?) ?: hostPlatform()
+
+/**
+ * `group:name:version:classifier` for a catalogue entry's native jar. The KMP
+ * source-set blocks have no `variantOf`, so the coordinate is spelled out — the
+ * version still comes from the catalogue, never from a literal here.
+ */
+fun nativeOf(library: Provider<MinimalExternalModuleDependency>): String {
+    val dependency = library.get()
+    val module = dependency.module
+    return "${module.group}:${module.name}:${dependency.versionConstraint.requiredVersion}:$javacppPlatform"
+}
+
+fun hostPlatform(): String {
+    val os = System.getProperty("os.name").lowercase()
+    // Bytedeco spells the architectures its own way, and the JVM's names differ
+    // per vendor: amd64 on HotSpot/Windows, x86_64 on macOS.
+    val arch = when (val raw = System.getProperty("os.arch").lowercase()) {
+        "amd64", "x86_64" -> "x86_64"
+        "aarch64", "arm64" -> "arm64"
+        else -> error("unsupported architecture '$raw' — Woka targets x86_64 and arm64")
+    }
+    return when {
+        os.startsWith("windows") -> "windows-$arch"
+        os.startsWith("mac") -> "macosx-$arch"
+        else -> error("unsupported OS '$os' — Woka targets Windows and macOS")
+    }
+}
+
 kotlin {
     jvm()
     
@@ -25,7 +59,8 @@ kotlin {
         }
         jvmMain.dependencies {
             implementation(libs.javacv)
-            implementation(libs.ffmpeg.platform)
+            implementation(nativeOf(libs.javacpp))
+            implementation(nativeOf(libs.ffmpeg))
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

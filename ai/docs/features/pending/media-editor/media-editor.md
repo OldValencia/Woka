@@ -27,7 +27,7 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | Ticket | Title | State |
 |---|---|---|
 | [ME-001](tickets/ME-001-toolchain-refresh.md) | Toolchain and dependency refresh | **done** 2026-08-16 |
-| [ME-013](tickets/ME-013-ffmpeg-8-1-2.md) | JavaCV 1.5.14 / FFmpeg 8.1.2 | not started |
+| [ME-013](tickets/ME-013-ffmpeg-8-1-2.md) | JavaCV 1.5.14 / FFmpeg 8.1.2 | bumped 2026-08-16 — by-hand pass pending |
 | [ME-002](tickets/ME-002-package-skeleton.md) | Editor package skeleton and DI seam | not started |
 | [ME-003](tickets/ME-003-param-schema.md) | Parameter schema | not started |
 | [ME-004](tickets/ME-004-document-history-session.md) | Document, history, session | not started |
@@ -426,8 +426,10 @@ listed because each would have cost a rewrite:
    Koin factory with an owner (ME-004).
 5. **No colour story** — editing a tone-mapped HDR still and saving it destroys the HDR. Now a
    first-class tool with a probe behind it (§6.1) rather than a warning label.
-6. **`ai/docs/testing/` — the artefact the roadmap calls permanent — is not in the repo.** The probes
-   had nowhere to publish. Restored by ME-010.
+6. **The probes had nowhere to publish.** The earlier plan assumed `ai/docs/testing/`, which is gone —
+   read, acted on and deleted deliberately, not lost. Closed by making the ticket the place: a probe's
+   output is dated in the ticket that asked for it, and the decision it settles goes into §9
+   (`conventions/feature-docs.md` §7, ME-010).
 7. **No mockup.** Design values lived in prose, which drifts from the code silently. Closed by ME-012.
 8. **A 2560 px proxy plus 800 % zoom is a blurred canvas** at the precision markup exists for.
    Acknowledged and deferred deliberately (ME-116) rather than discovered.

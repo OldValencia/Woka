@@ -30,7 +30,7 @@ compose.desktop {
         jvmArgs += listOf("-Xmx1536m", "-XX:MaxNewSize=256m")
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi)
             packageName = "com.woka"
             packageVersion = "1.0.0"
         }
