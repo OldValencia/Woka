@@ -44,7 +44,8 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-102](tickets/ME-102-param-row-renderers.md) | Parameter row renderers | **done** 2026-08-18 |
 | [ME-103](tickets/ME-103-image-surface.md) | Image surface | **done** 2026-08-18 |
 | [ME-104](tickets/ME-104-save-pipeline.md) | Save pipeline | **done** 2026-08-18 |
-| [ME-105…ME-130](tickets/backlog.md) | Image editor | backlog |
+| [ME-105](tickets/ME-105-transform-tool.md) | Transform tool | **specified**, not started |
+| [ME-106…ME-130](tickets/backlog.md) | Image editor | backlog |
 | ME-107 | ~~Revert to Original~~ | dropped — no backup store |
 | [ME-201…ME-204](tickets/backlog.md) | Video editor | backlog |
 

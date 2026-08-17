@@ -13,12 +13,6 @@ Order inside a track is dependency order. Between tracks, only the marked depend
 
 ## 100 — Image editor
 
-### ME-105 — Transform tool
-The first real tool and the proof that a tool is data: a manifest, three parameters, four actions and
-one pure matrix function. No inspector code, no overlay. If this needs anything the shell does not
-already give it, the shell is wrong.
-*Depends on ME-102, ME-103.*
-
 ### ME-106 — Entry points
 The Edit button stops being a stub, and the grid's `Edit` entry — **already present since ME-101, sitting
 beside Rename/Copy/Delete with `enabled = false`** — becomes live. Replacing that literal with
