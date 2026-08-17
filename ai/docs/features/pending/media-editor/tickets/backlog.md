@@ -13,13 +13,6 @@ Order inside a track is dependency order. Between tracks, only the marked depend
 
 ## 100 — Image editor
 
-### ME-102 — Param row renderers
-One renderer per `ParamSpec` type, reusing `DetentSlider`, `SegmentedControl`, `IosSwitch`,
-`DropdownItem`. This is the file set that makes every tool's panel identical, and the only place
-`manifest.interaction` decides between `preview` and `commit`. A tool contributing UI code after this
-ticket is a design failure, not a feature.
-*Depends on ME-101.*
-
 ### ME-103 — Image surface
 The ≤ 2560 px proxy, built in the **editor's own scope and never put in `ImageBitmapCache`** (§9,
 2026-08-18): a 100 MP source is 384 MB against a 256 MB budget, so caching it evicts everything and
@@ -91,6 +84,10 @@ which is a fourth fold primitive against §3.2's three.
 Silvertone** (§9) as colour-matrix constants, an intensity that lerps toward identity, and the
 thumbnail strip rendered by the schema's preview-choice row — one texture, one filter per thumbnail,
 no extra decode.
+
+**Also carries the `PreviewChoiceParam` renderer itself**, deferred here from ME-102: it draws each
+option through that option's own `stage()`, so it needs filters to preview and cannot be tested without
+them.
 *Depends on ME-111.*
 
 ### ME-113 — Markup engine
@@ -230,6 +227,43 @@ a `WokaSettings` entry, a row in Settings → Editor, and the save pipeline read
 constant. Parked deliberately — one more field and one more row against a §5 that is already dense,
 for a number most users never touch.
 *Depends on ME-115.*
+
+### ME-128 — Concurrent editor sessions, and the dock list that reaches them
+Requested 2026-08-18. Three things that belong together:
+
+- **The dock hides while an editor is open**, the way it already hides for the viewer
+  (`FolderScreen` sets `dockAccessories.isVisible = viewerMediaId == null`).
+- **The `Editor` dock item lists the open, unsaved editors** on hover — the same popup-on-hover shape
+  `Library` already uses for `pinnedSessions`, and driven the same way. Picking one **returns to it with
+  its document and history intact**, which is the whole point: an edit in progress is not lost by
+  opening something else.
+- **A badge dot when that list is non-empty**, using `DockItem`'s existing `hasBadge`. Explicitly *only*
+  the dot — the item is **not** tinted the way `Library` tints itself when active. One is "you are here",
+  the other is "something is waiting".
+
+**The architectural consequence, which is the reason this is not a small ticket.** ME-004 made
+`EditorSession` a Koin `factory` whose constructing composable **owns it and must `close()` it**. More
+than one live session means a composable can no longer be that owner: something above the screen has to
+hold them, key them by path plus frame index, and decide when a session is finally disposed — closing
+the editor is no longer the same event as ending the session. That store is what this ticket really
+adds; the dock list is its UI. **ME-106 must not create-and-dispose per open** once this lands, so
+whichever ships second adjusts the other.
+
+`EditorScreen` needs no change: ME-101 already takes the session as a parameter rather than resolving it.
+
+Also settled while looking: **`Icons.Static.Editor` already exists** (`square_and_pencil`) and is the
+right glyph. `FloatingDock` currently draws the Editor item with `Icons.Static.Settings` under a stale
+`// Replace with Editor icon if available` comment, so it is the same icon as the Settings button beside
+it. One-line fix, folded in here.
+*Depends on ME-106.*
+
+### ME-129 — Rename `IosSwitch`
+The components are Woka's own, inspired by that design language rather than branded with it
+(2026-08-18). `IosSwitch` is the only file carrying a vendor name; the type added in ME-102 is
+`SwitchColors` with no prefix, so this is the composable and its call sites in Settings and elsewhere.
+Deliberately not folded into ME-102 — a rename touching every call site is not the same change as
+making one control readable on a scrim.
+*Depends on nothing.*
 
 ---
 

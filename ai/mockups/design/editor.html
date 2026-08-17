@@ -48,14 +48,19 @@
     --popover-w:     210px;
 
     /* --- accentEditor: the one colour that ignores the theme --- */
-    --editor:        #BF5AF2;
-    /* The same hue taken down far enough to carry white text or a white glyph.
-       #BF5AF2 gives white 3.5 : 1 and #E5484D gives 2.9 : 1 — both under 4.5, and
-       in the light theme a white tick on #BF5AF2 sitting on a white sheet simply
-       disappears. accentEditor stays the *content* colour: the selected tool's
-       glyph, the slider fill, the markup outline. These two are grounds. */
-    --editor-solid:  #8B2FC9;
+    /* Golden, and the same value as the enabled eye toggle and the active Library
+       dock item (2026-08-18). As a *glyph* on the inspector scrim it measures
+       6.15 : 1 against the old purple's 3.59 — brighter is simply better here. */
+    --editor:        #FF9F0A;
+    /* But it cannot carry white: white on #FF9F0A is 2.06 : 1. Near-black is
+       8.28 : 1, so every filled accent control takes a dark label. That is why
+       there is no darkened "solid" variant of the accent — a light ground with a
+       dark label needs no help. Red still does: white on #E5484D is 2.9 : 1. */
+    --on-editor:     #1C1C1E;
     --danger-solid:  #C0272C;
+    /* Switches stay green in the editor, as in Settings: a control meaning "on"
+       must not change colour by screen. */
+    --switch-on:     #34C759;
 
     /* --- EditorTokens.Motion --- */
     --quick:  150ms;
@@ -172,8 +177,8 @@ body {
     height: 34px; padding: 0 18px; border-radius: 17px;
     display: inline-flex; align-items: center; gap: 8px;
     font-size: 13.5px; font-weight: 700; cursor: pointer;
-    background: var(--editor-solid); color: #fff;
-    box-shadow: 0 4px 14px rgba(139,47,201,0.45);
+    background: var(--editor); color: var(--on-editor);
+    box-shadow: 0 4px 14px rgba(255,159,10,0.40);
     transition: filter var(--quick) var(--ease);
 }
 .tb-done:hover { filter: brightness(1.08); }
@@ -245,7 +250,8 @@ body {
 /* FloatParam — DetentSlider */
 .slider { position: relative; height: 22px; display: flex; align-items: center; }
 .slider .track { height: 3px; width: 100%; border-radius: 2px; background: var(--on-scrim-hov); }
-.slider .done { position: absolute; height: 3px; border-radius: 2px; background: var(--editor); }
+/* White, matching the zoom slider — the accent is for selection, not for level. */
+.slider .done { position: absolute; height: 3px; border-radius: 2px; background: var(--on-scrim); }
 .slider .detent { position: absolute; width: 1px; height: 9px; background: var(--on-scrim-bd); }
 .slider .knob {
     position: absolute; width: 15px; height: 15px; border-radius: 50%; background: #fff;
@@ -258,9 +264,14 @@ body {
 .stepper span { width: 28px; height: 26px; display: grid; place-items: center;
                 font-size: 14px; color: var(--on-scrim); cursor: pointer; }
 .stepper span:hover { background: var(--on-scrim-hov); }
+/* `center`, not `baseline`: baseline aligns the two spans to each other and then
+   leaves the whole line sitting at the top of a 26px box, which is the same
+   "height without vertical centring" mistake as `.btn` and `.ios`. The 1.5px the
+   unit gains from being centred rather than baselined is invisible; the 7px it
+   was riding up was not. */
 .stepper em {
-    min-width: 66px; height: 26px; display: inline-flex; align-items: baseline;
-    justify-content: center; gap: 2px; font-style: normal;
+    min-width: 66px; height: 26px; display: inline-flex; align-items: center;
+    justify-content: center; gap: 2px; font-style: normal; line-height: 1;
     font-family: ui-monospace, Consolas, monospace; font-size: 12px; color: var(--on-scrim);
     border-inline: 1px solid var(--on-scrim-bd); font-variant-numeric: tabular-nums;
 }
@@ -279,7 +290,7 @@ body {
 .ios::after { content: ""; position: absolute; top: 2px; left: 2px; width: 21px; height: 21px;
               border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.4);
               transition: transform var(--quick) var(--ease); }
-.ios.on { background: var(--editor); }
+.ios.on { background: var(--switch-on); }
 .ios.on::after { transform: translateX(17px); }
 
 /* ChoiceParam — SegmentedControl */
@@ -405,7 +416,7 @@ body {
     border: 1.5px solid var(--text-3); display: grid; place-items: center;
     font-size: 12px; font-weight: 700; line-height: 1; color: var(--on-accent);
 }
-.sheet .box.on { background: var(--editor-solid); border-color: var(--editor-solid); }
+.sheet .box.on { background: var(--editor); border-color: var(--editor); color: var(--on-editor); }
 /* `:not(.box)` matters: the box is a span inside .askagain too, so a bare
    descendant selector here outranks `.sheet .box` (0,2,1 against 0,2,0) and comes
    later — it was repainting the checkmark in the *label's* colour, which on a
@@ -427,8 +438,9 @@ body {
    `--editor` and `--danger` are *content* colours: as a button ground they give
    white 3.5 : 1 and 2.9 : 1, both under WCAG's 4.5. These are the same hues taken
    down until the label passes. */
-.btn.primary, .btn.destroy { border-color: transparent; color: var(--on-danger); font-weight: 700; }
-.btn.primary { background: var(--editor-solid); }
+.btn.primary, .btn.destroy { border-color: transparent; font-weight: 700; }
+.btn.primary { background: var(--editor); color: var(--on-editor); }
+.btn.destroy { color: var(--on-danger); }
 .btn.destroy { background: var(--danger-solid); }
 /* Derived, not two more literals. */
 .btn.primary:hover, .btn.destroy:hover { filter: brightness(1.14); }
@@ -474,10 +486,19 @@ body {
 <div class="legend">
     <h1>Woka Editor — visual spec</h1>
     <p>
-        The spec for ME-101…ME-119, not a proposal: once this file lands the UI tickets implement it,
+        The spec for ME-101…ME-129, not a proposal: once this file lands the UI tickets implement it,
         and a disagreement is settled by changing this file first. Values mirror
         <code>feature/editor/shell/EditorTokens.kt</code>; colours come from <code>Theme.colors</code>
         and <code>ViewerChrome</code> and are never re-declared here.
+    </p>
+    <p>
+        <b>The palette.</b> Accent is <b>#FF9F0A</b> — the same golden as the enabled eye toggle and the
+        active <code>Library</code> dock item, and it replaces the earlier purple everywhere. Wherever it
+        is a <i>ground</i> it carries a <b>dark</b> label: white on it measures 2.06&nbsp;:&nbsp;1 and
+        near-black 8.28&nbsp;:&nbsp;1. As a <i>glyph</i> on the inspector scrim it measures
+        6.15&nbsp;:&nbsp;1, better than the purple's 3.59. <b>Sliders are white</b>, matching the zoom
+        slider, because the accent marks selection rather than level; <b>switches are green</b>, as in
+        Settings, because a control meaning "on" must not change colour by screen.
     </p>
     <p>
         <b>On the theme.</b> The editor follows it, like the rest of the app. What does <i>not</i>

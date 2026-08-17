@@ -41,7 +41,8 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-012](tickets/ME-012-mockup-tokens.md) | Editor mockup and tokens | **done** 2026-08-18 |
 | [ME-014](tickets/ME-014-remove-material3.md) | Remove `material3` — before ME-101 | **done** 2026-08-18 |
 | [ME-101](tickets/ME-101-editor-shell.md) | Editor shell | **specified**, not started |
-| [ME-102…ME-127](tickets/backlog.md) | Image editor | backlog |
+| [ME-102](tickets/ME-102-param-row-renderers.md) | Parameter row renderers | **specified**, not started |
+| [ME-103…ME-129](tickets/backlog.md) | Image editor | backlog |
 | ME-107 | ~~Revert to Original~~ | dropped — no backup store |
 | [ME-201…ME-204](tickets/backlog.md) | Video editor | backlog |
 
@@ -505,6 +506,8 @@ sheet instead of a dead Edit button.
 | 2026-08-17 | Can the bundled ffmpeg write HDR stills? | **AVIF yes (PQ), HEIF no, HLG never written** | `libx265` cannot open a HEIF output; the HLG request produces a byte-identical PQ file, so the flag is ignored |
 | 2026-08-17 | Does `To HDR` ship? | **Still gated**, and the evidence so far is void | Every HDR measurement was taken against `hdr_pq.avif`, which turned out to be SDR pixels wearing HDR tags (`psnr` between the PQ and HLG fixtures is **inf** — `setparams` only tags). Re-run against a genuine source |
 | 2026-08-18 | Why did the viewer burn out HDR stills while the grid did not? | **`HdrShader` ran the BT.2020→709 matrix before the tone curve** — fixed by swapping the order (ME-010) | `hable` is defined on non-negative light; every out-of-709 colour reaches it negative, its denominator flips sign, and it returns >1. Red drew yellow, blue drew magenta, the rest white. The HLG fixture looked right only because its lower absolute level kept four of six negatives small enough to clamp to zero — magnitude, not branch |
+| 2026-08-18 | Control palette in the inspector | Sliders **white** (as the zoom slider); switches **green**, as everywhere else in Settings; buttons, checkboxes and the markup shape colour on the editor accent | A switch that means "on" must not change colour by screen. Components are Woka's own and carry no vendor name in their type names |
+| 2026-08-18 | More than one editor open at once? | **Yes** — the dock lists open unsaved sessions and returning to one keeps its document and history (ME-128) | An edit in progress is not lost by opening something else. Consequence: a composable can no longer own the session, so ME-106 must resolve from a store rather than construct per open |
 | 2026-08-18 | Where does the editor mount when opened from the **grid**? | Its own overlay in `FolderScreen`, beside `viewerMediaId` | The viewer is not a `Screen` either — it is an overlay too. Cancel then returns where the user actually was: the grid from the grid, the viewer with its exact zoom/pan from the viewer |
 | 2026-08-18 | Canvas zoom in v1? | **No — `Fit` only.** Zoom arrives with ME-116 | §4.3 asked for both "`Fit` at all times" and "wheel zooms 100–800 %". Above 100 % the canvas draws a 2560 px proxy, so zoom without ME-116's native-region draw ships a feature that looks broken on arrival |
 | 2026-08-18 | Does the native bitmap stay in `ImageBitmapCache` during an edit? | **No.** The canvas draws an editor-scoped ≤2560 px proxy; native is decoded once, at save, and released | §4.1 wanted it from the cache, §10 wanted it out. 384 MB against a 256 MB budget settles it — and the guard rail §10 asked for falls out for free. Cost is 6–8 ms of proxy build per open |
