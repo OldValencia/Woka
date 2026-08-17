@@ -40,7 +40,8 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-011](tickets/ME-011-test-harness.md) | Test harness and the fixture tool | **done** 2026-08-18 |
 | [ME-012](tickets/ME-012-mockup-tokens.md) | Editor mockup and tokens | **done** 2026-08-18 |
 | [ME-014](tickets/ME-014-remove-material3.md) | Remove `material3` — before ME-101 | **done** 2026-08-18 |
-| [ME-101…ME-121](tickets/backlog.md) | Image editor | backlog |
+| [ME-101](tickets/ME-101-editor-shell.md) | Editor shell | **specified**, not started |
+| [ME-102…ME-127](tickets/backlog.md) | Image editor | backlog |
 | ME-107 | ~~Revert to Original~~ | dropped — no backup store |
 | [ME-201…ME-204](tickets/backlog.md) | Video editor | backlog |
 
@@ -295,7 +296,9 @@ in the shell instead of once per tool. The selected tool and the `Done` pill use
 
 ### 4.3 Canvas interaction
 
-The canvas is `Fit` at all times; the size control is gone in edit mode.
+The canvas is `Fit` at all times in v1 and the size control is gone in edit mode. **Zoom arrives with
+ME-116**, not before: above 100 % the canvas draws the ≤2560 px proxy, so wheel zoom without the
+native-region draw would ship blurred (§9, 2026-08-18).
 
 - **Primary drag** goes to the active `CanvasTool`'s `Overlay` first. If it does not consume, nothing
   happens (no accidental pan).
@@ -436,7 +439,7 @@ tone-mapped file actually looks like before deciding what the tool should write.
 
 Formats Skia cannot encode, and multi-frame files, are converted **after the user agrees** — the Edit
 button is never dead. A sheet states the target name, that the source file stays exactly where it is,
-and (for a frame set) which single frame survives. Photographic sources default to JPEG q95, graphics
+and (for a frame set) which single frame survives. Photographic sources default to JPEG **q95** — the one quality, settled in §9 — graphics
 and anything with alpha or multiple frames to PNG; an HDR source offers an HDR-capable target (§6.1)
 when the probe says the encoder can write one.
 
@@ -502,6 +505,18 @@ sheet instead of a dead Edit button.
 | 2026-08-17 | Can the bundled ffmpeg write HDR stills? | **AVIF yes (PQ), HEIF no, HLG never written** | `libx265` cannot open a HEIF output; the HLG request produces a byte-identical PQ file, so the flag is ignored |
 | 2026-08-17 | Does `To HDR` ship? | **Still gated**, and the evidence so far is void | Every HDR measurement was taken against `hdr_pq.avif`, which turned out to be SDR pixels wearing HDR tags (`psnr` between the PQ and HLG fixtures is **inf** — `setparams` only tags). Re-run against a genuine source |
 | 2026-08-18 | Why did the viewer burn out HDR stills while the grid did not? | **`HdrShader` ran the BT.2020→709 matrix before the tone curve** — fixed by swapping the order (ME-010) | `hable` is defined on non-negative light; every out-of-709 colour reaches it negative, its denominator flips sign, and it returns >1. Red drew yellow, blue drew magenta, the rest white. The HLG fixture looked right only because its lower absolute level kept four of six negatives small enough to clamp to zero — magnitude, not branch |
+| 2026-08-18 | Where does the editor mount when opened from the **grid**? | Its own overlay in `FolderScreen`, beside `viewerMediaId` | The viewer is not a `Screen` either — it is an overlay too. Cancel then returns where the user actually was: the grid from the grid, the viewer with its exact zoom/pan from the viewer |
+| 2026-08-18 | Canvas zoom in v1? | **No — `Fit` only.** Zoom arrives with ME-116 | §4.3 asked for both "`Fit` at all times" and "wheel zooms 100–800 %". Above 100 % the canvas draws a 2560 px proxy, so zoom without ME-116's native-region draw ships a feature that looks broken on arrival |
+| 2026-08-18 | Does the native bitmap stay in `ImageBitmapCache` during an edit? | **No.** The canvas draws an editor-scoped ≤2560 px proxy; native is decoded once, at save, and released | §4.1 wanted it from the cache, §10 wanted it out. 384 MB against a 256 MB budget settles it — and the guard rail §10 asked for falls out for free. Cost is 6–8 ms of proxy build per open |
+| 2026-08-18 | HDR tool scope in v1? | `Keep` + `To SDR`, and **not before ME-120** | `To SDR` bakes the tone curve into pixels, and that curve is currently wrong for real content (SDR white at 148/255). Baking it would put the defect in the file permanently. `To HDR` is deferred, not blocked |
+| 2026-08-18 | Markup scope in v1? | All five shapes, **three** tickets — ME-113, ME-114, ME-122 | Text is the only shape with focus, a caret and IME. Splitting it keeps each ticket to one sitting instead of cutting a feature |
+| 2026-08-18 | Which six adjustments? | Exposure, Brightness, Contrast, Saturation, Warmth, Tint | All six compose into **one** `ColorMatrix`, which is what §3.2 promises. Highlights/Shadows need a per-luminance curve — a fourth fold primitive, and §3.2 says three |
+| 2026-08-18 | Which filter presets? | Original, Vivid, Dramatic, Warm, Cool, Mono, Noir, Silvertone | Eight, iOS Photos naming, every one expressible as a colour matrix |
+| 2026-08-18 | Which crop aspects? | Free, Original, 1:1, 4:3, 3:2, 16:9, plus an `ActionParam` flipping the ratio | Six exceeds `SegmentedControl`'s four, so a chip row (§3.4). The flip replaces doubling the list with portrait variants |
+| 2026-08-18 | Which resize presets? | 100/75/50/25 % **and** a long-edge chip row — 4K, 2560, 1920, 1280 | Percentages for "a bit smaller", long edge for the target the web actually asks for |
+| 2026-08-18 | JPEG quality on save? | **q95** everywhere | §7 said q95 and ME-104's block said q90. Editing is a second compression over a first, and q90 stacks visible artefacts. Configurable quality is ME-127, not MVP |
+| 2026-08-18 | Do §10's four open gaps become tickets? | **All four** — ME-123 large sources, ME-124 editor + PiP, ME-125 save cancellation, ME-126 frame sets | Each was measured or found, not guessed; none is a "later maybe" |
+| 2026-08-18 | HDR view mode in MVP? | **No** — stays a backlog block | It writes no pixels, and its whole purpose — previewing what `To SDR` will bake — depends on the curve being right, i.e. on ME-120 |
 | 2026-08-18 | Does the editor follow the app theme? | **Yes** — like the rest of the app. Only the on-media layer is fixed | Measured while drawing the mockup: chrome over media took its background from a `ViewerChrome` scrim and its text from `Theme.colors.textPrimary`, which in the light theme is `#1C1C1E` — **1.05 : 1** over a dark photograph, 6.68 : 1 over a bright one. Legibility decided by the picture is not a theme |
 | 2026-08-18 | Where do the on-media foreground colours live? | `ViewerChrome`, beside the scrims it already owns (`onScrim`, `onScrimSecondary`, `onScrimDisabled`, `onScrimBorder`, `onScrimHover`, `onScrimSelected`) | The pair had only one half, which is why ~27 viewer files reach for `Theme.colors` instead. Putting the other half in `EditorTokens` would have been a second source of truth. The editor reads them from its first commit; the viewer migrates in **ME-121** |
 | 2026-08-18 | Is HDR *display* now correct? | **No — one defect left, and it is the viewer's, not the editor's** | The tone curve's white point is the literal `W = 11.2`, asserting 1120-nit content. A real 174-nit HDR frame therefore draws SDR white at 148/255 instead of 255. Needs a genuine HDR still to tune against, so it is **ME-120** in the backlog rather than a hold on ME-010 |

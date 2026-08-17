@@ -13,13 +13,6 @@ Order inside a track is dependency order. Between tracks, only the marked depend
 
 ## 100 — Image editor
 
-### ME-101 — Editor shell
-The screen itself: top bar accessory (Cancel · name · Edited dot · Undo/Redo · Done), the canvas host
-that measures itself and builds the canvas↔source matrices, the animated inspector container, and the
-tool rail with its domain groups and dividers. Built against `FixtureTool` (ME-011) so it is provable
-before a real tool exists. Owns `activeToolId` and nothing else.
-*Depends on ME-008, ME-011, ME-012.*
-
 ### ME-102 — Param row renderers
 One renderer per `ParamSpec` type, reusing `DetentSlider`, `SegmentedControl`, `IosSwitch`,
 `DropdownItem`. This is the file set that makes every tool's panel identical, and the only place
@@ -28,13 +21,15 @@ ticket is a design failure, not a feature.
 *Depends on ME-101.*
 
 ### ME-103 — Image surface
-Native bitmap and ≤ 2560 px proxy out of `ImageBitmapCache`; the live canvas drawing the proxy through
-the folded recipe — matrix, colour filter, paints — with no bitmap allocation per frame. Native size
-comes from the decoder, never from the bitmap.
+The ≤ 2560 px proxy, built in the **editor's own scope and never put in `ImageBitmapCache`** (§9,
+2026-08-18): a 100 MP source is 384 MB against a 256 MB budget, so caching it evicts everything and
+still does not fit. Native is decoded once, at save, by ME-104 — not held here. The live canvas draws
+the proxy through the folded recipe — matrix, colour filter, paints — with no bitmap allocation per
+frame. Native size comes from the decoder, never from a bitmap.
 *Depends on ME-101.*
 
 ### ME-104 — Save pipeline
-Replay the recipe onto a Skia surface at native scale, encode (PNG / JPEG q90 / WebP q90), splice EXIF
+Replay the recipe onto a Skia surface at native scale, encode (PNG / JPEG **q95** / WebP q90), splice EXIF
 per the ME-010 decision, and write through ME-009's atomic write. `Done` saves a **copy** with the
 generated name; `Overwrite` is a separate menu entry behind a confirmation that says no copy is kept
 and carries the session-scoped "don't ask again" option (`OverwriteConsent`), and is the only path
@@ -70,37 +65,44 @@ The source file is kept exactly where it is; the converted file is a new item be
 *Depends on ME-106.*
 
 ### ME-109 — Crop tool
-`Geometry`, `Single`, `Canvas`. A rect in source coordinates plus aspect presets from the schema; an
+`Geometry`, `Single`, `Canvas`. A rect in source coordinates plus the aspect presets settled in §9 —
+Free, Original, 1:1, 4:3, 3:2, 16:9 as a chip row (six exceeds `SegmentedControl`), and an
+`ActionParam` that flips the ratio rather than doubling the list with portrait variants; an
 overlay with dimming, thirds grid, eight handles, hover cursors and a minimum size. Drags preview,
 pointer-up commits. The aspect and hit-test math is a separate pure file, unit-tested.
 *Depends on ME-105.*
 
 ### ME-110 — Resize tool
-`Output`, `Single`, `Continuous`, pure data: width, height, aspect lock, percentage presets, and a
+`Output`, `Single`, `Continuous`, pure data: two `IntParam` (width, height), a `BoolParam` aspect lock,
+**100/75/50/25 % as a `SegmentedControl` and a long-edge chip row — 4K, 2560, 1920, 1280** (§9), and a
 footnote row showing source → target dimensions. The footnote is a shell addition every later tool
 inherits.
 *Depends on ME-105.*
 
 ### ME-111 — Adjustments tool
-`Color`, `Single`, `Continuous`, pure data: six sliders composing into one colour matrix, neutral at
-all-zero, plus an auto action. No Compose code in the tool at all.
+`Color`, `Single`, `Continuous`, pure data: **Exposure, Brightness, Contrast, Saturation, Warmth,
+Tint** (§9) composing into **one** `ColorMatrix`, neutral at all-zero, plus an auto action. No Compose
+code in the tool at all. Highlights/Shadows are deliberately absent: they need a per-luminance curve,
+which is a fourth fold primitive against §3.2's three.
 *Depends on ME-105.*
 
 ### ME-112 — Filter presets
-`Color`, `Single`, `Continuous`, pure data: a handful of colour-matrix constants, an intensity that
-lerps toward identity, and the thumbnail strip rendered by the schema's preview-choice row — one
-texture, one filter per thumbnail, no extra decode.
+`Color`, `Single`, `Continuous`, pure data: **Original, Vivid, Dramatic, Warm, Cool, Mono, Noir,
+Silvertone** (§9) as colour-matrix constants, an intensity that lerps toward identity, and the
+thumbnail strip rendered by the schema's preview-choice row — one texture, one filter per thumbnail,
+no extra decode.
 *Depends on ME-111.*
 
 ### ME-113 — Markup engine
-`Annotate`, `Repeating`, `Canvas`. The shape hierarchy in source coordinates, one draw routine shared
-by the overlay, the recipe and the save path — which is what makes native-resolution rasterisation
-automatic — and hit-testing with handle positions. Style parameters come from the schema.
+`Annotate`, `Repeating`, `Canvas`. The shape hierarchy in source coordinates for **arrow, rectangle,
+ellipse and freehand** — text is ME-122 — one draw routine shared by the overlay, the recipe and the
+save path, which is what makes native-resolution rasterisation automatic, and hit-testing with handle
+positions. Style parameters come from the schema.
 *Depends on ME-105.*
 
 ### ME-114 — Markup interaction
-The overlay: draw, select, move, resize, bend an arrow, inline text editing committed on blur or Enter
-and discarded when empty, Delete removes. Selection state lives outside the history — selecting is not
+The overlay for the four geometric shapes: draw, select, move, resize, bend an arrow, Delete removes.
+Text and its inline editing are ME-122. Selection state lives outside the history — selecting is not
 an edit.
 *Depends on ME-113.*
 
@@ -111,8 +113,11 @@ ops are reported as skipped rather than dropped.
 *Depends on ME-106.*
 
 ### ME-116 — Zoomed canvas fidelity
-Above 100 % the proxy is not enough for markup precision: the canvas draws the native bitmap for the
-visible region while zoomed, and drops back to the proxy when it is not.
+**Introduces canvas zoom, which v1 deliberately ships without** (§9, 2026-08-18): wheel 100–800 % about
+the cursor reusing `ScaleMath`, middle-drag or Space+drag panning clamped by `PanBounds`, reset on tool
+change — *and* the reason it waited, which is that above 100 % the proxy is not enough for markup
+precision, so the canvas draws the native bitmap for the visible region while zoomed and drops back to
+the proxy when it is not. Shipping the gesture without the native draw would look broken.
 *Depends on ME-114.*
 
 ### ME-117 — Housekeeping
@@ -122,12 +127,16 @@ that already holds a dozen of them.
 *Depends on ME-108, ME-115.*
 
 ### ME-118 — HDR tool
-`Output` domain, `Single`, one `ChoiceParam`: `Keep` / `To SDR` / `To HDR` (§6.1 of the feature doc). `To SDR` bakes the
-existing tone map into the pixels and writes an SDR file — that part is implementable the day the
-save pipeline exists. `Keep` and `To HDR` need an HDR encode path through ffmpeg, and ship only if
-ME-010's HDR probe says the bundled build writes a PQ/HLG file that reads back correctly. `To HDR` is
-labelled an expansion in the UI; it does not pretend to recover clipped highlights.
-*Depends on ME-013, ME-104, and the ME-010 HDR probe.*
+`Output` domain, `Single`, one `ChoiceParam` — **`Keep` and `To SDR` only in v1** (§9, 2026-08-18).
+`To SDR` bakes the existing tone map into the pixels and writes an SDR file; `Keep` carries the
+source's transfer through, which needs the ffmpeg encode path since Skia cannot write PQ. **`To HDR` is
+deferred** — no measurement blocks it (PQ AVIF via libaom writes correctly, ME-010) but it is inverse
+tone mapping and does not recover clipped highlights, so it is not MVP.
+
+**Blocked on ME-120, not just on ME-104.** `To SDR` bakes the tone curve into pixels permanently, and
+that curve is currently normalised by the literal `W = 11.2` — on real HDR content SDR white lands at
+148/255. Shipping `To SDR` first would write the defect into the user's files.
+*Depends on ME-013, ME-104, ME-120.*
 
 ### ME-119 — HDR view mode
 A tri-state — `Auto` / `Force HDR` / `Force SDR` — that changes how a still is *displayed* and no
@@ -170,6 +179,57 @@ The change is mechanical but wide, and it is a *visible* change to a surface tha
 wants the author's eyes rather than a green build: the files to convert are the intersection of "reads
 `Theme.viewer`" and "reads `Theme.colors`". Deliberately kept out of ME-012, whose job was the editor.
 *Depends on nothing. Blocks nothing — the editor is already correct.*
+
+### ME-122 — Markup text
+The fifth markup shape, split from ME-113/114 because it is the only one with focus, a caret and an
+IME (§9, 2026-08-18). A text shape in source coordinates carrying its string, size and colour; inline
+editing on the canvas committed on blur or Enter and **discarded when empty**, so an accidental
+double-click leaves no invisible empty shape in the document. Rasterised at source resolution by the
+same draw routine as every other shape.
+*Depends on ME-114.*
+
+### ME-123 — Keep a huge source out of the shared cache
+The guard rail §10 measured and did not build. A 100 MP source is **384 MB** of native pixels against a
+**256 MB** `ImageBitmapCache` budget, so one such picture evicts everything else and still does not fit.
+
+Most of this falls out of ME-103's decision to build the proxy in the editor's own scope and decode
+native only at save (§9) — what is left is the part that decision does not cover: the **viewer**
+route already put the native bitmap in the cache before the editor opened, and ME-104's save decode
+must not put a second one there. So: a decode path that returns a bitmap without caching it, and a
+measured assertion that editing a 100 MP file leaves the cache no larger than it started.
+*Depends on ME-104.*
+
+### ME-124 — Editor and picture-in-picture
+Undefined today, and the reason it matters is concrete: `GlobalShortcutState.onPreviewKey` is a
+**single mutable slot**, so whoever registers last wins the keyboard. With a PiP window open and the
+editor mounted, that is decided by composition order rather than by intent.
+
+Decide and enforce one rule — most likely "the editor takes the keyboard and PiP keeps playing without
+shortcuts", the alternative being to refuse opening the editor while PiP is up — and make the handler
+hand-off explicit rather than incidental. ME-106 saves and restores the viewer's handler; this ticket
+is what happens when there are three claimants, not two.
+*Depends on ME-106.*
+
+### ME-125 — Save cancellation and job lifetime
+What happens to an in-flight save when the app closes. No file is ever half-written — the atomic move
+is the last step — so this is about the **job and the banner**, not corruption: which scope the save
+runs in, whether closing the window waits for it, and what the banner says if the process goes away
+mid-write. Today the answer is "whatever the coroutine scope happens to do", which is not an answer.
+*Depends on ME-104.*
+
+### ME-126 — Frame sets after an edit
+Editing frame N of a burst produces a **new single-frame file** beside the container (ME-108's
+conversion). What the carousel then shows is unstated: the container it came from, the new file, both,
+and where the selection lands. A small ticket, but the kind that reads as a bug when it is left to
+fall out of the listing order.
+*Depends on ME-108.*
+
+### ME-127 — Configurable output quality
+JPEG quality is fixed at **q95** in MVP (§9, 2026-08-18). This is the field that makes it adjustable:
+a `WokaSettings` entry, a row in Settings → Editor, and the save pipeline reading it instead of the
+constant. Parked deliberately — one more field and one more row against a §5 that is already dense,
+for a number most users never touch.
+*Depends on ME-115.*
 
 ---
 
