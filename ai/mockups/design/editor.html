@@ -705,27 +705,38 @@ body {
 <div class="state-label">4 · The disabled-tool notice</div>
 <div class="note">
     A document may hold operations whose tool was switched off in Settings. They are neither applied nor
-    lost, and the notice is the only place that says so — <code>RasterRecipe.skipped</code> is what
-    feeds it.
+    lost, and the notice is the only place that says so.
+    <p style="margin-top:8px">
+    <b>It stands on its own, above the inspector — not inside it.</b> Drawn inside the card it is
+    invisible whenever no tool is open, which is exactly the state a user is in after switching a tool
+    off in Settings and coming back. It sat inside the card in the first version of this file and the
+    shell test caught it (ME-101, 2026-08-18); §3.4 promises a document never silently loses work, and a
+    warning reachable only by opening something unrelated does not keep that promise.
+    </p>
 </div>
 <div class="frame">
-    <div class="row-demo">
+    <div class="row-demo" style="flex-direction:column;align-items:center;gap:12px">
+        <div class="notice" style="width:420px;margin-top:0">
+            <b>!</b>
+            <div>
+                <b>2 operations were not applied</b>
+                <p>
+                    Markup and Resize are switched off in Settings. Their edits are kept and will
+                    apply again once the tools are back. <a>Open Settings</a>
+                </p>
+            </div>
+        </div>
         <div class="inspector">
             <div class="insp-head"><b>Resize</b><span class="reset">Reset</span></div>
             <div class="row"><label>Width</label>
                 <div class="fill"><span class="stepper"><span>−</span><em>2560<i>px</i></em><span>+</span></span></div>
                 <div class="readout"></div>
             </div>
-            <div class="notice">
-                <b>!</b>
-                <div>
-                    <b>2 operations were not applied</b>
-                    <p>
-                        Markup and Resize are switched off in Settings. Their edits are kept and will
-                        apply again once the tools are back. <a>Open Settings</a>
-                    </p>
-                </div>
-            </div>
+        </div>
+        <div class="rail">
+            <div class="tool" title="Transform">⤢</div>
+            <div class="sep"></div>
+            <div class="tool sel" title="Resize">⇲</div>
         </div>
     </div>
 </div>

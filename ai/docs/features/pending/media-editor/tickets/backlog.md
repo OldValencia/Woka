@@ -37,9 +37,11 @@ already give it, the shell is wrong.
 *Depends on ME-102, ME-103.*
 
 ### ME-106 — Entry points
-The Edit button stops being a stub, and the grid context menu grows an `Edit` entry beside
-Rename/Copy/Delete — both routes call one entry function with a path and a frame index, both greyed
-out with a reason when the media is not editable, neither deciding editability on its own. Plus: the
+The Edit button stops being a stub, and the grid's `Edit` entry — **already present since ME-101, sitting
+beside Rename/Copy/Delete with `enabled = false`** — becomes live. Replacing that literal with
+`engineFactory.create(target) != null` is the whole of the editability decision on that side. Both
+routes then call one entry function with a path and a frame index, both greyed with a reason when the
+media is not editable, neither deciding editability on its own. Plus: the
 editor mounted over a frozen viewer, the keyboard scope taken over and restored on dispose (`Ctrl+S`
 copy, `Ctrl+Shift+S` overwrite), the discard-changes dialog, and an explicit `FolderViewModel.refresh()`
 after a successful save — nothing watches the directory, so a saved copy is invisible until the

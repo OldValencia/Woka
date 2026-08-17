@@ -40,7 +40,7 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-011](tickets/ME-011-test-harness.md) | Test harness and the fixture tool | **done** 2026-08-18 |
 | [ME-012](tickets/ME-012-mockup-tokens.md) | Editor mockup and tokens | **done** 2026-08-18 |
 | [ME-014](tickets/ME-014-remove-material3.md) | Remove `material3` — before ME-101 | **done** 2026-08-18 |
-| [ME-101](tickets/ME-101-editor-shell.md) | Editor shell | **specified**, not started |
+| [ME-101](tickets/ME-101-editor-shell.md) | Editor shell | **done** 2026-08-18 |
 | [ME-102](tickets/ME-102-param-row-renderers.md) | Parameter row renderers | **specified**, not started |
 | [ME-103…ME-129](tickets/backlog.md) | Image editor | backlog |
 | ME-107 | ~~Revert to Original~~ | dropped — no backup store |

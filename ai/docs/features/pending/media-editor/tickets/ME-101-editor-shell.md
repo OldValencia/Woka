@@ -113,3 +113,47 @@ disabled tool is skipped; an op from an enabled tool is not; the list keeps docu
   kind appears is `engine.kind`, passed through to the registry. This is the mechanical form of "the
   video editor inherits the shell";
 - `./gradlew.bat :shared:build` green, with the tests above passing.
+
+## Result — 2026-08-18
+
+Eight files in `feature/editor/shell/` plus three in `jvmTest`. `:shared:build` green, **575 tests, 0
+failures** (563 before, +12: six unit, six UI). Largest file 121 lines.
+
+Every Done-when condition checked mechanically, not by eye:
+
+| Condition | |
+|---|---|
+| no file in `shell/` names `MediaKind.Image`/`.Video` | ✅ grep clean — the only kind spoken about is `engine.kind` |
+| `EditorScreen` names no `RasterRecipe`, `SaveTarget`, `GlobalShortcutState`, `FolderScreen` | ✅ grep clean |
+| every file ≤ 150 lines | ✅ max 121 |
+| anti-FQN | ✅ clean across all eleven files |
+
+### The shell test found a design bug, in the ticket rather than in the code
+
+Step 5 said the inspector's **footer** draws the skipped-ops notice, and the mockup drew it inside the
+card. Implemented that way, `the skipped notice appears when a committed op's tool is switched off`
+failed — and it was right to.
+
+**The inspector only exists while a tool is open.** So a user who switches a tool off in Settings and
+comes back to the editor is shown *nothing*: the warning is reachable only by opening some unrelated
+tool and noticing it at the bottom of that tool's panel. §3.4 promises a document "never crashes and
+never silently loses work", and the notice is the entire mechanism of the second half — one that
+appears by accident does not keep the promise.
+
+Fixed in the design, not in the test: `EditorSkippedNotice` is its own composable, stacked **above**
+the inspector and shown whenever `skippedOps` is non-empty, tool open or not. `EditorInspector` lost two
+parameters and got smaller. `ai/mockups/design/editor.html` §4 is redrawn to match — the mockup is the
+spec, so it changes first.
+
+### Two smaller things the tree decided
+
+- **`EditorCanvasGeometry` is a separate file from the host.** The matrices are the part with a
+  correctness claim — `canvasToSource` is computed by inverting `sourceToCanvas` rather than written
+  out, so the two cannot drift — and that claim is testable without a composition. The host is layout.
+- **`EditorTopBar` split at 152 lines** into the bar and `EditorTopBarControls`. The seam is real rather
+  than arithmetic: the bar is *what sits where*, the controls are *what a button looks like*, and
+  ME-104's save menu asks the second question again.
+
+`EditorCanvasHost` takes `overlay` as a `@Composable (EditorCanvasGeometry) -> Unit` rather than
+handing the geometry out through a callback — a callback fired from composition is a side effect, and
+the overlay needs the matrices synchronously anyway.

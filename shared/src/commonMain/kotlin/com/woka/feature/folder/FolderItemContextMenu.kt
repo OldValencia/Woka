@@ -54,6 +54,15 @@ internal fun FolderItemContextMenu(
         }
     }
 
+    // Beside Rename/Copy/Delete, where §4.1 puts it. **Disabled deliberately**: the
+    // editor shell exists (ME-101) but `ImageEditorEngine.Surface` is still
+    // `TODO("ME-103")`, so an enabled entry would be a dead click at best and a
+    // `NotImplementedError` at worst. ME-106 replaces `enabled = false` with
+    // `engineFactory.create(target) != null` — the factory is the single answer to
+    // "is this editable", and it decides from the format without touching the disk.
+    if (item !is MediaItem.Folder) {
+        DropdownItem("Edit", enabled = false) { dismiss() }
+    }
     DropdownItem("Rename") { dismiss(); overlays.itemToRename = target }
     // Copy means the clipboard, the way it does everywhere else on the desktop;
     // copying into a chosen folder is Duplicate below (TC-SYS-06).
