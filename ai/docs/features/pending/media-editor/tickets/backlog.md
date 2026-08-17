@@ -13,22 +13,6 @@ Order inside a track is dependency order. Between tracks, only the marked depend
 
 ## 100 — Image editor
 
-### ME-106 — Entry points
-The Edit button stops being a stub, and the grid's `Edit` entry — **already present since ME-101, sitting
-beside Rename/Copy/Delete with `enabled = false`** — becomes live. Replacing that literal with
-`engineFactory.create(target) != null` is the whole of the editability decision on that side. Both
-routes then call one entry function with a path and a frame index, both greyed with a reason when the
-media is not editable, neither deciding editability on its own. Plus: the
-editor mounted over a frozen viewer, the keyboard scope taken over and restored on dispose (`Ctrl+S`
-copy, `Ctrl+Shift+S` overwrite), the discard-changes dialog, and an explicit `FolderViewModel.refresh()`
-after a successful save — nothing watches the directory, so a saved copy is invisible until the
-listing is re-read. After this the editor is usable end to end on PNG/JPEG/WebP.
-*Depends on ME-104, ME-105.*
-
-### ~~ME-107 — Revert to Original~~ — dropped
-There is no backup store to revert from: `Save a Copy` is the default, so the original is still the
-original (decision log, 2026-08-16). The id is retired, not reused.
-
 ### ME-108 — Conversion on demand
 **The eight formats ME-104 refuses.** Skia encodes `png`, `jpg`/`jpeg` and `webp`, so those three save
 in place; `bmp`, `gif`, `tif`, `tiff`, `heic`, `heif` and `avif` return null from `formatFor` and land
@@ -264,8 +248,11 @@ stating plainly that no copy is kept and the original cannot be recovered, carry
 Then the reporting: `Done` closes the editor **immediately** and the save runs behind it, so the banner
 is the only report. It follows `FrameExportBanner` — a global status object read by one composable in
 the shell, which is what lets the banner outlive the editor it was started from. Three states: saving,
-saved with the name, and failed with "original untouched". Finally an explicit `FolderViewModel.refresh()`
-on success, because a copy is a **new** path and nothing watches the directory for it.
+saved with the name, and failed with "original untouched".
+
+**What ME-106 already did, so this ticket does not:** `Done` saving a copy at all, and the
+`FolderViewModel.refresh()` that makes the new file visible. This is the *choice* around saving —
+where it goes and what it costs — not the saving.
 *Depends on ME-104, ME-106.*
 
 ### ME-129 — Rename `IosSwitch`
