@@ -35,7 +35,7 @@ fun hostPlatform(): String {
     return when {
         os.startsWith("windows") -> "windows-$arch"
         os.startsWith("mac") -> "macosx-$arch"
-        os.startsWith("linux") -> "linux-$arch"
+        os.startsWith("linux") -> "linux-$arch" // only for github actions verification
         else -> error("unsupported OS '$os' — Woka targets Windows and macOS")
     }
 }
