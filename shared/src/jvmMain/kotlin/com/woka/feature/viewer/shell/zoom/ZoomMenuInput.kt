@@ -11,8 +11,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -91,7 +91,7 @@ internal fun ZoomMenuInputRow(
                     }
                 }
             )
-            Text(
+            BasicText(
                 text = "%",
                 style = TextStyle(color = Theme.colors.textSecondary, fontSize = 13.sp)
             )
@@ -104,7 +104,7 @@ internal fun ZoomMenuInputRow(
                 .clickable(enabled = canReset) { onReset() }
                 .padding(horizontal = 8.dp, vertical = 5.dp)
         ) {
-            Text(
+            BasicText(
                 text = "Reset",
                 style = TextStyle(
                     color = if (canReset) Theme.colors.accentFolders

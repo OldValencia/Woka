@@ -1,15 +1,16 @@
 package com.woka.feature.viewer.shell
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.TextStyle
@@ -29,11 +30,12 @@ fun InfoButton(isInfoOpen: Boolean, onInfo: () -> Unit) {
                 .clickable { onInfo() },
             contentAlignment = Alignment.Center
         ) {
-            Icon(
+            val tint = if (isInfoOpen) Theme.colors.accentFolders else Theme.colors.textPrimary
+            Image(
                 painter = painterResource(Icons.Static.InfoCircle),
                 contentDescription = "Information",
-                tint = if (isInfoOpen) Theme.colors.accentFolders else Theme.colors.textPrimary,
-                modifier = Modifier.size(16.dp)
+                modifier = Modifier.size(16.dp),
+                colorFilter = ColorFilter.tint(tint)
             )
         }
     }
@@ -58,7 +60,13 @@ fun ToggleCarouselButton(
                 ),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
+            val tint = if (isFullscreen) {
+                Theme.colors.textSecondary
+            } else when (carouselMode) {
+                CarouselVisibility.ALWAYS_ON -> Theme.colors.accentFolders
+                else -> Theme.colors.textPrimary
+            }
+            Image(
                 painter = painterResource(
                     if (isFullscreen) Icons.Static.EyeSlash
                     else when (carouselMode) {
@@ -67,12 +75,8 @@ fun ToggleCarouselButton(
                     }
                 ),
                 contentDescription = "Toggle Carousel",
-                tint = if (isFullscreen) Theme.colors.textSecondary
-                else when (carouselMode) {
-                    CarouselVisibility.ALWAYS_ON -> Theme.colors.accentFolders
-                    else -> Theme.colors.textPrimary
-                },
-                modifier = Modifier.size(16.dp)
+                modifier = Modifier.size(16.dp),
+                colorFilter = ColorFilter.tint(tint)
             )
         }
     }
@@ -94,11 +98,12 @@ fun PipWindowButton(isPipWindow: Boolean, onToggle: () -> Unit) {
                 .clickable { onToggle() },
             contentAlignment = Alignment.Center
         ) {
-            Icon(
+            val tint = if (isPipWindow) Theme.colors.accentFolders else Theme.colors.textPrimary
+            Image(
                 painter = painterResource(Icons.Static.Navigation),
                 contentDescription = label,
-                tint = if (isPipWindow) Theme.colors.accentFolders else Theme.colors.textPrimary,
-                modifier = Modifier.size(16.dp)
+                modifier = Modifier.size(16.dp),
+                colorFilter = ColorFilter.tint(tint)
             )
         }
     }
@@ -115,13 +120,13 @@ fun EditButton(onEdit: () -> Unit) {
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
+        Image(
             painter = painterResource(Icons.Static.Pencil),
             contentDescription = "Edit",
-            tint = Theme.colors.textPrimary,
-            modifier = Modifier.size(12.dp).padding(end = 4.dp)
+            modifier = Modifier.size(12.dp).padding(end = 4.dp),
+            colorFilter = ColorFilter.tint(Theme.colors.textPrimary)
         )
-        Text(
+        BasicText(
             text = "Edit",
             style = TextStyle(
                 color = Theme.colors.textPrimary,

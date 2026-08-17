@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,13 +22,13 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.woka.feature.viewer.video.engine.sync.SYNC_STEP_MS
+import com.woka.feature.viewer.shell.PopoverSectionLabel
 import com.woka.feature.viewer.video.engine.VideoPlayerState
+import com.woka.feature.viewer.video.engine.sync.SYNC_STEP_MS
 import com.woka.feature.viewer.video.engine.sync.formatSyncOffset
 import com.woka.feature.viewer.video.engine.sync.resetSync
 import com.woka.feature.viewer.video.engine.sync.setAudioDelay
 import com.woka.feature.viewer.video.engine.sync.setSubtitleDelay
-import com.woka.feature.viewer.shell.PopoverSectionLabel
 
 /**
  * `SYNC` section of the Settings ⚙ popover (§3): shifts subtitles or audio against
@@ -77,7 +77,7 @@ private fun SyncStepperRow(label: String, delayMs: Long, onChange: (Long) -> Uni
     ) {
         SyncGlyph("−") { onChange(delayMs - SYNC_STEP_MS) }
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-            Text(
+            BasicText(
                 text = formatSyncOffset(delayMs),
                 style = TextStyle(
                     color = Color.White,
@@ -92,11 +92,10 @@ private fun SyncStepperRow(label: String, delayMs: Long, onChange: (Long) -> Uni
 
 @Composable
 private fun SyncRowLabel(text: String) {
-    Text(
+    BasicText(
         text = text,
-        color = Color.White.copy(alpha = 0.72f),
-        style = TextStyle(fontSize = 11.sp),
-        modifier = Modifier.padding(horizontal = 2.dp, vertical = 3.dp)
+        modifier = Modifier.padding(horizontal = 2.dp, vertical = 3.dp),
+        style = TextStyle(fontSize = 11.sp, color = Color.White.copy(alpha = 0.72f))
     )
 }
 
@@ -110,7 +109,7 @@ private fun SyncGlyph(symbol: String, onClick: () -> Unit) {
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        Text(
+        BasicText(
             text = symbol,
             style = TextStyle(color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
         )
@@ -138,7 +137,7 @@ private fun SyncResetRow(enabled: Boolean, onReset: () -> Unit) {
             ),
         contentAlignment = Alignment.Center
     ) {
-        Text(
+        BasicText(
             text = "Reset sync",
             style = TextStyle(
                 color = Color.White.copy(alpha = if (enabled) 0.85f else 0.3f),

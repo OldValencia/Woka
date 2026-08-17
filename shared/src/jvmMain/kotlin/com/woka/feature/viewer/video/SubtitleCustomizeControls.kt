@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,7 +58,7 @@ fun <T> SubtitlePillGroup(
                     .clickable { onSelect(value) },
                 contentAlignment = Alignment.Center
             ) {
-                Text(
+                BasicText(
                     text = label,
                     style = TextStyle(
                         color = Color.White.copy(alpha = if (isSelected) 1f else 0.7f),
@@ -109,7 +109,7 @@ fun SubtitlePercentStepper(percent: Int, onChange: (Int) -> Unit) {
     ) {
         StepperGlyph("−") { onChange((percent - 10).coerceAtLeast(0)) }
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-            Text(
+            BasicText(
                 text = "$percent%",
                 style = TextStyle(color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
             )
@@ -128,6 +128,9 @@ private fun StepperGlyph(symbol: String, onClick: () -> Unit) {
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        Text(text = symbol, style = TextStyle(color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold))
+        BasicText(
+            text = symbol,
+            style = TextStyle(color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        )
     }
 }

@@ -2,7 +2,6 @@ package com.woka.feature.viewer.shell
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -10,6 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.woka.core.data.CarouselVisibility
 import com.woka.core.data.MediaItem
+import com.woka.core.ui.components.WokaSpinner
+import com.woka.core.ui.theme.Theme
 import com.woka.feature.viewer.shell.frames.FRAME_STRIP_WIDTH
 import com.woka.feature.viewer.shell.frames.FrameStrip
 import com.woka.feature.viewer.shell.frames.FrameStripModel
@@ -94,7 +95,15 @@ fun MediaViewerPlayer(
                 navStartInset = navStartInset
             )
         } else {
-            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            // Was Material's indicator, which without a MaterialTheme resolved to
+            // the default Material purple. This sits on the media backdrop, so it
+            // takes the on-scrim foreground like every other mark drawn there.
+            WokaSpinner(
+                modifier = Modifier.align(Alignment.Center),
+                diameter = 40.dp,
+                color = Theme.viewer.onScrim,
+                strokeWidth = 3.dp
+            )
         }
 
         // Only for a file that has more than one picture in it, so an ordinary

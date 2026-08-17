@@ -7,15 +7,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import com.woka.core.ui.theme.Theme
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
+import com.woka.core.ui.theme.Theme
 
 private val PILL_GAP = 10.dp
 
@@ -74,22 +75,26 @@ internal fun MediaSliderTooltip(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (chapterTitle != null) {
-                    Text(
+                    BasicText(
                         text = chapterTitle,
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        style = TextStyle(
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     )
                 }
-                Text(
+                // The pill exists to answer "where does this land?", so the time
+                // is its headline and carries the larger size.
+                BasicText(
                     text = timeText,
-                    color = Color.White.copy(alpha = if (chapterTitle != null) 0.7f else 1f),
-                    // The pill exists to answer "where does this land?", so the time
-                    // is its headline and carries the larger size.
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
+                    style = TextStyle(
+                        color = Color.White.copy(alpha = if (chapterTitle != null) 0.7f else 1f),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
                 )
             }
         }

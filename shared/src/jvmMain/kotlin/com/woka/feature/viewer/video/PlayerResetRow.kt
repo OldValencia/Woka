@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,7 +64,7 @@ private fun ResetRowBody(label: String, enabled: Boolean, onReset: () -> Unit) {
             ),
         contentAlignment = Alignment.Center
     ) {
-        Text(
+        BasicText(
             text = label,
             style = TextStyle(
                 color = Color.White.copy(alpha = if (enabled) 0.85f else 0.3f),

@@ -11,9 +11,9 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.rememberScrollbarAdapter
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -114,7 +114,7 @@ private fun FileMetaBlock(item: MediaItem) {
 
 @Composable
 private fun InfoLine(text: String) {
-    Text(
+    BasicText(
         text,
         modifier = Modifier.fillMaxWidth(),
         style = TextStyle(color = Theme.colors.textSecondary, fontSize = 13.sp)

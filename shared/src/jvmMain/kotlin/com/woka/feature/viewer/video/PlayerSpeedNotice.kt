@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,7 +60,7 @@ internal fun PlayerSpeedNotice(videoState: VideoPlayerState, speed: Float) {
                 .background(Color.White.copy(alpha = 0.07f))
                 .padding(horizontal = 8.dp, vertical = 6.dp)
         ) {
-            Text(
+            BasicText(
                 text = "$quality — above 1x this file drops frames to keep the " +
                     "sound in step. Expected on a frame this large.",
                 style = TextStyle(

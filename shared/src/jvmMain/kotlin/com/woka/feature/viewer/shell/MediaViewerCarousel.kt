@@ -9,12 +9,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIcon
@@ -122,11 +122,11 @@ fun MediaViewerCarousel(
                             .background(Color.Black.copy(alpha = 0.5f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
+                        Image(
                             painter = painterResource(Icons.Static.PlayFill),
                             contentDescription = "Video",
-                            tint = Color.White,
-                            modifier = Modifier.size(12.dp)
+                            modifier = Modifier.size(12.dp),
+                            colorFilter = ColorFilter.tint(Color.White)
                         )
                     }
                 }

@@ -5,7 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,7 +47,7 @@ fun AbstractDialog(
 
 @Composable
 fun DialogTitle(text: String, color: Color) {
-    Text(
+    BasicText(
         text = text,
         style = TextStyle(color = color, fontSize = 18.sp, fontWeight = FontWeight.Bold)
     )
@@ -63,7 +63,7 @@ fun DialogButton(text: String, onClick: () -> Unit, color: Color) {
             .padding(horizontal = 16.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(
+        BasicText(
             text = text,
             style = TextStyle(color = color, fontSize = 14.sp, fontWeight = FontWeight.Medium)
         )

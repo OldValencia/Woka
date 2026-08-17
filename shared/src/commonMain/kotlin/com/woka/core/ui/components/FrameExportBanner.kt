@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -23,8 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.woka.core.ui.theme.Theme
 import com.woka.core.utils.FrameExportStatus
-import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.delay
 
 /** How long a finished message stays up before it takes itself away. */
 private const val SETTLE_MS = 2600L
@@ -66,7 +66,7 @@ fun FrameExportBanner() {
                     .border(1.dp, Theme.colors.border, RoundedCornerShape(10.dp))
                     .padding(horizontal = 16.dp, vertical = 10.dp)
             ) {
-                Text(
+                BasicText(
                     text = message.orEmpty(),
                     style = TextStyle(
                         color = Theme.colors.textPrimary,

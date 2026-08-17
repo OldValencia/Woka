@@ -1,5 +1,6 @@
 package com.woka.feature.viewer.video
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,17 +11,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.TextStyle
@@ -31,8 +32,8 @@ import com.woka.app.AppDependencies
 import com.woka.core.data.SubtitleFont
 import com.woka.core.data.SubtitleSize
 import com.woka.core.ui.icons.Icons
-import org.jetbrains.compose.resources.painterResource
 import kotlin.math.roundToInt
+import org.jetbrains.compose.resources.painterResource
 
 /**
  * Inline subtitle-appearance customizer (§3), shown in place of the track list
@@ -57,14 +58,14 @@ fun SubtitleCustomizePanel(onBack: () -> Unit) {
                     .clickable(onClick = onBack),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
+                Image(
                     painter = painterResource(Icons.Static.ChevronLeft),
                     contentDescription = "Back",
-                    tint = Color.White,
-                    modifier = Modifier.size(13.dp)
+                    modifier = Modifier.size(13.dp),
+                    colorFilter = ColorFilter.tint(Color.White)
                 )
             }
-            Text(
+            BasicText(
                 text = "Customize",
                 style = TextStyle(color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
                 modifier = Modifier.padding(start = 4.dp)

@@ -8,7 +8,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -31,7 +31,7 @@ fun ViewerTooltip(text: String, content: @Composable () -> Unit) {
                     .border(1.dp, Theme.colors.border, RoundedCornerShape(6.dp))
                     .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
-                Text(
+                BasicText(
                     text,
                     style = TextStyle(
                         color = Theme.colors.textPrimary,

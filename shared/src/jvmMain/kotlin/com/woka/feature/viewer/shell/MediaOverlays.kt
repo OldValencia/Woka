@@ -7,18 +7,19 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import com.woka.core.ui.icons.Icons
@@ -40,13 +41,13 @@ fun PlayPauseOverlay(event: ViewerEvent, isPlaying: Boolean) {
                 .background(Theme.viewer.hudScrim, CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
+            Image(
                 painter = painterResource(if (isPlaying) Icons.Static.PlayFill else Icons.Static.Pause),
                 contentDescription = null,
-                tint = Color.White,
                 modifier = Modifier
                     .size(40.dp)
-                    .graphicsLayer { if (!isPlaying) scaleX = 0.7f }
+                    .graphicsLayer { if (!isPlaying) scaleX = 0.7f },
+                colorFilter = ColorFilter.tint(Color.White)
             )
         }
     }
@@ -71,13 +72,13 @@ fun SkipOverlay(event: ViewerEvent, direction: Int) {
                 .background(Theme.viewer.hudScrim, CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
+            Image(
                 painter = painterResource(
                     if (direction == 1) Icons.Static.SkipForward5 else Icons.Static.SkipBackward5
                 ),
                 contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(20.dp),
+                colorFilter = ColorFilter.tint(Color.White)
             )
         }
     }
@@ -101,11 +102,7 @@ fun ZoomHudOverlay(event: ViewerEvent, label: String) {
                 .background(Theme.viewer.popoverScrim, RoundedCornerShape(Theme.viewer.cornerRadius))
                 .padding(Theme.viewer.hudPadding)
         ) {
-            Text(
-                text = label,
-                color = Color.White,
-                style = Theme.viewer.hudLabel
-            )
+            BasicText(text = label, style = Theme.viewer.hudLabel.copy(color = Color.White))
         }
     }
 }

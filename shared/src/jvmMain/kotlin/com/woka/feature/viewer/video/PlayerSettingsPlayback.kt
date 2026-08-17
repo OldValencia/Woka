@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,12 +69,12 @@ private fun ValueRow(label: String, value: String, active: Boolean, onClick: () 
             .padding(horizontal = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
+        BasicText(
             text = label,
             style = TextStyle(color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp),
             modifier = Modifier.weight(1f)
         )
-        Text(
+        BasicText(
             text = value,
             style = TextStyle(
                 color = Color.White.copy(alpha = if (active) 1f else 0.6f),

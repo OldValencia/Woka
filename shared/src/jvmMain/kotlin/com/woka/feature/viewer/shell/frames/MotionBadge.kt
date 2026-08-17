@@ -1,15 +1,16 @@
 package com.woka.feature.viewer.shell.frames
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.unit.dp
 import com.woka.core.ui.icons.Icons
 import org.jetbrains.compose.resources.painterResource
@@ -30,11 +31,11 @@ internal fun MotionBadge() {
             .background(Color.Black.copy(alpha = 0.5f)),
         contentAlignment = Alignment.Center
     ) {
-        Icon(
+        Image(
             painter = painterResource(Icons.Static.PlayFill),
             contentDescription = "Motion",
-            tint = Color.White,
-            modifier = Modifier.size(10.dp)
+            modifier = Modifier.size(10.dp),
+            colorFilter = ColorFilter.tint(Color.White)
         )
     }
 }

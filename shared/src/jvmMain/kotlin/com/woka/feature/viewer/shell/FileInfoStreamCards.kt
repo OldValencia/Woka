@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
@@ -59,7 +59,7 @@ private fun InfoSection(title: String, rows: @Composable () -> Unit) {
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Text(
+        BasicText(
             title,
             style = TextStyle(color = Theme.colors.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
         )
@@ -78,7 +78,7 @@ private fun InfoSection(title: String, rows: @Composable () -> Unit) {
 
 @Composable
 private fun InfoSubheader(text: String, topGap: Boolean) {
-    Text(
+    BasicText(
         text,
         modifier = Modifier.fillMaxWidth().padding(top = if (topGap) 6.dp else 0.dp),
         style = TextStyle(color = Theme.colors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
@@ -94,16 +94,15 @@ private fun InfoRow(label: String, value: String, highlight: Boolean = false) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(
+        BasicText(
             label,
             modifier = Modifier.weight(1f),
             style = TextStyle(color = labelColor, fontSize = 12.sp)
         )
-        Text(
+        BasicText(
             value,
             modifier = Modifier.weight(1f),
-            style = TextStyle(color = valueColor, fontSize = 12.sp, fontWeight = FontWeight.Medium),
-            textAlign = TextAlign.End
+            style = TextStyle(color = valueColor, fontSize = 12.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.End)
         )
     }
 }

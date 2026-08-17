@@ -3,7 +3,7 @@ package com.woka.feature.viewer.video
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,12 +26,12 @@ internal fun PlayerSpeedHeader(speed: Float) {
         modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp, vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
+        BasicText(
             text = "Speed",
             style = TextStyle(color = Color.White.copy(alpha = 0.72f), fontSize = 11.sp),
             modifier = Modifier.weight(1f)
         )
-        Text(
+        BasicText(
             text = PlaybackSpeed.label(speed),
             style = TextStyle(
                 color = if (speed == PlaybackSpeed.NORMAL) Color.White.copy(alpha = 0.6f)

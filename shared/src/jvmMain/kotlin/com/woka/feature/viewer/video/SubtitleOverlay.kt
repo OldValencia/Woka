@@ -11,8 +11,9 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,7 +29,6 @@ import androidx.compose.ui.unit.sp
 import com.woka.app.AppDependencies
 import com.woka.core.data.WokaSettings
 import com.woka.feature.viewer.video.model.Cue
-import androidx.compose.runtime.collectAsState
 
 /**
  * Renders text subtitle cues as a Compose overlay over the clean video frame
@@ -87,8 +87,14 @@ private fun TextSubtitleBox(
     ) {
         // Outline = a black stroke pass drawn behind the filled text.
         if (settings.subtitleOutline) {
-            Text(text = text, style = base.copy(color = Color.Black, drawStyle = Stroke(width = fontSize.value * 0.16f)))
+            BasicText(
+                text = text,
+                style = base.copy(
+                    color = Color.Black,
+                    drawStyle = Stroke(width = fontSize.value * 0.16f)
+                )
+            )
         }
-        Text(text = text, style = base)
+        BasicText(text = text, style = base)
     }
 }

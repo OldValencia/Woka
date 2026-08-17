@@ -1,7 +1,7 @@
 package com.woka.feature.viewer.video
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Text
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -10,15 +10,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.woka.core.ui.icons.Icons
 import com.woka.core.ui.theme.Theme
+import com.woka.feature.viewer.shell.slider.MediaSlider
+import com.woka.feature.viewer.shell.slider.SliderPreview
+import com.woka.feature.viewer.shell.slider.defaultMediaSliderStyle
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.engine.pauseForSeek
 import com.woka.feature.viewer.video.engine.preview.rememberSeekPreview
 import com.woka.feature.viewer.video.engine.resumeAfterSeek
 import com.woka.feature.viewer.video.engine.seek
 import com.woka.feature.viewer.video.engine.skipBy
-import com.woka.feature.viewer.shell.slider.MediaSlider
-import com.woka.feature.viewer.shell.slider.SliderPreview
-import com.woka.feature.viewer.shell.slider.defaultMediaSliderStyle
 
 /**
  * [position] stays a lambda through this whole function: invoking it here would
@@ -134,9 +134,8 @@ private fun VideoPlayerState.previewAspect(): Float? {
 /** Calls [position] in its own scope, so a moving play head recomposes only this. */
 @Composable
 private fun TimeLabel(position: () -> Long) {
-    Text(
+    BasicText(
         formatTime(position()),
-        color = Theme.colors.textPrimary,
         // 15sp against the row's 16–20dp icons; at 13 it read as a caption beside them.
         style = TextStyle(fontSize = 15.sp, color = Theme.colors.textPrimary)
     )

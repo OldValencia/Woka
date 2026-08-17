@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,8 +29,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.viewer.video.engine.VideoPlayerState
-import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.delay
 
 /** Long enough to read twice, short enough not to sit over the picture. */
 private const val VISIBLE_MS = 8_000L
@@ -109,7 +109,7 @@ private fun NoticeCard(text: String) {
             .border(1.dp, Color.White.copy(alpha = 0.12f), shape)
             .padding(horizontal = 14.dp, vertical = 10.dp)
     ) {
-        Text(
+        BasicText(
             text = text,
             style = TextStyle(
                 color = Color.White.copy(alpha = 0.85f),

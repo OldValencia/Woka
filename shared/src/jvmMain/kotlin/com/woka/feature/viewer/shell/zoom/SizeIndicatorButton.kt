@@ -2,6 +2,7 @@ package com.woka.feature.viewer.shell.zoom
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,8 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.onPointerEvent
@@ -82,7 +83,7 @@ internal fun SizeIndicatorButton(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            Text(
+            BasicText(
                 text = label,
                 style = TextStyle(
                     color = Theme.colors.textPrimary,
@@ -91,11 +92,11 @@ internal fun SizeIndicatorButton(
                 ),
                 modifier = Modifier.offset(y = (-1).dp)
             )
-            Icon(
+            Image(
                 painter = painterResource(Icons.Static.ChevronDown),
                 contentDescription = null,
-                tint = Theme.colors.textSecondary,
-                modifier = Modifier.padding(start = 4.dp).size(9.dp).rotate(chevronAngle)
+                modifier = Modifier.padding(start = 4.dp).size(9.dp).rotate(chevronAngle),
+                colorFilter = ColorFilter.tint(Theme.colors.textSecondary)
             )
         }
         StepButton("+", onStepUp)
@@ -112,7 +113,7 @@ private fun StepButton(symbol: String, onClick: () -> Unit) {
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
-        Text(
+        BasicText(
             text = symbol,
             style = TextStyle(
                 color = Theme.colors.textPrimary,

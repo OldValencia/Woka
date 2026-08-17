@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -93,10 +93,9 @@ private fun RemoveRowButton(onClick: () -> Unit) {
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        Text(
+        BasicText(
             text = "✕",
-            color = Color.White.copy(alpha = if (hovered) 1f else 0.6f),
-            style = TextStyle(fontSize = 10.sp)
+            style = TextStyle(fontSize = 10.sp, color = Color.White.copy(alpha = if (hovered) 1f else 0.6f))
         )
     }
 }
@@ -104,10 +103,9 @@ private fun RemoveRowButton(onClick: () -> Unit) {
 /** Small uppercase group heading above a [PopoverListRow] block. */
 @Composable
 internal fun PopoverSectionLabel(text: String) {
-    Text(
+    BasicText(
         text = text,
-        color = Color.White.copy(alpha = 0.45f),
-        style = TextStyle(fontSize = 10.sp),
-        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+        style = TextStyle(fontSize = 10.sp, color = Color.White.copy(alpha = 0.45f))
     )
 }

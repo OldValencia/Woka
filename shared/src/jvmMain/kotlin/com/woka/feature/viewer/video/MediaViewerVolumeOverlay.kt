@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Text
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -21,8 +21,8 @@ import androidx.compose.ui.unit.dp
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.viewer.shell.PopoverAnchor
 import com.woka.feature.viewer.shell.ToolbarPopover
-import com.woka.feature.viewer.video.model.MediaTrack
 import com.woka.feature.viewer.shell.slider.MediaVerticalSlider
+import com.woka.feature.viewer.video.model.MediaTrack
 
 @Composable
 fun VolumeVerticalOverlay(
@@ -88,11 +88,10 @@ private fun VolumeColumn(
             }
         }
     ) {
-        Text(
+        BasicText(
             text = "${(volume * 100).toInt()}%",
-            color = Color.White,
-            style = Theme.viewer.overlayLabel,
-            modifier = Modifier.padding(bottom = 8.dp)
+            modifier = Modifier.padding(bottom = 8.dp),
+            style = Theme.viewer.overlayLabel.copy(color = Color.White)
         )
         MediaVerticalSlider(
             value = volume,

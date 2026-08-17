@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.sp
  */
 @Composable
 internal fun SubtitleFieldLabel(text: String) {
-    Text(
+    BasicText(
         text = text.uppercase(),
         style = TextStyle(
             color = Color.White.copy(alpha = 0.5f),
@@ -48,7 +48,7 @@ internal fun SubtitleResetRow(onClick: () -> Unit) {
             .padding(vertical = 6.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(
+        BasicText(
             text = "Reset to defaults",
             style = TextStyle(
                 color = Color.White.copy(alpha = 0.6f),

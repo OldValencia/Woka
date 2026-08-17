@@ -1,6 +1,7 @@
 package com.woka.feature.viewer.video
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -8,20 +9,20 @@ import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.unit.dp
 import com.woka.core.ui.icons.Icons
 import com.woka.core.ui.theme.Theme
+import com.woka.feature.viewer.shell.SimpleTooltip
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.engine.togglePlayPause
 import org.jetbrains.compose.resources.painterResource
-import com.woka.feature.viewer.shell.SimpleTooltip
 
 @Composable
 fun MediaViewerVideoControls(
@@ -69,11 +70,11 @@ fun MediaViewerVideoControls(
                 ) { videoState?.togglePlayPause() },
             contentAlignment = Alignment.Center
         ) {
-            Icon(
+            Image(
                 painter = painterResource(if (isPlaying) Icons.Static.Pause else Icons.Static.PlayFill),
                 contentDescription = "Play/Pause",
-                tint = Theme.colors.textPrimary.copy(alpha = iconAlpha),
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(20.dp),
+                colorFilter = ColorFilter.tint(Theme.colors.textPrimary.copy(alpha = iconAlpha))
             )
         }
         
@@ -124,11 +125,11 @@ fun MediaViewerVideoControls(
                         ) { onToggleFullscreen() },
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
+                    Image(
                         painter = painterResource(if (isFullscreen) Icons.Static.Collapse else Icons.Static.Expand),
                         contentDescription = "Fullscreen",
-                        tint = Theme.colors.textPrimary.copy(alpha = iconAlpha),
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(16.dp),
+                        colorFilter = ColorFilter.tint(Theme.colors.textPrimary.copy(alpha = iconAlpha))
                     )
                 }
             }

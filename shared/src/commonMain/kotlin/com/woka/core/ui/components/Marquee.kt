@@ -9,7 +9,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.material3.Text
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,7 +54,7 @@ fun Marquee(
     val x = if (scroll) animated else 0f
 
     Box(modifier = modifier.clipToBounds().onSizeChanged { boxWidth = it.width }) {
-        Text(
+        BasicText(
             text = text,
             style = style,
             maxLines = 1,

@@ -4,7 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Text
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,7 +57,7 @@ class ComposeHarnessTest {
     @Test
     fun `the compose runtime comes up and composes`() {
         runComposeUiTest {
-            setContent { Text("woka-gate") }
+            setContent { BasicText("woka-gate") }
             onNodeWithText("woka-gate").assertExists()
         }
     }
@@ -66,7 +66,7 @@ class ComposeHarnessTest {
     fun `a node is laid out and actually displayed`() {
         runComposeUiTest {
             setContent {
-                Box(Modifier.size(120.dp).testTag("box")) { Text("inside") }
+                Box(Modifier.size(120.dp).testTag("box")) { BasicText("inside") }
             }
             onNodeWithTag("box").assertIsDisplayed()
         }
@@ -75,7 +75,7 @@ class ComposeHarnessTest {
     @Test
     fun `a test tag is a usable anchor`() {
         runComposeUiTest {
-            setContent { Text("tagged", Modifier.testTag("woka-anchor")) }
+            setContent { BasicText("tagged", Modifier.testTag("woka-anchor")) }
             onNodeWithTag("woka-anchor").assertExists()
         }
     }
@@ -85,7 +85,7 @@ class ComposeHarnessTest {
         runComposeUiTest {
             setContent {
                 var clicks by remember { mutableStateOf(0) }
-                Text(
+                BasicText(
                     text = "clicks=$clicks",
                     modifier = Modifier.testTag("target").clickable { clicks++ }
                 )
