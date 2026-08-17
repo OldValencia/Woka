@@ -28,6 +28,23 @@ interface EditorEngine {
     /** What operations address, in source pixels — never the canvas or the proxy. */
     val sourceSize: IntSize
 
+    /**
+     * How large the *result* is, which is not the same question as [sourceSize].
+     *
+     * A crop changes the frame: the picture drawn after it has the crop's dimensions
+     * while operations are still addressed against the original. The shell measures
+     * its canvas with this, so a cropped photograph is letterboxed in a box of its own
+     * proportions rather than the source's.
+     *
+     * Defaulted, because for a medium whose edits never change the frame the two are
+     * the same — and because a default is what keeps this from being a breaking change
+     * to every engine that does not care.
+     *
+     * Takes a document and returns an `IntSize`: no raster type appears, so this stays
+     * a question the video engine can answer (§3.3).
+     */
+    fun drawnSize(document: EditDocument): IntSize = sourceSize
+
     /** The live canvas for this medium, drawing [document] as it stands. */
     @Composable
     fun Surface(document: EditDocument, modifier: Modifier)

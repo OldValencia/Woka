@@ -188,6 +188,11 @@ native only at save (§9) — what is left is the part that decision does not co
 route already put the native bitmap in the cache before the editor opened, and ME-104's save decode
 must not put a second one there. So: a decode path that returns a bitmap without caching it, and a
 measured assertion that editing a 100 MP file leaves the cache no larger than it started.
+**Also carries the decode off the composition thread.** ME-103 builds the proxy inside
+`remember { EditorProxy.load(...) }`, which runs synchronously while composing — 667 ms for a 100 MP
+source, ~150 ms for a 24 MP one, measured in ME-010. Opening the editor on a large photograph freezes
+the UI for exactly that long. The fix needs a placeholder, an ordering against the frozen viewer
+underneath, and an answer for `Cancel` pressed mid-decode, which is why it was not improvised in ME-103.
 *Depends on ME-104.*
 
 ### ME-124 — Editor and picture-in-picture

@@ -1,6 +1,7 @@
 package com.woka.feature.editor.engine.image
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.MediaKind
@@ -42,9 +43,23 @@ internal class ImageEditorEngine(
     internal fun recipe(document: EditDocument): RasterRecipe =
         fold(document, registry, sourceSize)
 
+    /** The frame the recipe produces — a crop's dimensions, not the original's. */
+    override fun drawnSize(document: EditDocument): IntSize = recipe(document).outputSize
+
+    /**
+     * The proxy is remembered on the file, **not on the document**: editing changes
+     * the recipe, never the pixels it is applied to, so re-decoding on every stroke
+     * would be re-reading a file that has not changed to draw a picture that has.
+     */
     @Composable
     override fun Surface(document: EditDocument, modifier: Modifier) {
-        TODO("ME-103")
+        val proxy = remember(file, frameIndex) { EditorProxy.load(file, frameIndex) }
+        RasterSurface(
+            proxy = proxy,
+            sourceSize = sourceSize,
+            recipe = recipe(document),
+            modifier = modifier
+        )
     }
 
     override suspend fun save(document: EditDocument, target: SaveTarget): EditSaveResult {

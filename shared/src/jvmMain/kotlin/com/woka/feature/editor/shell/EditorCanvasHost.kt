@@ -45,8 +45,12 @@ internal fun EditorCanvasHost(
 
     // Rebuilt only when a size really changes. `onSizeChanged` fires per layout pass,
     // and two matrices per frame of an animation is work nothing asked for.
-    val geometry = remember(engine.sourceSize, canvasSize) {
-        EditorCanvasGeometry(engine.sourceSize, canvasSize)
+    // `drawnSize`, not `sourceSize`: after a crop the picture has the crop's shape
+    // while operations are still addressed against the original, and measuring the
+    // box with the source would letterbox it in the wrong proportions.
+    val drawnSize = engine.drawnSize(document)
+    val geometry = remember(drawnSize, canvasSize) {
+        EditorCanvasGeometry(drawnSize, canvasSize)
     }
 
     Box(

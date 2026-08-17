@@ -100,3 +100,50 @@ different canvas sizes; a zero canvas yields scale 1 rather than a division by z
 - `EditorEngine` still names no raster type — `drawnSize` takes a document and returns an `IntSize`;
 - `RasterSurface` allocates no bitmap inside its draw scope — read the diff;
 - `./gradlew.bat :shared:build` green, with the tests above passing.
+
+## Result — 2026-08-18
+
+`:shared:build` green, **598 tests, 0 failures** (588 before, +10). Largest new file 72 lines.
+`EditorEngine` still names no raster type — the only `Raster` in it is the comment saying why.
+
+### The corpus could not test the thing this ticket is about
+
+Every still in it is 640×480 or smaller — deliberately, it is 3.3 MB of fixtures — so **the downscale
+branch had no file that reaches it**. A proxy test against `still.png` alone would pass with the
+capping code deleted.
+
+So `EditorProxyTest` synthesises its oversized sources: a 4000×1000 and a 1000×4000 PNG written to a
+temp directory, asserting the long edge lands on 2560 and the aspect survives in both orientations.
+Nothing is committed to the corpus for it — a generated solid colour proves the arithmetic, and 16 MB
+of fixture would prove the same thing more slowly.
+
+### The guard rail is asserted, not promised
+
+`the proxy never lands in the shared bitmap cache` compares `ImageBitmapCache.retainedBytes` before and
+after, and demands they are **equal** rather than close. That is the whole of §10's "keep a huge source
+out of the shared cache": it is implemented by this object not writing, and a guarantee of absence
+holds only while something checks the absence.
+
+### Found while building: the proxy decodes on the composition thread
+
+`Surface` does `remember(file, frameIndex) { EditorProxy.load(...) }`, which runs **synchronously
+during composition**. ME-010 measured a 100 MP source at 667 ms to decode; a 24 MP one is nearer 150.
+So opening the editor on a large photograph freezes the UI for that long.
+
+Not fixed here, and deliberately not papered over with a `LaunchedEffect` invented on the spot — the
+placeholder, the ordering against the frozen viewer underneath, and what `Cancel` does mid-decode are a
+design, not a one-liner. Recorded on **ME-123**, which is already the ticket about large sources.
+
+### Two things the implementation had to get right
+
+- **`RasterSurface` names all three scales in one function.** `recipe.matrix` is in source pixels, the
+  proxy is source × proxyScale, the box is `outputSize` × fitScale. The failure mode of getting this
+  wrong is not a crash: it is a picture that looks perfect **until the first crop**, because until then
+  every matrix is the identity and the errors cancel.
+- **Markup draws outside the matrix.** `recipe.paints` are applied after the transform block, not
+  inside it, because a crop must *clip* an arrow rather than move it — which is `ToolDomain`'s
+  application order showing up in the draw call.
+
+`EditorCanvasGeometryTest` pins the claim ME-101 made: `canvasToSource` composed with `sourceToCanvas`
+round-trips three points to within 0.01 px at three canvas/source pairs, including a 137×991 canvas
+against a 4000×1000 source where a hand-written inverse would drift visibly.
