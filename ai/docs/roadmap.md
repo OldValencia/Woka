@@ -72,9 +72,16 @@ of that pass; the rare formats are the one part still outstanding.
   GIF/WebP alike, and HDR tone mapping for stills.
 
 ### Phase 5: Media Editor (Editing tools)
-Planned in `features/pending/media-editor/` — `media-editor.md` is the feature file, `tickets/` holds
-the fourteen foundation tickets plus `backlog.md` for the image (ME-1xx) and video (ME-2xx) tracks.
+In `features/pending/media-editor/` — `media-editor.md` is the feature file, `tickets/` holds the
+fourteen foundation tickets plus `backlog.md` for the image (ME-1xx) and video (ME-2xx) tracks.
 Image editor first (5a), video editor second (5b) on the same shell.
+
+**The foundation is built** — ME-001…ME-014 all done as of 2026-08-18: the document, history and
+session; the parameter schema and tool contract; the registry with settings-backed enablement; the
+raster fold; the engine seam; save targets and the atomic write; the capability probes; the test
+harness and fixture tool; the visual spec and its tokens; and `material3` removed. No UI yet by
+design — every one of those is shared by both editors and provable without a window. **ME-101, the
+editor shell, is the first ticket that puts pixels on screen.**
 
 - **UX:** `Edit` in the viewer's control pill and in the grid's context menu.
 - **Features:** Crop, resize, rotate/flip, adjustments, filters, HDR on/off, vector markup (arrows,
