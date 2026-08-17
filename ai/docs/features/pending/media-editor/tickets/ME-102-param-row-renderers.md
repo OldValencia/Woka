@@ -131,3 +131,45 @@ leaves exactly one undo step.
 - no accent-filled control carries a white or light label — the `Done` pill, `.btn.primary` and the
   checked box all take `#1C1C1E`;
 - `./gradlew.bat :shared:build` green, with the tests above passing.
+
+## Result — 2026-08-18
+
+Six renderers plus the writer and the value reader. `:shared:build` green, **588 tests, 0 failures**
+(575 before, +13). Largest new file 106 lines.
+
+| Done-when | |
+|---|---|
+| `ParamRow`'s `when` is exhaustive, no `else` | ✅ — `PreviewChoiceParam` and `ObjectParam` are explicit `Unit` branches, so a ninth spec type still breaks the build |
+| no call site of `SegmentedControl`/`IosSwitch` outside the editor changed | ✅ — the diff touches neither `feature/viewer`, `feature/settings` nor `app/` |
+| no new type name contains `Ios`, `Apple` or `Mac` | ✅ — `SwitchColors`, `SegmentedControlColors` |
+| `#BF5AF2` anywhere in `shared/` | ✅ gone; `accentEditor` is `#FF9F0A` in both palettes |
+| anti-FQN | ✅ across all nine files |
+
+### Three things found while writing it
+
+- **`onDragEnd` cannot re-send the value.** The first version committed `params[spec]` on release —
+  the value captured at *composition*, not the one just dragged, so a released slider would commit what
+  it held two frames earlier. `ParamWriter.settle()` exists for exactly this: the drag's last frame has
+  already previewed what it wants, and release only needs to fold it in.
+- **`Color(argb.toULong() shl 32)` was nonsense.** `ColorParam` stores ARGB as a `Long` in the same
+  `0xAARRGGBB` form Compose's own `Color(Long)` takes, so the shift produced a colour from another
+  planet. Caught by reading it back, not by the compiler — both spellings type-check.
+- **A vacuous test nearly shipped.** `a stepper press moves the value…` originally asserted
+  `assertEquals(1, FixtureParams.Count.default)` — a fact about the fixture, not about the stepper,
+  which would have passed with the stepper deleted. The stepper's buttons had no test tags, which is
+  *why* it was written that way. Tags added, and the test now presses `+` once, presses `−` three times
+  from 2, and asserts the value floors at 0 and that the button stops being pressable there rather than
+  accepting presses that clamp to the same number.
+
+### Two splits, both at 150 lines and both along a real seam
+
+- `ParamRowFrame` out of `ParamRowScalars`: the label column, the readout column and their widths are
+  shared furniture. Each renderer laying out its own label is how six rows end up at five widths.
+- `ParamRowColorAction` out of `ParamRowChoice` at 164 lines: an enum picker *chooses among named
+  options*; a swatch row and a button *set a value directly*. Different question, different file.
+
+### Carried forward
+
+`IntStepper` takes a `unit` parameter that nothing passes yet — `FixtureParams.Count` declares none.
+ME-110's resize rows are the first real caller, and the rendering is specified and built so that ticket
+does not have to invent it.

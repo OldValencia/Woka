@@ -41,7 +41,7 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-012](tickets/ME-012-mockup-tokens.md) | Editor mockup and tokens | **done** 2026-08-18 |
 | [ME-014](tickets/ME-014-remove-material3.md) | Remove `material3` — before ME-101 | **done** 2026-08-18 |
 | [ME-101](tickets/ME-101-editor-shell.md) | Editor shell | **done** 2026-08-18 |
-| [ME-102](tickets/ME-102-param-row-renderers.md) | Parameter row renderers | **specified**, not started |
+| [ME-102](tickets/ME-102-param-row-renderers.md) | Parameter row renderers | **done** 2026-08-18 |
 | [ME-103…ME-129](tickets/backlog.md) | Image editor | backlog |
 | ME-107 | ~~Revert to Original~~ | dropped — no backup store |
 | [ME-201…ME-204](tickets/backlog.md) | Video editor | backlog |

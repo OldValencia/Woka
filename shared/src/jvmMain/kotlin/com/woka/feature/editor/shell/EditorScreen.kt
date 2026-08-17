@@ -44,8 +44,7 @@ internal fun EditorScreen(
     fileName: String,
     onCancel: () -> Unit,
     onDone: () -> Unit,
-    unavailable: Map<String, String> = emptyMap(),
-    inspectorContent: @Composable (String) -> Unit = {}
+    unavailable: Map<String, String> = emptyMap()
 ) {
     val document by session.document.collectAsState()
     val isDirty by session.isDirty.collectAsState()
@@ -107,7 +106,7 @@ internal fun EditorScreen(
                 EditorInspector(
                     title = activeTool.manifest.title,
                     onReset = session::reset,
-                    content = { inspectorContent(activeTool.manifest.id) }
+                    content = { ParamRows(activeTool, session, document) }
                 )
             }
             EditorRail(

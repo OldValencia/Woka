@@ -53,7 +53,7 @@ val LightColors = Colors(
     onDanger = Color(0xFFFFFFFF),
     accentHome = Color(0xFF0A84FF),
     accentFolders = Color(0xFFFF9F0A),
-    accentEditor = Color(0xFFBF5AF2),
+    accentEditor = Color(0xFFFF9F0A),
     accentSearch = Color(0xFF30D158)
 )
 
@@ -76,7 +76,7 @@ val DarkColors = Colors(
     onDanger = Color(0xFFFFFFFF),
     accentHome = Color(0xFF0A84FF),
     accentFolders = Color(0xFFFF9F0A),
-    accentEditor = Color(0xFFBF5AF2),
+    accentEditor = Color(0xFFFF9F0A),
     accentSearch = Color(0xFF30D158)
 )
 

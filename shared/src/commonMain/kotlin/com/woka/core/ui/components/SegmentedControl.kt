@@ -25,18 +25,58 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.woka.core.ui.theme.Theme
 
+/**
+ * What a segmented control is painted with.
+ *
+ * Parameterised for the same reason `DetentSlider` already is: the defaults are read
+ * from `Theme.colors` and describe a control on an app surface, where
+ * `surfacePressed` is a groove and `border` is a hairline. Over a photograph both are
+ * black at 8 % and neither exists.
+ */
+@Immutable
+data class SegmentedControlColors(
+    val track: Color,
+    val indicator: Color,
+    val indicatorBorder: Color,
+    val selectedText: Color,
+    val text: Color
+)
+
+object SegmentedControlDefaults {
+
+    val onSurface: SegmentedControlColors
+        @Composable get() = SegmentedControlColors(
+            track = Theme.colors.surfacePressed,
+            indicator = Theme.colors.surface,
+            indicatorBorder = Theme.colors.border,
+            selectedText = Theme.colors.textPrimary,
+            text = Theme.colors.textSecondary
+        )
+
+    /** For a control drawn on a scrim over media — the editor's inspector. */
+    val onScrim: SegmentedControlColors
+        @Composable get() = SegmentedControlColors(
+            track = Theme.viewer.onScrimHover,
+            indicator = Theme.viewer.onScrimSelected,
+            indicatorBorder = Theme.viewer.onScrimBorder,
+            selectedText = Theme.viewer.onScrim,
+            text = Theme.viewer.onScrimSecondary
+        )
+}
+
 @Composable
 fun SegmentedControl(
     options: List<String>,
     selected: String,
-    onSelect: (String) -> Unit
+    onSelect: (String) -> Unit,
+    colors: SegmentedControlColors = SegmentedControlDefaults.onSurface
 ) {
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
             .height(36.dp)
             .clip(RoundedCornerShape(11.dp))
-            .background(Theme.colors.surfacePressed)
+            .background(colors.track)
             .padding(3.dp)
     ) {
         val segmentWidth = maxWidth / options.size
@@ -53,15 +93,15 @@ fun SegmentedControl(
                 .fillMaxHeight()
                 .shadow(6.dp, RoundedCornerShape(8.dp), ambientColor = Color.Black.copy(alpha = 0.18f), spotColor = Color.Black.copy(alpha = 0.24f))
                 .clip(RoundedCornerShape(8.dp))
-                .background(Theme.colors.surface)
-                .border(1.dp, Theme.colors.border, RoundedCornerShape(8.dp))
+                .background(colors.indicator)
+                .border(1.dp, colors.indicatorBorder, RoundedCornerShape(8.dp))
         )
 
         Row(Modifier.fillMaxSize()) {
             options.forEach { option ->
                 val isSelected = option == selected
                 val textColor by animateColorAsState(
-                    targetValue = if (isSelected) Theme.colors.textPrimary else Theme.colors.textSecondary,
+                    targetValue = if (isSelected) colors.selectedText else colors.text,
                     animationSpec = tween(160)
                 )
                 Box(
