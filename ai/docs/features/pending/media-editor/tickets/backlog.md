@@ -13,14 +13,6 @@ Order inside a track is dependency order. Between tracks, only the marked depend
 
 ## 100 — Image editor
 
-### ME-103 — Image surface
-The ≤ 2560 px proxy, built in the **editor's own scope and never put in `ImageBitmapCache`** (§9,
-2026-08-18): a 100 MP source is 384 MB against a 256 MB budget, so caching it evicts everything and
-still does not fit. Native is decoded once, at save, by ME-104 — not held here. The live canvas draws
-the proxy through the folded recipe — matrix, colour filter, paints — with no bitmap allocation per
-frame. Native size comes from the decoder, never from a bitmap.
-*Depends on ME-101.*
-
 ### ME-104 — Save pipeline
 Replay the recipe onto a Skia surface at native scale, encode (PNG / JPEG **q95** / WebP q90), splice EXIF
 per the ME-010 decision, and write through ME-009's atomic write. `Done` saves a **copy** with the
