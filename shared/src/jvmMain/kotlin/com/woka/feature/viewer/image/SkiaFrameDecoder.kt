@@ -10,6 +10,7 @@ import com.woka.core.data.ImageFrameSet
 import org.jetbrains.skia.Bitmap
 import org.jetbrains.skia.Codec
 import org.jetbrains.skia.Data
+import org.jetbrains.skia.EncodedOrigin
 import org.jetbrains.skia.Image
 import java.io.File
 
@@ -29,9 +30,24 @@ import java.io.File
  */
 internal object SkiaFrameDecoder : StillDecoder {
 
-    /** Every frame of an animation is the codec's one size. */
-    override fun nativeSize(file: File, frameIndex: Int): IntSize =
-        onCodec(file) { IntSize(it.width, it.height) }
+    /**
+     * Every frame of an animation is the codec's one size — **with the EXIF rotation
+     * applied**, because that is the size [frame] hands back.
+     *
+     * `Codec.width/height` reports the raster *as stored*, while frame 0 goes through
+     * `Image.makeFromEncoded`, which applies `Orientation` itself (see [frame]). For a
+     * photograph shot in portrait the two therefore disagreed: 640×480 from here,
+     * 480×640 from the decode. Everything that trusted this was wrong about a rotated
+     * photo — the viewer's zoom percentages, and the editor's save, which stretched a
+     * portrait into a landscape because it drew the oriented pixels into a box sized
+     * from the stored dimensions. Found by `ExifSpliceTest`, 2026-08-18.
+     *
+     * The four quarter-turn origins swap the axes; the four that only flip do not.
+     */
+    override fun nativeSize(file: File, frameIndex: Int): IntSize = onCodec(file) { codec ->
+        val stored = IntSize(codec.width, codec.height)
+        if (codec.encodedOrigin.swapsAxes) IntSize(stored.height, stored.width) else stored
+    }
 
     /** Frames, kinds and timings — without decoding a single pixel. */
     override fun frameSet(file: File): ImageFrameSet = onCodec(file) { codec ->
@@ -107,3 +123,16 @@ private fun <T> onCodec(file: File, block: (Codec) -> T): T =
     Data.makeFromBytes(file.readBytes()).use { data ->
         Codec.makeFromData(data).use(block)
     }
+
+/**
+ * Whether an EXIF origin turns the picture a quarter, which is what makes the decoded
+ * width the stored height.
+ *
+ * The flips — `TOP_RIGHT`, `BOTTOM_LEFT` — mirror without rotating and leave the
+ * dimensions alone, which is why this cannot be "anything but TOP_LEFT".
+ */
+private val EncodedOrigin.swapsAxes: Boolean
+    get() = this == EncodedOrigin.LEFT_TOP ||
+        this == EncodedOrigin.RIGHT_TOP ||
+        this == EncodedOrigin.RIGHT_BOTTOM ||
+        this == EncodedOrigin.LEFT_BOTTOM

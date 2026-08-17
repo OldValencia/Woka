@@ -80,6 +80,25 @@ object ImageBitmapCache {
     }
 
     /**
+     * Forgets one entry, so the next read decodes again.
+     *
+     * The cache had **no removal at all** until an in-place overwrite needed one
+     * (measured 2026-08-17): every other population here is keyed on something that
+     * changes when the file does — the `.thumbnails` poster carries length and mtime
+     * in its key and simply orphans — but these two are keyed on the bare path, so
+     * writing over a picture leaves the pre-edit pixels on screen until something
+     * else evicts them.
+     *
+     * Silent on a key that is not there. An overwrite invalidates both the native and
+     * the preview entry without knowing which of them was ever populated, and making
+     * that the caller's problem would put the same `if` at every call site.
+     */
+    fun remove(key: String) = synchronized(lock) {
+        entries.remove(key)?.let { retainedBytes -= it.byteSize }
+        Unit
+    }
+
+    /**
      * Drops the oldest entries until the budget is met. [except] is the entry just
      * admitted: a single photo larger than the whole budget still has to be
      * drawable, so it is kept and the cache simply holds nothing else.

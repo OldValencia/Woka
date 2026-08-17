@@ -10,7 +10,11 @@ import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditorEngine
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.core.SaveTarget
+import com.woka.feature.editor.save.ImageSaveJob
+import com.woka.feature.editor.save.SourceStamp
 import com.woka.feature.viewer.image.stillDecoderFor
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
@@ -62,7 +66,25 @@ internal class ImageEditorEngine(
         )
     }
 
-    override suspend fun save(document: EditDocument, target: SaveTarget): EditSaveResult {
-        TODO("ME-104")
+    /**
+     * The stamp is taken **when the engine is built**, not when a save starts.
+     *
+     * The window the stale guard covers is the editing session — from the decode the
+     * canvas is drawing to the write. Reading it at save time would compare the file
+     * to itself and catch nothing.
+     */
+    private val stamp = SourceStamp.of(file)
+
+    override suspend fun save(
+        document: EditDocument,
+        target: SaveTarget
+    ): EditSaveResult = withContext(Dispatchers.IO) {
+        ImageSaveJob(
+            file = file,
+            frameIndex = frameIndex,
+            sourceSize = sourceSize,
+            stamp = stamp,
+            recipeOf = ::recipe
+        ).save(document, target)
     }
 }

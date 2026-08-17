@@ -3,6 +3,7 @@ package com.woka.integration
 import com.woka.core.data.MediaItem
 import com.woka.core.ui.image.ImageBitmapCache
 import com.woka.feature.viewer.image.ImageLoader
+import com.woka.feature.viewer.image.stillDecoderFor
 import com.woka.feature.viewer.shell.MediaThumbnails
 import com.woka.fixtures.BURST_HEIC
 import com.woka.fixtures.EXIF_EXPECTED_HEIGHT
@@ -126,6 +127,26 @@ class ImageLoaderTest {
         val bitmap = assertNotNull(ImageLoader.load(SampleMedia.file(EXIF_ROTATED)))
         assertEquals(EXIF_EXPECTED_WIDTH, bitmap.width)
         assertEquals(EXIF_EXPECTED_HEIGHT, bitmap.height)
+    }
+
+    /**
+     * The two answers about a rotated photo must agree.
+     *
+     * They did not until 2026-08-18: `Codec.width/height` reports the raster **as
+     * stored** while `Image.makeFromEncoded` applies `Orientation`, so `nativeSize`
+     * said 640×480 about a picture that decodes 480×640. Everything trusting it was
+     * wrong about a portrait photograph — the viewer's zoom percentages, and the
+     * editor's save, which drew the oriented pixels into a box sized from the stored
+     * dimensions and stretched the picture. Found by `ExifSpliceTest`.
+     */
+    @Test
+    fun `nativeSize agrees with the bitmap it describes, rotation included`() {
+        val file = SampleMedia.file(EXIF_ROTATED)
+        val bitmap = assertNotNull(ImageLoader.load(file))
+        val reported = stillDecoderFor(file).nativeSize(file, 0)
+
+        assertEquals(bitmap.width, reported.width)
+        assertEquals(bitmap.height, reported.height)
     }
 
     @Test

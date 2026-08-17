@@ -125,3 +125,53 @@ formats carry the qualities §9 settled.
 - the native bitmap is not in `ImageBitmapCache` after a save — same `retainedBytes` assertion ME-103
   uses;
 - `./gradlew.bat :shared:build` green, with the tests above passing.
+
+## Result — 2026-08-18
+
+`:shared:build` green, **611 tests, 0 failures** (598 before). `ImageEditorEngine.save` has no `TODO`.
+Largest new file 116 lines.
+
+### The test found a bug that was never about the editor
+
+`ExifSpliceTest`'s dimension assertion failed: a rotated JPEG saved as 640×480 when it should have been
+480×640. Tracing it turned up a disagreement that predates this ticket entirely.
+
+**`Codec.width/height` reports the raster as stored; `Image.makeFromEncoded` applies `Orientation`.**
+`SkiaFrameDecoder` uses the first for `nativeSize` and the second for `frame(0)`, so for any portrait
+photograph the two answers differed — 640×480 from one, 480×640 from the other. The file's own KDoc
+already documented that `makeFromEncoded` applies the tag; `nativeSize` had simply never been reconciled
+with it.
+
+The editor's symptom was the visible one: `save` drew the oriented pixels into a surface sized from the
+stored dimensions, **stretching every rotated photograph into a landscape**. But the defect is the
+viewer's too — `nativeSize` is what "Actual size" and every zoom percentage are computed against, so
+those were wrong for rotated photos as well.
+
+Fixed at the source rather than worked around here: `nativeSize` now asks `codec.encodedOrigin` and
+swaps the axes for the four quarter-turn origins. The four that only mirror are deliberately excluded —
+"anything but `TOP_LEFT`" would have been wrong for `TOP_RIGHT`. Every viewer zoom, scale and navigation
+test still passes, and `ImageLoaderTest` gained the guard that should have existed: **`nativeSize` must
+agree with the bitmap it describes**.
+
+### Two things about the splice
+
+`spliceExif` rewrites `Orientation` to 1 **in place**, one 16-bit field, leaving every other entry and
+every offset untouched. Rebuilding the IFD would mean rebuilding the offsets inside it, which is a
+different and much larger risk for no gain — §6 wants the metadata carried across, not reorganised.
+
+It **never throws**. A malformed segment, a non-JPEG source, an absent `APP1` all return the encoded
+bytes unchanged. Losing metadata is a far smaller harm than losing the save, and §6 states that
+fallback openly rather than discovering it.
+
+### One thing corrected while writing it
+
+`copyNameFor` first used the *format's* extension, which turns `photo.jpeg` into `photo-edited.jpg`.
+Nothing in this ticket converts anything: a `.jpeg` re-encodes as JPEG and stays a `.jpeg`. Extensions
+change in ME-108, and they change because the user agreed to it.
+
+### What the tests are actually for
+
+`the recipe actually reaches the pixels` compares the saved copy against the source pixel by pixel.
+Without it the whole file would pass against a save that copied the source and never applied the
+document — every other assertion here is about paths, names and bytes surviving, and all of them would
+still be true.
