@@ -1,6 +1,7 @@
 package com.woka.feature.editor.shell
 
 import androidx.compose.runtime.Stable
+import com.woka.feature.editor.core.ActionParam
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditorSession
 import com.woka.feature.editor.core.EditorTool
@@ -33,7 +34,13 @@ internal class ParamWriter(
      * passes true, and for an `Instant` tool the distinction never arises anyway.
      */
     fun <T> edit(spec: ParamSpec<T>, value: T, settled: Boolean = true) {
-        val params = paramsOf(document, tool).with(spec, value)
+        // An `ActionParam` records *this happened*, never *the state is now* — which
+        // is what its own contract says and what `Repeating` means. Building it from
+        // the previous operation would carry that operation's flag forward, so
+        // pressing Rotate and then Flip would produce one op claiming both and the
+        // picture would rotate twice (ME-105).
+        val base = if (spec is ActionParam) tool.defaults() else paramsOf(document, tool)
+        val params = base.with(spec, value)
         session.preview(ToolOp(tool.manifest.id, params))
 
         val commit = when (tool.manifest.interaction) {

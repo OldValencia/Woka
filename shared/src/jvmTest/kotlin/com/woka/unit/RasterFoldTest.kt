@@ -1,5 +1,6 @@
 package com.woka.unit
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.unit.IntSize
@@ -27,6 +28,35 @@ class RasterFoldTest {
 
     @get:Rule
     val mainDispatcher = MainDispatcherRule(UnconfinedTestDispatcher())
+
+    /**
+     * Two stages that do **not** commute, composed in application order.
+     *
+     * Every geometry stage this file tested before 2026-08-18 was a translation, and
+     * translations commute — so `concat` composed in the wrong direction for two years
+     * of nobody noticing. A scale and a translation disagree loudly: scale-then-shift
+     * sends (1,0) to 102, shift-then-scale sends it to 202.
+     */
+    @Test
+    fun `geometry stages compose in application order, not in reverse`() {
+        val scale = StageTool(
+            "scale",
+            ToolDomain.Geometry,
+            RasterStage.Geometry(Matrix().apply { scale(x = 2f, y = 2f) }, IntSize(1, 1))
+        )
+        val shift = StageTool(
+            "shift",
+            ToolDomain.Geometry,
+            RasterStage.Geometry(translation(100f), IntSize(1, 1))
+        )
+
+        withFoldRegistry(listOf(scale, shift)) { registry, _ ->
+            val document = EditDocument(ops = listOf(toolOp("scale"), toolOp("shift")))
+            val recipe = fold(document, registry, FOLD_SOURCE)
+
+            assertEquals(Offset(102f, 0f), recipe.matrix.map(Offset(1f, 0f)))
+        }
+    }
 
     @Test
     fun `an op added last but ranked first applies first`() {

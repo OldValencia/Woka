@@ -17,8 +17,21 @@ import com.woka.feature.editor.core.ToolStage
  */
 sealed interface RasterStage : ToolStage {
 
-    /** Crop, rotate, flip, resize. [outputSize] is the size *after* this stage. */
-    data class Geometry(val matrix: Matrix, val outputSize: IntSize) : RasterStage
+    /**
+     * Crop, rotate, flip, resize.
+     *
+     * [outputSize] is the frame *after* this stage, and it is **nullable on purpose**.
+     * A crop *chooses* a frame and says so. A rotation cannot: `stage()` receives only
+     * the parameters, so a quarter turn has no way to know it should report the source's
+     * height as its width — and a *second* rotation would need the size after the first,
+     * which is a running value only the fold holds.
+     *
+     * Null therefore means **derive it**: the fold maps this stage's matrix over the
+     * frame as it stands, takes the bounding box, and normalises the matrix so the box
+     * starts at the origin. A rotation consequently declares nothing but its rotation —
+     * no size and no compensating translation (ME-105).
+     */
+    data class Geometry(val matrix: Matrix, val outputSize: IntSize? = null) : RasterStage
 
     /**
      * Adjustments and filter presets.

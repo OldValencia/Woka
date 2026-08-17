@@ -37,11 +37,17 @@ fun fold(
     stages.forEach { stage ->
         when (stage) {
             is RasterStage.Geometry -> {
-                concat(matrix, stage.matrix)
-                // The last geometry stage decides the frame: each one declares the
+                // A stage that named its frame is taken at its word; one that did not
+                // has it derived from the frame *as it stands*, which is what lets a
+                // second rotation know what the first left behind (ME-105).
+                val (applied, frame) = stage.outputSize
+                    ?.let { stage.matrix to it }
+                    ?: derivedFrame(outputSize, stage.matrix)
+                concat(matrix, applied)
+                // The last geometry stage decides the frame: each one describes the
                 // size *after* it applies, so a crop following a quarter turn wins
                 // over the turn's swapped dimensions.
-                outputSize = stage.outputSize
+                outputSize = frame
             }
             is RasterStage.Pixels -> colorMatrix = multiply(colorMatrix, stage.colorMatrix)
             is RasterStage.Paint -> paints += stage

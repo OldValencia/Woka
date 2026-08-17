@@ -7,6 +7,7 @@ import com.woka.feature.editor.core.EditorTool
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.core.OverwriteConsent
 import com.woka.feature.editor.engine.EditorEngineFactoryImpl
+import com.woka.feature.editor.tools.transform.TransformTool
 import org.koin.dsl.module
 
 /**
@@ -18,9 +19,9 @@ import org.koin.dsl.module
  * from its manifest, and the registry is built from `getAll<EditorTool>()` — so
  * joining the set is that one line, and leaving it is deleting that one line.
  *
- * No tool is declared yet — the first arrives with the transform tool in ME-105.
- * The registry below is already wired to collect them, so that ticket adds a line
- * here and touches nothing else.
+ * `TransformTool` is the first, added in ME-105 — one line, and nothing else in the
+ * app changed to make it appear in the rail, the inspector, the Settings list and the
+ * fold's ordering. That was the claim; that is the evidence.
  *
  * JVM-only: the editor engines are Skia and ffmpeg, so `appModule` in `commonMain`
  * cannot name this.
@@ -29,6 +30,9 @@ val editorModule = module {
     // `factory`, not `single`: a session is per-open, holds the document being
     // edited, and owns a scope its caller cancels on close (`di.md`).
     factory { (media: MediaItem) -> EditorSession(media) }
+
+    // The whole of adding a tool: one line, and nothing else learns it exists.
+    single<EditorTool> { TransformTool }
 
     // `getAll` is what makes declaring a tool the only step in joining the set.
     // `single`, because the registry's per-kind flows are built once and every

@@ -94,3 +94,49 @@ ops, each carrying exactly one flag.
 - `TransformTool` contains no Compose import and no `@Composable`;
 - rotating four times returns the picture to its original dimensions;
 - `./gradlew.bat :shared:build` green, with the tests above passing.
+
+## Result — 2026-08-18
+
+`:shared:build` green, **620 tests, 0 failures** (611 before). The tool itself is 57 lines and 26 —
+a manifest, four `ActionParam`s and one `when` over four matrices, with no Compose import and no
+`@Composable`. Both predicted shell gaps were real. A third was not predicted.
+
+### The one that was not predicted: `concat` composed backwards
+
+Building the rotation produced a picture translated *before* it was turned rather than after, which
+puts it off the canvas entirely. The cause was not in ME-105 at all:
+
+**`concat(into, next)` was documented as "apply `into`, then `next`" and implemented as the reverse.**
+Compose's `timesAssign` computes `this = other * this`, so the receiver is the factor that acts first,
+and the helper had them the wrong way round. Verified empirically rather than reasoned about — a scale
+composed with a translation sends `(1,0)` to 202 one way and 102 the other.
+
+**Nothing caught it because nothing could.** The fold has composed geometry stages in reverse order
+since ME-007, and every geometry stage that had ever been written — in the tool set and in
+`RasterFoldTest` alike — was a **translation**. Translations commute, so both orders gave the same
+answer, in the code and in the test. ME-105's rotation is the first pair in the project's history that
+does not commute.
+
+Fixed in the implementation, not the doc: the doc stated the intent correctly. `RasterFoldTest` gained
+`geometry stages compose in application order, not in reverse`, using a scale and a translation
+precisely because they disagree loudly.
+
+### The two that were predicted
+
+- **`stage()` cannot know its frame**, so `RasterStage.Geometry.outputSize` is nullable and
+  `derivedFrame` maps the corners, takes the bounding box and normalises the matrix back to the origin.
+  A rotation now declares `Matrix().rotateZ(90f)` and nothing else — no size, no compensating shift.
+  Crop will still declare its frame, and that difference is now what the nullability *means*.
+- **An action op inherited the previous action's flags.** `ParamWriter` bases an `ActionParam` write on
+  `tool.defaults()`, so Rotate-then-Flip is two ops carrying one flag each rather than one op claiming
+  both and turning the picture twice.
+
+### Done when
+
+- `EditorModule`: the declaration is **one line**, `single<EditorTool> { TransformTool }`, plus its
+  import. The other lines in that diff are a KDoc paragraph that said "no tool is declared yet".
+- `TransformTool` imports no Compose UI and declares no composable. `androidx.compose.ui.graphics.Matrix`
+  appears in `TransformMatrix.kt` and is a maths type, not a UI one.
+- Four rotations return the frame to 640×480 — asserted, not assumed.
+- The end-to-end claim holds: a rotate pressed through `ParamWriter`, folded, drawn and **saved**
+  produces a 480×640 file from a 640×480 source.

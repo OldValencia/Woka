@@ -13,13 +13,21 @@ import androidx.compose.ui.graphics.Matrix
  * difference between rotating a cropped picture and cropping a rotated one.
  */
 
-/** `into` becomes "apply [into], then apply [next]". */
+/**
+ * `into` becomes "apply [into], then apply [next]".
+ *
+ * **This was backwards until 2026-08-18** and nothing caught it, because every
+ * geometry stage that had ever existed was a translation and translations commute.
+ * ME-105's rotation was the first pair that does not, and it composed a shift *before*
+ * the turn instead of after it — which puts the picture off the canvas rather than
+ * merely somewhere unexpected.
+ *
+ * Compose's `timesAssign` computes `this = other * this`, so the factor that acts
+ * first is the receiver. `into` is therefore the receiver and `next` the argument.
+ */
 internal fun concat(into: Matrix, next: Matrix) {
-    // `timesAssign` computes `this = this * other`, and for column vectors the
-    // right-hand factor acts first — so the accumulated transform goes on the
-    // right and the new stage on the left.
-    val composed = Matrix(next.values.copyOf())
-    composed *= into
+    val composed = Matrix(into.values.copyOf())
+    composed *= next
     into.setFrom(composed)
 }
 
