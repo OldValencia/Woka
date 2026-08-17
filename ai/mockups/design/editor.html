@@ -24,6 +24,14 @@
     --danger:        #E5484D;
     --on-accent:     #FFFFFF;
     --on-danger:     #FFFFFF;
+    /* Theme.colors.accentFolders / accentSearch — the notice and the banners.
+       Named here because a colour literal buried in a rule is the one that rots. */
+    --warn:          #FF9F0A;
+    --ok:            #30D158;
+    /* The window behind the editor, and the neutral plate the state panels use.
+       Not theme tokens: they stand in for a screenshot frame, not for a surface. */
+    --shot-bg:       #0b0d11;
+    --shot-plate:    #14171d;
 
     /* --- ViewerChrome: identical in both themes, by design --- */
     --hud-scrim:     rgba(0,0,0,0.5);
@@ -41,6 +49,13 @@
 
     /* --- accentEditor: the one colour that ignores the theme --- */
     --editor:        #BF5AF2;
+    /* The same hue taken down far enough to carry white text or a white glyph.
+       #BF5AF2 gives white 3.5 : 1 and #E5484D gives 2.9 : 1 — both under 4.5, and
+       in the light theme a white tick on #BF5AF2 sitting on a white sheet simply
+       disappears. accentEditor stays the *content* colour: the selected tool's
+       glyph, the slider fill, the markup outline. These two are grounds. */
+    --editor-solid:  #8B2FC9;
+    --danger-solid:  #C0272C;
 
     /* --- EditorTokens.Motion --- */
     --quick:  150ms;
@@ -70,6 +85,10 @@ body {
     -webkit-font-smoothing: antialiased;
     padding: 0 0 80px;
 }
+
+/* The only hex literals below the token blocks are content, not chrome: the
+   stand-in photograph gradients, and the ARGB values a ColorParam offers as
+   swatches. Anything structural reads a token. */
 
 /* ============ page furniture (not part of the spec) ============ */
 .legend { max-width: 1180px; margin: 0 auto; padding: 28px 24px 0; }
@@ -107,8 +126,8 @@ body {
     max-width: 1180px; margin: 0 auto; padding: 0 24px;
 }
 .editor {
-    position: relative; height: 660px; border-radius: 14px; overflow: hidden;
-    border: 1px solid var(--border); background: #0b0d11;
+    position: relative; height: 680px; border-radius: 14px; overflow: hidden;
+    border: 1px solid var(--border); background: var(--shot-bg);
     box-shadow: 0 18px 50px rgba(0,0,0,0.28);
     display: flex; flex-direction: column;
 }
@@ -153,8 +172,8 @@ body {
     height: 34px; padding: 0 18px; border-radius: 17px;
     display: inline-flex; align-items: center; gap: 8px;
     font-size: 13.5px; font-weight: 700; cursor: pointer;
-    background: var(--editor); color: #fff;
-    box-shadow: 0 4px 14px rgba(191,90,242,0.38);
+    background: var(--editor-solid); color: #fff;
+    box-shadow: 0 4px 14px rgba(139,47,201,0.45);
     transition: filter var(--quick) var(--ease);
 }
 .tb-done:hover { filter: brightness(1.08); }
@@ -165,9 +184,15 @@ body {
 .tb-done .caret { opacity: 0.75; font-size: 10px; }
 
 /* --- canvas --- */
-.canvas { position: relative; z-index: 10; flex: 1; display: grid; place-items: center; }
+/* The picture clears the floating chrome instead of sitting under it. Without the
+   inset the inspector covered the bottom third of the photograph — which is not a
+   drawing mistake, it is the layout being wrong: the canvas is `Fit` inside the
+   space that is *left over*, not inside the whole frame. */
+.canvas { position: relative; z-index: 10; flex: 1; min-height: 0;
+          display: grid; place-items: center;
+          padding: 16px 16px 274px; }
 .picture {
-    width: 46%; aspect-ratio: 3 / 2; border-radius: 4px;
+    width: 50%; aspect-ratio: 3 / 2; max-height: 100%; border-radius: 4px;
     background: linear-gradient(135deg, #d98b3f 0%, #b5532e 38%, #2f5d86 100%);
     box-shadow: 0 24px 60px rgba(0,0,0,0.55);
     position: relative;
@@ -234,13 +259,22 @@ body {
                 font-size: 14px; color: var(--on-scrim); cursor: pointer; }
 .stepper span:hover { background: var(--on-scrim-hov); }
 .stepper em {
-    min-width: 54px; height: 26px; display: grid; place-items: center; font-style: normal;
+    min-width: 66px; height: 26px; display: inline-flex; align-items: baseline;
+    justify-content: center; gap: 2px; font-style: normal;
     font-family: ui-monospace, Consolas, monospace; font-size: 12px; color: var(--on-scrim);
     border-inline: 1px solid var(--on-scrim-bd); font-variant-numeric: tabular-nums;
 }
+/* The unit belongs to the number, not to the readout column — that column means
+   "the current value" on every other row, and putting `px` there while FloatParam
+   put `+36%` there made one column mean two things. */
+.stepper em i { font-style: normal; font-size: 10.5px; color: var(--on-scrim-off); }
 
 /* BoolParam — IosSwitch */
-.ios { width: 42px; height: 25px; border-radius: 13px; background: var(--on-scrim-sel);
+/* `display` matters here: this is a <span>, and an inline box ignores width and
+   height outright — the track vanished and only the absolutely-positioned knob
+   drew, which is what "BoolParam renders wrong" looked like. */
+.ios { display: inline-block; vertical-align: middle;
+       width: 42px; height: 25px; border-radius: 13px; background: var(--on-scrim-sel);
        position: relative; cursor: pointer; transition: background var(--quick) var(--ease); }
 .ios::after { content: ""; position: absolute; top: 2px; left: 2px; width: 21px; height: 21px;
               border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.4);
@@ -268,7 +302,7 @@ body {
 .strip figure.sel .thumb { border-color: var(--editor); }
 .strip .f-mono  { filter: grayscale(1); }
 .strip .f-warm  { filter: saturate(1.5) hue-rotate(-12deg); }
-.strip .f-cool  { filter: saturate(1.2) hue-rotate(30deg); }
+.strip .f-cool  { filter: saturate(1.1) hue-rotate(150deg); }
 .strip figcaption { margin-top: 5px; font-size: 10.5px; font-weight: 600; text-align: center;
                     color: var(--on-scrim-off); }
 .strip figure.sel figcaption { color: var(--on-scrim); }
@@ -299,11 +333,13 @@ body {
 .notice {
     margin-top: 8px; display: flex; gap: 9px; align-items: flex-start;
     padding: 9px 11px; border-radius: 9px;
-    background: rgba(255,159,10,0.14); border: 1px solid rgba(255,159,10,0.32);
+    background: color-mix(in srgb, var(--warn) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--warn) 32%, transparent);
 }
-.notice b { font-size: 12px; color: #FFC062; font-weight: 700; }
+.notice > b { flex: none; font-size: 13px; font-weight: 700; color: var(--warn); line-height: 1.3; }
+.notice b { font-size: 12px; color: var(--warn); font-weight: 700; }
 .notice p { font-size: 11.5px; color: var(--on-scrim-2); line-height: 1.45; margin-top: 2px; }
-.notice a { color: #FFC062; font-weight: 600; text-decoration: none; cursor: pointer; }
+.notice a { color: var(--warn); font-weight: 600; text-decoration: none; cursor: pointer; }
 
 /* --- rail: EditorTokens.Rail --- */
 .rail {
@@ -319,15 +355,18 @@ body {
     transition: background var(--quick) var(--ease), color var(--quick) var(--ease);
 }
 .rail .tool:hover { background: var(--on-scrim-hov); color: var(--on-scrim); }
+/* Two signals, not three. The dot under the glyph was a third and it collided
+   with a 16px icon in a 40px button; the dock's own idiom for "active" is a fill
+   plus an accent-tinted icon, so the rail follows it. */
 .rail .tool.sel { background: var(--on-scrim-sel); color: var(--editor); }
-.rail .tool.sel::after {
-    content: ""; position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%);
-    width: 4px; height: 4px; border-radius: 50%; background: var(--editor);
-}
-.rail .tool.off { color: var(--on-scrim-off); cursor: default; }
+/* Unavailable for *this file* — dimmed, and the strike says "cannot", which
+   dimming alone does not. Deliberately not the same thing as switched off in
+   Settings: that removes a tool from the rail entirely (§3.4). */
+.rail .tool.off { color: var(--on-scrim-off); cursor: not-allowed; }
 .rail .tool.off::before {
-    content: ""; position: absolute; width: 22px; height: 1px; background: var(--on-scrim-off);
-    transform: rotate(-45deg);
+    content: ""; position: absolute; top: 50%; left: 50%;
+    width: 22px; height: 1px; background: currentColor; opacity: 0.9;
+    transform: translate(-50%, -50%) rotate(-45deg);
 }
 .rail .sep { width: 1px; height: 20px; margin: 0 4px; background: var(--on-scrim-bd); flex: none; }
 
@@ -343,7 +382,7 @@ body {
 .menu .item b { display: block; font-size: 12.5px; font-weight: 600; color: var(--on-scrim); }
 .menu .item small { display: block; font-size: 11px; color: var(--on-scrim-off); margin-top: 2px;
                     font-family: ui-monospace, Consolas, monospace; }
-.menu .item.danger b { color: #FF8A8A; }
+.menu .item.danger b { color: var(--danger); }
 .menu .div { height: 1px; margin: 5px 6px; background: var(--on-scrim-bd); }
 
 /* Dialogs are NOT over media — they use Theme.colors and follow the theme. */
@@ -362,19 +401,37 @@ body {
 .sheet .askagain { display: flex; align-items: center; gap: 9px; margin-top: 16px; cursor: pointer; }
 .sheet .box {
     width: 17px; height: 17px; border-radius: 5px; flex: none;
-    border: 1px solid var(--border-glow); display: grid; place-items: center;
-    font-size: 11px; color: var(--on-accent);
+    /* 8 % of anything is not a control. An unchecked box has to be findable. */
+    border: 1.5px solid var(--text-3); display: grid; place-items: center;
+    font-size: 12px; font-weight: 700; line-height: 1; color: var(--on-accent);
 }
-.sheet .box.on { background: var(--editor); border-color: var(--editor); }
-.sheet .askagain span { font-size: 12.5px; color: var(--text-2); }
+.sheet .box.on { background: var(--editor-solid); border-color: var(--editor-solid); }
+/* `:not(.box)` matters: the box is a span inside .askagain too, so a bare
+   descendant selector here outranks `.sheet .box` (0,2,1 against 0,2,0) and comes
+   later — it was repainting the checkmark in the *label's* colour, which on a
+   purple fill is invisible. The tick looked fine only while the fill was lighter. */
+.sheet .askagain > span:not(.box) { font-size: 12.5px; color: var(--text-2); }
 .sheet .buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+/* `inline-flex` + centring, for the same reason as `.ios`: given only a height, a
+   span lays its text on the first line box and the glyphs sit against the top
+   edge. `--border-glow`, not `--border`: at 4 % white on an elevated sheet the
+   outline is invisible and Cancel stops reading as a button at all. */
 .btn {
-    height: 32px; padding: 0 15px; border-radius: 8px; border: 1px solid var(--border);
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 32px; padding: 0 15px; border-radius: 8px; border: 1px solid var(--border-glow);
     background: transparent; color: var(--text); font-size: 12.5px; font-weight: 600; cursor: pointer;
+    transition: background var(--quick) var(--ease);
 }
 .btn:hover { background: var(--hover); }
-.btn.primary { background: var(--editor); border-color: transparent; color: #fff; }
-.btn.destroy { background: var(--danger); border-color: transparent; color: var(--on-danger); }
+/* Filled buttons carry white text, so the fill has to be dark enough to hold it.
+   `--editor` and `--danger` are *content* colours: as a button ground they give
+   white 3.5 : 1 and 2.9 : 1, both under WCAG's 4.5. These are the same hues taken
+   down until the label passes. */
+.btn.primary, .btn.destroy { border-color: transparent; color: var(--on-danger); font-weight: 700; }
+.btn.primary { background: var(--editor-solid); }
+.btn.destroy { background: var(--danger-solid); }
+/* Derived, not two more literals. */
+.btn.primary:hover, .btn.destroy:hover { filter: brightness(1.14); }
 
 .banner {
     display: inline-flex; align-items: center; gap: 9px;
@@ -384,9 +441,16 @@ body {
     font-size: 13px; font-weight: 600; color: var(--on-scrim);
 }
 .banner .spin { width: 13px; height: 13px; border-radius: 50%; flex: none;
-                border: 2px solid var(--on-scrim-bd); border-top-color: var(--on-scrim); }
-.banner .ok { color: #30D158; }
-.banner .bad { color: #FF5C5C; }
+                border: 2px solid var(--on-scrim-bd); border-top-color: var(--on-scrim);
+                animation: spin 700ms linear infinite; }
+@keyframes spin { to { transform: rotate(360deg) } }
+/* Success withdraws itself after Motion.BANNER_MS; failure waits to be dismissed.
+   Looped on purpose: run once and it settles half-faded, which a reader takes for
+   the design rather than for the dismissal it is demonstrating. */
+.banner.transient { animation: hold var(--banner) var(--ease) infinite; }
+@keyframes hold { 0%, 70% { opacity: 1 } 92%, 100% { opacity: 0 } }
+.banner .ok { color: var(--ok); }
+.banner .bad { color: var(--danger); }
 .banner small { color: var(--on-scrim-2); font-weight: 500; }
 
 /* the tooltip, at ViewerChrome's own numbers */
@@ -395,7 +459,7 @@ body {
            font-size: 11px; font-weight: 500; letter-spacing: 0.5px; }
 
 .row-demo { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start;
-            padding: 22px; border-radius: 14px; background: #14171d;
+            padding: 22px; border-radius: 14px; background: var(--shot-plate);
             border: 1px solid var(--on-scrim-bd); }
 .pair { display: flex; gap: 26px; flex-wrap: wrap; }
 </style>
@@ -496,16 +560,22 @@ body {
                 <div class="sep"></div>
                 <div class="tool" title="Markup">✎</div>
                 <div class="sep"></div>
-                <div class="tool off" title="Resize — switched off in Settings">⇲</div>
+                <div class="tool off" title="Output — no HDR encoder for this format">⇲</div>
             </div>
         </div>
     </div>
 </div>
 <div class="note" style="margin-top:12px">
     Rail groups are <code>ToolDomain</code> boundaries — Geometry · Color · Annotate · Output — with one
-    1×20 divider each. The last item is the <b>disabled</b> state: dimmed to
-    <code>onScrimDisabled</code> and struck through, present but not pressable. <code>Redo</code> shows
-    the same treatment in the top bar. <code>Done</code> is the dirty state; §2 has the clean one.
+    1×20 divider each. Glyphs here stand in for <code>Icons.*</code> and are not part of the spec.
+    <p style="margin-top:8px">
+    The last item is the <b>disabled</b> state, and it means one specific thing: <b>this tool cannot
+    apply to this file</b> — an HDR output with no encoder for the format, say — dimmed to
+    <code>onScrimDisabled</code>, struck through, and carrying a tooltip that says why. It is
+    <b>not</b> how a tool switched off in Settings looks: that one leaves the rail, the shortcut table
+    and the fold altogether (§3.4), so there is nothing to draw. <code>Redo</code> shows the same
+    disabled treatment in the top bar, and <code>Done</code> is the dirty state — §2 has the clean one.
+    </p>
 </div>
 
 <div class="state-label">2 · Done — clean, and the save menu open</div>
@@ -558,8 +628,8 @@ body {
 
             <div class="row">
                 <label>IntParam</label>
-                <div class="fill"><span class="stepper"><span>−</span><em>1280</em><span>+</span></span></div>
-                <div class="readout">px</div>
+                <div class="fill"><span class="stepper"><span>−</span><em>1280<i>px</i></em><span>+</span></span></div>
+                <div class="readout"></div>
             </div>
 
             <div class="row">
@@ -622,8 +692,8 @@ body {
         <div class="inspector">
             <div class="insp-head"><b>Resize</b><span class="reset">Reset</span></div>
             <div class="row"><label>Width</label>
-                <div class="fill"><span class="stepper"><span>−</span><em>2560</em><span>+</span></span></div>
-                <div class="readout">px</div>
+                <div class="fill"><span class="stepper"><span>−</span><em>2560<i>px</i></em><span>+</span></span></div>
+                <div class="readout"></div>
             </div>
             <div class="notice">
                 <b>!</b>
@@ -685,7 +755,7 @@ body {
 </div>
 <div class="frame">
     <div class="row-demo">
-        <div class="menu" style="width:230px">
+        <div class="menu">
             <div class="item is-hover"><b>Auto</b><small>follow the file’s tags</small></div>
             <div class="item"><b>Force HDR</b><small>tone map as PQ</small></div>
             <div class="item"><b>Force SDR</b><small>ignore the transfer tag</small></div>
@@ -703,7 +773,7 @@ body {
 <div class="frame">
     <div class="row-demo" style="flex-direction:column;align-items:flex-start">
         <span class="banner"><span class="spin"></span>Saving…</span>
-        <span class="banner"><span class="ok">✓</span>Saved <small>photo-edited.jpg</small></span>
+        <span class="banner transient"><span class="ok">✓</span>Saved <small>photo-edited.jpg</small></span>
         <span class="banner"><span class="bad">✕</span>Save failed <small>— original untouched</small></span>
     </div>
 </div>

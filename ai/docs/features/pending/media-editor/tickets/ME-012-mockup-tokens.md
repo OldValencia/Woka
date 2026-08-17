@@ -111,3 +111,92 @@ dangling at a file that did not exist; it now resolves, and gained the theme rul
   were found and closed — `Motion.BANNER_MS` had no representation at all, `Motion.PANEL_MS` was
   declared and never applied, and the save menu used a 6 px inset where `ViewerChrome.popoverPadding`
   is 8/12.
+
+## Review pass — 2026-08-18, in Chrome, both themes
+
+The first version was never opened in a browser (the extension was not connected), and it showed. Two
+CSS bugs, one layout error, three contrast failures and a specificity trap. All fixed; recorded because
+every one of them is a mistake that repeats.
+
+### Two bugs of the same family: a `<span>` given a size
+
+- **`BoolParam` drew only its knob.** `.ios` is a `span`, so it was an **inline** box — width and
+  height are simply ignored on one. The track vanished and the absolutely-positioned knob was all that
+  remained. `display: inline-block` fixes it.
+- **Button labels sat on the top edge** (§5, §8). `.btn` is also a `span`, blockified by its flex
+  parent so the height *did* apply — but with no vertical centring the text lays out on the first line
+  box, against the top. `inline-flex` + `align-items: center`.
+
+The general rule, since it will recur: **a height on a `span` means nothing without a `display` that
+accepts one, and means nothing useful without centring.** Every other sized element in the file was
+already a flex or grid child and so escaped by accident, not by design.
+
+### The specificity trap — the one worth remembering
+
+The checked checkbox showed a purple square with no tick. Not a colour choice: `.sheet .askagain span`
+(0,2,1) outranks `.sheet .box` (0,2,0) **and comes later**, and the box *is* a span inside `.askagain`
+— so the tick was being painted in the label's colour, `--text-2` `#6E6E76`, on purple. It had looked
+passable only while the fill was the lighter `#BF5AF2`; darkening the fill for contrast is what exposed
+it. Scoped to `.askagain > span:not(.box)`.
+
+### The layout error
+
+The inspector covered the bottom third of the photograph. That is not a drawing slip — it is the layout
+being wrong about what `Fit` means: **the canvas fits the space left over after the chrome, not the
+whole frame.** `.canvas` now reserves the stack's height. Also `.picture` had both `height` and
+`max-width` set, so whichever cap bound first broke the aspect ratio; width drives it now, with
+`max-height` as the guard.
+
+### Three contrast failures, and a new token because of them
+
+`accentEditor` `#BF5AF2` and `danger` `#E5484D` are **content** colours. Used as a ground under white
+text they give **3.5 : 1** and **2.9 : 1** — both under WCAG's 4.5, and `Done` at 13.5 px bold does not
+qualify for the 3 : 1 large-text allowance. In the light theme a white tick on `#BF5AF2` sitting on a
+white sheet disappeared outright.
+
+So the mockup now carries `--editor-solid` `#8B2FC9` and `--danger-solid` `#C0272C`: the same hues taken
+down until a white label passes. `accentEditor` keeps its real job — the selected tool's glyph, the
+slider fill, the markup outline, the switch track. **`EditorTokens.kt` does not need changing**, since it
+declares no colour; if the shell wants these they belong in `Theme.colors` as a pair beside the accents,
+and ME-101 is where that call gets made.
+
+Also fixed: `Cancel` was outlined in `--border` (4 % white), invisible on an elevated sheet, so it read
+as plain text rather than a button — now `--border-glow`. The unchecked checkbox was outlined at 8 %,
+which is not a control anyone can find — now `--text-3` at 1.5 px.
+
+### A real design contradiction, found by trying to draw it
+
+Step 1 asks for a **disabled** rail item. §3.4 and ME-115 say a tool switched off in Settings *leaves*
+the rail, the shortcut table and the fold — so by that reading a disabled rail item cannot exist and
+there is nothing to draw.
+
+Resolved by giving the state the meaning it actually has: **this tool cannot apply to this file** — an
+HDR output with no encoder for the format — dimmed, struck through, with a tooltip saying why. Settings
+removal and per-file unavailability are different states with different treatments, and the mockup and
+its note now say so. Previously the note claimed the struck item was the Settings case, which
+contradicted §3.4.
+
+### Smaller things
+
+- The selected rail tool carried **three** signals — fill, accent glyph and a dot — and the dot
+  collided with a 16 px icon in a 40 px button. Dropped to two, matching the dock's own `active-*`
+  idiom.
+- `IntParam` put `px` in the readout column while `FloatParam` put `+36%` there, so one column meant
+  two things. The unit is now a suffix on the number and the column always means "the value".
+- The HDR menu overrode `popoverWidth` to 230 px with an inline style — in the file that specifies the
+  token. Removed.
+- The `Cool` filter preview was `hue-rotate(30deg)` on an orange source, which comes out **yellow**,
+  contradicting its own label.
+- Seven colour literals were sitting in rules (`#0b0d11`, `#14171d`, `#30D158`, `#FF5C5C`, `#FFC062`,
+  `#FF8A8A`, `rgba(255,159,10,…)`) in a file whose whole claim is that colours come from tokens. Named
+  in the token block — `--warn`, `--ok`, `--shot-bg`, `--shot-plate` — or mapped to existing ones.
+- The banner spinner was a static ring and read as a broken glyph; it spins, and `--banner` finally has
+  a use marking which banner self-dismisses.
+- Rail glyphs are text stand-ins for `Icons.*`. The note now says so, so nobody implements the arrows.
+
+### How it was checked
+
+`file://` is refused by the browser extension, so the directory was served on `127.0.0.1:8765` and the
+page driven in Chrome — both themes, all eight sections, zoomed on the switch and the checkbox. Tag
+balance verified mechanically after the edits (138/138 `div`, 49/49 `span`, 4/4 `figure`), and the CSS
+variable audit re-run: no undefined, no unused but `--banner`, no dark-only declaration.
