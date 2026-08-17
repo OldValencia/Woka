@@ -37,7 +37,7 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-008](tickets/ME-008-engine-seam.md) | Editor engine seam | **done** 2026-08-16 |
 | [ME-009](tickets/ME-009-save-targets.md) | Save targets and the atomic write | **done** 2026-08-17 |
 | [ME-010](tickets/ME-010-probes.md) | Capability probes | **done** 2026-08-18 |
-| [ME-011](tickets/ME-011-test-harness.md) | Test harness and the fixture tool | not started |
+| [ME-011](tickets/ME-011-test-harness.md) | Test harness and the fixture tool | **done** 2026-08-18 |
 | [ME-012](tickets/ME-012-mockup-tokens.md) | Editor mockup and tokens | not started |
 | [ME-014](tickets/ME-014-remove-material3.md) | Remove `material3` — before ME-101 | not started |
 | [ME-101…ME-120](tickets/backlog.md) | Image editor | backlog |
