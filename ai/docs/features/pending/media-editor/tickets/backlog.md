@@ -13,15 +13,6 @@ Order inside a track is dependency order. Between tracks, only the marked depend
 
 ## 100 — Image editor
 
-### ME-104 — Save pipeline
-Replay the recipe onto a Skia surface at native scale, encode (PNG / JPEG **q95** / WebP q90), splice EXIF
-per the ME-010 decision, and write through ME-009's atomic write. `Done` saves a **copy** with the
-generated name; `Overwrite` is a separate menu entry behind a confirmation that says no copy is kept
-and carries the session-scoped "don't ask again" option (`OverwriteConsent`), and is the only path
-that invalidates caches. Reports through `EditSaveResult`; the banner follows `FrameExportBanner`.
-The source is never touched when the encode fails.
-*Depends on ME-009, ME-103.*
-
 ### ME-105 — Transform tool
 The first real tool and the proof that a tool is data: a manifest, three parameters, four actions and
 one pure matrix function. No inspector code, no overlay. If this needs anything the shell does not
@@ -45,9 +36,19 @@ There is no backup store to revert from: `Save a Copy` is the default, so the or
 original (decision log, 2026-08-16). The id is retired, not reused.
 
 ### ME-108 — Conversion on demand
-Formats Skia cannot encode, and multi-frame files, become editable through an explicit sheet: target
-format defaulted from the ME-010 matrix, the new filename shown live, the surviving frame named when
-the source is a frame set, and the HDR target offered when the probe says the encoder can write one.
+**The eight formats ME-104 refuses.** Skia encodes `png`, `jpg`/`jpeg` and `webp`, so those three save
+in place; `bmp`, `gif`, `tif`, `tiff`, `heic`, `heif` and `avif` return null from `formatFor` and land
+here. Multi-frame files land here too, whatever their container.
+
+An explicit sheet: target format defaulted from the ME-010 matrix (photographic → JPEG q95, graphics or
+alpha or multi-frame → PNG), the new filename shown live, the surviving frame named when the source is a
+frame set, and the HDR target offered when the probe says the encoder can write one.
+
+Two things the probe already settled and this ticket must not re-litigate: **HEIF output is impossible**
+— `libx265` cannot open a HEIF output at all, so `.heic` in never means `.heic` out — and **AVIF is the
+one refused format with a second road**, since `libaom-av1` writes PQ AVIF correctly, which is ME-118's
+business rather than this sheet's.
+
 The source file is kept exactly where it is; the converted file is a new item beside it.
 *Depends on ME-106.*
 
@@ -255,6 +256,23 @@ right glyph. `FloatingDock` currently draws the Editor item with `Icons.Static.S
 `// Replace with Editor icon if available` comment, so it is the same icon as the Settings button beside
 it. One-line fix, folded in here.
 *Depends on ME-106.*
+
+### ME-130 — Save UX
+The half of the old ME-104 block that a user actually sees, split off because none of it is testable
+without a window and none of the write path needs a decision about what a dialog says.
+
+`Done` becomes a menu: **Save a Copy** carrying the generated name, computed and shown *before* the
+write, and **Overwrite…** as the secondary, destructive entry. Overwrite goes through a confirmation
+stating plainly that no copy is kept and the original cannot be recovered, carrying the session-scoped
+"Don't ask again" that `OverwriteConsent` already holds in memory (§5 — deliberately never a
+`WokaSettings` field, because a persisted flag turns destructive overwrite into the permanent default).
+
+Then the reporting: `Done` closes the editor **immediately** and the save runs behind it, so the banner
+is the only report. It follows `FrameExportBanner` — a global status object read by one composable in
+the shell, which is what lets the banner outlive the editor it was started from. Three states: saving,
+saved with the name, and failed with "original untouched". Finally an explicit `FolderViewModel.refresh()`
+on success, because a copy is a **new** path and nothing watches the directory for it.
+*Depends on ME-104, ME-106.*
 
 ### ME-129 — Rename `IosSwitch`
 The components are Woka's own, inspired by that design language rather than branded with it
