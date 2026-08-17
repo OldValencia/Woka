@@ -36,11 +36,11 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-007](tickets/ME-007-raster-fold.md) | Raster stage and the fold | **done** 2026-08-16 |
 | [ME-008](tickets/ME-008-engine-seam.md) | Editor engine seam | **done** 2026-08-16 |
 | [ME-009](tickets/ME-009-save-targets.md) | Save targets and the atomic write | **done** 2026-08-17 |
-| [ME-010](tickets/ME-010-probes.md) | Capability probes and the testing artefact | not started |
+| [ME-010](tickets/ME-010-probes.md) | Capability probes | **done** 2026-08-18 |
 | [ME-011](tickets/ME-011-test-harness.md) | Test harness and the fixture tool | not started |
 | [ME-012](tickets/ME-012-mockup-tokens.md) | Editor mockup and tokens | not started |
 | [ME-014](tickets/ME-014-remove-material3.md) | Remove `material3` — before ME-101 | not started |
-| [ME-101…ME-119](tickets/backlog.md) | Image editor | backlog |
+| [ME-101…ME-120](tickets/backlog.md) | Image editor | backlog |
 | ME-107 | ~~Revert to Original~~ | dropped — no backup store |
 | [ME-201…ME-204](tickets/backlog.md) | Video editor | backlog |
 
@@ -358,12 +358,14 @@ directory for it.
 
 Everything here is **probe first, decision second** (ME-010) — none of it is assumed.
 
-- **EXIF orientation.** A JPEG that displays upright only because of its `Orientation` tag must be
-  saved with the rotation baked into the pixels and the tag reset to 1, or it double-rotates on the
-  next open. Whether Woka's decode path already applies the tag is a probe.
+- **EXIF orientation. Measured 2026-08-17 (ME-010): the decode path already applies the tag** — a
+  640×480 source with `Orientation=6` arrives as 480×640. The rotation is therefore already in the
+  pixels the editor holds, so a save must write the tag as **1** and must not rotate again. Splicing
+  the source `APP1` back unchanged would double-rotate on the next open.
 - **EXIF preservation.** Baseline decision: **preserve**. Camera, lens, date and GPS are not the
-  editor's to throw away, so the source `APP1` segment is spliced into the re-encoded output. If the
-  splice proves unreliable, the fallback is a one-time "metadata will be dropped" notice.
+  editor's to throw away. **Measured 2026-08-17: a Skia JPEG re-encode drops `APP1` entirely**, so
+  preservation is never automatic — the segment survives only if ME-104 splices it in deliberately.
+  If the splice proves unreliable, the fallback is a one-time "metadata will be dropped" notice.
 - **Colour profile.** An sRGB assumption is fine for the first release, and must be an explicit,
   logged assumption rather than an oversight: a Display-P3 photo re-encoded without its profile shifts
   visibly.
@@ -380,11 +382,42 @@ two different questions and conflating them is how HDR features become confusing
 |---|---|---|
 | `Keep` | the output carries the source's transfer function unchanged | an HDR-capable encoder — **ffmpeg**, not Skia |
 | `To SDR` | bakes the tone map into the pixels and writes an SDR file | the existing shader, rendered into the surface |
-| `To HDR` | expands an SDR source into a PQ/HLG output | inverse tone mapping + an HDR encoder — **gated on the probe**, labelled an expansion |
+| `To HDR` | expands an SDR source into a PQ output | inverse tone mapping + an HDR encoder — **still gated**, see below |
 
-`To HDR` never claims to recover clipped highlights; the UI says so in one line. It ships only if the
-probe shows the bundled ffmpeg writes a PQ/HLG AVIF or HEIF that Woka and Windows both read back
-correctly.
+**Probe results, 2026-08-17 (ME-010, ffmpeg 8.1.2-1.5.14). The gate is not resolved yet.**
+
+Settled:
+
+- **HEIF output is impossible**: `libx265` cannot open a HEIF output at all. AVIF or nothing.
+- **HLG is never actually written**: the PQ and HLG outputs come out byte-identical, so
+  `-color_trc arib-std-b67` is silently ignored. **HLG is not an offerable target**; `To HDR` means
+  PQ if it means anything.
+- **PQ AVIF via `libaom-av1` writes correctly by every measurement available** — PSNR 52 dB against
+  the source, identical stream tags, and a `colr`/`nclx` payload byte-identical to a known-good
+  reference.
+
+**Resolved 2026-08-18. The gate falls, and it was never the file.**
+
+Windows Photos renders our written file blown out — but it does not render the *reference* correctly
+either, flashing correct HDR and falling back to dull. **A viewer that mishandles a known-good file
+cannot decide whether ours is good**, so its verdict was evidence about Photos, not about the file.
+
+The check that mattered was the one never run: **how Woka itself draws these files**. Run, it found a
+bug in `HdrShader` — the gamut matrix ran before the tone curve, feeding a rational function defined
+on non-negative light the negatives that every out-of-709 colour produces, so saturated colours came
+out full-scale (red drew yellow, blue drew magenta, the rest white). With the matrix moved after the
+curve, Woka draws both the reference and **our own written PQ AVIF** correctly, confirmed on sight.
+
+So `To HDR` is technically clear: **PQ AVIF via `libaom-av1`, and nothing else** — no HEIF, no HLG.
+Whether it *ships* is still a product call for §6.1, but no measurement blocks it.
+
+**Two lessons, recorded because both will recur:** a read-back that checks the transfer *tag* cannot
+certify an HDR file — the probe reported "PQ + wide" for a file rejected on sight. And a visual check
+is only as good as the viewer doing the looking, **including when that viewer is ours**.
+
+**None of this touches HDR *display*.** Woka already tone-maps HDR stills at draw time, and the
+`Auto` / `Force HDR` / `Force SDR` view mode below is unaffected. Everything above is about what a
+save *writes*.
 
 Skia is not the encoder for any HDR output: it does not even read a valid PQ `cICP` PNG correctly
 (measured 2026-08-07, recorded in `StillColorInfo`). HDR output therefore goes through the bundled
@@ -458,9 +491,18 @@ sheet instead of a dead Edit button.
 | 2026-08-16 | Copy name? | `photo-edited.jpg`, collisions `-2`, `-3` | Reads as what it is; sorts next to the original; no space to break a shell command |
 | 2026-08-16 | Overwrite consent? | Ask every time, plus a session-scoped "don't ask again" | Repetition is the point for a destructive action, but twenty in a row is not served by twenty dialogs. In memory only |
 | 2026-08-16 | HDR: one control or two? | Two — an `Output` **tool** in the document and a **view mode** that changes no pixels | They answer different questions: what the file becomes, versus what the screen shows |
-| 2026-08-16 | Who encodes HDR? | ffmpeg, never Skia | Skia misreads a valid PQ `cICP` PNG (2026-08-07, `StillColorInfo`); the bundled ffmpeg can write PQ/HLG AVIF/HEIF — gated on the ME-010 probe |
+| 2026-08-16 | Who encodes HDR? | ffmpeg, never Skia | Skia misreads a valid PQ `cICP` PNG (2026-08-07, `StillColorInfo`); the bundled ffmpeg can write PQ AVIF, and only that (ME-010) |
 | 2026-08-16 | Entry points? | Viewer control pill **and** grid context menu, one entry function | Two doors, one decision about editability |
 | 2026-08-16 | `material3`? | Removed before the editor shell (ME-014) | 37 files hold a pre-release dependency for four symbols; 23 files already use the `BasicText` idiom |
+| 2026-08-17 | Does the decode path apply EXIF `Orientation`? | **Yes** — measured, ME-010 | A 640×480 source with `Orientation=6` arrives 480×640, so the editor must not rotate again and must save the tag as 1 |
+| 2026-08-17 | Does a Skia re-encode keep EXIF? | **No** — `APP1` is dropped entirely | Preservation is never automatic; ME-104 splices the segment in or the metadata is gone |
+| 2026-08-17 | What must an overwrite invalidate? | `ImageBitmapCache.key(path, 0)` and `previewKey(path)`, and nothing else | The `.thumbnails` poster is keyed on length + mtime, so it orphans rather than going stale. `ImageBitmapCache` has no removal API yet — one is needed |
+| 2026-08-17 | Can the bundled ffmpeg write HDR stills? | **AVIF yes (PQ), HEIF no, HLG never written** | `libx265` cannot open a HEIF output; the HLG request produces a byte-identical PQ file, so the flag is ignored |
+| 2026-08-17 | Does `To HDR` ship? | **Still gated**, and the evidence so far is void | Every HDR measurement was taken against `hdr_pq.avif`, which turned out to be SDR pixels wearing HDR tags (`psnr` between the PQ and HLG fixtures is **inf** — `setparams` only tags). Re-run against a genuine source |
+| 2026-08-18 | Why did the viewer burn out HDR stills while the grid did not? | **`HdrShader` ran the BT.2020→709 matrix before the tone curve** — fixed by swapping the order (ME-010) | `hable` is defined on non-negative light; every out-of-709 colour reaches it negative, its denominator flips sign, and it returns >1. Red drew yellow, blue drew magenta, the rest white. The HLG fixture looked right only because its lower absolute level kept four of six negatives small enough to clamp to zero — magnitude, not branch |
+| 2026-08-18 | Is HDR *display* now correct? | **No — one defect left, and it is the viewer's, not the editor's** | The tone curve's white point is the literal `W = 11.2`, asserting 1120-nit content. A real 174-nit HDR frame therefore draws SDR white at 148/255 instead of 255. Needs a genuine HDR still to tune against, so it is **ME-120** in the backlog rather than a hold on ME-010 |
+| 2026-08-17 | Is a transfer-tag read-back enough to certify HDR output? | **No** | The probe reported "PQ + wide" for the file rejected on sight. And a visual check is only as good as the viewer doing the looking |
+| 2026-08-17 | What does a 100 MP source cost? | 384 MB native, 667 ms to decode — larger than the whole cache budget | Editing is fine because the canvas draws a 2560 px proxy built in 8 ms; caching the native is what has to be avoided |
 
 ---
 
@@ -469,9 +511,13 @@ sheet instead of a dead Edit button.
 Not oversights — things this document deliberately has no answer for yet. Each becomes a ticket when
 it becomes the next question, per `ai/docs/conventions/feature-docs.md`.
 
-- **Very large sources.** A 100 MP photo is ~400 MB of native pixels at save time, against a 1.5 GB
-  heap and a cache that already holds two or three natives. ME-010 measures it; the guard rail (refuse,
-  warn, or stream in tiles) is decided from that number.
+- **Very large sources — measured 2026-08-17 (ME-010).** A 100 MP source (11600×8700) decodes in
+  667 ms to **384 MB** of native pixels; a 24 MP one is 91 MB. The proxy is cheap at both — 2560 px
+  in 6–8 ms — and it is what the canvas draws, so *editing* a huge photo is comfortable. *Holding* it
+  is not: 384 MB exceeds the whole 256 MB `ImageBitmapCache` budget, so one such picture would evict
+  everything else and still not fit. The guard rail this points at is "keep the native bitmap out of
+  the shared cache for the duration of an edit", not "refuse the file" — but the rail itself is still
+  a ticket to write.
 - **Save cancellation.** What happens to an in-flight save when the app is closing. Nothing writes a
   partial file — the atomic move is the last step — but the banner and the job's lifetime are unstated.
 - **Editor plus PiP.** The picture-in-picture window can be open while the editor is; who owns the

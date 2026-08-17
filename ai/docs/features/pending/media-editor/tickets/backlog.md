@@ -136,6 +136,28 @@ editor's top bar so the user can see what the HDR tool is about to write. Belong
 much as to the editor; it is listed here because §6.1 is where the two halves are defined together.
 *Depends on ME-106.*
 
+### ME-120 — The tone curve's white point must come from the content
+`HdrShader` normalises Hable by the literal `W = 11.2`, which asserts every HDR source peaks at 1120
+nits. Measured in ME-010: a real HDR frame peaks at **174**, so the curve compresses a picture that
+barely exceeds SDR as though it had eleven times the range, and SDR reference white lands at
+**148/255** instead of 255. That is the "brightness at −50 %" the author reported — the second of two
+defects found on 2026-08-18, the first (gamut matrix before the curve, wrecking every saturated
+colour) being fixed in ME-010.
+
+The shape: the white point becomes a uniform beside `transfer` and `wideGamut`. A still is decoded in
+full, so its peak can simply be measured; video should prefer the stream's mastering-display or
+MaxCLL metadata and fall back to a constant when a file carries neither.
+
+**Blocked on a fixture, not on the analysis.** The corpus has no genuine HDR still — `hdr_pq.avif`
+and friends are SDR pixels wearing a PQ tag (see the corpus README), and tuning a tone curve against
+them would tune it against nothing. A real PQ BT.2020 still has to land in the corpus first, ideally
+two or three with different peaks.
+
+Belongs to the viewer, not to the editor; listed here because ME-010 is where it was measured and
+because the HDR tool's `To SDR` bakes this very curve into pixels.
+*Depends on a real HDR fixture reaching the corpus. Blocks nothing in the 100 track except honest
+output from ME-118's `To SDR`.*
+
 ---
 
 ## 200 — Video editor

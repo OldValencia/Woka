@@ -39,8 +39,24 @@ in the file names or in the stream metadata.
 | `anim.avif` | **8** frames, 320×240, in **two** streams — a 1-frame cover item and the 8-frame animation | animated AVIF: "one stream per picture" is wrong, and only the frame count tells the two streams apart |
 | `anim.gif` / `anim.webp` | **8** frames, 320×240, 120 ms each | animated stills that must not freeze on frame 1 |
 | `multipage.tif` | **3** pages, 320×240, deflate | multi-page TIFF |
-| `hdr_pq.avif` / `hdr_hlg.avif` | 640×480 10-bit, BT.2020 with PQ and HLG transfers | Phase 5: HLG cannot be settled without an HLG file |
-| `hdr_pq.png` | 640×480 `rgb48be` with a `cICP` chunk | an HDR still on the one path that already decodes |
+| `hdr_pq.avif` / `hdr_hlg.avif` | **SDR pixels wearing HDR tags — see the warning below** | tag *reading* only; useless for anything about pixels |
+| `hdr_pq.png` | same warning — `rgb48be` SDR data with a `cICP` chunk | tag reading on the PNG path |
+
+> **These three files are not HDR pictures.** `setparams` writes the colour tags and does not touch a
+> single pixel, so what they contain is an ordinary SDR `testsrc2` pattern that merely *claims* PQ or
+> HLG. Proof: `hdr_pq.avif` and `hdr_hlg.avif` are pixel-identical — `ffmpeg -lavfi psnr` reports
+> **inf** — and two genuinely different transfer curves cannot encode the same scene into the same
+> numbers. Measured 2026-08-17.
+>
+> The consequence: a viewer that honours the tag reads their white as PQ code 1.0, which *means*
+> 10000 nits. A frame cut from a real HDR master peaks at **144** (0.565 → 174 nits) where these peak
+> at **255**, so these files drive the whole draw path far past anything real content reaches — useful
+> for finding where it breaks, useless for judging whether it looks right. They did in fact expose a
+> genuine `HdrShader` bug that way on 2026-08-18 (gamut matrix before the tone curve); the bug was
+> ours, not theirs.
+>
+> So they test that a transfer tag is *read*, and nothing else. **Anything about how HDR pixels are
+> decoded, tone mapped or drawn needs a genuine HDR source**, and the corpus does not have one yet.
 | `tools/pgs_gen.py`, `tools/vobsub_idx.py` | generators for the `.sup` and `.idx`/`.sub` pair | how the bitmap subtitle files were produced |
 | `tools/frameset_gen.py` | generator for every frame-set fixture above | how the HEIC/AVIF/animation/HDR files were produced |
 

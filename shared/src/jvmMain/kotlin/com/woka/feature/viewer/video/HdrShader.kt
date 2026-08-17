@@ -68,8 +68,6 @@ internal const val HDR_SHADER = """
             lin = pow(e, vec3(2.2));
         }
 
-        if (wideGamut > 0.5) lin = bt2020to709 * lin;
-
         // The tone curve belongs to the HDR transfers alone. A wide-gamut SDR
         // picture has no extra range to compress and must come out with its
         // luminance untouched — only its primaries converted.
@@ -78,6 +76,20 @@ internal const val HDR_SHADER = """
             const float W = 11.2;
             mapped = hable(lin) / hable(vec3(W));
         }
-        return half4(pow(clamp(mapped, 0.0, 1.0), vec3(1.0/2.2)), 1.0);
+        mapped = clamp(mapped, 0.0, 1.0);
+
+        // Gamut conversion goes *after* the curve, never before. `hable` is a
+        // rational function defined on non-negative light, and the matrix is
+        // what first produces negatives: every saturated BT.2020 colour falls
+        // outside BT.709. Fed one, the curve's denominator changes sign and it
+        // returns a large positive. Measured on the PQ bars: BT.2020 red
+        // reached the curve as g = -12.5 and left it as 1.73, so red drew
+        // yellow, blue drew magenta, and green, yellow, magenta and cyan all
+        // drew white. Clipping the converted value is the right answer
+        // instead — a colour the display cannot make becomes the nearest one
+        // it can, which is what leaves red red.
+        if (wideGamut > 0.5) mapped = clamp(bt2020to709 * mapped, 0.0, 1.0);
+
+        return half4(pow(mapped, vec3(1.0/2.2)), 1.0);
     }
 """
