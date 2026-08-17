@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Woka Editor — Visual Spec</title>
+<style>
+/* No @import, no CDN: this file must open by double-click with the network off.
+   FINAL_design_mockup.html pulls Inter from Google Fonts, which is why its type
+   silently falls back when offline. Inter first if the machine has it, then the
+   platform UI face. */
+:root {
+    font-family: Inter, -apple-system, "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+
+    /* --- Theme.colors / LightColors --- */
+    --bg:            #F2F2F7;
+    --elevated:      #FFFFFF;
+    --hover:         rgba(0,0,0,0.039);
+    --text:          #1C1C1E;
+    --text-2:        #6E6E76;
+    --text-3:        #9A9AA1;
+    --border:        rgba(0,0,0,0.078);
+    --border-glow:   rgba(0,0,0,0.149);
+    --danger:        #E5484D;
+    --on-accent:     #FFFFFF;
+    --on-danger:     #FFFFFF;
+
+    /* --- ViewerChrome: identical in both themes, by design --- */
+    --hud-scrim:     rgba(0,0,0,0.5);
+    --popover-scrim: rgba(0,0,0,0.6);
+    --tooltip-scrim: rgba(0,0,0,0.7);
+    --on-scrim:      #F4F4F6;
+    --on-scrim-2:    #CDCDD2;
+    --on-scrim-off:  #838893;
+    --on-scrim-bd:   rgba(255,255,255,0.08);
+    --on-scrim-hov:  rgba(255,255,255,0.08);
+    --on-scrim-sel:  rgba(255,255,255,0.14);
+    --radius:        12px;
+    --radius-tip:    6px;
+    --popover-w:     210px;
+
+    /* --- accentEditor: the one colour that ignores the theme --- */
+    --editor:        #BF5AF2;
+
+    /* --- EditorTokens.Motion --- */
+    --quick:  150ms;
+    --panel:  200ms;
+    /* Declared, not applied: a self-dismissing banner is behaviour, not a
+       transition, so CSS has nothing to hang it on. It is spec'd in §7's note. */
+    --banner: 2600ms;
+    --ease:   cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+[data-theme="dark"] {
+    --bg:            #0E1015;
+    --elevated:      #161920;
+    --hover:         rgba(255,255,255,0.02);
+    --text:          #F4F4F6;
+    --text-2:        #515764;
+    --text-3:        #838893;
+    --border:        rgba(255,255,255,0.04);
+    --border-glow:   rgba(255,255,255,0.08);
+    --danger:        #FF5C5C;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    padding: 0 0 80px;
+}
+
+/* ============ page furniture (not part of the spec) ============ */
+.legend { max-width: 1180px; margin: 0 auto; padding: 28px 24px 0; }
+.legend h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.4px; }
+.legend p { font-size: 13.5px; color: var(--text-2); margin-top: 8px; line-height: 1.55; max-width: 76ch; }
+.legend code { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 12.5px; }
+.state-label {
+    max-width: 1180px; margin: 40px auto 10px; padding: 0 24px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.9px; text-transform: uppercase;
+    color: var(--text-3);
+}
+.note { max-width: 1180px; margin: 0 auto 12px; padding: 0 24px; font-size: 13px; color: var(--text-2); line-height: 1.5; }
+.theme-switch {
+    position: fixed; top: 18px; right: 22px; z-index: 9000;
+    display: flex; align-items: center; gap: 8px;
+    background: var(--elevated); border: 1px solid var(--border);
+    border-radius: 999px; padding: 6px 8px 6px 14px;
+    font-size: 12.5px; font-weight: 600; color: var(--text-2);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.18); cursor: pointer;
+}
+.theme-switch .track {
+    width: 38px; height: 22px; border-radius: 11px; background: var(--border-glow);
+    position: relative; transition: background var(--quick) var(--ease);
+}
+.theme-switch .knob {
+    position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%;
+    background: var(--elevated); box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    transition: transform var(--quick) var(--ease);
+}
+[data-theme="dark"] .theme-switch .track { background: var(--editor); }
+[data-theme="dark"] .theme-switch .knob { transform: translateX(16px); }
+
+/* ============ the editor frame ============ */
+.frame {
+    max-width: 1180px; margin: 0 auto; padding: 0 24px;
+}
+.editor {
+    position: relative; height: 660px; border-radius: 14px; overflow: hidden;
+    border: 1px solid var(--border); background: #0b0d11;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.28);
+    display: flex; flex-direction: column;
+}
+.editor.short { height: 420px; }
+
+/* The blurred media backdrop the editor is full-bleed over (ViewerBackdrop). */
+.backdrop {
+    position: absolute; inset: -6%;
+    background:
+        radial-gradient(38% 52% at 26% 32%, #8e5b2f 0%, transparent 62%),
+        radial-gradient(44% 58% at 74% 66%, #26537a 0%, transparent 64%),
+        linear-gradient(135deg, #23303f, #12161d 70%);
+    filter: blur(46px) saturate(1.4); transform: scale(1.05);
+}
+
+/* --- top bar: EditorTokens.TopBar --- */
+.topbar {
+    position: relative; z-index: 20; height: 60px; flex: none;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px; gap: 12px;
+    background: var(--hud-scrim);
+    backdrop-filter: blur(24px) saturate(1.2); -webkit-backdrop-filter: blur(24px) saturate(1.2);
+    border-bottom: 1px solid var(--on-scrim-bd);
+}
+.tb-group { display: flex; align-items: center; gap: 6px; }
+.tb-title { font-size: 15px; font-weight: 600; color: var(--on-scrim); letter-spacing: -0.1px; }
+.tb-dirty { font-size: 13px; color: var(--on-scrim-2); }
+
+.tb-btn {
+    height: 34px; padding: 0 12px; border-radius: 8px;
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 13px; font-weight: 600; color: var(--on-scrim);
+    border: 1px solid transparent; cursor: pointer;
+    transition: background var(--quick) var(--ease), border-color var(--quick) var(--ease);
+}
+.tb-btn:hover { background: var(--on-scrim-hov); }
+.tb-btn.is-hover { background: var(--on-scrim-hov); }
+.tb-btn.is-disabled { color: var(--on-scrim-off); cursor: default; }
+.tb-icon-btn { width: 34px; padding: 0; justify-content: center; font-size: 15px; }
+
+.tb-done {
+    height: 34px; padding: 0 18px; border-radius: 17px;
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 13.5px; font-weight: 700; cursor: pointer;
+    background: var(--editor); color: #fff;
+    box-shadow: 0 4px 14px rgba(191,90,242,0.38);
+    transition: filter var(--quick) var(--ease);
+}
+.tb-done:hover { filter: brightness(1.08); }
+.tb-done.is-clean {
+    background: var(--on-scrim-hov); color: var(--on-scrim-off);
+    box-shadow: none; cursor: default; font-weight: 600;
+}
+.tb-done .caret { opacity: 0.75; font-size: 10px; }
+
+/* --- canvas --- */
+.canvas { position: relative; z-index: 10; flex: 1; display: grid; place-items: center; }
+.picture {
+    width: 46%; aspect-ratio: 3 / 2; border-radius: 4px;
+    background: linear-gradient(135deg, #d98b3f 0%, #b5532e 38%, #2f5d86 100%);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.55);
+    position: relative;
+}
+/* a markup shape with its handles showing (§4.3 hover) */
+.shape { position: absolute; left: 16%; top: 22%; width: 34%; height: 30%;
+         border: 2px solid var(--editor); border-radius: 3px; }
+.shape i {
+    position: absolute; width: 9px; height: 9px; border-radius: 50%;
+    background: #fff; border: 1.5px solid var(--editor);
+}
+.shape i:nth-child(1) { left: -5px; top: -5px; }
+.shape i:nth-child(2) { right: -5px; top: -5px; }
+.shape i:nth-child(3) { left: -5px; bottom: -5px; }
+.shape i:nth-child(4) { right: -5px; bottom: -5px; }
+
+/* --- floating stack: inspector above rail --- */
+.stack {
+    position: absolute; z-index: 30; left: 50%; transform: translateX(-50%);
+    bottom: 28px; display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+
+/* --- inspector: EditorTokens.Inspector --- */
+.inspector {
+    width: 420px; padding: 10px 14px; border-radius: var(--radius);
+    background: var(--popover-scrim);
+    backdrop-filter: blur(30px) saturate(1.3); -webkit-backdrop-filter: blur(30px) saturate(1.3);
+    border: 1px solid var(--on-scrim-bd);
+    box-shadow: 0 20px 44px rgba(0,0,0,0.5);
+    display: flex; flex-direction: column; gap: 2px;
+}
+.insp-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 2px 0 8px; margin-bottom: 4px; border-bottom: 1px solid var(--on-scrim-bd);
+}
+.insp-head b { font-size: 13px; font-weight: 700; color: var(--on-scrim); letter-spacing: -0.1px; }
+.insp-head .reset { font-size: 12px; font-weight: 600; color: var(--on-scrim-2); cursor: pointer; }
+
+.row { min-height: 36px; display: flex; align-items: center; gap: 10px; }
+.row > label { width: 104px; flex: none; font-size: 12.5px; font-weight: 600; color: var(--on-scrim-2); }
+.row .readout {
+    width: 48px; flex: none; text-align: right;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: 12px; font-variant-numeric: tabular-nums; color: var(--on-scrim);
+}
+.row.tall { align-items: flex-start; padding: 6px 0; }
+.row.tall > label { padding-top: 6px; }
+.row .fill { flex: 1; min-width: 0; }
+
+/* FloatParam — DetentSlider */
+.slider { position: relative; height: 22px; display: flex; align-items: center; }
+.slider .track { height: 3px; width: 100%; border-radius: 2px; background: var(--on-scrim-hov); }
+.slider .done { position: absolute; height: 3px; border-radius: 2px; background: var(--editor); }
+.slider .detent { position: absolute; width: 1px; height: 9px; background: var(--on-scrim-bd); }
+.slider .knob {
+    position: absolute; width: 15px; height: 15px; border-radius: 50%; background: #fff;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.55); transform: translateX(-50%);
+}
+
+/* IntParam — stepper */
+.stepper { display: inline-flex; align-items: center; border-radius: 8px; overflow: hidden;
+           border: 1px solid var(--on-scrim-bd); }
+.stepper span { width: 28px; height: 26px; display: grid; place-items: center;
+                font-size: 14px; color: var(--on-scrim); cursor: pointer; }
+.stepper span:hover { background: var(--on-scrim-hov); }
+.stepper em {
+    min-width: 54px; height: 26px; display: grid; place-items: center; font-style: normal;
+    font-family: ui-monospace, Consolas, monospace; font-size: 12px; color: var(--on-scrim);
+    border-inline: 1px solid var(--on-scrim-bd); font-variant-numeric: tabular-nums;
+}
+
+/* BoolParam — IosSwitch */
+.ios { width: 42px; height: 25px; border-radius: 13px; background: var(--on-scrim-sel);
+       position: relative; cursor: pointer; transition: background var(--quick) var(--ease); }
+.ios::after { content: ""; position: absolute; top: 2px; left: 2px; width: 21px; height: 21px;
+              border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+              transition: transform var(--quick) var(--ease); }
+.ios.on { background: var(--editor); }
+.ios.on::after { transform: translateX(17px); }
+
+/* ChoiceParam — SegmentedControl */
+.segmented { display: inline-flex; padding: 2px; border-radius: 9px; background: var(--on-scrim-hov);
+             border: 1px solid var(--on-scrim-bd); }
+.segmented span {
+    padding: 4px 12px; border-radius: 7px; font-size: 12px; font-weight: 600;
+    color: var(--on-scrim-2); cursor: pointer;
+}
+.segmented span.sel { background: var(--on-scrim-sel); color: var(--on-scrim); }
+
+/* PreviewChoiceParam — thumbnail strip */
+.strip { display: flex; gap: 8px; }
+.strip figure { width: 64px; }
+.strip .thumb {
+    width: 64px; height: 64px; border-radius: 8px; overflow: hidden;
+    border: 2px solid transparent; cursor: pointer;
+    background: linear-gradient(135deg, #d98b3f, #b5532e 40%, #2f5d86);
+}
+.strip figure.sel .thumb { border-color: var(--editor); }
+.strip .f-mono  { filter: grayscale(1); }
+.strip .f-warm  { filter: saturate(1.5) hue-rotate(-12deg); }
+.strip .f-cool  { filter: saturate(1.2) hue-rotate(30deg); }
+.strip figcaption { margin-top: 5px; font-size: 10.5px; font-weight: 600; text-align: center;
+                    color: var(--on-scrim-off); }
+.strip figure.sel figcaption { color: var(--on-scrim); }
+
+/* ColorParam — swatches + custom */
+.swatches { display: flex; gap: 8px; align-items: center; }
+.swatches i { width: 24px; height: 24px; border-radius: 50%; cursor: pointer;
+              border: 2px solid transparent; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.25); }
+.swatches i.sel { border-color: var(--on-scrim); }
+.swatches .custom {
+    width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+    font-size: 12px; color: var(--on-scrim); border: 1px dashed var(--on-scrim-bd); cursor: pointer;
+    background: conic-gradient(#ff5c5c, #ffd60a, #30d158, #0a84ff, #bf5af2, #ff5c5c);
+}
+
+/* ActionParam — icon buttons */
+.actions { display: flex; gap: 6px; }
+.actions span {
+    width: 34px; height: 30px; border-radius: 8px; display: grid; place-items: center;
+    font-size: 14px; color: var(--on-scrim); border: 1px solid var(--on-scrim-bd); cursor: pointer;
+}
+.actions span:hover { background: var(--on-scrim-hov); }
+
+/* ObjectParam — the shell renders nothing */
+.no-row { font-size: 12px; color: var(--on-scrim-off); font-style: italic; }
+
+/* the disabled-tool notice */
+.notice {
+    margin-top: 8px; display: flex; gap: 9px; align-items: flex-start;
+    padding: 9px 11px; border-radius: 9px;
+    background: rgba(255,159,10,0.14); border: 1px solid rgba(255,159,10,0.32);
+}
+.notice b { font-size: 12px; color: #FFC062; font-weight: 700; }
+.notice p { font-size: 11.5px; color: var(--on-scrim-2); line-height: 1.45; margin-top: 2px; }
+.notice a { color: #FFC062; font-weight: 600; text-decoration: none; cursor: pointer; }
+
+/* --- rail: EditorTokens.Rail --- */
+.rail {
+    display: flex; align-items: center; gap: 4px; padding: 6px; border-radius: 20px;
+    background: var(--popover-scrim);
+    backdrop-filter: blur(30px) saturate(1.3); -webkit-backdrop-filter: blur(30px) saturate(1.3);
+    border: 1px solid var(--on-scrim-bd);
+    box-shadow: 0 24px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03);
+}
+.rail .tool {
+    width: 40px; height: 40px; border-radius: 14px; display: grid; place-items: center;
+    font-size: 16px; color: var(--on-scrim-2); cursor: pointer; position: relative;
+    transition: background var(--quick) var(--ease), color var(--quick) var(--ease);
+}
+.rail .tool:hover { background: var(--on-scrim-hov); color: var(--on-scrim); }
+.rail .tool.sel { background: var(--on-scrim-sel); color: var(--editor); }
+.rail .tool.sel::after {
+    content: ""; position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%);
+    width: 4px; height: 4px; border-radius: 50%; background: var(--editor);
+}
+.rail .tool.off { color: var(--on-scrim-off); cursor: default; }
+.rail .tool.off::before {
+    content: ""; position: absolute; width: 22px; height: 1px; background: var(--on-scrim-off);
+    transform: rotate(-45deg);
+}
+.rail .sep { width: 1px; height: 20px; margin: 0 4px; background: var(--on-scrim-bd); flex: none; }
+
+/* --- menus, dialogs, banners --- */
+.menu {
+    width: var(--popover-w); padding: 12px 8px; border-radius: var(--radius);
+    background: var(--popover-scrim); border: 1px solid var(--on-scrim-bd);
+    backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+    box-shadow: 0 20px 44px rgba(0,0,0,0.5);
+}
+.menu .item { padding: 8px 10px; border-radius: 8px; cursor: pointer; }
+.menu .item:hover, .menu .item.is-hover { background: var(--on-scrim-hov); }
+.menu .item b { display: block; font-size: 12.5px; font-weight: 600; color: var(--on-scrim); }
+.menu .item small { display: block; font-size: 11px; color: var(--on-scrim-off); margin-top: 2px;
+                    font-family: ui-monospace, Consolas, monospace; }
+.menu .item.danger b { color: #FF8A8A; }
+.menu .div { height: 1px; margin: 5px 6px; background: var(--on-scrim-bd); }
+
+/* Dialogs are NOT over media — they use Theme.colors and follow the theme. */
+.sheet-wrap { position: absolute; inset: 0; z-index: 60; display: grid; place-items: center;
+              background: rgba(0,0,0,0.45);
+              animation: fade var(--panel) var(--ease) both; }
+.menu, .inspector { animation: fade var(--panel) var(--ease) both; }
+@keyframes fade { from { opacity: 0 } to { opacity: 1 } }
+.sheet {
+    width: 400px; padding: 20px; border-radius: var(--radius);
+    background: var(--elevated); border: 1px solid var(--border); color: var(--text);
+    box-shadow: 0 28px 70px rgba(0,0,0,0.45);
+}
+.sheet h3 { font-size: 15px; font-weight: 700; letter-spacing: -0.15px; }
+.sheet p { font-size: 12.5px; color: var(--text-2); line-height: 1.5; margin-top: 8px; }
+.sheet .askagain { display: flex; align-items: center; gap: 9px; margin-top: 16px; cursor: pointer; }
+.sheet .box {
+    width: 17px; height: 17px; border-radius: 5px; flex: none;
+    border: 1px solid var(--border-glow); display: grid; place-items: center;
+    font-size: 11px; color: var(--on-accent);
+}
+.sheet .box.on { background: var(--editor); border-color: var(--editor); }
+.sheet .askagain span { font-size: 12.5px; color: var(--text-2); }
+.sheet .buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+.btn {
+    height: 32px; padding: 0 15px; border-radius: 8px; border: 1px solid var(--border);
+    background: transparent; color: var(--text); font-size: 12.5px; font-weight: 600; cursor: pointer;
+}
+.btn:hover { background: var(--hover); }
+.btn.primary { background: var(--editor); border-color: transparent; color: #fff; }
+.btn.destroy { background: var(--danger); border-color: transparent; color: var(--on-danger); }
+
+.banner {
+    display: inline-flex; align-items: center; gap: 9px;
+    padding: 10px 16px; border-radius: var(--radius);
+    background: var(--hud-scrim); border: 1px solid var(--on-scrim-bd);
+    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    font-size: 13px; font-weight: 600; color: var(--on-scrim);
+}
+.banner .spin { width: 13px; height: 13px; border-radius: 50%; flex: none;
+                border: 2px solid var(--on-scrim-bd); border-top-color: var(--on-scrim); }
+.banner .ok { color: #30D158; }
+.banner .bad { color: #FF5C5C; }
+.banner small { color: var(--on-scrim-2); font-weight: 500; }
+
+/* the tooltip, at ViewerChrome's own numbers */
+.tooltip { display: inline-block; padding: 4px 8px; border-radius: var(--radius-tip);
+           background: var(--tooltip-scrim); color: var(--on-scrim);
+           font-size: 11px; font-weight: 500; letter-spacing: 0.5px; }
+
+.row-demo { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start;
+            padding: 22px; border-radius: 14px; background: #14171d;
+            border: 1px solid var(--on-scrim-bd); }
+.pair { display: flex; gap: 26px; flex-wrap: wrap; }
+</style>
+</head>
+<body data-theme-host>
+
+<div class="theme-switch" onclick="toggleTheme()">
+    <span id="tname">Dark</span>
+    <span class="track"><span class="knob"></span></span>
+</div>
+
+<div class="legend">
+    <h1>Woka Editor — visual spec</h1>
+    <p>
+        The spec for ME-101…ME-119, not a proposal: once this file lands the UI tickets implement it,
+        and a disagreement is settled by changing this file first. Values mirror
+        <code>feature/editor/shell/EditorTokens.kt</code>; colours come from <code>Theme.colors</code>
+        and <code>ViewerChrome</code> and are never re-declared here.
+    </p>
+    <p>
+        <b>On the theme.</b> The editor follows it, like the rest of the app. What does <i>not</i>
+        follow it is the layer sitting on the photograph: <code>ViewerChrome</code>'s scrims stay dark
+        and its <code>onScrim*</code> foregrounds stay light in both themes, because legibility over a
+        picture cannot depend on a preference. Flip the switch and watch the top bar, inspector and
+        rail hold still while the overwrite dialog, the conversion sheet and this page change — that
+        difference is the design, not an oversight.
+    </p>
+</div>
+
+<div class="state-label">1 · The editor — a tool selected, document dirty</div>
+<div class="frame">
+    <div class="editor">
+        <div class="backdrop"></div>
+
+        <div class="topbar">
+            <div class="tb-group">
+                <span class="tb-btn">Cancel</span>
+            </div>
+            <div class="tb-group">
+                <span class="tb-title">photo.jpg</span>
+                <span class="tb-dirty">· Edited</span>
+            </div>
+            <div class="tb-group">
+                <span class="tb-btn">HDR <span class="caret" style="opacity:.6;font-size:10px">▾</span></span>
+                <span class="tb-btn tb-icon-btn">↶</span>
+                <span class="tb-btn tb-icon-btn is-disabled">↷</span>
+                <span class="tb-done">Done <span class="caret">▾</span></span>
+            </div>
+        </div>
+
+        <div class="canvas">
+            <div class="picture">
+                <div class="shape"><i></i><i></i><i></i><i></i></div>
+            </div>
+        </div>
+
+        <div class="stack">
+            <div class="inspector">
+                <div class="insp-head"><b>Adjustments</b><span class="reset">Reset</span></div>
+                <div class="row">
+                    <label>Brightness</label>
+                    <div class="fill slider">
+                        <div class="track"></div>
+                        <div class="done" style="left:50%;width:12%"></div>
+                        <div class="detent" style="left:50%"></div>
+                        <div class="knob" style="left:62%"></div>
+                    </div>
+                    <div class="readout">+12</div>
+                </div>
+                <div class="row">
+                    <label>Contrast</label>
+                    <div class="fill slider">
+                        <div class="track"></div>
+                        <div class="done" style="left:46%;width:4%"></div>
+                        <div class="detent" style="left:50%"></div>
+                        <div class="knob" style="left:46%"></div>
+                    </div>
+                    <div class="readout">−4</div>
+                </div>
+                <div class="row">
+                    <label>Saturation</label>
+                    <div class="fill slider">
+                        <div class="track"></div>
+                        <div class="detent" style="left:50%"></div>
+                        <div class="knob" style="left:50%"></div>
+                    </div>
+                    <div class="readout">0</div>
+                </div>
+            </div>
+
+            <div class="rail">
+                <div class="tool" title="Transform">⤢</div>
+                <div class="tool" title="Rotate">⟳</div>
+                <div class="tool" title="Crop">⛶</div>
+                <div class="sep"></div>
+                <div class="tool sel" title="Adjustments">◐</div>
+                <div class="tool" title="Filters">✦</div>
+                <div class="sep"></div>
+                <div class="tool" title="Markup">✎</div>
+                <div class="sep"></div>
+                <div class="tool off" title="Resize — switched off in Settings">⇲</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="note" style="margin-top:12px">
+    Rail groups are <code>ToolDomain</code> boundaries — Geometry · Color · Annotate · Output — with one
+    1×20 divider each. The last item is the <b>disabled</b> state: dimmed to
+    <code>onScrimDisabled</code> and struck through, present but not pressable. <code>Redo</code> shows
+    the same treatment in the top bar. <code>Done</code> is the dirty state; §2 has the clean one.
+</div>
+
+<div class="state-label">2 · Done — clean, and the save menu open</div>
+<div class="frame">
+    <div class="pair">
+        <div>
+            <div class="note" style="padding:0 0 8px">Nothing edited yet — nothing to save.</div>
+            <div class="row-demo">
+                <span class="tb-done is-clean">Done ▾</span>
+                <span class="tb-done">Done ▾</span>
+            </div>
+        </div>
+        <div>
+            <div class="note" style="padding:0 0 8px">
+                <code>Save a Copy</code> is the default and carries the generated name;
+                <code>Overwrite</code> is secondary and destructive.
+            </div>
+            <div class="row-demo">
+                <div class="menu">
+                    <div class="item is-hover"><b>Save a Copy</b><small>photo-edited.jpg</small></div>
+                    <div class="div"></div>
+                    <div class="item danger"><b>Overwrite…</b><small>photo.jpg</small></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="state-label">3 · Inspector — one row per ParamSpec type</div>
+<div class="note">
+    Eight specs, eight renderers, and the shell picks by type — a tool writes no panel code.
+    <code>ObjectParam</code> is the one that draws nothing: its value belongs to a
+    <code>CanvasTool</code>'s overlay, and saying so in the type is the point.
+</div>
+<div class="frame">
+    <div class="row-demo">
+        <div class="inspector" style="width:460px">
+            <div class="insp-head"><b>Every spec type</b><span class="reset">Reset</span></div>
+
+            <div class="row">
+                <label>FloatParam</label>
+                <div class="fill slider">
+                    <div class="track"></div>
+                    <div class="done" style="left:50%;width:18%"></div>
+                    <div class="detent" style="left:50%"></div>
+                    <div class="knob" style="left:68%"></div>
+                </div>
+                <div class="readout">+36%</div>
+            </div>
+
+            <div class="row">
+                <label>IntParam</label>
+                <div class="fill"><span class="stepper"><span>−</span><em>1280</em><span>+</span></span></div>
+                <div class="readout">px</div>
+            </div>
+
+            <div class="row">
+                <label>BoolParam</label>
+                <div class="fill"><span class="ios on"></span></div>
+            </div>
+
+            <div class="row">
+                <label>ChoiceParam</label>
+                <div class="fill">
+                    <span class="segmented">
+                        <span class="sel">Fit</span><span>Fill</span><span>Stretch</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="row tall">
+                <label>PreviewChoice</label>
+                <div class="fill strip">
+                    <figure class="sel"><div class="thumb"></div><figcaption>Original</figcaption></figure>
+                    <figure><div class="thumb f-mono"></div><figcaption>Mono</figcaption></figure>
+                    <figure><div class="thumb f-warm"></div><figcaption>Warm</figcaption></figure>
+                    <figure><div class="thumb f-cool"></div><figcaption>Cool</figcaption></figure>
+                </div>
+            </div>
+
+            <div class="row">
+                <label>ColorParam</label>
+                <div class="fill swatches">
+                    <i class="sel" style="background:#FF5C5C"></i>
+                    <i style="background:#FFD60A"></i>
+                    <i style="background:#30D158"></i>
+                    <i style="background:#0A84FF"></i>
+                    <i style="background:#FFFFFF"></i>
+                    <span class="custom">+</span>
+                </div>
+            </div>
+
+            <div class="row">
+                <label>ActionParam</label>
+                <div class="fill actions"><span>⟲</span><span>⟳</span><span>⇋</span><span>⇅</span></div>
+            </div>
+
+            <div class="row">
+                <label>ObjectParam</label>
+                <div class="fill no-row">no row — the overlay owns this value</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="state-label">4 · The disabled-tool notice</div>
+<div class="note">
+    A document may hold operations whose tool was switched off in Settings. They are neither applied nor
+    lost, and the notice is the only place that says so — <code>RasterRecipe.skipped</code> is what
+    feeds it.
+</div>
+<div class="frame">
+    <div class="row-demo">
+        <div class="inspector">
+            <div class="insp-head"><b>Resize</b><span class="reset">Reset</span></div>
+            <div class="row"><label>Width</label>
+                <div class="fill"><span class="stepper"><span>−</span><em>2560</em><span>+</span></span></div>
+                <div class="readout">px</div>
+            </div>
+            <div class="notice">
+                <b>!</b>
+                <div>
+                    <b>2 operations were not applied</b>
+                    <p>
+                        Markup and Resize are switched off in Settings. Their edits are kept and will
+                        apply again once the tools are back. <a>Open Settings</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="state-label">5 · Overwrite confirmation — both states of “Don’t ask again”</div>
+<div class="note">
+    Not over media, so this one <b>does</b> follow the theme — flip the switch. Repetition is the point
+    for a destructive action, and the opt-out is session-scoped and in memory only.
+</div>
+<div class="frame">
+    <div class="editor short">
+        <div class="backdrop"></div>
+        <div class="sheet-wrap">
+            <div class="pair">
+                <div class="sheet">
+                    <h3>Overwrite photo.jpg?</h3>
+                    <p>
+                        The original is replaced and <b>no copy is kept</b>. Woka does not keep a
+                        version history — this cannot be undone after the editor closes.
+                    </p>
+                    <div class="askagain"><span class="box"></span><span>Don’t ask again this session</span></div>
+                    <div class="buttons">
+                        <span class="btn">Cancel</span>
+                        <span class="btn destroy">Overwrite</span>
+                    </div>
+                </div>
+                <div class="sheet">
+                    <h3>Overwrite photo.jpg?</h3>
+                    <p>
+                        The original is replaced and <b>no copy is kept</b>. Woka does not keep a
+                        version history — this cannot be undone after the editor closes.
+                    </p>
+                    <div class="askagain"><span class="box on">✓</span><span>Don’t ask again this session</span></div>
+                    <div class="buttons">
+                        <span class="btn">Cancel</span>
+                        <span class="btn destroy">Overwrite</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="state-label">6 · HDR view mode — top bar</div>
+<div class="note">
+    Changes no pixels: it is what the screen shows, not what the file becomes. The <code>Output</code>
+    tool in the inspector is the other half, and the two are deliberately separate controls.
+</div>
+<div class="frame">
+    <div class="row-demo">
+        <div class="menu" style="width:230px">
+            <div class="item is-hover"><b>Auto</b><small>follow the file’s tags</small></div>
+            <div class="item"><b>Force HDR</b><small>tone map as PQ</small></div>
+            <div class="item"><b>Force SDR</b><small>ignore the transfer tag</small></div>
+        </div>
+        <div class="tooltip">HDR · AUTO</div>
+    </div>
+</div>
+
+<div class="state-label">7 · Save banner — three states</div>
+<div class="note">
+    <code>Done</code> closes the editor at once and the save runs behind it, so the banner is the only
+    report. The failure state names the one thing that matters. Success dismisses itself after
+    <code>Motion.BANNER_MS</code> = 2600&nbsp;ms; the failure state stays until dismissed.
+</div>
+<div class="frame">
+    <div class="row-demo" style="flex-direction:column;align-items:flex-start">
+        <span class="banner"><span class="spin"></span>Saving…</span>
+        <span class="banner"><span class="ok">✓</span>Saved <small>photo-edited.jpg</small></span>
+        <span class="banner"><span class="bad">✕</span>Save failed <small>— original untouched</small></span>
+    </div>
+</div>
+
+<div class="state-label">8 · Conversion sheet</div>
+<div class="note">
+    Skia writes <code>png</code>, <code>jpg</code> and <code>webp</code> and nothing else, so every
+    other listed format is edited only after a conversion the user agrees to. The Edit button is never
+    a dead button — it either edits or offers this.
+</div>
+<div class="frame">
+    <div class="editor short">
+        <div class="backdrop"></div>
+        <div class="sheet-wrap">
+            <div class="sheet">
+                <h3>Convert to edit?</h3>
+                <p>
+                    <b>portrait.heic</b> cannot be saved back as HEIC — Woka has no HEIC encoder.
+                    Editing it produces a new <b>JPEG</b> beside the original, which is left untouched.
+                </p>
+                <p style="color:var(--text-3)">Frame 1 of 5 · the other frames are not carried over.</p>
+                <div class="buttons">
+                    <span class="btn">Cancel</span>
+                    <span class="btn primary">Convert &amp; Edit</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleTheme() {
+    const root = document.documentElement;
+    const dark = root.getAttribute('data-theme') === 'dark';
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+    document.getElementById('tname').textContent = dark ? 'Light' : 'Dark';
+}
+</script>
+</body>
+</html>

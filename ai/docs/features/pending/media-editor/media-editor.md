@@ -16,7 +16,7 @@ media-editor/
 
 Conventions: `ai/docs/conventions/feature-docs.md` · `tickets.md` · `code-style/README.md`.
 UX model: the iOS Photos editor. Visual truth: `ai/mockups/design/FINAL_design_mockup.html`, plus
-`editor.html` once ME-012 lands.
+`ai/mockups/design/editor.html`.
 
 ---
 
@@ -38,9 +38,9 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-009](tickets/ME-009-save-targets.md) | Save targets and the atomic write | **done** 2026-08-17 |
 | [ME-010](tickets/ME-010-probes.md) | Capability probes | **done** 2026-08-18 |
 | [ME-011](tickets/ME-011-test-harness.md) | Test harness and the fixture tool | **done** 2026-08-18 |
-| [ME-012](tickets/ME-012-mockup-tokens.md) | Editor mockup and tokens | not started |
+| [ME-012](tickets/ME-012-mockup-tokens.md) | Editor mockup and tokens | **done** 2026-08-18 |
 | [ME-014](tickets/ME-014-remove-material3.md) | Remove `material3` — before ME-101 | not started |
-| [ME-101…ME-120](tickets/backlog.md) | Image editor | backlog |
+| [ME-101…ME-121](tickets/backlog.md) | Image editor | backlog |
 | ME-107 | ~~Revert to Original~~ | dropped — no backup store |
 | [ME-201…ME-204](tickets/backlog.md) | Video editor | backlog |
 
@@ -285,8 +285,10 @@ and the dock accessories are hidden while editing — the editor is a mode, not 
 └───────────────────────────────────────────────────────────────┘
 ```
 
-Concrete geometry, colours and timings live in `ai/mockups/design/editor.html` and are mirrored as
-constants by ME-012. The rail reuses the viewer's controls container; row renderers reuse
+Concrete geometry, colours and timings live in `ai/mockups/design/editor.html` and are mirrored by
+`feature/editor/shell/EditorTokens.kt`. **The editor follows the app theme**; the one layer that does
+not is chrome sitting on the photograph, which takes `ViewerChrome`'s dark scrims and its light
+`onScrim*` foregrounds in both themes — legibility over a picture cannot depend on a preference. The rail reuses the viewer's controls container; row renderers reuse
 `DetentSlider`, `SegmentedControl`, `IosSwitch`, `DropdownItem` — the existing components, wired once
 in the shell instead of once per tool. The selected tool and the `Done` pill use
 `Theme.colors.accentEditor` (#BF5AF2).
@@ -500,6 +502,8 @@ sheet instead of a dead Edit button.
 | 2026-08-17 | Can the bundled ffmpeg write HDR stills? | **AVIF yes (PQ), HEIF no, HLG never written** | `libx265` cannot open a HEIF output; the HLG request produces a byte-identical PQ file, so the flag is ignored |
 | 2026-08-17 | Does `To HDR` ship? | **Still gated**, and the evidence so far is void | Every HDR measurement was taken against `hdr_pq.avif`, which turned out to be SDR pixels wearing HDR tags (`psnr` between the PQ and HLG fixtures is **inf** — `setparams` only tags). Re-run against a genuine source |
 | 2026-08-18 | Why did the viewer burn out HDR stills while the grid did not? | **`HdrShader` ran the BT.2020→709 matrix before the tone curve** — fixed by swapping the order (ME-010) | `hable` is defined on non-negative light; every out-of-709 colour reaches it negative, its denominator flips sign, and it returns >1. Red drew yellow, blue drew magenta, the rest white. The HLG fixture looked right only because its lower absolute level kept four of six negatives small enough to clamp to zero — magnitude, not branch |
+| 2026-08-18 | Does the editor follow the app theme? | **Yes** — like the rest of the app. Only the on-media layer is fixed | Measured while drawing the mockup: chrome over media took its background from a `ViewerChrome` scrim and its text from `Theme.colors.textPrimary`, which in the light theme is `#1C1C1E` — **1.05 : 1** over a dark photograph, 6.68 : 1 over a bright one. Legibility decided by the picture is not a theme |
+| 2026-08-18 | Where do the on-media foreground colours live? | `ViewerChrome`, beside the scrims it already owns (`onScrim`, `onScrimSecondary`, `onScrimDisabled`, `onScrimBorder`, `onScrimHover`, `onScrimSelected`) | The pair had only one half, which is why ~27 viewer files reach for `Theme.colors` instead. Putting the other half in `EditorTokens` would have been a second source of truth. The editor reads them from its first commit; the viewer migrates in **ME-121** |
 | 2026-08-18 | Is HDR *display* now correct? | **No — one defect left, and it is the viewer's, not the editor's** | The tone curve's white point is the literal `W = 11.2`, asserting 1120-nit content. A real 174-nit HDR frame therefore draws SDR white at 148/255 instead of 255. Needs a genuine HDR still to tune against, so it is **ME-120** in the backlog rather than a hold on ME-010 |
 | 2026-08-17 | Is a transfer-tag read-back enough to certify HDR output? | **No** | The probe reported "PQ + wide" for the file rejected on sight. And a visual check is only as good as the viewer doing the looking |
 | 2026-08-17 | What does a 100 MP source cost? | 384 MB native, 667 ms to decode — larger than the whole cache budget | Editing is fine because the canvas draws a 2560 px proxy built in 8 ms; caching the native is what has to be avoided |

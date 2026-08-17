@@ -43,3 +43,71 @@ a mockup disagrees visibly.
 - the mockup opens by double-click with no network access, and both themes render;
 - every value in `EditorTokens.kt` appears in the mockup, and every chrome value in the mockup appears
   in `EditorTokens.kt`.
+
+## Result — 2026-08-18
+
+`ai/mockups/design/editor.html` (new, self-contained), `feature/editor/shell/EditorTokens.kt` (new),
+`core/ui/theme/ViewerChrome.kt` (extended), `media-editor.md` (§4.2 + decision log + status),
+`tickets/backlog.md` (ME-121).
+
+### The theme question the ticket could not answer on its own
+
+Step 1 demands both themes with a toggle. §4.2 says the editor is full-bleed over the viewer's dark
+backdrop, and `ViewerChrome`'s own doc says it "stays dark in both themes". Read together that makes a
+toggle produce two identical screens.
+
+Resolved by measuring instead of reading doc comments. **The viewer does follow the theme** — 27 files
+under `feature/viewer/` read `Theme.colors`; `ViewerChrome` describes one scrim layer, not the viewer.
+So the editor follows it too.
+
+But that exposed a real defect. Chrome over media took its *background* from a scrim here and its
+*text* from `Theme.colors.textPrimary`, which in the light theme is `#1C1C1E`. Against `hudScrim`:
+
+| media behind | contrast of `#1C1C1E` on the scrim |
+|---|---|
+| dark photograph (`#303030`) | **1.05 : 1** — invisible |
+| mid photograph (`#808080`) | **2.57 : 1** — fails WCAG's 4.5 |
+| bright photograph (`#E0E0E0`) | 6.68 : 1 — fine |
+
+Legibility decided by the picture. `ViewerChrome` owned only the background half of the on-media pair,
+which is why every consumer reaches past it for a text colour.
+
+**Fixed at the shared object**, on the author's call: `ViewerChrome` gained `onScrim`,
+`onScrimSecondary`, `onScrimDisabled`, `onScrimBorder`, `onScrimHover` and `onScrimSelected`, light in
+both themes for the same reason the scrims are dark in both. The editor reads them from its first
+commit. The viewer's ~27 call sites are **not** converted here — that is a visible change to a shipping
+surface and wants the author's eyes, so it is **ME-121** in the backlog.
+
+`EditorTokens.kt` therefore declares **no colour at all**. `Theme.viewer` owns both halves of the
+on-media pair, `Theme.colors` owns everything not over media (the overwrite dialog, the conversion
+sheet, Settings), and this object holds only the rail, the inspector and the top bar. `onScrimHover`
+and `onScrimSelected` are the two genuinely new values — 8 % and 14 % white, denser than the dock's
+2 %/3 %, because the dock sits on an opaque island and these sit on 50 % black over a photograph where
+2 % is invisible.
+
+### Two things about the existing mockup, found on the way
+
+- **`FINAL_design_mockup.html` is dark-only.** No toggle, no light palette. `LightColors` has existed
+  in `Theme.kt` since the theme landed and had never been drawn; `editor.html` is the first mockup to
+  render it, which is also why the contrast problem above surfaced now rather than earlier.
+- **It pulls Inter from Google Fonts** via `@import`, so its type silently falls back with the network
+  off — against the convention's "no CDN, opens by double-click". `editor.html` uses a local stack
+  (Inter if installed, then the platform UI face) and references nothing remote. Verified by grep.
+
+### Step 4 was already done
+
+§4.2 already pointed at `editor.html` and named ME-012 as its mirror — it was written that way when
+the feature doc was drafted, so there were no concrete values left to replace. The pointer had been
+dangling at a file that did not exist; it now resolves, and gained the theme rule the mockup settles.
+
+### Done when
+
+- Opens by double-click, no network: **verified** — the only match for `https?://|@import|cdn|<link`
+  in the file is the comment saying there are none.
+- Both themes render, and the toggle is meaningful rather than decorative: the on-media layer holds
+  still by design while the dialogs, sheets and page furniture change. The legend says so, so a reader
+  cannot mistake it for an oversight.
+- Every `EditorTokens` value appears in the mockup and vice versa: audited value by value. Three gaps
+  were found and closed — `Motion.BANNER_MS` had no representation at all, `Motion.PANEL_MS` was
+  declared and never applied, and the save menu used a 6 px inset where `ViewerChrome.popoverPadding`
+  is 8/12.

@@ -158,6 +158,19 @@ because the HDR tool's `To SDR` bakes this very curve into pixels.
 *Depends on a real HDR fixture reaching the corpus. Blocks nothing in the 100 track except honest
 output from ME-118's `To SDR`.*
 
+### ME-121 — Migrate the viewer's on-media chrome to the onScrim tokens
+`ViewerChrome` gained the foreground half of its on-media pair in ME-012 (`onScrim`,
+`onScrimSecondary`, `onScrimDisabled`, `onScrimBorder`, `onScrimHover`, `onScrimSelected`), light in
+both themes for the same reason its scrims are dark in both. The editor reads them from its first
+commit; **the viewer does not yet**. About 27 files under `feature/viewer/` still take `Theme.colors`
+for text and icons drawn on a scrim, which in the light theme measures between 1.05 : 1 and 6.68 : 1
+depending on the photograph behind it — see the decision log.
+
+The change is mechanical but wide, and it is a *visible* change to a surface that already ships, so it
+wants the author's eyes rather than a green build: the files to convert are the intersection of "reads
+`Theme.viewer`" and "reads `Theme.colors`". Deliberately kept out of ME-012, whose job was the editor.
+*Depends on nothing. Blocks nothing — the editor is already correct.*
+
 ---
 
 ## 200 — Video editor
