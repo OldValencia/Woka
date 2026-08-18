@@ -25,4 +25,17 @@ interface EditorEngineFactory {
      * type whose only implementation is a class.
      */
     fun create(path: String, frameIndex: Int = 0): EditorEngine?
+
+    /**
+     * What editing this file would cost it (§5.1).
+     *
+     * Answered **here** rather than beside the carriers, for the reason the whole
+     * type exists: the doors must not grow a second extension list. It is a
+     * question about the container, so it costs a stat and no decode — the grid
+     * asks it once per menu.
+     *
+     * [create] and this agree by construction: `Unavailable` is exactly the case
+     * where [create] returns null.
+     */
+    fun capability(path: String): EditCapability
 }

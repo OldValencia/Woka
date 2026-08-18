@@ -1,0 +1,67 @@
+package com.woka.unit
+
+import com.woka.core.data.SettingsRepositoryImpl
+import com.woka.feature.editor.core.EditCapability
+import com.woka.feature.editor.core.EditorToolRegistry
+import com.woka.feature.editor.engine.EditorEngineFactoryImpl
+import com.woka.fixtures.ANIM_GIF
+import com.woka.fixtures.BURST_HEIC
+import com.woka.fixtures.MULTIPAGE_TIFF
+import com.woka.fixtures.SampleMedia
+import com.woka.fixtures.STILL_JPG
+import com.woka.fixtures.STILL_PNG
+import com.woka.fixtures.STILL_WEBP
+import com.woka.support.MainDispatcherRule
+import com.woka.support.withTempStorageRoot
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import org.junit.Rule
+import kotlin.test.Test
+import kotlin.test.assertEquals
+
+/**
+ * §5.1's three buckets, asked of the committed corpus rather than of invented
+ * paths — the whole question is about real containers.
+ *
+ * The set here is a **snapshot, not a rule**: every carrier ME-108 adds moves a
+ * row from `Unavailable` to `Recorded`, and this test is where that is recorded.
+ */
+@OptIn(ExperimentalCoroutinesApi::class)
+class EditCapabilityTest {
+
+    @get:Rule
+    val mainDispatcher = MainDispatcherRule(UnconfinedTestDispatcher())
+
+    private fun withFactory(block: (EditorEngineFactoryImpl) -> Unit) = withTempStorageRoot {
+        block(EditorEngineFactoryImpl(EditorToolRegistry(emptyList(), SettingsRepositoryImpl())))
+    }
+
+    private fun EditorEngineFactoryImpl.of(fixture: String): EditCapability =
+        capability(SampleMedia.file(fixture).absolutePath)
+
+    @Test
+    fun `a jpeg and a png carry their own history`() = withFactory { factory ->
+        assertEquals(EditCapability.Recorded, factory.of(STILL_JPG))
+        assertEquals(EditCapability.Recorded, factory.of(STILL_PNG))
+    }
+
+    /** Until ME-108's RIFF carrier promotes it to `VP8X`, this is the only bucket B. */
+    @Test
+    fun `a webp can be re-encoded but keeps no history`() = withFactory { factory ->
+        assertEquals(EditCapability.Destructive, factory.of(STILL_WEBP))
+    }
+
+    @Test
+    fun `a container with neither a slot nor an encoder is not editable`() = withFactory { factory ->
+        assertEquals(EditCapability.Unavailable, factory.of(BURST_HEIC))
+        assertEquals(EditCapability.Unavailable, factory.of(ANIM_GIF))
+        assertEquals(EditCapability.Unavailable, factory.of(MULTIPAGE_TIFF))
+    }
+
+    @Test
+    fun `a video and a missing file are not editable`() = withFactory { factory ->
+        assertEquals(EditCapability.Unavailable, factory.capability("D:/Films/a.mp4"))
+        assertEquals(EditCapability.Unavailable, factory.capability("D:/Nowhere/missing.png"))
+        assertEquals(EditCapability.Unavailable, factory.capability("D:/Notes/readme.txt"))
+    }
+}
