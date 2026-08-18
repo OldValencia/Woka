@@ -43,11 +43,15 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-101](tickets/ME-101-editor-shell.md) | Editor shell | **done** 2026-08-18 |
 | [ME-102](tickets/ME-102-param-row-renderers.md) | Parameter row renderers | **done** 2026-08-18 |
 | [ME-103](tickets/ME-103-image-surface.md) | Image surface | **done** 2026-08-18 |
-| [ME-104](tickets/ME-104-save-pipeline.md) | Save pipeline | **done** 2026-08-18 |
+| [ME-104](tickets/ME-104-save-pipeline.md) | Save pipeline | **done** 2026-08-18, ~~superseded~~ by ME-132 |
 | [ME-105](tickets/ME-105-transform-tool.md) | Transform tool | **done** 2026-08-18 |
-| [ME-106](tickets/ME-106-entry-points.md) | Entry points | **specified**, not started |
+| [ME-106](tickets/ME-106-entry-points.md) | Entry points | **done** 2026-08-18 |
+| [ME-131](tickets/ME-131-recipe-carrier.md) | Recipe carrier — JPEG and PNG | **done** 2026-08-19 |
+| [ME-132](tickets/ME-132-done-writes-the-recipe.md) | `Done` writes it; Export removed | **next** |
+| [ME-133](tickets/ME-133-readers-apply-the-recipe.md) | Every reader applies the recipe | specified |
+| [ME-107](tickets/ME-107-revert-to-original.md) | Revert to Original — **un-dropped** | specified |
+| [ME-134](tickets/ME-134-reopening-an-edited-file.md) | Reopening an edited file | specified |
 | [ME-108…ME-130](tickets/backlog.md) | Image editor | backlog |
-| ME-107 | ~~Revert to Original~~ | dropped — no backup store |
 | [ME-201…ME-204](tickets/backlog.md) | Video editor | backlog |
 
 **Why the foundation is fourteen tickets and no pixels.** Every one of ME-002…ME-011 is shared by both
@@ -266,8 +270,10 @@ Two entry points, one destination:
 Both routes call the same entry function with one path plus a frame index; nothing decides editability
 twice — the engine factory is the single answer.
 
-Exit: `Done` saves a copy and returns to the viewer showing it; `Cancel`/`Esc` returns unchanged, via
-a confirmation dialog if the document is dirty.
+Exit: `Done` writes the recipe into the file and returns to the viewer, which now draws the edit
+(§5); `Cancel`/`Esc` returns unchanged, via a confirmation dialog if the document is dirty. A file
+that already carries a recipe opens with it loaded, so editing an edit continues where it left off
+rather than starting again — and never degrades, because every render starts from the original pixels.
 
 ### 4.2 Layout
 
@@ -319,8 +325,7 @@ no viewer or app shortcut fires underneath.
 | Key | Action |
 |---|---|
 | `Esc` | Cancel (confirm if dirty) |
-| `Ctrl+S` / `Enter` | Done — save a copy |
-| `Ctrl+Shift+S` | Overwrite (goes through the confirmation) |
+| `Ctrl+S` / `Enter` | Done — write the recipe into the file |
 | `Ctrl+Z` / `Ctrl+Shift+Z` / `Ctrl+Y` | Undo / Redo |
 | `Delete` | Delete selected markup shape |
 | `Tab` / `Shift+Tab` | Next / previous tool |
@@ -330,37 +335,106 @@ no viewer or app shortcut fires underneath.
 ### 4.5 Save UX
 
 `Done` closes the editor immediately and runs the save in the background, with the same banner pattern
-as `FrameExportBanner`: "Saving…" → "Saved" / "Save failed — original untouched". The folder listing
-is refreshed when the job reports success, because a copy is a **new** file and nothing watches the
-directory for it.
+as `FrameExportBanner`: "Saving…" → "Saved" / "Save failed — nothing was written".
+
+**Nothing is chosen.** No target, no name, no confirmation — the recipe goes into the file that was
+opened (§5). The folder listing needs no refresh for a new item, because there is no new item; what
+changes is how the existing one draws, which is a cache eviction rather than a re-listing.
+
+A **bucket B** file (§5.1) carries one extra thing: a notice inside the editor saying this format keeps
+no history and `Done` will re-encode it. A strip in the shell, following `EditorSkippedNotice` — never
+a modal, because a warning that costs a click has been turned into a step.
 
 ---
 
-## 5. Saving — non-destructive by default
+## 5. Saving — the recipe lives inside the file
 
-**There is no hidden backup store.** The original is preserved by not being written to.
+**Rewritten 2026-08-19**, reversing the model below it. The first hands-on use asked for one file
+carrying its own history — edit repeatedly without breeding copies, return to the original whenever —
+and every `Done` was minting `photo-edited.jpg`, then `-2`, then `-3`. The working through is in
+[`review-2026-08-18.md`](review-2026-08-18.md).
 
-- **Save a Copy (default, `Done`).** `photo.jpg` → `photo-edited.jpg`; a taken name gets `-2`, `-3`.
-  The name is shown before the write, not after it. The source keeps its thumbnail, its watch record
-  and its place in the folder; the copy is a new item the grid picks up.
-- **Overwrite (explicit).** Its own menu entry, behind a confirmation that says plainly that Woka
-  keeps no copy and the original cannot be recovered. The dialog carries a **"Don't ask again this
-  session"** option: the consent lives in memory for the run of the app and is gone on restart. It is
-  deliberately **not** a `WokaSettings` field — a persisted flag would quietly turn destructive
-  overwrite into the permanent default, which is the one thing this section exists to prevent.
-- **Why no backup store.** Git covers the repository, not the user's linked folders — a photo in
-  `D:\Photos` is in no history. A hidden `.originals` directory would be Woka inventing private
-  version control for files it does not own, with an index to keep consistent, orphans to sweep, and a
-  "Revert to Original" promise that breaks the moment the folder moves to another machine. Not writing
-  to the source gives the same guarantee with none of that.
-- **Windows-safe write**: render → encode → write a temp file beside the target → atomic move with
-  replace, retried a few times, because the viewer underneath may still hold the file. Both save modes:
-  a half-written copy is as bad as a half-written original.
+**The `EditDocument` is written into the file's own private metadata slot. Pixels on disk are never
+rewritten.** Every reader in the app decodes the original and folds the recipe over it. Revert is
+deleting the segment. There is no index, no sidecar, no store in `Documents` and no duplicate of
+anything, because the original pixels never left the file they were always in.
+
+`Done` is the **only** save. There is no copy, no overwrite, no export and no name to choose.
+
+### 5.1 Three buckets, decided by the container
+
+| | Condition | Behaviour |
+|---|---|---|
+| **A** | a carrier exists for the format | `Done` writes the recipe. Pixels untouched, history kept, revert forever. |
+| **B** | no carrier, but Skia can encode it | a notice in the editor says there will be no history; `Done` re-encodes the file in place. |
+| **C** | neither | `Edit` is unavailable, with the reason in the menu. |
+
+At the time of writing: **A** = `jpg`, `jpeg`, `png` · **B** = `webp` · **C** = `heic`, `heif`,
+`avif`, `tif`, `tiff`, `gif`, `bmp`.
+
+C is not a permanent state. Almost every image container has a **sanctioned** private extension point,
+and a new carrier moves formats straight from C to A, never through B:
+
+| Format | Slot | |
+|---|---|---|
+| `jpg`/`jpeg` | private `APPn` segment | done first |
+| `png` | ancillary private chunk | done first |
+| `heic`/`heif`/`avif` | ISOBMFF `uuid` box — the slot the spec provides for exactly this | later |
+| `webp` | RIFF chunk, needs promotion to the extended `VP8X` container | later |
+| `gif` | Application Extension block | later |
+| `tif`/`tiff` | private IFD tag (numbers ≥ 32768 are reserved for it) | later |
+| `bmp` | none | never |
+
+**A carrier needs no encoder, which is what makes this reach formats a save never could.** `libx265`
+cannot open a HEIF output at all and Skia writes three formats in total (ME-010) — so today the editor
+opens a HEIC and then refuses at save time. Under a recipe there is nothing to encode: HEIC, AVIF and
+TIFF become editable for the first time, and the refusal moves from *after* the work (a failed save) to
+*before* it (a greyed menu item).
+
+### 5.2 Rules
+
+- **Only the serialised `EditDocument` is written** — no paths, no timestamps, no identifiers. "What
+  does Woka put in my files" has a one-line answer, and that is deliberate.
+- **Windows-safe write**: build the new bytes → temp file beside the target → atomic move with replace,
+  retried a few times, because the viewer underneath may still hold the file. A half-written recipe is
+  a corrupted photograph, so this is not optional for the small write either.
+- **Never throws.** A malformed container, a truncated file, a segment that is not what it claims —
+  every one reads as "no recipe". Losing an edit is smaller than refusing to open a picture, and
+  `ExifSplice` already holds this line for the same reason.
 - **Stale-source guard**: if the file changed on disk since the editor opened it, the save stops and
-  says so rather than overwriting someone else's change.
-- **After save**: a copy is a new path and needs no invalidation. An overwrite drops the native and
-  preview entries from `ImageBitmapCache`, deletes the stale poster, and evicts Coil's memory and disk
-  entry for the path — a grid still showing the pre-edit tile is the bug that prevents.
+  says so rather than writing over someone else's change.
+- **Saving an emptied document removes the recipe** rather than reporting nothing to do — that is the
+  same operation as Revert, reached from the other direction.
+- **After save**: drop the native and preview entries from `ImageBitmapCache` and evict Coil's memory
+  and disk entry for the path. Not conditional any more — every save changes what the file draws as.
+  The `.thumbnails` poster is keyed on path, size and mtime, all three of which a write changes, so it
+  re-derives itself.
+
+### 5.3 The two costs, accepted knowingly
+
+- **An edit is invisible outside Woka.** The file opens everywhere and shows the unedited photograph.
+- **Another program re-saving the file may strip unknown metadata**, silently returning the picture to
+  the original. The pixels are never at risk; only the edit is.
+
+### 5.4 What was rejected, and why
+
+Recorded so it is not re-proposed:
+
+- **Embedding the whole original.** A JPEG `APP` segment caps at ~64 KB, so a 10 MB original needs
+  ~160 chained segments with framing of our own — a container inside a container — and doubles every
+  file.
+- **Wrapping the picture in an archive.** Whatever the name, the file stops being a picture to every
+  program that is not Woka, and every grid tile pays a full unpack where a segment read costs ~4 KB.
+- **Converting the library to JPEG XL.** It does carry everything — HDR, boxes, lossless JPEG
+  transcode — and nothing in the dependency set writes it, Windows cannot open it, and "convert back
+  when you need to" is the export step this model exists to remove.
+- **A hidden per-folder index or a central store keyed on path.** Universal and safe, and it loses
+  portability: the edit stops travelling with the file. Unnecessary once the containers carry it.
+- **NTFS alternate data streams.** Invisible, universal, zero surgery — and silently destroyed by any
+  copy to exFAT, a network share or a stripping antivirus. A promise that stops working without saying
+  so is worse than none.
+- **A hidden `.originals` directory** — the model this replaces already rejected it: an index to keep
+  consistent, orphans to sweep, and a promise that breaks the moment the folder moves.
 
 ---
 
@@ -442,14 +516,19 @@ tone-mapped file actually looks like before deciding what the tool should write.
 
 ## 7. Conversion on demand
 
-Formats Skia cannot encode, and multi-frame files, are converted **after the user agrees** — the Edit
-button is never dead. A sheet states the target name, that the source file stays exactly where it is,
-and (for a frame set) which single frame survives. Photographic sources default to JPEG **q95** — the one quality, settled in §9 — graphics
-and anything with alpha or multiple frames to PNG; an HDR source offers an HDR-capable target (§6.1)
-when the probe says the encoder can write one.
+**Narrowed 2026-08-19.** This section existed because Skia encodes three formats and the other eight
+had to become one of them before they could be edited at all. A carrier needs no encoder (§5.1), so
+that reason is gone: the road to editing a HEIC is its `uuid` box, not a converted copy of it beside
+the original. Conversion mints a file, and the model no longer mints files.
 
-The conversion writes the new file beside the source and opens the editor on it. The source is
-**kept** — §5's rule holds here too, and a HEIC the user shot on a phone is not Woka's to delete.
+What survives is a **multi-frame** question, which is a different one. Editing frame N of a burst has
+to say what happens to the other frames, and a recipe cannot answer it — that is ME-126's, not this
+section's.
+
+Should a format ever want a target anyway, the old terms hold: a sheet states the name, that the source
+stays exactly where it is, and which single frame survives; photographic sources default to JPEG
+**q95** (§9), graphics and anything with alpha to PNG; the source is **kept**, because a HEIC the user
+shot on a phone is not Woka's to delete.
 
 ---
 
@@ -497,9 +576,9 @@ sheet instead of a dead Edit button.
 | 2026-08-16 | How does video reuse the shell? | An `EditorEngine` per `MediaKind` | The shell composes `engine.Surface(...)` and never branches on media |
 | 2026-08-16 | Is the document persisted in v1? | No, but serialisable by construction | Re-opening a saved edit is a later ticket, not a rewrite |
 | 2026-08-16 | Where is the editor mounted? | Over a frozen, still-mounted viewer | Cancel returns to the exact zoom/pan/frame; the bitmap is already cached |
-| 2026-08-16 | Backups? | **None.** Save a Copy is the default; overwrite is explicit and confirmed | Git covers the repo, not `D:\Photos`. Not writing to the source beats inventing private version control for files Woka does not own |
-| 2026-08-16 | Copy name? | `photo-edited.jpg`, collisions `-2`, `-3` | Reads as what it is; sorts next to the original; no space to break a shell command |
-| 2026-08-16 | Overwrite consent? | Ask every time, plus a session-scoped "don't ask again" | Repetition is the point for a destructive action, but twenty in a row is not served by twenty dialogs. In memory only |
+| 2026-08-16 | ~~Backups? **None.** Save a Copy is the default~~ | **Superseded 2026-08-19** — see the four rows dated that day | |
+| 2026-08-16 | ~~Copy name? `photo-edited.jpg`, collisions `-2`, `-3`~~ | **Superseded 2026-08-19** — nothing writes a copy | |
+| 2026-08-16 | ~~Overwrite consent? Ask every time + session-scoped~~ | **Superseded 2026-08-19** — there is no overwrite | |
 | 2026-08-16 | HDR: one control or two? | Two — an `Output` **tool** in the document and a **view mode** that changes no pixels | They answer different questions: what the file becomes, versus what the screen shows |
 | 2026-08-16 | Who encodes HDR? | ffmpeg, never Skia | Skia misreads a valid PQ `cICP` PNG (2026-08-07, `StillColorInfo`); the bundled ffmpeg can write PQ AVIF, and only that (ME-010) |
 | 2026-08-16 | Entry points? | Viewer control pill **and** grid context menu, one entry function | Two doors, one decision about editability |
@@ -514,6 +593,15 @@ sheet instead of a dead Edit button.
 | 2026-08-18 | Does `nativeSize` describe the picture as stored or as decoded? | **As decoded** — it swaps the axes for a quarter-turn EXIF origin | `Codec.width/height` gives the stored raster while `Image.makeFromEncoded` applies `Orientation`, so the two disagreed for every portrait photograph. The editor stretched them on save; the viewer's zoom percentages were wrong about them too. Found by `ExifSpliceTest`, fixed in `SkiaFrameDecoder` (ME-104) |
 | 2026-08-18 | Control palette in the inspector | Sliders **white** (as the zoom slider); switches **green**, as everywhere else in Settings; buttons, checkboxes and the markup shape colour on the editor accent | A switch that means "on" must not change colour by screen. Components are Woka's own and carry no vendor name in their type names |
 | 2026-08-18 | More than one editor open at once? | **Yes** — the dock lists open unsaved sessions and returning to one keeps its document and history (ME-128) | An edit in progress is not lost by opening something else. Consequence: a composable can no longer own the session, so ME-106 must resolve from a store rather than construct per open |
+| 2026-08-18 | Where does an edit live? | **A recipe in the file's own metadata. The pixels on disk are never rewritten.** | Embedding the whole original needs ~160 chained `APP` segments on a 10 MB JPEG — a container inside a container — and unknown metadata is silently stripped by uploads, messengers and sync, so revert would break with no message. `EditDocument` is a few hundred bytes and fits in one segment: no store, no index, no orphans, no generational loss, and no new file per save. Cost: outside Woka the photograph looks unedited |
+| 2026-08-19 | Which containers can carry it? | **Nine of eleven, in four writer families.** `jpg`/`png` first; `heic`/`heif`/`avif` (ISOBMFF `uuid` box), `webp` (RIFF, needs `VP8X`), `gif` (Application Extension), `tif` (private IFD tag) follow one ticket each. Only `bmp` never | The first reading — "JPEG and PNG can, the rest cannot" — was wrong. Almost every image container has a **sanctioned** private extension slot; the difference between them is implementation cost, not possibility. So this is a staged rollout, not an architectural limit |
+| 2026-08-19 | A format with no carrier **yet**? | **Three buckets** (§5.1). Carrier → record it. No carrier but Skia encodes it → a notice, then re-encode in place. Neither → `Edit` greyed, with the reason | A new carrier moves a format from C straight to A, so B is a transitional state and today holds one format. It also moves the refusal from *after* the work — today a HEIC edits happily and then fails to save — to *before* it |
+| 2026-08-19 | Does `Export` / "save a flattened copy" survive? | **No. `Done` is the only save.** `SaveTarget`, `OverwriteConsent` and `SaveFileNaming` are deleted | The flow is edit → `Done`, with nothing to choose. The cost is real and accepted: the edit cannot leave Woka, and a file sent to someone arrives unedited. A menu entry was offered and declined in favour of the simpler editor |
+| 2026-08-19 | Wrap the picture in an archive / convert to JPEG XL? | **No** to both | An archive stops the file being a picture to everything that is not Woka and costs a full unpack per grid tile against a ~4 KB header read. JXL genuinely carries everything and nothing in the build writes it, Windows cannot open it, and "convert back when needed" is the export step this removes |
+| 2026-08-19 | Can a recipe be edited again? | **Yes** — the editor loads what the file carries, and `isDirty` means "differs from the file", not "the document is non-empty" | Otherwise reopening an edited photograph is dirty before it is touched, and a second edit either starts blank or re-encodes an encode. Every render starts from the original pixels, so there is no generational loss however many times it is edited |
+| 2026-08-19 | "Remove Woka's data from this file"? | **It is Revert** — the segment holds the edit and nothing else. ME-107, un-dropped | Two names for one operation would be two buttons doing the same thing. A **bulk** removal across a folder is hygiene rather than editing and belongs in Settings, as its own later ticket |
+| 2026-08-18 | Does the editor draw its own top bar? | **No** — it fills the shell's accessory slots, as the viewer does, and restores them on dispose | Two stacked bars left the folder path up there doing nothing, the carousel eye and a live `Edit` button running during an edit, and a `Cancel` duplicating a Back that still exited the folder |
+| 2026-08-18 | Zoom in v1, revisited | **Yes, capped at 100 %** | A wheel that does nothing reads as broken. At 100 % the ≤2560 px proxy is still sharp; above it is ME-116's, and the cap is the line it removes |
 | 2026-08-18 | Where does the editor mount when opened from the **grid**? | Its own overlay in `FolderScreen`, beside `viewerMediaId` | The viewer is not a `Screen` either — it is an overlay too. Cancel then returns where the user actually was: the grid from the grid, the viewer with its exact zoom/pan from the viewer |
 | 2026-08-18 | Canvas zoom in v1? | **No — `Fit` only.** Zoom arrives with ME-116 | §4.3 asked for both "`Fit` at all times" and "wheel zooms 100–800 %". Above 100 % the canvas draws a 2560 px proxy, so zoom without ME-116's native-region draw ships a feature that looks broken on arrival |
 | 2026-08-18 | Does the native bitmap stay in `ImageBitmapCache` during an edit? | **No.** The canvas draws an editor-scoped ≤2560 px proxy; native is decoded once, at save, and released | §4.1 wanted it from the cache, §10 wanted it out. 384 MB against a 256 MB budget settles it — and the guard rail §10 asked for falls out for free. Cost is 6–8 ms of proxy build per open |

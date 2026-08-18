@@ -1,5 +1,12 @@
 # ME-104 — Save pipeline
 
+> **Superseded 2026-08-19 by ME-132.** Shipped as written and then overtaken: §5 no longer writes
+> pixels for a format that can carry a recipe, so `SaveTarget`, the copy naming and the overwrite
+> consent this ticket built are deleted. What it built that **survives** is the render-encode-splice
+> path itself — `NativeRender`, `ExifSplice`, `AtomicWrite`, `SourceStamp` — which becomes bucket B's
+> in-place re-encode and is reused unchanged by ME-133's read-side fold. Kept for the record; the id is
+> not reused.
+
 | | |
 |---|---|
 | **Order** | 18 |

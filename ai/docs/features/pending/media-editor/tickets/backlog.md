@@ -13,22 +13,29 @@ Order inside a track is dependency order. Between tracks, only the marked depend
 
 ## 100 — Image editor
 
-### ME-108 — Conversion on demand
-**The eight formats ME-104 refuses.** Skia encodes `png`, `jpg`/`jpeg` and `webp`, so those three save
-in place; `bmp`, `gif`, `tif`, `tiff`, `heic`, `heif` and `avif` return null from `formatFor` and land
-here. Multi-frame files land here too, whatever their container.
+### ME-108 — The remaining recipe carriers
+**Re-scoped 2026-08-19.** This block used to be "conversion on demand" — make the eight formats Skia
+cannot encode into ones it can, so they could be edited at all. §5's recipe model needs no encoder, so
+the road to editing a HEIC is its own container, not a converted copy beside it.
 
-An explicit sheet: target format defaulted from the ME-010 matrix (photographic → JPEG q95, graphics or
-alpha or multi-frame → PNG), the new filename shown live, the surviving frame named when the source is a
-frame set, and the HDR target offered when the probe says the encoder can write one.
+Four writers, **one ticket each**, each moving formats out of bucket C (§5.1) straight into A:
 
-Two things the probe already settled and this ticket must not re-litigate: **HEIF output is impossible**
-— `libx265` cannot open a HEIF output at all, so `.heic` in never means `.heic` out — and **AVIF is the
-one refused format with a second road**, since `libaom-av1` writes PQ AVIF correctly, which is ME-118's
-business rather than this sheet's.
+- **ISOBMFF `uuid` box** — `heic`, `heif`, `avif`. A top-level box appended at the end of the file: the
+  slot the spec provides for private data, and appending disturbs no `iloc` offset. The biggest win of
+  the four, since these are the formats a phone actually produces.
+- **RIFF chunk** — `webp`. Needs promotion of a simple `VP8`/`VP8L` file to the extended `VP8X`
+  container (flags byte plus canvas width-1 and height-1 as 24-bit LE) before an ancillary chunk is
+  legal. Moves `webp` out of bucket B, so it stops being re-encoded.
+- **Application Extension block** — `gif`. The mechanism Netscape looping uses; 8-byte identifier plus
+  data sub-blocks.
+- **Private IFD tag** — `tif`, `tiff`. Tag numbers ≥ 32768 are reserved for exactly this. Fiddliest of
+  the four, because adding an entry shifts every value offset after the IFD.
 
-The source file is kept exactly where it is; the converted file is a new item beside it.
-*Depends on ME-106.*
+`bmp` has no slot and stays in bucket C permanently.
+
+Each follows ME-131's shape exactly — a `RecipeCarrier` implementation, a row in `carrierFor`, and its
+own fixture round-trip tests — and needs no change anywhere else in the app.
+*Depends on ME-131.*
 
 ### ME-109 — Crop tool
 `Geometry`, `Single`, `Canvas`. A rect in source coordinates plus the aspect presets settled in §9 —
@@ -172,7 +179,11 @@ measured assertion that editing a 100 MP file leaves the cache no larger than it
 source, ~150 ms for a 24 MP one, measured in ME-010. Opening the editor on a large photograph freezes
 the UI for exactly that long. The fix needs a placeholder, an ordering against the frozen viewer
 underneath, and an answer for `Cancel` pressed mid-decode, which is why it was not improvised in ME-103.
-*Depends on ME-104.*
+
+**Wider since 2026-08-19.** ME-133 makes every *read* of an edited file a decode plus a fold, so the
+native decode is no longer something only a save does. The viewer's route is the one to watch: a
+100 MP edited photograph is now 384 MB decoded, folded, and the fold's output cached on top of it.
+*Depends on ME-133.*
 
 ### ME-124 — Editor and picture-in-picture
 Undefined today, and the reason it matters is concrete: `GlobalShortcutState.onPreviewKey` is a
@@ -190,14 +201,20 @@ What happens to an in-flight save when the app closes. No file is ever half-writ
 is the last step — so this is about the **job and the banner**, not corruption: which scope the save
 runs in, whether closing the window waits for it, and what the banner says if the process goes away
 mid-write. Today the answer is "whatever the coroutine scope happens to do", which is not an answer.
-*Depends on ME-104.*
+
+Smaller since 2026-08-19 but not gone: a recipe write is a few hundred bytes rather than a re-encode of
+100 MP, so the window is short — for bucket B (§5.1) it is still a full render and encode.
+*Depends on ME-132.*
 
 ### ME-126 — Frame sets after an edit
-Editing frame N of a burst produces a **new single-frame file** beside the container (ME-108's
-conversion). What the carousel then shows is unstated: the container it came from, the new file, both,
-and where the selection lands. A small ticket, but the kind that reads as a bug when it is left to
-fall out of the listing order.
-*Depends on ME-108.*
+**The one question §7's narrowing did not answer.** A recipe is written once per file, and a frame set
+is several pictures in one file — so editing frame N either applies to all of them, or the recipe needs
+a frame index, or a burst is simply not editable per frame. None of the three is obviously right, and
+the old answer (convert frame N into a new single-frame file beside the container) mints a file, which
+the model no longer does.
+
+Also unstated once it is decided: what the carousel then shows and where the selection lands.
+*Depends on ME-132.*
 
 ### ME-127 — Configurable output quality
 JPEG quality is fixed at **q95** in MVP (§9, 2026-08-18). This is the field that makes it adjustable:
@@ -235,25 +252,16 @@ right glyph. `FloatingDock` currently draws the Editor item with `Icons.Static.S
 it. One-line fix, folded in here.
 *Depends on ME-106.*
 
-### ME-130 — Save UX
-The half of the old ME-104 block that a user actually sees, split off because none of it is testable
-without a window and none of the write path needs a decision about what a dialog says.
+### ME-130 — The save banner
+**Mostly dissolved 2026-08-19.** This block was the *choice* around saving — a `Done` menu offering
+Save a Copy and Overwrite…, a destructive confirmation, a session-scoped "don't ask again". §5 removed
+all of it: there is one save, one destination, nothing to choose and nothing to confirm.
 
-`Done` becomes a menu: **Save a Copy** carrying the generated name, computed and shown *before* the
-write, and **Overwrite…** as the secondary, destructive entry. Overwrite goes through a confirmation
-stating plainly that no copy is kept and the original cannot be recovered, carrying the session-scoped
-"Don't ask again" that `OverwriteConsent` already holds in memory (§5 — deliberately never a
-`WokaSettings` field, because a persisted flag turns destructive overwrite into the permanent default).
-
-Then the reporting: `Done` closes the editor **immediately** and the save runs behind it, so the banner
-is the only report. It follows `FrameExportBanner` — a global status object read by one composable in
-the shell, which is what lets the banner outlive the editor it was started from. Three states: saving,
-saved with the name, and failed with "original untouched".
-
-**What ME-106 already did, so this ticket does not:** `Done` saving a copy at all, and the
-`FolderViewModel.refresh()` that makes the new file visible. This is the *choice* around saving —
-where it goes and what it costs — not the saving.
-*Depends on ME-104, ME-106.*
+What is left is the **reporting**, and it is worth keeping. `Done` closes the editor immediately and
+the save runs behind it, so a banner is the only report there can be. It follows `FrameExportBanner` —
+a global status object read by one composable in the shell, which is what lets the banner outlive the
+editor that started it. Three states: saving, saved, and failed with "nothing was written".
+*Depends on ME-132.*
 
 ### ME-129 — Rename `IosSwitch`
 The components are Woka's own, inspired by that design language rather than branded with it
