@@ -8,6 +8,19 @@ import com.woka.core.ui.components.DropdownItem
 import com.woka.core.ui.theme.Theme
 import com.woka.core.utils.copyFilesToClipboard
 import com.woka.core.utils.openDirectoryPicker
+import com.woka.feature.editor.core.EditorEngineFactory
+import com.woka.feature.editor.isEditable
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+
+/**
+ * The one thing this menu needs from outside the folder feature: the single answer to
+ * "is this editable" (§4.1). Held as an object rather than injected per item, because a
+ * grid draws a menu per right-click and the factory is a `single` either way.
+ */
+private object EditorMenuDependencies : KoinComponent {
+    val factory: EditorEngineFactory by inject()
+}
 
 /**
  * Right-click menu for a single grid tile. Split out of [FolderGrid] (§11): what
@@ -25,10 +38,12 @@ internal fun FolderItemContextMenu(
     overlays: FolderOverlayState,
     onNavigateToFolder: (String) -> Unit,
     onOpenMedia: (String) -> Unit,
+    onEditMedia: (String) -> Unit,
     dismiss: () -> Unit,
     watch: WatchRecord? = null
 ) {
     val target = item.file.absolutePath
+    val engineFactory = EditorMenuDependencies.factory
 
     if (item is MediaItem.Folder) {
         DropdownItem("Open") { dismiss(); onNavigateToFolder(target) }
@@ -54,14 +69,14 @@ internal fun FolderItemContextMenu(
         }
     }
 
-    // Beside Rename/Copy/Delete, where §4.1 puts it. **Disabled deliberately**: the
-    // editor shell exists (ME-101) but `ImageEditorEngine.Surface` is still
-    // `TODO("ME-103")`, so an enabled entry would be a dead click at best and a
-    // `NotImplementedError` at worst. ME-106 replaces `enabled = false` with
-    // `engineFactory.create(target) != null` — the factory is the single answer to
-    // "is this editable", and it decides from the format without touching the disk.
+    // Beside Rename/Copy/Delete, where §4.1 puts it. Greyed for anything the engine
+    // factory refuses — video until ME-201, and every format Skia cannot encode — so
+    // the entry is honest rather than absent.
     if (item !is MediaItem.Folder) {
-        DropdownItem("Edit", enabled = false) { dismiss() }
+        DropdownItem("Edit", enabled = isEditable(engineFactory, target)) {
+            dismiss()
+            onEditMedia(target)
+        }
     }
     DropdownItem("Rename") { dismiss(); overlays.itemToRename = target }
     // Copy means the clipboard, the way it does everywhere else on the desktop;

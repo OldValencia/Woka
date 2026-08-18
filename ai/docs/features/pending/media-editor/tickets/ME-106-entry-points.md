@@ -117,3 +117,55 @@ false for an unknown extension, and false for a path that does not exist. No dec
 - `editAction` no longer calls `onClose`;
 - the viewer's shortcuts work again after the editor has been opened and closed;
 - `./gradlew.bat :shared:build` green, with the tests above passing.
+
+## Result — 2026-08-18
+
+`:shared:build` green, **628 tests, 0 failures** (620 before). The editor opens from both doors and
+`Done` leaves a `-edited` file the grid then shows.
+
+### `FolderScreen` is `commonMain`, so the mount needed a seam
+
+`EditorHost` and everything it draws with are `jvmMain` internals, and `FolderScreen` cannot see them.
+Rather than widening a dozen declarations, the editor gained the shape the viewer already has:
+`expect fun NativeMediaEditor` in `commonMain`, `actual` in `jvmMain`, both in
+`com.woka.feature.editor`. `EditorTarget` and `isEditable` moved to `commonMain` with them — neither
+has a JVM dependency, and `EditorEngineFactory` was already a `commonMain` interface precisely so the
+decision could live above the engine that answers it.
+
+### The tests found two behaviours, one of which contradicted an earlier decision
+
+**A file that is not there was editable.** `mediaKind()` reads the extension alone and `SourceStamp`
+answers 0/0 for a missing file rather than failing, so `create` handed back an engine for a path that
+had been deleted — leaving the grid's `Edit` entry enabled and turning the problem into a failed save
+instead of a greyed menu item. Fixed in the factory, which is the single answer.
+
+That **reverses an intentional assertion from ME-008**: `editability is a question about the format,
+not about the bytes` existed to keep a menu cheap. The cost argument was right and is now obsolete —
+`isFile` is a stat rather than a decode, and since ME-104 the engine's `SourceStamp` stats the file in
+its constructor anyway. The test is rewritten rather than deleted, and says why it flipped; the half of
+its claim that survives — no pixel is read to answer — is now its own test.
+
+**Twenty editability questions cost zero bytes of cache**, asserted, because this runs while a context
+menu is being drawn and a folder of 40 MP photographs would hitch on every right-click if it ever
+started decoding.
+
+### The keyboard hand-back has its own test, and needs one
+
+`GlobalShortcutState.onPreviewKey` is a single mutable slot, and the viewer installs its handler in a
+`DisposableEffect(globalShortcuts)` that does **not** re-run when the editor overwrites it. An editor
+that forgets to restore leaves the viewer without Esc, Space or arrows — and that arrives as "the arrow
+keys stopped working", days later, with nothing connecting it to an edit.
+
+`EditorKeysUiTest` installs a sentinel, mounts the effect, asserts the slot changed, and asserts the
+sentinel is back once the composition is gone. It also covers the empty case, so an editor opened
+outside the viewer restores *null* rather than leaving its own handler behind.
+
+`Ctrl+Z` and `Ctrl+Y` are consumed **even when there is nothing to undo**: the editor owns the keyboard
+while it is open, including for keys it currently has no work for, or the press falls through to
+whatever the viewer underneath does with it.
+
+### Still to come
+
+`Ctrl+Shift+S` is absent because the overwrite target is ME-130's. The session is owned by
+`EditorHost`'s `DisposableEffect`, which is exactly the ownership ME-128 moves to a store when more
+than one editor can be open at once.

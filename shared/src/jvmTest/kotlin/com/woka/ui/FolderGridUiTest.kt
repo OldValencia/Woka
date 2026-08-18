@@ -68,6 +68,7 @@ class FolderGridUiTest {
                 overlays = remember { FolderOverlayState() },
                 onNavigateToFolder = {},
                 onOpenMedia = onOpenMedia,
+                onEditMedia = {},
                 modifier = Modifier.fillMaxSize().testTag(GRID)
             )
         }

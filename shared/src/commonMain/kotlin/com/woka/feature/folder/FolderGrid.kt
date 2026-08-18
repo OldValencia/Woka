@@ -33,6 +33,7 @@ fun FolderGrid(
     overlays: FolderOverlayState,
     onNavigateToFolder: (String) -> Unit,
     onOpenMedia: (String) -> Unit,
+    onEditMedia: (String) -> Unit,
     highlightFile: String? = null,
     modifier: Modifier = Modifier
 ) {
@@ -110,6 +111,7 @@ fun FolderGrid(
                     overlays = overlays,
                     onNavigateToFolder = onNavigateToFolder,
                     onOpenMedia = onOpenMedia,
+                    onEditMedia = onEditMedia,
                     highlightFile = highlightFile
                 )
             }

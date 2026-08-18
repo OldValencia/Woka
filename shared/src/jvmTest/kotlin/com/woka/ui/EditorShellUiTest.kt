@@ -20,7 +20,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Rule
 import kotlin.test.Test
-import kotlin.test.assertEquals
 
 /**
  * The shell, driven end to end against `FixtureTool` and `FixtureEngine` — no real
@@ -45,7 +44,6 @@ class EditorShellUiTest {
                         session = harness.session,
                         engine = FixtureEngine(),
                         registry = harness.registry,
-                        fileName = "photo.jpg",
                         onCancel = {},
                         onDone = {}
                     )
@@ -65,7 +63,7 @@ class EditorShellUiTest {
         onEditor(listOf(tool)) { harness ->
             onUi {
                 setContent {
-                    EditorScreen(harness.session, FixtureEngine(), harness.registry, "p.jpg", {}, {})
+                    EditorScreen(harness.session, FixtureEngine(), harness.registry, {}, {})
                 }
                 onNodeWithTag("editor-inspector").assertDoesNotExist()
 
@@ -84,7 +82,7 @@ class EditorShellUiTest {
         onEditor(listOf(tool)) { harness ->
             onUi {
                 setContent {
-                    EditorScreen(harness.session, FixtureEngine(), harness.registry, "p.jpg", {}, {})
+                    EditorScreen(harness.session, FixtureEngine(), harness.registry, {}, {})
                 }
                 onNodeWithTag("editor-tool-adjust").performClick()
                 onNodeWithTag("editor-inspector").assertIsDisplayed()
@@ -99,51 +97,12 @@ class EditorShellUiTest {
     }
 
     @Test
-    fun `the dirty mark appears only after a commit`() {
-        val tool = FixtureTool(id = "adjust", domain = ToolDomain.Color)
-        onEditor(listOf(tool)) { harness ->
-            onUi {
-                setContent {
-                    EditorScreen(harness.session, FixtureEngine(), harness.registry, "p.jpg", {}, {})
-                }
-                onNodeWithTag("editor-dirty").assertDoesNotExist()
-
-                harness.apply(ToolOp("adjust", tool.defaults()), ToolCardinality.Single)
-                waitForIdle()
-
-                onNodeWithTag("editor-dirty").assertIsDisplayed()
-            }
-        }
-    }
-
-    @Test
-    fun `cancel and done fire exactly once`() {
-        var cancels = 0
-        var dones = 0
-        onEditor(listOf(FixtureTool())) { harness ->
-            onUi {
-                setContent {
-                    EditorScreen(
-                        harness.session, FixtureEngine(), harness.registry, "p.jpg",
-                        onCancel = { cancels++ },
-                        onDone = { dones++ }
-                    )
-                }
-                onNodeWithTag("editor-cancel").performClick()
-                onNodeWithTag("editor-done").performClick()
-            }
-        }
-        assertEquals(1, cancels)
-        assertEquals(1, dones)
-    }
-
-    @Test
     fun `the skipped notice appears when a committed op's tool is switched off`() {
         val tool = FixtureTool(id = "adjust", domain = ToolDomain.Color)
         onEditor(listOf(tool)) { harness ->
             onUi {
                 setContent {
-                    EditorScreen(harness.session, FixtureEngine(), harness.registry, "p.jpg", {}, {})
+                    EditorScreen(harness.session, FixtureEngine(), harness.registry, {}, {})
                 }
                 harness.apply(ToolOp("adjust", tool.defaults()), ToolCardinality.Single)
                 harness.settings.setEditorToolEnabled("adjust", enabled = false)

@@ -19,6 +19,7 @@ fun FolderContent(
     overlays: FolderOverlayState,
     onNavigateToFolder: (String) -> Unit,
     onOpenMedia: (String) -> Unit,
+    onEditMedia: (String) -> Unit,
     highlightFile: String? = null,
     scrollToMediaId: String? = null,
     onScrollToMediaIdConsumed: () -> Unit = {},
@@ -97,6 +98,7 @@ fun FolderContent(
             onNavigateToFolder = onNavigateToFolder,
             overlays = overlays,
             onOpenMedia = onOpenMedia,
+            onEditMedia = onEditMedia,
             modifier = Modifier.fillMaxWidth().weight(1f)
         )
     }

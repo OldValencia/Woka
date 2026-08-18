@@ -2,8 +2,10 @@ package com.woka.feature.editor.shell
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.woka.feature.editor.core.ActionParam
 import com.woka.feature.editor.core.BoolParam
 import com.woka.feature.editor.core.ChoiceParam
@@ -26,6 +28,7 @@ import com.woka.feature.editor.core.PreviewChoiceParam
  * cannot drift apart in spacing, typography or commit behaviour: there is one
  * implementation and it is this one.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun ParamRows(
     tool: EditorTool,
@@ -35,10 +38,23 @@ internal fun ParamRows(
     val params = paramsOf(document, tool)
     val writer = ParamWriter(session, tool, document)
     Column(
-        modifier = Modifier,
         verticalArrangement = Arrangement.spacedBy(EditorTokens.Inspector.rowGap)
     ) {
-        tool.params.forEach { spec -> ParamRow(spec, params, writer) }
+        // Consecutive actions become one wrapping group rather than one row each.
+        // Four buttons stacked vertically, each with an empty label column beside it,
+        // is what made the Transform panel a tall strip of white space.
+        groupRuns(tool.params).forEach { run ->
+            if (run.size > 1 || run.first() is ActionParam) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    run.forEach { spec -> ParamRow(spec, params, writer) }
+                }
+            } else {
+                ParamRow(run.first(), params, writer)
+            }
+        }
     }
 }
 
@@ -70,4 +86,25 @@ internal fun ParamRow(spec: ParamSpec<*>, params: ParamSet, writer: ParamWriter)
         // type rather than arriving at a renderer that then has to guess.
         is ObjectParam<*> -> Unit
     }
+}
+
+/**
+ * Splits a tool's specs into runs of the same *shape*: consecutive actions in one run,
+ * everything else alone.
+ *
+ * An action is a button and buttons sit beside each other; a slider is a labelled row
+ * and rows stack. Grouping by adjacency rather than by sorting keeps the tool's
+ * declared order, which is the order its inspector is meant to read in (§3.4).
+ */
+private fun groupRuns(specs: List<ParamSpec<*>>): List<List<ParamSpec<*>>> {
+    val runs = mutableListOf<MutableList<ParamSpec<*>>>()
+    specs.forEach { spec ->
+        val last = runs.lastOrNull()
+        if (last != null && last.first() is ActionParam && spec is ActionParam) {
+            last += spec
+        } else {
+            runs += mutableListOf(spec)
+        }
+    }
+    return runs
 }

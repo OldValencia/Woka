@@ -13,6 +13,8 @@ import androidx.compose.ui.text.TextStyle
 import com.woka.app.shell.LocalDockAccessories
 import com.woka.core.data.MediaItem
 import com.woka.core.ui.theme.Theme
+import com.woka.feature.editor.EditorTarget
+import com.woka.feature.editor.NativeMediaEditor
 import com.woka.feature.viewer.NativeMediaViewer
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -36,6 +38,10 @@ fun FolderScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val overlays = remember { FolderOverlayState() }
     var viewerMediaId by remember { mutableStateOf<String?>(openViewerForId) }
+    // The editor is an overlay beside the viewer, not on top of the navigation stack:
+    // the viewer is one too, and this is what lets Cancel return where the user
+    // actually was — the grid from the grid, the frozen viewer from the viewer (§9).
+    var editorTarget by remember { mutableStateOf<EditorTarget?>(null) }
     var scrollToMediaId by remember { mutableStateOf<String?>(null) }
     // Taken or dismissed, the offer does not come back for this screen.
     var pinOfferOpen by remember(path) { mutableStateOf(offerPin) }
@@ -47,8 +53,8 @@ fun FolderScreen(
     }
 
     val dockAccessories = LocalDockAccessories.current
-    LaunchedEffect(viewerMediaId) {
-        dockAccessories.isVisible = viewerMediaId == null
+    LaunchedEffect(viewerMediaId, editorTarget) {
+        dockAccessories.isVisible = viewerMediaId == null && editorTarget == null
     }
 
     Column(modifier = Modifier.fillMaxSize().background(Theme.colors.background)) {
@@ -65,6 +71,7 @@ fun FolderScreen(
                     overlays = overlays,
                     onNavigateToFolder = onNavigateToFolder,
                     onOpenMedia = { id -> viewerMediaId = id },
+                    onEditMedia = { id -> editorTarget = EditorTarget(id) },
                     highlightFile = highlightFile,
                     scrollToMediaId = scrollToMediaId,
                     onScrollToMediaIdConsumed = { scrollToMediaId = null },
@@ -88,6 +95,25 @@ fun FolderScreen(
             onClose = { lastMediaId ->
                 viewerMediaId = null
                 scrollToMediaId = lastMediaId
+            },
+            onEdit = { id -> editorTarget = EditorTarget(id) }
+        )
+    }
+
+    // Last, so it draws over the viewer — which stays mounted and frozen underneath,
+    // keeping its exact zoom, pan and frame for when Back returns to it (§4.1).
+    // Not wrapped in a `let`: the editor takes a nullable target and animates itself
+    // out, which it cannot do if the call site removes it from the tree first.
+    run {
+        NativeMediaEditor(
+            target = editorTarget,
+            onClose = { editorTarget = null },
+            onSaved = { savedPath ->
+                // A copy is a path the grid has never seen and nothing watches the
+                // directory for it, so the listing is re-read against it rather than
+                // hopefully refreshed.
+                viewModel.refresh()
+                scrollToMediaId = savedPath
             }
         )
     }

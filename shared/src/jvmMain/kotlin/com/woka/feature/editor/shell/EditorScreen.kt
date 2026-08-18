@@ -41,7 +41,6 @@ internal fun EditorScreen(
     session: EditorSession,
     engine: EditorEngine,
     registry: EditorToolRegistry,
-    fileName: String,
     onCancel: () -> Unit,
     onDone: () -> Unit,
     unavailable: Map<String, String> = emptyMap()
@@ -53,6 +52,19 @@ internal fun EditorScreen(
     val tools by registry.tools(engine.kind).collectAsState()
 
     var activeToolId by remember { mutableStateOf<String?>(null) }
+
+    // The editor takes over the shell's bar rather than drawing a second one, which
+    // is also what removes the folder path and the viewer's own controls from above
+    // it — see EditorTopBarSetup.
+    EditorTopBarSetup(
+        isDirty = isDirty,
+        canUndo = canUndo,
+        canRedo = canRedo,
+        onLeave = onCancel,
+        onUndo = session::undo,
+        onRedo = session::redo,
+        onDone = onDone
+    )
 
     // A tool switched off in Settings leaves `tools`, and an inspector for a tool that
     // is gone would keep drawing controls whose writes the fold then skips. Clearing
@@ -72,23 +84,14 @@ internal fun EditorScreen(
             .background(Color.Black)
             .testTag("editor-screen")
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            EditorTopBar(
-                fileName = fileName,
-                isDirty = isDirty,
-                canUndo = canUndo,
-                canRedo = canRedo,
-                onCancel = onCancel,
-                onUndo = session::undo,
-                onRedo = session::redo,
-                onDone = onDone
-            )
-            EditorCanvasHost(
-                engine = engine,
-                document = document,
-                modifier = Modifier.weight(1f)
-            )
-        }
+        EditorCanvasHost(
+            engine = engine,
+            document = document,
+            modifier = Modifier.fillMaxSize(),
+            // Back to Fit whenever the tool changes: a crop opened at 100 % on a
+            // corner of the picture is a crop nobody can frame (§4.3).
+            resetKey = activeToolId
+        )
 
         Column(
             modifier = Modifier

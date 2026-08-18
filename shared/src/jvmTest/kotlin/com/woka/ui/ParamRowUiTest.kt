@@ -39,7 +39,7 @@ class ParamRowUiTest {
         onEditor(listOf(tool)) { harness ->
             onUi {
                 setContent {
-                    EditorScreen(harness.session, FixtureEngine(), harness.registry, "p.jpg", {}, {})
+                    EditorScreen(harness.session, FixtureEngine(), harness.registry, {}, {})
                 }
                 onNodeWithTag("editor-tool-adjust").performClick()
 
@@ -63,7 +63,7 @@ class ParamRowUiTest {
         onEditor(listOf(tool)) { harness ->
             onUi {
                 setContent {
-                    EditorScreen(harness.session, FixtureEngine(), harness.registry, "p.jpg", {}, {})
+                    EditorScreen(harness.session, FixtureEngine(), harness.registry, {}, {})
                 }
                 onNodeWithTag("editor-tool-adjust").performClick()
                 onNodeWithTag("param-${FixtureParams.Flag.key}").performClick()
@@ -84,7 +84,7 @@ class ParamRowUiTest {
         onEditor(listOf(tool)) { harness ->
             onUi {
                 setContent {
-                    EditorScreen(harness.session, FixtureEngine(), harness.registry, "p.jpg", {}, {})
+                    EditorScreen(harness.session, FixtureEngine(), harness.registry, {}, {})
                 }
                 onNodeWithTag("editor-tool-adjust").performClick()
 

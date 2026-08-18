@@ -54,10 +54,19 @@ object EditorTokens {
     object Inspector {
 
         /**
-         * Fixed, not content-sized. A card that grew per tool would move the rail
-         * under the cursor every time the tool changed.
+         * A range, not a fixed width — corrected 2026-08-18.
+         *
+         * It was fixed at 420 dp on the reasoning that a card growing per tool would
+         * move the rail under the cursor. **That reasoning was wrong**: the inspector
+         * and the rail are independent children of a `CenterHorizontally` column, so
+         * the rail is centred whatever the card measures and does not move at all.
+         *
+         * What the fixed width actually bought was a Transform panel of four small
+         * buttons floating in 420 dp of empty space, with `Reset` three buttons' worth
+         * of nothing away from anything.
          */
-        val width = 420.dp
+        val minWidth = 240.dp
+        val maxWidth = 420.dp
 
         val rowHeight = 36.dp
         val rowGap = 2.dp

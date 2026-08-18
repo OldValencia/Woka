@@ -11,15 +11,11 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.rememberScrollbarAdapter
-import androidx.compose.foundation.text.BasicText
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.woka.core.data.MediaItem
 import com.woka.core.ui.dialogs.AbstractDialog
 import com.woka.core.ui.dialogs.DialogButton
@@ -28,8 +24,6 @@ import com.woka.core.ui.theme.Theme
 import com.woka.feature.viewer.video.model.MediaTracks
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
-import java.text.SimpleDateFormat
-import java.util.Date
 
 @Composable
 fun FileInfoDialog(
@@ -95,28 +89,4 @@ private fun ScrollableInfo(
             )
         }
     }
-}
-
-@Composable
-private fun FileMetaBlock(item: MediaItem) {
-    SelectionContainer(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            InfoLine("Name: ${item.file.name}")
-            InfoLine("Path: ${item.file.absolutePath}")
-            InfoLine("Size: ${item.file.length().toReadableSize()}")
-            InfoLine("Created: ${SimpleDateFormat("yyyy-MM-dd HH:mm").format(Date(item.file.lastModified()))}")
-        }
-    }
-}
-
-@Composable
-private fun InfoLine(text: String) {
-    BasicText(
-        text,
-        modifier = Modifier.fillMaxWidth(),
-        style = TextStyle(color = Theme.colors.textSecondary, fontSize = 13.sp)
-    )
 }

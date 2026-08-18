@@ -5,7 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
@@ -37,7 +37,7 @@ internal fun EditorSkippedNotice(count: Int, titles: List<String>) {
     val warn = Theme.colors.accentFolders
     Column(
         modifier = Modifier
-            .width(EditorTokens.Inspector.width)
+            .widthIn(min = EditorTokens.Inspector.minWidth, max = EditorTokens.Inspector.maxWidth)
             .clip(RoundedCornerShape(9.dp))
             .background(warn.copy(alpha = 0.14f))
             .border(1.dp, warn.copy(alpha = 0.32f), RoundedCornerShape(9.dp))

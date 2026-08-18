@@ -39,11 +39,13 @@ fun MainShell(
     val dockAccessories = remember { DockAccessoriesState() }
     val topBarAccessories = remember { TopBarAccessoriesState() }
     val globalShortcuts = remember { GlobalShortcutState() }
+    val canvasOverride = remember { CanvasOverrideState() }
 
     CompositionLocalProvider(
         LocalDockAccessories provides dockAccessories,
         LocalTopBarAccessories provides topBarAccessories,
-        LocalGlobalShortcuts provides globalShortcuts
+        LocalGlobalShortcuts provides globalShortcuts,
+        LocalCanvasOverride provides canvasOverride
     ) {
         Box(
             modifier = Modifier

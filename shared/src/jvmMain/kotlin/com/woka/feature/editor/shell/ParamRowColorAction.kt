@@ -77,23 +77,23 @@ internal fun ColorParamRow(spec: ColorParam, params: ParamSet, writer: ParamWrit
  */
 @Composable
 internal fun ActionParamRow(spec: ActionParam, writer: ParamWriter) {
-    ParamRowFrame(spec.label) {
-        Box(modifier = Modifier.weight(1f)) {
-            BasicText(
-                text = spec.label,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .border(1.dp, Theme.viewer.onScrimBorder, RoundedCornerShape(8.dp))
-                    .pointerHoverIcon(PointerIcon.Hand)
-                    .clickable { writer.edit(spec, true) }
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
-                    .testTag("param-${spec.key}"),
-                style = TextStyle(
-                    color = Theme.viewer.onScrim,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            )
-        }
-    }
+    // **No label column.** An action's label is written on the button that performs
+    // it, so putting it in the row's label column too printed "Rotate left" twice on
+    // the same line — and left the button stranded in a 420 dp card with a column of
+    // white space between it and everything else.
+    BasicText(
+        text = spec.label,
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .border(1.dp, Theme.viewer.onScrimBorder, RoundedCornerShape(8.dp))
+            .pointerHoverIcon(PointerIcon.Hand)
+            .clickable { writer.edit(spec, true) }
+            .padding(horizontal = 12.dp, vertical = 7.dp)
+            .testTag("param-${spec.key}"),
+        style = TextStyle(
+            color = Theme.viewer.onScrim,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+    )
 }

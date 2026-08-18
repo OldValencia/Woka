@@ -7,5 +7,6 @@ import com.woka.core.data.MediaItem
 expect fun NativeMediaViewer(
     initialId: String,
     mediaItems: List<MediaItem>,
-    onClose: (String) -> Unit
+    onClose: (String) -> Unit,
+    onEdit: (String) -> Unit
 )

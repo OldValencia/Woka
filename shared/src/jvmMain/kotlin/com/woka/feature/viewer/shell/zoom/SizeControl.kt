@@ -38,13 +38,19 @@ fun SizeControl(
     containerSize: IntSize,
     nativeSize: IntSize,
     onSizeModeChange: (SizeMode) -> Unit,
-    onOffsetReset: () -> Unit
+    onOffsetReset: () -> Unit,
+    /**
+     * The reachable range, when the owner's is narrower than the viewer's — the editor
+     * floors at Fit (see `CanvasZoom`). A slider that travels somewhere the picture will
+     * not follow reads as the zoom being broken, not as a limit.
+     */
+    bounds: IntRange? = null
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     var anchorHeight by remember { mutableStateOf(0) }
     val gapPx = with(LocalDensity.current) { 6.dp.roundToPx() }
 
-    val bounds = zoomBounds(containerSize, nativeSize)
+    val range = bounds ?: zoomBounds(containerSize, nativeSize)
     val percent = sizeMode.percentIn(containerSize, nativeSize)
     val label = when (sizeMode) {
         is SizeMode.Preset -> "${presetLabel(sizeMode.preset)} · $percent%"
@@ -52,7 +58,7 @@ fun SizeControl(
     }
 
     fun applyPercent(value: Int) {
-        onSizeModeChange(sizeModeFor(clampPercent(value, bounds), containerSize, nativeSize))
+        onSizeModeChange(sizeModeFor(clampPercent(value, range), containerSize, nativeSize))
     }
 
     fun applyPreset(preset: ScalePreset) {
@@ -65,8 +71,8 @@ fun SizeControl(
         SizeIndicatorButton(
             label = label,
             menuOpen = menuOpen,
-            onStepDown = { applyPercent(stepDown(percent, bounds)) },
-            onStepUp = { applyPercent(stepUp(percent, bounds)) },
+            onStepDown = { applyPercent(stepDown(percent, range)) },
+            onStepUp = { applyPercent(stepUp(percent, range)) },
             onToggleMenu = { menuOpen = !menuOpen }
         )
 
@@ -80,7 +86,7 @@ fun SizeControl(
                 ZoomMenuPopover(
                     sizeMode = sizeMode,
                     percent = percent,
-                    bounds = bounds,
+                    bounds = range,
                     container = containerSize,
                     native = nativeSize,
                     onPreset = { applyPreset(it) },

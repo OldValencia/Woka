@@ -23,12 +23,14 @@ private object RealViewerThumbnails : ViewerThumbnails {
 actual fun NativeMediaViewer(
     initialId: String,
     mediaItems: List<MediaItem>,
-    onClose: (String) -> Unit
+    onClose: (String) -> Unit,
+    onEdit: (String) -> Unit
 ) {
     MediaViewerScreen(
         initialMediaId = initialId,
         mediaItems = mediaItems,
         onClose = onClose,
+        onEdit = onEdit,
         thumbnails = RealViewerThumbnails
     )
 }

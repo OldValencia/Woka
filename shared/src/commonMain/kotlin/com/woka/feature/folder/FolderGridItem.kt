@@ -22,6 +22,7 @@ internal fun FolderGridItem(
     overlays: FolderOverlayState,
     onNavigateToFolder: (String) -> Unit,
     onOpenMedia: (String) -> Unit,
+    onEditMedia: (String) -> Unit,
     highlightFile: String?
 ) {
     val target = item.file.absolutePath
@@ -51,6 +52,7 @@ internal fun FolderGridItem(
                 overlays = overlays,
                 onNavigateToFolder = onNavigateToFolder,
                 onOpenMedia = onOpenMedia,
+                onEditMedia = onEditMedia,
                 dismiss = dismiss,
                 watch = watch
             )

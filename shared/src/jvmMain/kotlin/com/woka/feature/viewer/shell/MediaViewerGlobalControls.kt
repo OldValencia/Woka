@@ -1,5 +1,6 @@
 package com.woka.feature.viewer.shell
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -11,6 +12,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.woka.app.shell.LocalCanvasOverride
 import com.woka.core.data.CarouselVisibility
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.viewer.shell.zoom.SizeControl
@@ -18,6 +20,12 @@ import com.woka.feature.viewer.shell.zoom.SizeControl
 @Composable
 fun MediaViewerControlsContainer(
     modifier: Modifier = Modifier,
+    /**
+     * `spacedBy` puts a gap beside a child even when that child has measured itself to
+     * nothing, so a pill with a retracting group keeps 8.dp of dead space at the edge
+     * for the rest of the session. Those pills space themselves with [PillGap] instead.
+     */
+    arrangement: Arrangement.Horizontal = Arrangement.spacedBy(PILL_GAP),
     content: @Composable RowScope.() -> Unit
 ) {
     Row(
@@ -26,11 +34,23 @@ fun MediaViewerControlsContainer(
             .background(Theme.colors.surface, RoundedCornerShape(30.dp))
             .border(1.dp, Theme.colors.border, RoundedCornerShape(30.dp))
             .padding(horizontal = 6.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = arrangement,
         verticalAlignment = Alignment.CenterVertically
     ) {
         content()
     }
+}
+
+private val PILL_GAP = 8.dp
+
+@Composable
+private fun PillGap() {
+    Spacer(modifier = Modifier.width(PILL_GAP))
+}
+
+@Composable
+private fun PillDivider() {
+    Box(modifier = Modifier.height(16.dp).width(1.dp).background(Theme.colors.border))
 }
 
 @Composable
@@ -47,17 +67,36 @@ fun MediaViewerNormalControls(
     isInfoOpen: Boolean,
     modifier: Modifier = Modifier
 ) {
-    MediaViewerControlsContainer(modifier) {
-        SizeControl(sizeMode, containerSize, nativeSize, onSizeModeChange, onOffsetReset)
+    val override = LocalCanvasOverride.current
+    val zoom = override.zoom
 
-        Box(modifier = Modifier.height(16.dp).width(1.dp).background(Theme.colors.border))
+    MediaViewerControlsContainer(modifier, arrangement = Arrangement.Start) {
+        // The same control either way, pointed somewhere else: while the editor is up
+        // it owns the picture, and the viewer underneath is frozen (see CanvasZoom).
+        if (zoom != null) {
+            CanvasZoomControl(zoom)
+        } else {
+            SizeControl(sizeMode, containerSize, nativeSize, onSizeModeChange, onOffsetReset)
+        }
 
+        PillGap()
+        PillDivider()
+        PillGap()
         InfoButton(isInfoOpen, onInfo)
-        ToggleCarouselButton(carouselMode, onToggleCarousel)
 
-        Box(modifier = Modifier.height(16.dp).width(1.dp).background(Theme.colors.border))
-
-        EditButton(onEdit)
+        // One group, so the pill narrows in a single movement rather than closing two
+        // holes at once. Everything that goes with them — the gaps and the divider —
+        // is inside, which is what lets the pill end flush against Info.
+        AnimatedVisibility(visible = !override.editing) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                PillGap()
+                ToggleCarouselButton(carouselMode, onToggleCarousel)
+                PillGap()
+                PillDivider()
+                PillGap()
+                EditButton(onEdit)
+            }
+        }
     }
 }
 
@@ -83,7 +122,7 @@ fun MediaViewerFullscreenControls(
     MediaViewerControlsContainer(modifier) {
         SizeControl(sizeMode, containerSize, nativeSize, onSizeModeChange, onOffsetReset)
 
-        Box(modifier = Modifier.height(16.dp).width(1.dp).background(Theme.colors.border))
+        PillDivider()
 
         PipWindowButton(isPipWindow, onTogglePipWindow)
         ToggleCarouselButton(carouselMode, onToggleCarousel, isFullscreen = true)

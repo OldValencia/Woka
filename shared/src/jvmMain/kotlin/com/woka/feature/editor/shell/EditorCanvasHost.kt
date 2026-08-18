@@ -1,80 +1,145 @@
 package com.woka.feature.editor.shell
 
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditorEngine
+import kotlin.math.roundToInt
 
 /** Where a `CanvasTool`'s overlay is drawn, once one exists (ME-109, ME-113). */
 internal const val CANVAS_HOST_TAG = "editor-canvas"
 
+/** One notch of the wheel. Multiplicative, so zooming feels the same at every level. */
+private const val ZOOM_STEP = 1.15f
+
 /**
- * The frame the medium draws itself into.
+ * The frame the medium draws itself into, and the magnifier over it.
  *
  * It measures, works out where the picture lands, and composes [EditorEngine.Surface]
- * — and that is the whole of it. **It never names a bitmap, a player or a recipe**,
- * which is what lets the video editor reuse this file rather than acquire its own
- * (§3.3): a trim strip and a photograph are both "something the engine draws inside a
- * measured box".
+ * — **it never names a bitmap, a player or a recipe**, which is what lets the video
+ * editor reuse this file rather than acquire its own (§3.3).
  *
- * [overlay] receives the geometry rather than measuring itself, because the thing that
- * turns a pointer position into a source coordinate needs exactly these two matrices.
- * A second measurement is a second answer, and the two disagree by a pixel or two at
- * the edges — which reads as a gesture bug rather than as the layout bug it is.
+ * Zoom runs Fit to 1000 %, the range the viewer offers. Above 100 % the ≤2560 px proxy
+ * is soft — ME-116 sharpens it by drawing the native bitmap for the visible region —
+ * but a magnifier that refuses to magnify is the worse of the two (2026-08-18).
+ *
+ * [resetKey] returns the view to Fit whenever it changes — the active tool, in
+ * practice. A crop opened at 400 % on a corner of the picture is a crop nobody can
+ * frame (§4.3).
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 internal fun EditorCanvasHost(
     engine: EditorEngine,
     document: EditDocument,
     modifier: Modifier = Modifier,
+    resetKey: Any? = null,
     overlay: @Composable (EditorCanvasGeometry) -> Unit = {}
 ) {
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
+    var zoom by remember { mutableStateOf(1f) }
+    var pan by remember { mutableStateOf(Offset.Zero) }
 
-    // Rebuilt only when a size really changes. `onSizeChanged` fires per layout pass,
-    // and two matrices per frame of an animation is work nothing asked for.
+    LaunchedEffect(resetKey) {
+        zoom = 1f
+        pan = Offset.Zero
+    }
+
     // `drawnSize`, not `sourceSize`: after a crop the picture has the crop's shape
     // while operations are still addressed against the original, and measuring the
     // box with the source would letterbox it in the wrong proportions.
     val drawnSize = engine.drawnSize(document)
-    val geometry = remember(drawnSize, canvasSize) {
-        EditorCanvasGeometry(drawnSize, canvasSize)
+    val geometry = remember(drawnSize, canvasSize, zoom, pan) {
+        EditorCanvasGeometry(drawnSize, canvasSize, zoom, pan)
     }
+
+    // The wheel is not the only way in: the top bar's pill drives the same two values.
+    PublishCanvasZoom(
+        geometry = geometry,
+        onZoom = { next -> zoom = next.coerceIn(1f, geometry.maxZoom) },
+        onReset = {
+            zoom = 1f
+            pan = Offset.Zero
+        }
+    )
 
     Box(
         modifier = modifier
             .fillMaxSize()
+            .clipToBounds()
             .testTag(CANVAS_HOST_TAG)
-            .onSizeChanged { canvasSize = it },
+            .onSizeChanged { canvasSize = it }
+            .onPointerEvent(PointerEventType.Scroll) { event ->
+                val change = event.changes.firstOrNull() ?: return@onPointerEvent
+                val notches = change.scrollDelta.y
+                if (notches == 0f) return@onPointerEvent
+                // Scrolling *up* is negative, and up means closer.
+                val next = (zoom * if (notches < 0f) ZOOM_STEP else 1f / ZOOM_STEP)
+                    .coerceIn(1f, geometry.maxZoom)
+                if (next != zoom) {
+                    pan = geometry.panForZoomAbout(change.position, next)
+                    zoom = next
+                }
+                change.consume()
+            }
+            .pointerInput(Unit) {
+                // Any drag pans. There is no competing gesture on the canvas until a
+                // `CanvasTool` exists (ME-109), and at that point the overlay gets
+                // first refusal and this becomes the fallback.
+                detectDragGestures { change, dragged ->
+                    pan += dragged
+                    change.consume()
+                }
+            },
         contentAlignment = Alignment.Center
     ) {
-        // Nothing is drawn before the first measurement: at `IntSize.Zero` the fit
-        // scale is a placeholder 1.0, and drawing a picture at native size for one
-        // frame is a visible flash on anything large.
+        // Nothing before the first measurement: at `IntSize.Zero` the fit scale is a
+        // placeholder 1.0, and drawing at native size for one frame is a visible flash.
         if (canvasSize != IntSize.Zero) {
             val density = LocalDensity.current
+            // `requiredSize`, **not** `size`: `size` constrains itself to what the
+            // parent offers, so the picture could never measure larger than the canvas
+            // and zooming past Fit changed the readout while the picture stood still.
             val drawn = with(density) {
-                Modifier.size(
+                Modifier.requiredSize(
                     width = (geometry.sourceSize.width * geometry.scale).toDp(),
                     height = (geometry.sourceSize.height * geometry.scale).toDp()
                 )
             }
-            // The engine is handed the *drawn size* and fills it. Handing it the scale
-            // instead would make every engine repeat this arithmetic, and the second
-            // copy is the one that rounds differently.
-            Box(modifier = drawn) {
+            Box(
+                // The *clamped* pan, read from the geometry rather than from the raw
+                // state, so the picture stops where the matrices say it does. An
+                // overlay hit-testing against `canvasToSource` while the box was drawn
+                // somewhere else is the disagreement this avoids.
+                modifier = drawn.offset {
+                    IntOffset(
+                        geometry.clampedPan.x.roundToInt(),
+                        geometry.clampedPan.y.roundToInt()
+                    )
+                }
+            ) {
                 engine.Surface(document, Modifier.fillMaxSize())
                 overlay(geometry)
             }

@@ -59,10 +59,30 @@ class EditorEngineFactoryTest {
         assertNull(factory.create("D:/Notes/archive.zip"))
     }
 
+    /**
+     * **Reversed 2026-08-18 (ME-106), deliberately.**
+     *
+     * This asserted the opposite until then — a missing path still yielded an engine,
+     * on the grounds that greying out a menu item must not cost a decode of every file
+     * in the grid. The cost argument was right and no longer applies: `isFile` is a
+     * stat, not a decode, and since ME-104 the engine's `SourceStamp` stats the file in
+     * its constructor anyway. Existence is free to check now.
+     *
+     * And it has to be checked, because nothing downstream would: `mediaKind()` reads
+     * the extension alone and `SourceStamp` answers 0/0 for a file that is not there.
+     * Without this the grid's `Edit` entry stays enabled for a file deleted out from
+     * under it, and the user meets the problem as a failed save rather than a greyed
+     * menu item.
+     */
     @Test
-    fun `editability is a question about the format, not about the bytes`() = withFactory { factory ->
-        // A path that does not exist still yields an engine: greying out a menu
-        // item must not cost a decode of every file in the grid.
-        assertNotNull(factory.create("D:/Nowhere/missing.png"))
+    fun `a file that is not there is not editable`() = withFactory { factory ->
+        assertNull(factory.create("D:/Nowhere/missing.png"))
+    }
+
+    @Test
+    fun `editability is still decided by format, for a file that exists`() = withFactory { factory ->
+        // The half of the original claim that survives: no pixel is read to answer.
+        val existing = SampleMedia.file(STILL_PNG)
+        assertNotNull(factory.create(existing.absolutePath))
     }
 }

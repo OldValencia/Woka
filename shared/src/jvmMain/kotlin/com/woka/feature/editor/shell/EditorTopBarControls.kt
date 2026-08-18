@@ -21,9 +21,12 @@ import androidx.compose.ui.unit.dp
 import com.woka.core.ui.theme.Theme
 
 /**
- * The two button shapes the editor's top bar is made of, split from [EditorTopBar]
- * at 150 lines. The bar is *what sits where*; these are *what a control looks like*,
- * and the second question is the one ME-104's save menu will ask again.
+ * The two button shapes the editor puts in the shell's top bar.
+ *
+ * **`Theme.colors`, not `Theme.viewer.onScrim*`.** These used to live on the editor's
+ * own bar, which was a scrim over the photograph; they now sit in the app's top bar,
+ * which is an ordinary surface and follows the theme. Reading the on-scrim set here
+ * would put near-white text on a light background.
  */
 
 /** A plain label that reacts to hover and dims rather than disappears when disabled. */
@@ -52,7 +55,7 @@ internal fun TopBarButton(
         BasicText(
             text = label,
             style = TextStyle(
-                color = if (enabled) Theme.viewer.onScrim else Theme.viewer.onScrimDisabled,
+                color = if (enabled) Theme.colors.textPrimary else Theme.colors.textTertiary,
                 fontSize = EditorTokens.TopBar.subtitleStyle,
                 fontWeight = FontWeight.SemiBold
             )

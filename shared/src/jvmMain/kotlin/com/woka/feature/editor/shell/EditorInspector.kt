@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
@@ -43,7 +43,7 @@ internal fun EditorInspector(
 ) {
     Column(
         modifier = Modifier
-            .width(EditorTokens.Inspector.width)
+            .widthIn(min = EditorTokens.Inspector.minWidth, max = EditorTokens.Inspector.maxWidth)
             .clip(RoundedCornerShape(Theme.viewer.cornerRadius))
             .background(Theme.viewer.popoverScrim)
             .border(
