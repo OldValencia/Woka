@@ -52,7 +52,13 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-134](tickets/ME-134-reopening-an-edited-file.md) | Reopening an edited file | **done** 2026-08-19 |
 | [ME-135](tickets/ME-135-readers-notice-a-save.md) | Readers notice a save | **done** 2026-08-19 |
 | [ME-107](tickets/ME-107-revert-to-original.md) | Revert to Original — **un-dropped** | **done** 2026-08-19 |
-| [ME-108…ME-130](tickets/backlog.md) | Image editor | backlog |
+| [ME-108](tickets/ME-108-isobmff-carrier.md) | ISOBMFF carrier — HEIC, HEIF, AVIF | **done** 2026-08-19 — by hand outstanding |
+| [ME-137](tickets/ME-137-webp-carrier.md) | RIFF carrier — WebP, and bucket B empties | specified — **next** |
+| [ME-138](tickets/ME-138-gif-carrier.md) | GIF carrier — Application Extension | specified |
+| [ME-139](tickets/ME-139-tiff-carrier.md) | TIFF carrier — private IFD tag | specified |
+| [ME-109](tickets/ME-109-crop-tool.md) | Crop tool, and the fold at preview scale | specified |
+| [ME-110](tickets/ME-110-resize-tool.md) | Resize tool | specified |
+| [ME-111…ME-130](tickets/backlog.md) | Image editor | backlog |
 | [ME-201…ME-204](tickets/backlog.md) | Video editor | backlog |
 
 **Why the foundation is fourteen tickets and no pixels.** Every one of ME-002…ME-011 is shared by both
@@ -372,8 +378,8 @@ anything, because the original pixels never left the file they were always in.
 | **B** | no carrier, but Skia can encode it | a notice in the editor says there will be no history; `Done` re-encodes the file in place. |
 | **C** | neither | `Edit` is unavailable, with the reason in the menu. |
 
-At the time of writing: **A** = `jpg`, `jpeg`, `png` · **B** = `webp` · **C** = `heic`, `heif`,
-`avif`, `tif`, `tiff`, `gif`, `bmp`.
+At the time of writing: **A** = `jpg`, `jpeg`, `png`, `heic`, `heif`, `avif` · **B** = `webp` ·
+**C** = `tif`, `tiff`, `gif`, `bmp`.
 
 C is not a permanent state. Almost every image container has a **sanctioned** private extension point,
 and a new carrier moves formats straight from C to A, never through B:
@@ -382,7 +388,7 @@ and a new carrier moves formats straight from C to A, never through B:
 |---|---|---|
 | `jpg`/`jpeg` | private `APPn` segment | done first |
 | `png` | ancillary private chunk | done first |
-| `heic`/`heif`/`avif` | ISOBMFF `uuid` box — the slot the spec provides for exactly this | later |
+| `heic`/`heif`/`avif` | ISOBMFF `uuid` box — the slot the spec provides for exactly this | done (ME-108) |
 | `webp` | RIFF chunk, needs promotion to the extended `VP8X` container | later |
 | `gif` | Application Extension block | later |
 | `tif`/`tiff` | private IFD tag (numbers ≥ 32768 are reserved for it) | later |
@@ -612,6 +618,8 @@ sheet instead of a dead Edit button.
 | 2026-08-19 | Does the stale-source stamp survive a save? | **No — it is re-read after every successful write** (ME-132) | The save now lands on the file the editor is still holding open, so the stamp taken at open no longer describes it. Without the re-read the second `Done` of a sitting reports the user's own first one as somebody else's change |
 | 2026-08-19 | How does a Coil tile re-request a file that has not moved? | **`key(reloadKey) { AsyncImage(…) }`** — a new composition identity, not a rebuilt `ImageRequest` (ME-135) | The memory key is the bare file URI and the `File` model compares equal across a write, so Coil keeps the painter it already resolved and never asks again — evicting its entry alone changes nothing. A new key is a new `AsyncImagePainter`, which then misses the evicted entry and reads the file. The recipe case does not even reach here: `carries` goes true and the tile moves to Woka's road. What is left is the bucket-B re-encode and a revert coming back |
 | 2026-08-19 | Does undo step back **past** what the file carries? | ~~No — the history is seeded with it and the first undo lands *on* it~~ **Superseded the same day by the row below** | The reasoning was that stepping past the file's own state is Revert's job (ME-107), not undo's. The by-hand run disagreed, and it was the user's call to make |
+| 2026-08-19 | What does an edit mean for a **frame set**? | **Every frame of it** — one recipe per file, and that is the MVP answer, not a placeholder (ME-126) | Confirmed by hand the day HEIC became editable: turning one frame of a burst turns the burst, and that reads as the file being edited rather than as a bug. Per-frame is a keyed payload in the same segment and is wanted, not needed. The **consequence that was a bug**: a save evicted only the edited frame's cache entries, so the other frames' thumbnails kept the pre-edit picture until something remounted the strip — `ImageBitmapCache.removeAllFor` now forgets the whole file, and the strip subscribes to the save signal like every other reader |
+| 2026-08-19 | Where in an ISOBMFF file does the recipe go? | **A `uuid` box appended after the last box**, and readers read the **tail** (ME-108) | HEIF stores item positions in `iloc` as absolute file offsets, so inserting anywhere earlier silently rewrites every one of them and the picture stops decoding. Appending disturbs nothing — an unrecognised top-level box is skipped by its size. The cost is that the head window `carries` was built around cannot see it, so `RecipeCarrier` now says which end it lives at and `EditRecipe` reads 64 KB from there. A payload that would not fit that window is **refused at write time**, which is what makes "not in the tail" a real answer rather than a reason to read 4 MB per grid tile |
 | 2026-08-19 | Where does a grid Revert get its dialog? | **The dialog chrome moved to `commonMain`** — `core/ui/dialogs/Dialogs.kt`, whole and unchanged (ME-107) | The folder feature is `commonMain` to the bottom and the chrome sat in `jvmMain`, so the confirmation could not see it. Nothing in that file is JVM-specific — the AWT `FileDialog` pickers are in `ui/components/dialogs/`, a different file — and the alternative was a second dialog chrome for one dialog. Every caller is in the same package and none changed |
 | 2026-08-19 | Does `Reset` stay in the inspector? | **No — removed** (ME-107) | It cleared the *whole* working document from a header naming one tool, next to an Undo that takes work back a step at a time, and what people reached for it to do was "put this photograph back as it was". That is Revert, and one control now says so. `EditorSession.reset()` survives with no caller: undo covers it, and the next tool that wants a per-panel reset should re-earn the button |
 | 2026-08-19 | What does Revert actually remove? | **The recipe from the file, and the session's `openedWith` with it** (ME-107) | Two halves in one order: the engine writes, then the session mirrors it. Clearing only the document would leave the editor dirty against an edit the file no longer holds, and clearing only the file would leave Undo pointing at operations nobody can reach. A failed write moves neither, so the editor never claims a revert the disk refused |
@@ -658,7 +666,8 @@ it becomes the next question, per `ai/docs/conventions/feature-docs.md`.
   partial file — the atomic move is the last step — but the banner and the job's lifetime are unstated.
 - **Editor plus PiP.** The picture-in-picture window can be open while the editor is; who owns the
   keyboard and whether editing is even allowed then is undefined.
-- **Frame sets.** Editing frame N of a burst is covered by conversion, but nothing says what the
-  carousel shows afterwards.
+- **Frame sets.** ~~Editing frame N of a burst is covered by conversion~~ — **answered 2026-08-19**:
+  one recipe per file, so an edit applies to every frame in it. Per-frame editing is ME-126 and is a
+  want rather than a gap.
 - **Localisation.** Every string in this feature is English, like the rest of the app. If that ever
   changes, the manifests are where the strings live.

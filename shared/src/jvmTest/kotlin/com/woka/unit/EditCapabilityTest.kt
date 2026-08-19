@@ -10,6 +10,7 @@ import com.woka.fixtures.MULTIPAGE_TIFF
 import com.woka.fixtures.SampleMedia
 import com.woka.fixtures.STILL_JPG
 import com.woka.fixtures.STILL_PNG
+import com.woka.fixtures.STILL_AVIF
 import com.woka.fixtures.STILL_WEBP
 import com.woka.support.MainDispatcherRule
 import com.woka.support.withTempStorageRoot
@@ -51,9 +52,15 @@ class EditCapabilityTest {
         assertEquals(EditCapability.Destructive, factory.of(STILL_WEBP))
     }
 
+    /** ME-108's row: the `uuid` box moved this family from the test below to here. */
+    @Test
+    fun `an ISOBMFF photograph records its edit`() = withFactory { factory ->
+        assertEquals(EditCapability.Recorded, factory.of(BURST_HEIC))
+        assertEquals(EditCapability.Recorded, factory.of(STILL_AVIF))
+    }
+
     @Test
     fun `a container with neither a slot nor an encoder is not editable`() = withFactory { factory ->
-        assertEquals(EditCapability.Unavailable, factory.of(BURST_HEIC))
         assertEquals(EditCapability.Unavailable, factory.of(ANIM_GIF))
         assertEquals(EditCapability.Unavailable, factory.of(MULTIPAGE_TIFF))
     }

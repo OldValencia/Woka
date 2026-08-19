@@ -103,4 +103,29 @@ class ImageCacheEvictionTest {
     fun `the shipped budget is the one the app runs with`() {
         assertEquals(256L * 1024 * 1024, ImageBitmapCache.budgetBytes)
     }
+
+    /**
+     * One file, every frame — what a save has to forget (ME-108 made frame sets
+     * editable, and the recipe covers all of them).
+     */
+    @Test
+    fun `removeAllFor drops every frame and preview of one path`() =
+        withImageCacheBudget(8 * MEGABYTE) {
+            val path = "D:/Photos/burst.heic"
+            put(ImageBitmapCache.key(path, 0))
+            put(ImageBitmapCache.key(path, 3))
+            put(ImageBitmapCache.previewKey(path, 0))
+            put(ImageBitmapCache.previewKey(path, 3))
+            put(ImageBitmapCache.key("D:/Photos/burst.heic.backup", 0))
+
+            ImageBitmapCache.removeAllFor(path)
+
+            assertNull(ImageBitmapCache[ImageBitmapCache.key(path, 0)])
+            assertNull(ImageBitmapCache[ImageBitmapCache.key(path, 3)])
+            assertNull(ImageBitmapCache[ImageBitmapCache.previewKey(path, 0)])
+            assertNull(ImageBitmapCache[ImageBitmapCache.previewKey(path, 3)])
+            // A path this one is a prefix of is a different file, and stays.
+            assertNotNull(ImageBitmapCache[ImageBitmapCache.key("D:/Photos/burst.heic.backup", 0)])
+            assertEquals(MEGABYTE, ImageBitmapCache.retainedBytes)
+        }
 }

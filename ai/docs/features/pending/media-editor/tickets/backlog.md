@@ -13,45 +13,6 @@ Order inside a track is dependency order. Between tracks, only the marked depend
 
 ## 100 — Image editor
 
-### ME-108 — The remaining recipe carriers
-**Re-scoped 2026-08-19.** This block used to be "conversion on demand" — make the eight formats Skia
-cannot encode into ones it can, so they could be edited at all. §5's recipe model needs no encoder, so
-the road to editing a HEIC is its own container, not a converted copy beside it.
-
-Four writers, **one ticket each**, each moving formats out of bucket C (§5.1) straight into A:
-
-- **ISOBMFF `uuid` box** — `heic`, `heif`, `avif`. A top-level box appended at the end of the file: the
-  slot the spec provides for private data, and appending disturbs no `iloc` offset. The biggest win of
-  the four, since these are the formats a phone actually produces.
-- **RIFF chunk** — `webp`. Needs promotion of a simple `VP8`/`VP8L` file to the extended `VP8X`
-  container (flags byte plus canvas width-1 and height-1 as 24-bit LE) before an ancillary chunk is
-  legal. Moves `webp` out of bucket B, so it stops being re-encoded.
-- **Application Extension block** — `gif`. The mechanism Netscape looping uses; 8-byte identifier plus
-  data sub-blocks.
-- **Private IFD tag** — `tif`, `tiff`. Tag numbers ≥ 32768 are reserved for exactly this. Fiddliest of
-  the four, because adding an entry shifts every value offset after the IFD.
-
-`bmp` has no slot and stays in bucket C permanently.
-
-Each follows ME-131's shape exactly — a `RecipeCarrier` implementation, a row in `carrierFor`, and its
-own fixture round-trip tests — and needs no change anywhere else in the app.
-*Depends on ME-131.*
-
-### ME-109 — Crop tool
-`Geometry`, `Single`, `Canvas`. A rect in source coordinates plus the aspect presets settled in §9 —
-Free, Original, 1:1, 4:3, 3:2, 16:9 as a chip row (six exceeds `SegmentedControl`), and an
-`ActionParam` that flips the ratio rather than doubling the list with portrait variants; an
-overlay with dimming, thirds grid, eight handles, hover cursors and a minimum size. Drags preview,
-pointer-up commits. The aspect and hit-test math is a separate pure file, unit-tested.
-*Depends on ME-105.*
-
-### ME-110 — Resize tool
-`Output`, `Single`, `Continuous`, pure data: two `IntParam` (width, height), a `BoolParam` aspect lock,
-**100/75/50/25 % as a `SegmentedControl` and a long-edge chip row — 4K, 2560, 1920, 1280** (§9), and a
-footnote row showing source → target dimensions. The footnote is a shell addition every later tool
-inherits.
-*Depends on ME-105.*
-
 ### ME-111 — Adjustments tool
 `Color`, `Single`, `Continuous`, pure data: **Exposure, Brightness, Contrast, Saturation, Warmth,
 Tint** (§9) composing into **one** `ColorMatrix`, neutral at all-zero, plus an auto action. No Compose
@@ -206,15 +167,30 @@ Smaller since 2026-08-19 but not gone: a recipe write is a few hundred bytes rat
 100 MP, so the window is short — for bucket B (§5.1) it is still a full render and encode.
 *Depends on ME-132.*
 
-### ME-126 — Frame sets after an edit
-**The one question §7's narrowing did not answer.** A recipe is written once per file, and a frame set
-is several pictures in one file — so editing frame N either applies to all of them, or the recipe needs
-a frame index, or a burst is simply not editable per frame. None of the three is obviously right, and
-the old answer (convert frame N into a new single-frame file beside the container) mints a file, which
-the model no longer does.
+### ME-126 — Editing one frame of a frame set
+**Answered for the MVP, wanted properly.** A recipe is written once per file and a frame set is
+several pictures in one file, so today an edit applies to **all of them** — turn one frame of a burst
+and the whole burst turns. Confirmed acceptable by hand on 2026-08-19, once ME-108 made HEIC editable
+at all, and it is the honest default: the file carries one document and every reader folds it.
 
-Also unstated once it is decided: what the carousel then shows and where the selection lands.
-*Depends on ME-132.*
+What is wanted is per-frame: turn frame 3 and leave the other four alone. The shape that fits the
+model is a **keyed document** in the same segment — the payload becomes frames-to-documents rather
+than one document, with the un-keyed form still read as "every frame", so a file written before this
+keeps meaning what it meant. Readers are already shaped for it: `StillEdits.apply` takes a frame
+index and ignores it.
+
+What that then has to answer, and nothing does yet:
+
+- **`Done`** writes into one slot rather than replacing the payload, so editing frame 3 must not drop
+  frame 1's edit — the same failure ME-134 fixed one level up.
+- **Revert** grows a question it does not have today: this frame, or the file. The grid entry can only
+  mean the file; the editor's control could mean either.
+- **The strip and the carousel** need to say which frames carry an edit, or a burst becomes a place
+  where edits hide.
+- **Which frame the editor opens on** is already carried (`EditorTarget.frameIndex`) and already
+  correct; nothing else in the shell changes.
+
+*Depends on ME-108.*
 
 ### ME-127 — Configurable output quality
 JPEG quality is fixed at **q95** in MVP (§9, 2026-08-18). This is the field that makes it adjustable:

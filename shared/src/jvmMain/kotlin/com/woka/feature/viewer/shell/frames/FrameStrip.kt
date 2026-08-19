@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.woka.core.data.FrameKind
 import com.woka.core.data.ImageFrame
 import com.woka.core.data.MediaItem
+import com.woka.core.ui.image.rememberReloadKey
 
 private val SELECTED_SIZE = 56.dp
 private val UNSELECTED_SIZE = 48.dp
@@ -96,7 +97,10 @@ private fun FrameThumbnail(
     // A Motion frame is the sibling clip, which this strip has no decoder for —
     // it shows the badge over the still's own preview rather than nothing.
     val previewIndex = if (frame.kind == FrameKind.Motion) 0 else frame.index
-    LaunchedEffect(item.file.absolutePath, previewIndex) {
+    // Keyed on the save signal as well (ME-135): one recipe covers every frame in the
+    // file, so an edit made on frame 3 changes what all of them draw.
+    val reloadKey = rememberReloadKey(item.file.absolutePath)
+    LaunchedEffect(item.file.absolutePath, previewIndex, reloadKey) {
         bitmap = loadPreview(item, previewIndex)
     }
     // On the box rather than the image, so it is there while the thumbnail is

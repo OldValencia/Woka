@@ -18,6 +18,16 @@ import java.io.File
  */
 internal interface RecipeCarrier {
 
+    /**
+     * Which end of the file the recipe lives at (ME-108).
+     *
+     * A JPEG segment and a PNG chunk sit before the picture data, so the head answers
+     * for both. An ISOBMFF `uuid` box is **appended after the last box** — HEIF item
+     * offsets in `iloc` are absolute, so inserting earlier rewrites the meaning of
+     * every one of them — and a head read would report every edited HEIC as untouched.
+     */
+    val window: RecipeWindow get() = RecipeWindow.Head
+
     /** What [bytes] carries, and whether the walk ran out of data before deciding. */
     fun scan(bytes: ByteArray): RecipeScan
 
@@ -35,6 +45,9 @@ internal interface RecipeCarrier {
      */
     fun with(bytes: ByteArray, payload: String): ByteArray?
 }
+
+/** Which slice of a file [EditRecipe] hands a carrier's [RecipeCarrier.scan]. */
+internal enum class RecipeWindow { Head, Tail }
 
 /**
  * [truncated] is what lets a reader work from the head of a file instead of all of
@@ -54,15 +67,16 @@ internal class RecipeScan(
  * the same reason it was extracted: six copies of an extension list disagreed with
  * each other. **Null is bucket B or C** (§5.1), never an error.
  *
- * The other seven image extensions are not gaps to be filled here. `heic`, `heif`
- * and `avif` are ISOBMFF and take a `uuid` box, `webp` a RIFF chunk behind a `VP8X`
- * promotion, `gif` an Application Extension block, `tif`/`tiff` a private IFD tag —
- * one ticket each under ME-108. Only `bmp` has no slot at all.
+ * The four remaining extensions are not gaps to be filled here. `webp` takes a RIFF
+ * chunk behind a `VP8X` promotion, `gif` an Application Extension block, `tif`/`tiff`
+ * a private IFD tag — one ticket each under ME-137. Only `bmp` has no slot at all.
  */
 internal fun carrierFor(file: File): RecipeCarrier? =
     when (file.extension.lowercase()) {
         // Both spellings are one format; the file keeps whichever it arrived with.
         "jpg", "jpeg" -> JpegRecipe
         "png" -> PngRecipe
+        // One container family, three brands in its `ftyp` (ME-108).
+        "heic", "heif", "avif" -> IsoBmffRecipe
         else -> null
     }

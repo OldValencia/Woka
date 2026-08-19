@@ -111,7 +111,7 @@ internal class ImageEditorEngine(
             }
             if (result is EditSaveResult.Saved) {
                 stamp = SourceStamp.of(file)
-                evictCachesFor(file, frameIndex)
+                evictCachesFor(file)
             }
             result
         }
@@ -125,7 +125,7 @@ internal class ImageEditorEngine(
         val result = revertRecipe(file)
         if (result is EditSaveResult.Saved) {
             stamp = SourceStamp.of(file)
-            evictCachesFor(file, frameIndex)
+            evictCachesFor(file)
         }
         result
     }

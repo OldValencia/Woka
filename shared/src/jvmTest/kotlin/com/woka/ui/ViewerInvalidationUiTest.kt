@@ -9,6 +9,9 @@ import com.woka.core.ui.image.MediaInvalidation
 import com.woka.feature.viewer.shell.MediaViewerActiveItemEffects
 import com.woka.feature.viewer.shell.MediaViewerState
 import com.woka.feature.viewer.shell.ViewerThumbnails
+import com.woka.feature.viewer.shell.frames.FrameStrip
+import com.woka.core.data.FrameKind
+import com.woka.core.data.ImageFrame
 import com.woka.support.onViewer
 import com.woka.support.poster
 import kotlin.test.Test
@@ -64,4 +67,31 @@ class ViewerInvalidationUiTest {
             waitForIdle()
             assertEquals(2, thumbnails.loads.size, "the save never reached the viewer")
         }
+
+    /**
+     * The strip down the left edge, which had the same defect one layer over
+     * (2026-08-19, by hand on a burst HEIC): its thumbnails are keyed on the path and
+     * the frame, and a save moves neither. One recipe covers every frame in the file,
+     * so **all** of them re-read.
+     */
+    @Test
+    fun `every frame thumbnail re-reads when the file is invalidated`() = onViewer(1) { items ->
+        val loads = mutableListOf<Int>()
+        setContent {
+            FrameStrip(
+                item = items[0],
+                frames = listOf(ImageFrame(0, FrameKind.Primary), ImageFrame(1, FrameKind.Sequence)),
+                selectedIndex = 0,
+                loadPreview = { _, index -> poster(8, 8).also { loads += index } },
+                onSelectFrame = {}
+            )
+        }
+        waitForIdle()
+        assertEquals(2, loads.size, "both frames were never drawn")
+
+        MediaInvalidation.invalidate(items[0].file.absolutePath)
+        waitForIdle()
+
+        assertEquals(4, loads.size, "a frame kept the picture from before the edit")
+    }
 }

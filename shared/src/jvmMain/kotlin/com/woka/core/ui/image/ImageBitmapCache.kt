@@ -99,6 +99,23 @@ object ImageBitmapCache {
     }
 
     /**
+     * Forgets **every** frame of one file — native and preview, frame 0 and the rest.
+     *
+     * A recipe belongs to the file, not to the frame that was open when it was written
+     * (ME-108 made frame sets editable for the first time), so a save changes what all
+     * of them draw as. Removing only the edited frame's two keys left a burst's other
+     * thumbnails showing the picture from before the edit until something remounted
+     * them — found by hand on a multi-frame HEIC, 2026-08-19.
+     *
+     * Matched on the key shapes [key] and [previewKey] build: the bare path, or the
+     * path followed by `#`.
+     */
+    fun removeAllFor(path: String) = synchronized(lock) {
+        val ours = entries.keys.filter { it == path || it.startsWith("$path#") }
+        ours.forEach { key -> entries.remove(key)?.let { retainedBytes -= it.byteSize } }
+    }
+
+    /**
      * Drops the oldest entries until the budget is met. [except] is the entry just
      * admitted: a single photo larger than the whole budget still has to be
      * drawable, so it is kept and the cache simply holds nothing else.

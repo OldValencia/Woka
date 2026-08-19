@@ -5,11 +5,12 @@ import com.woka.feature.editor.core.editorJson
 import com.woka.feature.editor.save.writeAtomically
 import kotlinx.serialization.encodeToString
 import java.io.File
+import java.io.RandomAccessFile
 
 /**
  * How large a slice of a file is enough to answer "does this carry a recipe".
  *
- * Both carriers stop walking where the picture data begins, so for a file either
+ * The head carriers stop walking where the picture data begins, so for a file either
  * of them wrote the answer is in the first few kilobytes. The window exists for the
  * pathological case — a JPEG whose leading `APPn` run holds a large ICC profile —
  * and [read] falls back to the whole file only when a walk actually ran out.
@@ -19,6 +20,15 @@ import java.io.File
  * between a scroll and a stutter.
  */
 private const val HEAD_BYTES = 512 * 1024
+
+/**
+ * The same question from the other end (ME-108), and far smaller: a tail carrier's box
+ * is the **last** thing in the file, so a slice this size holds it and its header with
+ * room to spare. Only a file rewritten by another program — appending something of its
+ * own after ours — needs more, and that falls back to the whole file like any other
+ * walk that ran out.
+ */
+internal const val TAIL_WINDOW = 64 * 1024
 
 /**
  * The edit a file carries, as far as the rest of the app is concerned (§5).
@@ -78,9 +88,9 @@ internal object EditRecipe {
 
     private fun payloadOf(file: File): String? {
         val carrier = carrierFor(file) ?: return null
-        val head = file.head() ?: return null
-        val scan = carrier.scan(head)
-        if (scan.payload != null || !scan.truncated || head.size.toLong() >= file.length()) {
+        val slice = file.slice(carrier.window) ?: return null
+        val scan = carrier.scan(slice)
+        if (scan.payload != null || !scan.truncated || slice.size.toLong() >= file.length()) {
             return scan.payload
         }
         // The walk ran out of window rather than out of file. Rare, and the only
@@ -90,8 +100,28 @@ internal object EditRecipe {
     }
 }
 
+private fun File.slice(window: RecipeWindow): ByteArray? = when (window) {
+    RecipeWindow.Head -> head()
+    RecipeWindow.Tail -> tail()
+}
+
 private fun File.head(): ByteArray? = runCatching {
     inputStream().use { stream -> stream.readNBytes(minOf(length(), HEAD_BYTES.toLong()).toInt()) }
+}.getOrNull()
+
+/**
+ * The last [TAIL_BYTES] of the file, or all of it when it is smaller.
+ *
+ * A `RandomAccessFile` rather than a skip-and-read, because skipping is not a seek on
+ * every stream and this runs per visible grid tile.
+ */
+private fun File.tail(): ByteArray? = runCatching {
+    val size = length()
+    val from = maxOf(0L, size - TAIL_WINDOW)
+    RandomAccessFile(this, "r").use { handle ->
+        handle.seek(from)
+        ByteArray((size - from).toInt()).also { handle.readFully(it) }
+    }
 }.getOrNull()
 
 private fun failure(reason: String): Result<Unit> = Result.failure(IllegalArgumentException(reason))

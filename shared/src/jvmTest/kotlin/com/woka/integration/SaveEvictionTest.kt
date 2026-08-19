@@ -64,7 +64,7 @@ class SaveEvictionTest {
             assertTrue(before.isNotEmpty(), "Coil cached nothing — this test proves nothing")
             println("[coil] memory key for ${file.absolutePath} -> $before")
 
-            evictCachesFor(file, 0)
+            evictCachesFor(file)
 
             assertEquals(emptyList(), keysFor(file), "the substring filter matched nothing")
         }
@@ -84,7 +84,7 @@ class SaveEvictionTest {
             val otherKeys = { memory?.keys.orEmpty().count { it.key.contains("other.jpg") } }
             assertTrue(otherKeys() > 0, "Coil cached nothing for the second file")
 
-            evictCachesFor(file, 0)
+            evictCachesFor(file)
 
             assertTrue(otherKeys() > 0, "an unrelated path was evicted")
             ImageBitmapCache.remove(other.absolutePath)

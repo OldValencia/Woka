@@ -17,10 +17,12 @@ import java.io.File
  * path, length and mtime, all three of which a write changes, so it orphans rather
  * than going stale.
  */
-internal fun evictCachesFor(file: File, frameIndex: Int) {
+internal fun evictCachesFor(file: File) {
     val path = file.absolutePath
-    ImageBitmapCache.remove(ImageBitmapCache.key(path, frameIndex))
-    ImageBitmapCache.remove(ImageBitmapCache.previewKey(path, frameIndex))
+    // **Every frame, not the one that was edited.** The recipe is written once per
+    // file, so a burst's other frames draw differently after a save too — they kept
+    // their pre-edit thumbnails until something remounted the strip (2026-08-19).
+    ImageBitmapCache.removeAllFor(path)
     evictCoil(file)
     // **Last, after every cache is clear** (ME-135). Dropping an entry changes nothing
     // on screen by itself; this is what makes a reader ask again. Raised before the
