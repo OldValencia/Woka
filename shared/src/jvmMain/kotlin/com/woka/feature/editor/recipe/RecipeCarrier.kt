@@ -67,9 +67,9 @@ internal class RecipeScan(
  * the same reason it was extracted: six copies of an extension list disagreed with
  * each other. **Null is bucket B or C** (§5.1), never an error.
  *
- * The four remaining extensions are not gaps to be filled here. `webp` takes a RIFF
- * chunk behind a `VP8X` promotion, `gif` an Application Extension block, `tif`/`tiff`
- * a private IFD tag — one ticket each under ME-137. Only `bmp` has no slot at all.
+ * The three remaining extensions are not gaps to be filled here. `gif` takes an
+ * Application Extension block (ME-138) and `tif`/`tiff` a private IFD tag (ME-139).
+ * Only `bmp` has no slot at all.
  */
 internal fun carrierFor(file: File): RecipeCarrier? =
     when (file.extension.lowercase()) {
@@ -78,5 +78,7 @@ internal fun carrierFor(file: File): RecipeCarrier? =
         "png" -> PngRecipe
         // One container family, three brands in its `ftyp` (ME-108).
         "heic", "heif", "avif" -> IsoBmffRecipe
+        // Extended by us when it arrives simple (ME-137) — the last of bucket B.
+        "webp" -> WebpRecipe
         else -> null
     }

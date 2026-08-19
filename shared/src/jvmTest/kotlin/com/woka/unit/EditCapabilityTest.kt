@@ -10,6 +10,7 @@ import com.woka.fixtures.MULTIPAGE_TIFF
 import com.woka.fixtures.SampleMedia
 import com.woka.fixtures.STILL_JPG
 import com.woka.fixtures.STILL_PNG
+import com.woka.fixtures.ANIM_WEBP
 import com.woka.fixtures.STILL_AVIF
 import com.woka.fixtures.STILL_WEBP
 import com.woka.support.MainDispatcherRule
@@ -47,9 +48,15 @@ class EditCapabilityTest {
     }
 
     /** Until ME-108's RIFF carrier promotes it to `VP8X`, this is the only bucket B. */
+    /**
+     * **Bucket B is empty** (ME-137). `Destructive` is still reachable in code — it is
+     * the fallback for a format that ever gains an encoder before a carrier — but no
+     * format Woka lists lands there any more, which is what the enum's own doc predicted.
+     */
     @Test
-    fun `a webp can be re-encoded but keeps no history`() = withFactory { factory ->
-        assertEquals(EditCapability.Destructive, factory.of(STILL_WEBP))
+    fun `a webp records its edit rather than being re-encoded`() = withFactory { factory ->
+        assertEquals(EditCapability.Recorded, factory.of(STILL_WEBP))
+        assertEquals(EditCapability.Recorded, factory.of(ANIM_WEBP))
     }
 
     /** ME-108's row: the `uuid` box moved this family from the test below to here. */

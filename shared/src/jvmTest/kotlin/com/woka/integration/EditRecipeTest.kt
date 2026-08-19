@@ -10,7 +10,6 @@ import com.woka.feature.viewer.image.stillDecoderFor
 import com.woka.fixtures.SampleMedia
 import com.woka.fixtures.STILL_JPG
 import com.woka.fixtures.STILL_PNG
-import com.woka.fixtures.STILL_WEBP
 import java.io.File
 import java.nio.file.Files
 import kotlin.test.Test
@@ -116,11 +115,24 @@ class EditRecipeTest {
         assertFalse(EditRecipe.carries(file))
     }
 
+    /**
+     * `bmp` is the one format left with no slot at all, and there is none in the
+     * corpus — the extension is what `carrierFor` keys on, so a JPEG under that name is
+     * exactly the case being asked about.
+     */
     @Test
-    fun `a format with no carrier answers nothing rather than failing`() = onCopy(STILL_WEBP) { f ->
-        assertNull(EditRecipe.read(f))
-        assertTrue(EditRecipe.write(f, document("transform")).isFailure)
-        // Clearing is a success because there is nothing there to clear.
-        assertTrue(EditRecipe.clear(f).isSuccess)
+    fun `a format with no carrier answers nothing rather than failing`() {
+        val dir = Files.createTempDirectory("woka-recipe").toFile()
+        try {
+            val file = File(dir, "photo.bmp")
+            file.writeBytes(SampleMedia.file(STILL_JPG).readBytes())
+
+            assertNull(EditRecipe.read(file))
+            assertTrue(EditRecipe.write(file, document("transform")).isFailure)
+            // Clearing is a success because there is nothing there to clear.
+            assertTrue(EditRecipe.clear(file).isSuccess)
+        } finally {
+            dir.deleteRecursively()
+        }
     }
 }
