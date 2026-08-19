@@ -47,9 +47,30 @@ data class ImageFrame(
 @Immutable
 data class ImageFrameSet(
     val frames: List<ImageFrame>,
-    val primaryIndex: Int = 0
+    val primaryIndex: Int = 0,
+    /**
+     * How many times an animation repeats **after** its first pass, in skia's own
+     * numbers: `-1` forever, `0` once, `n` that many more times.
+     *
+     * Carried unchanged rather than translated into a friendlier type, because the
+     * only producer is skia's `Codec` and the only consumer is the clock that plays
+     * it — a second vocabulary in between would be a place for the two to disagree.
+     * Null when the decoder does not answer: a burst and a page chain are not
+     * animations and have nothing to repeat.
+     */
+    val repeatCount: Int? = null
 ) {
     val isSingle: Boolean get() = frames.size <= 1
+
+    /**
+     * Whether this file is something to *play* rather than to step through.
+     *
+     * A duration is the distinction the decoders already draw: skia reports one per
+     * animation frame and nothing for a burst, so a photograph, a HEIC burst and a
+     * multi-page TIFF all answer false here and behave exactly as they always have.
+     */
+    val isAnimated: Boolean
+        get() = frames.size > 1 && frames.any { (it.durationMs ?: 0) > 0 }
 
     /**
      * The frames the viewer offers, in file order — [FrameKind.Depth] and

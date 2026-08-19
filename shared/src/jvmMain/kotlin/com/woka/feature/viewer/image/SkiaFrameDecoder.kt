@@ -60,7 +60,9 @@ internal object SkiaFrameDecoder : StillDecoder {
                 durationMs = frameDuration(codec, index)
             )
         }
-        ImageFrameSet(frames)
+        // Carried from the codec, not inferred: a GIF says how many times it loops in
+        // its own Application Extension block and skia is what reads it (ME-140).
+        ImageFrameSet(frames, repeatCount = codec.repetitionCount)
     }
 
     /**

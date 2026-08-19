@@ -25,10 +25,22 @@ import java.io.File
  */
 data class FrameStripModel(
     val frames: List<ImageFrame> = emptyList(),
-    val motion: File? = null
+    val motion: File? = null,
+    /** Skia's own numbers: `-1` forever, `0` once, `n` that many more passes. */
+    val repeatCount: Int? = null
 ) {
     /** Nothing to show: one picture and no clip beside it. */
     val isSingle: Boolean get() = frames.size <= 1
+
+    /**
+     * Whether this file plays. A burst and a page chain have frames and no
+     * durations, so they keep the strip and never get a clock (ME-140).
+     *
+     * A Live Photo's appended motion entry carries no duration either, which is
+     * right: the movement is a *different file*, played by the video engine.
+     */
+    val isAnimated: Boolean
+        get() = frames.size > 1 && frames.any { (it.durationMs ?: 0) > 0 }
 
     /**
      * True when [frameIndex] is the motion clip rather than a still frame.
@@ -52,7 +64,7 @@ internal fun rememberFrameStrip(item: MediaItem?): FrameStripModel {
         if (item == null || item is MediaItem.Video) return@LaunchedEffect
         val set = MediaThumbnails.frameSet(item)
         val motion = motionSiblingOf(item.file)
-        model = FrameStripModel(framesOf(set, motion != null), motion)
+        model = FrameStripModel(framesOf(set, motion != null), motion, set.repeatCount)
     }
     return model
 }

@@ -52,6 +52,7 @@ fun MediaViewerFullscreenSurface(
         }
         MediaViewerContent(
             media = media,
+            contentKey = PipManager.activeItem?.file?.absolutePath ?: media.poster,
             animationDirection = 0,
             transform = ViewerTransform(
                 PipManager.sizeMode,

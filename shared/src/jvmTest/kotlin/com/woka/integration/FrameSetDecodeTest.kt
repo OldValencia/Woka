@@ -22,6 +22,7 @@ import com.woka.fixtures.SampleMedia
 import com.woka.fixtures.TIFF_PAGE_COUNT
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
+import kotlin.test.assertNotNull
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -138,5 +139,23 @@ class FrameSetDecodeTest {
         val set = frameSetOf(ANIM_AVIF)
         assertEquals(ANIM_FRAME_COUNT, set.frames.size)
         assertEquals(125, set.frames.first().durationMs, "8 fps is 125 ms a frame")
+    }
+
+    /**
+     * What the clock reads (ME-140): an animation declares durations and how often it
+     * repeats; a burst and a page chain declare neither and must stay unplayable.
+     */
+    @Test
+    fun `only an animation reports timings and a repetition count`() {
+        listOf(ANIM_GIF, ANIM_WEBP).forEach { name ->
+            val set = frameSetOf(name)
+            assertTrue(set.isAnimated, "$name is not animated")
+            assertTrue(set.frames.all { (it.durationMs ?: 0) > 0 }, "$name has a frame with no delay")
+            assertNotNull(set.repeatCount, "$name never said how often it loops")
+        }
+        listOf(BURST_HEIC, MULTIPAGE_TIFF).forEach { name ->
+            val set = frameSetOf(name)
+            assertFalse(set.isAnimated, "$name was taken for an animation")
+        }
     }
 }

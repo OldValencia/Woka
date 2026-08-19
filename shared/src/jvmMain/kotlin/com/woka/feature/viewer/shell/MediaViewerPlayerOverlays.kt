@@ -29,7 +29,9 @@ internal fun MediaViewerPlayerOverlays(
     bottomPadding: Dp,
     showInfoDialog: Boolean,
     onShowInfoDialogChange: (Boolean) -> Unit,
-    onVolumeChange: (Float) -> Unit
+    onVolumeChange: (Float) -> Unit,
+    /** True while an animated still is running, so the flash shows the right glyph. */
+    isFramePlaying: Boolean = false
 ) {
     // Read unconditionally: inside the `||` below it would be a conditional
     // composable call, which Compose cannot key.
@@ -37,7 +39,10 @@ internal fun MediaViewerPlayerOverlays(
     val video = media as? ViewerMedia.Video
     val alignment = if (state.isUiVisible) Alignment.BottomEnd else Alignment.CenterEnd
 
-    PlayPauseOverlay(event = state.playPauseEvent, isPlaying = video?.player?.isPlaying == true)
+    PlayPauseOverlay(
+        event = state.playPauseEvent,
+        isPlaying = video?.player?.isPlaying == true || isFramePlaying
+    )
     SkipOverlay(event = state.skipEvent, direction = state.skipDirection)
     ZoomHudOverlay(
         event = state.zoomHudEvent,

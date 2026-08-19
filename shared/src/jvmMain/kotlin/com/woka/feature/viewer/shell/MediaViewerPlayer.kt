@@ -13,6 +13,8 @@ import com.woka.core.ui.components.WokaSpinner
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.viewer.shell.frames.FRAME_STRIP_WIDTH
 import com.woka.feature.viewer.shell.frames.FrameStrip
+import com.woka.feature.viewer.shell.frames.FramePauseRequestEffect
+import com.woka.feature.viewer.shell.frames.FramePlaybackEffect
 import com.woka.feature.viewer.shell.frames.FrameStripModel
 
 @Composable
@@ -48,9 +50,12 @@ fun MediaViewerPlayer(
         val showStrip = !strip.isSingle && state.isUiVisible
         val navStartInset = if (showStrip) FRAME_STRIP_WIDTH else 0.dp
 
+        val contentKey = if (strip.isAnimated) state.currentId else media?.poster ?: state.currentId
+
         if (media != null) {
             MediaViewerContent(
                 media = media,
+                contentKey = contentKey,
                 animationDirection = state.animationDirection,
                 transform = ViewerTransform(state.sizeMode, state.offsetX, state.offsetY),
                 actions = actions,
@@ -65,7 +70,8 @@ fun MediaViewerPlayer(
                 onZoomHud = { state.zoomHudEvent.raise() },
                 onPlayPause = { state.playPauseEvent.raise() },
                 onToggleFullscreen = onToggleFullscreen,
-                ambientFill = chrome.isFullscreen && chrome.ambientFill
+                ambientFill = chrome.isFullscreen && chrome.ambientFill,
+                isAnimated = strip.isAnimated
             )
             MediaViewerToolbar(
                 currentId = state.currentId,
@@ -109,13 +115,23 @@ fun MediaViewerPlayer(
         // Only for a file that has more than one picture in it, so an ordinary
         // photograph composes byte for byte the tree it always did.
         LaunchedEffect(strip) { state.frameCount = strip.frames.size.coerceAtLeast(1) }
+        // The clock, which returns before its first delay for anything that is not an
+        // animation — a photograph composes the tree it always did (ME-140).
+        FramePlaybackEffect(state, strip)
+        FramePauseRequestEffect(state, strip)
         if (activeItem != null && showStrip) {
             FrameStrip(
                 item = activeItem,
                 frames = strip.frames,
                 selectedIndex = state.frameIndex,
                 loadPreview = { item, frame -> thumbnails.preview(item, frame) },
-                onSelectFrame = { state.frameIndex = it },
+                onSelectFrame = {
+                    // Reaching for a frame by hand is asking the animation to stand
+                    // still; one that walked away from the frame just chosen would be
+                    // the only surprising thing here.
+                    state.isFramePlaying = false
+                    state.frameIndex = it
+                },
                 modifier = Modifier
                     .align(Alignment.CenterStart)
                     .padding(start = 12.dp, top = 72.dp, bottom = bottomOverlayPadding)
@@ -130,7 +146,8 @@ fun MediaViewerPlayer(
             bottomPadding = bottomOverlayPadding,
             showInfoDialog = showInfoDialog,
             onShowInfoDialogChange = onShowInfoDialogChange,
-            onVolumeChange = onVolumeChange
+            onVolumeChange = onVolumeChange,
+            isFramePlaying = strip.isAnimated && state.isFramePlaying
         )
     }
 }

@@ -47,10 +47,11 @@ internal fun Modifier.mediaTapGestures(
             onZoomHud()
         },
         onTap = {
-            if (videoState != null) {
-                videoState.togglePlayPause()
-                onPlayPause()
-            }
+            // **Raised for a still as well** (ME-140): an animated frame set listens for
+            // the same signal the keyboard's Space raises, so a GIF pauses under the
+            // gesture people already know. A photograph has nothing listening.
+            videoState?.togglePlayPause()
+            onPlayPause()
         }
     )
 }

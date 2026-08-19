@@ -1,25 +1,10 @@
 package com.woka.feature.viewer.shell
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.AnimationSpec
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.snap
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
@@ -36,6 +21,7 @@ import kotlin.math.min
 @Composable
 fun MediaViewerContent(
     media: ViewerMedia,
+    contentKey: Any,
     animationDirection: Int,
     transform: ViewerTransform,
     actions: ViewerActions,
@@ -48,7 +34,8 @@ fun MediaViewerContent(
     onToggleFullscreen: () -> Unit,
     bottomPadding: Dp = 40.dp,
     panRequiresCtrl: Boolean = false,
-    ambientFill: Boolean = false
+    ambientFill: Boolean = false,
+    isAnimated: Boolean = false
 ) {
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
 
@@ -98,20 +85,34 @@ fun MediaViewerContent(
             AmbientFillLayer(media.player)
         }
         AnimatedContent(
-            targetState = media.poster,
+            targetState = contentKey,
             transitionSpec = {
                 if (animationDirection == 0) {
-                    fadeIn() togetherWith fadeOut()
+                    if (isAnimated) {
+                        // A frame of an animation is not a new picture arriving: crossfading
+                        // every 40 ms reads as a flicker (ME-140).
+                        EnterTransition.None togetherWith ExitTransition.None
+                    } else {
+                        fadeIn() togetherWith fadeOut()
+                    }
                 } else {
                     val sign = animationDirection
                     slideInHorizontally { it * sign } togetherWith slideOutHorizontally { -it * sign }
                 }
             },
             modifier = Modifier.fillMaxSize()
-        ) { targetPoster ->
+        ) { targetKey ->
+            var cachedPoster by remember { mutableStateOf(media.poster) }
+            var cachedMedia by remember { mutableStateOf(media) }
+
+            if (targetKey == contentKey) {
+                cachedPoster = media.poster
+                cachedMedia = media
+            }
+
             MediaViewerFrame(
-                media = media,
-                targetPoster = targetPoster,
+                media = cachedMedia,
+                targetPoster = cachedPoster,
                 renderScale = renderScale,
                 offsetX = drawnOffsetX,
                 offsetY = drawnOffsetY,
