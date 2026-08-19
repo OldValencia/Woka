@@ -25,6 +25,16 @@ interface EditorEngine {
 
     val kind: MediaKind
 
+    /**
+     * What saving this file costs it (§5.1) — decided once, by the factory, and
+     * carried here rather than re-derived.
+     *
+     * The engine branches its save on it and the shell draws bucket B's notice from
+     * it, so the two cannot disagree about the same file. A `Unavailable` engine is
+     * never built by the factory; the value exists so the branch is total.
+     */
+    val capability: EditCapability
+
     /** What operations address, in source pixels — never the canvas or the proxy. */
     val sourceSize: IntSize
 
@@ -50,9 +60,12 @@ interface EditorEngine {
     fun Surface(document: EditDocument, modifier: Modifier)
 
     /**
-     * Writes [document] to [target]. Runs off the UI thread and reports through
-     * [EditSaveResult] rather than throwing: §4.5's banner needs an outcome, and
-     * the source must survive every failure path.
+     * Writes [document] into the file that was opened — the only save there is
+     * (§5). Nothing is chosen: no target, no name, no confirmation.
+     *
+     * Runs off the UI thread and reports through [EditSaveResult] rather than
+     * throwing: §4.5's banner needs an outcome, and the picture must survive every
+     * failure path.
      */
-    suspend fun save(document: EditDocument, target: SaveTarget): EditSaveResult
+    suspend fun save(document: EditDocument): EditSaveResult
 }

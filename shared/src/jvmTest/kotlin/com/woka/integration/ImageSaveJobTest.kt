@@ -2,39 +2,44 @@ package com.woka.integration
 
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.unit.IntSize
-import com.woka.core.ui.image.ImageBitmapCache
+import com.woka.core.data.SettingsRepositoryImpl
+import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditorToolRegistry
-import com.woka.feature.editor.core.SaveTarget
 import com.woka.feature.editor.core.ToolDomain
 import com.woka.feature.editor.core.ToolOp
 import com.woka.feature.editor.engine.image.ImageEditorEngine
 import com.woka.feature.editor.engine.image.RasterStage
-import com.woka.feature.viewer.image.ImageLoader
+import com.woka.feature.editor.recipe.EditRecipe
+import com.woka.feature.viewer.image.stillDecoderFor
 import com.woka.fixtures.SampleMedia
 import com.woka.fixtures.STILL_PNG
+import com.woka.fixtures.STILL_WEBP
 import com.woka.support.MainDispatcherRule
 import com.woka.support.StageTool
 import com.woka.support.scaleRed
 import com.woka.support.withTempStorageRoot
-import com.woka.core.data.SettingsRepositoryImpl
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Rule
 import java.io.File
 import java.nio.file.Files
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * A document becoming a file.
+ * `Done` on a bucket B file — the re-encode, which is what a format with no carrier
+ * gets instead of a recipe (§5.1).
  *
- * Every case here is about **the source surviving**: that is what §5's whole design is
- * for, and the failure modes are the ones where it would not.
+ * Driven against `webp`, because that is the only format in the bucket today and the
+ * bucket is expected to empty: when ME-108's RIFF carrier lands this file describes a
+ * path nothing reaches, and that will be the moment to delete it rather than to widen
+ * it.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class ImageSaveJobTest {
@@ -44,123 +49,83 @@ class ImageSaveJobTest {
 
     private val redder = StageTool("tint", ToolDomain.Color, RasterStage.Pixels(scaleRed(2f)))
 
-    private fun onCopiedSource(block: (File, ImageEditorEngine) -> Unit) = withTempStorageRoot {
+    private fun onPicture(
+        fixture: String,
+        name: String,
+        capability: EditCapability = EditCapability.Destructive,
+        block: (File, ImageEditorEngine) -> Unit
+    ) = withTempStorageRoot {
         val dir = Files.createTempDirectory("woka-save").toFile()
         try {
-            val file = File(dir, "photo.png")
-            file.writeBytes(SampleMedia.file(STILL_PNG).readBytes())
+            val file = File(dir, name)
+            file.writeBytes(SampleMedia.file(fixture).readBytes())
             val registry = EditorToolRegistry(listOf(redder), SettingsRepositoryImpl())
-            block(file, ImageEditorEngine(file, 0, registry))
+            block(file, ImageEditorEngine(file, 0, registry, capability))
         } finally {
             dir.deleteRecursively()
         }
     }
 
+    private fun onWebp(block: (File, ImageEditorEngine) -> Unit) =
+        onPicture(STILL_WEBP, "photo.webp", block = block)
+
     private fun tinted() = EditDocument(ops = listOf(ToolOp("tint", redder.defaults())))
+
+    /** Straight from the decoder: the path is the same before and after a save. */
+    private fun File.pixels() = stillDecoderFor(this).frame(this, 0).toPixelMap().buffer
 
     @Test
     fun `an empty document writes nothing at all`() {
-        onCopiedSource { file, engine ->
-            val before = file.parentFile.list()!!.size
-
-            val result = runBlocking {
-                engine.save(EditDocument(), SaveTarget.Copy("photo-edited.png"))
-            }
-
-            assertEquals(EditSaveResult.NothingToDo, result)
-            assertEquals(before, file.parentFile.list()!!.size)
-        }
-    }
-
-    @Test
-    fun `a copy lands beside the source and leaves it byte-identical`() {
-        onCopiedSource { file, engine ->
+        onWebp { file, engine ->
             val original = file.readBytes()
 
-            val result = runBlocking {
-                engine.save(tinted(), SaveTarget.Copy("photo-edited.png"))
-            }
+            val result = runBlocking { engine.save(EditDocument()) }
 
-            assertTrue(result is EditSaveResult.Saved, "got $result")
-            assertTrue(File(file.parentFile, "photo-edited.png").isFile)
-            assertTrue(original.contentEquals(file.readBytes()), "the source was written to")
+            assertEquals(EditSaveResult.NothingToDo, result)
+            assertContentEquals(original, file.readBytes())
         }
     }
 
     @Test
-    fun `the recipe actually reaches the pixels`() {
-        onCopiedSource { file, engine ->
-            runBlocking {
-                engine.save(tinted(), SaveTarget.Copy("photo-edited.png"))
-            }
+    fun `the save re-encodes in place and mints no second file`() {
+        onWebp { file, engine ->
+            val before = file.parentFile.list()!!.toList()
+            val pixelsBefore = file.pixels()
 
-            // Without this the whole suite would pass against a save that wrote the
-            // source back unchanged.
-            val source = ImageLoader.load(file).toPixelMap()
-            val saved = ImageLoader.load(File(file.parentFile, "photo-edited.png")).toPixelMap()
-            val differs = (0 until minOf(source.width, saved.width) step 17).any { x ->
-                source[x, 0] != saved[x, 0]
-            }
-            assertTrue(differs, "the saved copy is pixel-identical to the source")
+            val result = runBlocking { engine.save(tinted()) }
+
+            assertEquals(EditSaveResult.Saved(file.absolutePath), result)
+            assertEquals(before, file.parentFile.list()!!.toList(), "a file was minted")
+            // The pixels are where the edit went, because there is nowhere else for it.
+            assertFalse(pixelsBefore.contentEquals(file.pixels()), "the picture is unchanged")
+            assertFalse(EditRecipe.carries(file), "a recipe was written to bucket B")
         }
     }
 
     @Test
     fun `a source changed on disk stops the save and touches nothing`() {
-        onCopiedSource { file, engine ->
-            // The engine stamped the file when it was built; this is somebody else
-            // writing it while the editor was open.
+        onWebp { file, engine ->
             Thread.sleep(5)
-            file.writeBytes(SampleMedia.file(STILL_PNG).readBytes() + byteArrayOf(0))
+            file.writeBytes(SampleMedia.file(STILL_WEBP).readBytes() + byteArrayOf(0))
             val afterTamper = file.readBytes()
 
-            val result = runBlocking {
-                engine.save(tinted(), SaveTarget.Overwrite)
-            }
+            val result = runBlocking { engine.save(tinted()) }
 
             assertTrue(result is EditSaveResult.Failed, "got $result")
-            assertTrue(afterTamper.contentEquals(file.readBytes()), "the source was overwritten")
+            assertContentEquals(afterTamper, file.readBytes(), "the source was written over")
         }
     }
 
     @Test
-    fun `overwrite drops exactly the two cache entries for that path`() {
-        onCopiedSource { file, engine ->
-            val path = file.absolutePath
-            val bitmap = ImageLoader.load(file)
-            ImageBitmapCache[ImageBitmapCache.key(path, 0)] = bitmap
-            ImageBitmapCache[ImageBitmapCache.previewKey(path)] = bitmap
-            // A third entry, to prove the invalidation is targeted rather than a purge.
-            val other = "somewhere/else.png"
-            ImageBitmapCache[other] = bitmap
+    fun `a file that cannot be edited at all is refused rather than half-written`() {
+        onPicture(STILL_PNG, "picture.bmp", EditCapability.Unavailable) { file, engine ->
+            val original = file.readBytes()
 
-            runBlocking { engine.save(tinted(), SaveTarget.Overwrite) }
-
-            assertEquals(null, ImageBitmapCache[ImageBitmapCache.key(path, 0)])
-            assertEquals(null, ImageBitmapCache[ImageBitmapCache.previewKey(path)])
-            assertNotEquals(null, ImageBitmapCache[other], "an unrelated entry was evicted")
-            ImageBitmapCache.remove(other)
-        }
-    }
-
-    @Test
-    fun `a format Skia cannot encode is refused rather than half-written`() = withTempStorageRoot {
-        val dir = Files.createTempDirectory("woka-save-bmp").toFile()
-        try {
-            val file = File(dir, "picture.bmp")
-            file.writeBytes(SampleMedia.file(STILL_PNG).readBytes())
-            val engine = ImageEditorEngine(
-                file, 0, EditorToolRegistry(listOf(redder), SettingsRepositoryImpl())
-            )
-
-            val result = runBlocking {
-                engine.save(tinted(), SaveTarget.Copy("picture-edited.bmp"))
-            }
+            val result = runBlocking { engine.save(tinted()) }
 
             assertTrue(result is EditSaveResult.Failed, "got $result")
-            assertEquals(listOf("picture.bmp"), dir.list()!!.toList())
-        } finally {
-            dir.deleteRecursively()
+            assertEquals(listOf("picture.bmp"), file.parentFile.list()!!.toList())
+            assertContentEquals(original, file.readBytes())
         }
     }
 
@@ -168,7 +133,7 @@ class ImageSaveJobTest {
     fun `a colour operation leaves the frame size alone`() {
         // `drawnSize` follows the recipe's output, so this is the case where it must
         // *not* move — a crop is what changes it, and there is no crop tool yet.
-        onCopiedSource { _, engine ->
+        onWebp { _, engine ->
             assertEquals(IntSize(640, 480), engine.sourceSize)
             assertEquals(IntSize(640, 480), engine.drawnSize(tinted()))
         }

@@ -2,9 +2,9 @@ package com.woka.integration
 
 import com.woka.core.data.SettingsRepositoryImpl
 import com.woka.feature.editor.core.EditDocument
+import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditorToolRegistry
-import com.woka.feature.editor.core.SaveTarget
 import com.woka.feature.editor.core.ToolDomain
 import com.woka.feature.editor.core.ToolOp
 import com.woka.feature.editor.engine.image.ImageEditorEngine
@@ -35,6 +35,10 @@ import kotlin.test.assertTrue
  * decode path has already applied `Orientation`. So the segment has to be carried
  * over by hand, and the orientation inside it has to be neutralised — put back
  * unchanged, it rotates a picture that is already rotated.
+ *
+ * **Driven through the re-encode branch deliberately** (ME-132): a JPEG is bucket A
+ * now, so nothing the app can do reaches the splice. It is kept because a re-encode is
+ * what every bucket B format gets, and `webp` carries no EXIF to prove it with.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class ExifSpliceTest {
@@ -44,23 +48,25 @@ class ExifSpliceTest {
 
     private val redder = StageTool("tint", ToolDomain.Color, RasterStage.Pixels(scaleRed(2f)))
 
-    private fun onCopyOf(fixture: String, name: String, block: (File, File) -> Unit) =
+    /** [block] takes the file as it was before the re-encode, and the file after it. */
+    private fun onReEncodeOf(fixture: String, name: String, block: (ByteArray, File) -> Unit) =
         withTempStorageRoot {
             val dir = Files.createTempDirectory("woka-exif").toFile()
             try {
                 val file = File(dir, name)
                 file.writeBytes(SampleMedia.file(fixture).readBytes())
+                val before = file.readBytes()
                 val engine = ImageEditorEngine(
-                    file, 0, EditorToolRegistry(listOf(redder), SettingsRepositoryImpl())
+                    file,
+                    0,
+                    EditorToolRegistry(listOf(redder), SettingsRepositoryImpl()),
+                    EditCapability.Destructive
                 )
                 val result = runBlocking {
-                    engine.save(
-                        EditDocument(ops = listOf(ToolOp("tint", redder.defaults()))),
-                        SaveTarget.Copy("out.${file.extension}")
-                    )
+                    engine.save(EditDocument(ops = listOf(ToolOp("tint", redder.defaults()))))
                 }
                 assertTrue(result is EditSaveResult.Saved, "save failed: $result")
-                block(file, File(dir, "out.${file.extension}"))
+                block(before, file)
             } finally {
                 dir.deleteRecursively()
             }
@@ -68,23 +74,23 @@ class ExifSpliceTest {
 
     @Test
     fun `the APP1 segment survives a JPEG save`() {
-        onCopyOf(EXIF_ROTATED, "rotated.jpg") { source, saved ->
-            assertTrue(source.readBytes().hasApp1(), "the fixture lost its own EXIF")
+        onReEncodeOf(EXIF_ROTATED, "rotated.jpg") { before, saved ->
+            assertTrue(before.hasApp1(), "the fixture lost its own EXIF")
             assertTrue(saved.readBytes().hasApp1(), "APP1 was dropped — the splice did nothing")
         }
     }
 
     @Test
     fun `orientation comes out as 1, because the pixels are already rotated`() {
-        onCopyOf(EXIF_ROTATED, "rotated.jpg") { source, saved ->
-            assertEquals(6, source.readBytes().orientation(), "the fixture is not tagged 6")
+        onReEncodeOf(EXIF_ROTATED, "rotated.jpg") { before, saved ->
+            assertEquals(6, before.orientation(), "the fixture is not tagged 6")
             assertEquals(1, saved.readBytes().orientation())
         }
     }
 
     @Test
     fun `the saved picture keeps the dimensions the decoder produced`() {
-        onCopyOf(EXIF_ROTATED, "rotated.jpg") { _, saved ->
+        onReEncodeOf(EXIF_ROTATED, "rotated.jpg") { _, saved ->
             // 640x480 tagged 6 decodes to 480x640; with orientation neutralised, the
             // next reader must see exactly that and not rotate it again.
             val bitmap = ImageLoader.load(saved)
@@ -95,7 +101,7 @@ class ExifSpliceTest {
 
     @Test
     fun `a PNG target is left alone`() {
-        onCopyOf(STILL_PNG, "plain.png") { _, saved ->
+        onReEncodeOf(STILL_PNG, "plain.png") { _, saved ->
             val bytes = saved.readBytes()
             assertTrue(bytes.size > 8, "nothing was written")
             // PNG's own magic, intact — the splice must not have prefixed a JPEG
@@ -107,8 +113,8 @@ class ExifSpliceTest {
 
     @Test
     fun `a JPEG source with no EXIF still produces a readable file`() {
-        onCopyOf(STILL_JPG, "plain.jpg") { source, saved ->
-            assertTrue(!source.readBytes().hasApp1(), "the fixture unexpectedly carries EXIF")
+        onReEncodeOf(STILL_JPG, "plain.jpg") { before, saved ->
+            assertTrue(!before.hasApp1(), "the fixture unexpectedly carries EXIF")
             // The real assertion: it decodes. A splice that prefixed a malformed
             // segment would produce bytes that are not a JPEG at all.
             assertEquals(640, ImageLoader.load(saved).width)

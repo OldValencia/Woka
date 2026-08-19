@@ -7,6 +7,7 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.ToolCardinality
 import com.woka.feature.editor.core.ToolDomain
 import com.woka.feature.editor.core.ToolOp
@@ -110,6 +111,34 @@ class EditorShellUiTest {
 
                 onNodeWithTag("editor-skipped-notice").assertIsDisplayed()
                 onNodeWithText("1 operation was not applied").assertIsDisplayed()
+            }
+        }
+    }
+
+    /** Bucket B says so before any work is done; bucket A has nothing to warn about. */
+    @Test
+    fun `the no-history notice appears for a format with no carrier and for no other`() {
+        val tool = FixtureTool(id = "adjust", domain = ToolDomain.Color)
+        onEditor(listOf(tool)) { harness ->
+            onUi {
+                setContent {
+                    EditorScreen(
+                        harness.session,
+                        FixtureEngine(capability = EditCapability.Destructive),
+                        harness.registry,
+                        {},
+                        {}
+                    )
+                }
+                onNodeWithTag("editor-no-history-notice").assertIsDisplayed()
+            }
+        }
+        onEditor(listOf(tool)) { harness ->
+            onUi {
+                setContent {
+                    EditorScreen(harness.session, FixtureEngine(), harness.registry, {}, {})
+                }
+                onNodeWithTag("editor-no-history-notice").assertDoesNotExist()
             }
         }
     }

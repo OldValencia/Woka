@@ -17,8 +17,6 @@ import com.woka.feature.editor.core.EditorEngine
 import com.woka.feature.editor.core.EditorEngineFactory
 import com.woka.feature.editor.core.EditorSession
 import com.woka.feature.editor.core.EditorToolRegistry
-import com.woka.feature.editor.core.SaveTarget
-import com.woka.feature.editor.save.copyNameFor
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -70,12 +68,12 @@ internal fun EditorHost(
 
     val leave = { if (isDirty) askingToDiscard = true else onClose() }
 
-    // `Done` writes a copy and closes. The menu, the overwrite target and the banner
-    // are ME-130 — this is the save, not the choice about it.
+    // `Done` writes into the file that was opened and closes. **There is nothing to
+    // choose** (§4.5): no target, no name, no confirmation — which is why this is four
+    // lines and why `copyNameFor` no longer exists. The banner is ME-130.
     val done = {
-        val name = copyNameFor(file)
         scope.launch {
-            val result = engine.save(session.document.value, SaveTarget.Copy(name))
+            val result = engine.save(session.document.value)
             if (result is EditSaveResult.Saved) onSaved(result.path)
             onClose()
         }

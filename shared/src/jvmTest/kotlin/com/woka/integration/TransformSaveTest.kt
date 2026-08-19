@@ -3,15 +3,15 @@ package com.woka.integration
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.SettingsRepositoryImpl
 import com.woka.feature.editor.core.ActionParam
+import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditorToolRegistry
-import com.woka.feature.editor.core.SaveTarget
 import com.woka.feature.editor.engine.image.ImageEditorEngine
 import com.woka.feature.editor.shell.ParamWriter
 import com.woka.feature.editor.tools.transform.TransformTool
 import com.woka.feature.viewer.image.ImageLoader
 import com.woka.fixtures.SampleMedia
-import com.woka.fixtures.STILL_PNG
+import com.woka.fixtures.STILL_WEBP
 import com.woka.support.EditorHarness
 import com.woka.support.MainDispatcherRule
 import com.woka.support.onEditor
@@ -39,14 +39,24 @@ class TransformSaveTest {
     @get:Rule
     val mainDispatcher = MainDispatcherRule(UnconfinedTestDispatcher())
 
+    /**
+     * A **bucket B** picture, so the save re-encodes and the rotation has to reach the
+     * pixels to be seen at all (§5.1). On a `png` the same edit would be recorded as a
+     * recipe, and a test asserting on the saved file's dimensions would be asserting
+     * that `EditRecipe` round-trips — which `EditRecipeTest` already does.
+     */
     private fun onPhoto(block: (EditorHarness, File, ImageEditorEngine) -> Unit) {
         val dir = Files.createTempDirectory("woka-transform").toFile()
         try {
-            val file = File(dir, "photo.png")
-            file.writeBytes(SampleMedia.file(STILL_PNG).readBytes())
+            val file = File(dir, "photo.webp")
+            file.writeBytes(SampleMedia.file(STILL_WEBP).readBytes())
             onEditor(listOf(TransformTool)) { harness ->
                 val registry = EditorToolRegistry(listOf(TransformTool), SettingsRepositoryImpl())
-                block(harness, file, ImageEditorEngine(file, 0, registry))
+                block(
+                    harness,
+                    file,
+                    ImageEditorEngine(file, 0, registry, EditCapability.Destructive)
+                )
             }
         } finally {
             dir.deleteRecursively()
@@ -66,10 +76,10 @@ class TransformSaveTest {
             val document = harness.session.document.value
             assertEquals(IntSize(480, 640), engine.drawnSize(document), "the frame did not turn")
 
-            val result = runBlocking { engine.save(document, SaveTarget.Copy("photo-edited.png")) }
+            val result = runBlocking { engine.save(document) }
             assertTrue(result is EditSaveResult.Saved, "got $result")
 
-            val saved = ImageLoader.load(File(file.parentFile, "photo-edited.png"))
+            val saved = ImageLoader.load(file)
             assertEquals(480, saved.width)
             assertEquals(640, saved.height)
         }

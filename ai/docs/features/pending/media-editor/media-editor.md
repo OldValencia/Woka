@@ -47,8 +47,8 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-105](tickets/ME-105-transform-tool.md) | Transform tool | **done** 2026-08-18 |
 | [ME-106](tickets/ME-106-entry-points.md) | Entry points | **done** 2026-08-18 |
 | [ME-131](tickets/ME-131-recipe-carrier.md) | Recipe carrier — JPEG and PNG | **done** 2026-08-19 |
-| [ME-132](tickets/ME-132-done-writes-the-recipe.md) | `Done` writes it; Export removed | **next** |
-| [ME-133](tickets/ME-133-readers-apply-the-recipe.md) | Every reader applies the recipe | specified |
+| [ME-132](tickets/ME-132-done-writes-the-recipe.md) | `Done` writes it; Export removed | **done** 2026-08-19 |
+| [ME-133](tickets/ME-133-readers-apply-the-recipe.md) | Every reader applies the recipe | **next** |
 | [ME-107](tickets/ME-107-revert-to-original.md) | Revert to Original — **un-dropped** | specified |
 | [ME-134](tickets/ME-134-reopening-an-edited-file.md) | Reopening an edited file | specified |
 | [ME-108…ME-130](tickets/backlog.md) | Image editor | backlog |
@@ -67,8 +67,8 @@ what re-encoding does to EXIF, colour and caches (ME-010) land before any code c
 ## 2. Scope
 
 **In (image):** Rotate 90°, Flip H/V, Crop (aspect presets), Resize, Adjustments, Filter presets,
-HDR on/off, Markup (arrow, rectangle, ellipse, freehand, text), Undo/Redo, **Save a Copy** (default)
-and Overwrite (explicit).
+HDR on/off, Markup (arrow, rectangle, ellipse, freehand, text), Undo/Redo, and **`Done`** — the only
+save there is (§5).
 
 **In (video, 5b):** Trim by keyframe-snapped stream copy, Mute. Same shell, same history, same save
 model.
@@ -599,6 +599,8 @@ sheet instead of a dead Edit button.
 | 2026-08-19 | Does `Export` / "save a flattened copy" survive? | **No. `Done` is the only save.** `SaveTarget`, `OverwriteConsent` and `SaveFileNaming` are deleted | The flow is edit → `Done`, with nothing to choose. The cost is real and accepted: the edit cannot leave Woka, and a file sent to someone arrives unedited. A menu entry was offered and declined in favour of the simpler editor |
 | 2026-08-19 | Wrap the picture in an archive / convert to JPEG XL? | **No** to both | An archive stops the file being a picture to everything that is not Woka and costs a full unpack per grid tile against a ~4 KB header read. JXL genuinely carries everything and nothing in the build writes it, Windows cannot open it, and "convert back when needed" is the export step this removes |
 | 2026-08-19 | Can a recipe be edited again? | **Yes** — the editor loads what the file carries, and `isDirty` means "differs from the file", not "the document is non-empty" | Otherwise reopening an edited photograph is dirty before it is touched, and a second edit either starts blank or re-encodes an encode. Every render starts from the original pixels, so there is no generational loss however many times it is edited |
+| 2026-08-19 | What does a save have to evict from Coil? | **Its memory entries for the path, matched by substring. Its disk cache is never touched** (ME-132) | Measured against coil 3.5.0: `addLastModifiedToFileCacheKey` defaults to **off**, so the memory key is the bare file URI and a write does not change it — the tile would keep the pre-edit picture. The disk cache is written by network fetchers only, `coil-network-*` is not on the classpath, and a local file is read straight off disk by `FileUriFetcher`: there is no entry to remove and no key that would name one. One file also yields one entry per requested size, so a key cannot be rebuilt — hence substring |
+| 2026-08-19 | Does the stale-source stamp survive a save? | **No — it is re-read after every successful write** (ME-132) | The save now lands on the file the editor is still holding open, so the stamp taken at open no longer describes it. Without the re-read the second `Done` of a sitting reports the user's own first one as somebody else's change |
 | 2026-08-19 | "Remove Woka's data from this file"? | **It is Revert** — the segment holds the edit and nothing else. ME-107, un-dropped | Two names for one operation would be two buttons doing the same thing. A **bulk** removal across a folder is hygiene rather than editing and belongs in Settings, as its own later ticket |
 | 2026-08-18 | Does the editor draw its own top bar? | **No** — it fills the shell's accessory slots, as the viewer does, and restores them on dispose | Two stacked bars left the folder path up there doing nothing, the carousel eye and a live `Edit` button running during an edit, and a `Cancel` duplicating a Back that still exited the folder |
 | 2026-08-18 | Zoom in v1, revisited | **Yes, capped at 100 %** | A wheel that does nothing reads as broken. At 100 % the ≤2560 px proxy is still sharp; above it is ME-116's, and the cap is the line it removes |

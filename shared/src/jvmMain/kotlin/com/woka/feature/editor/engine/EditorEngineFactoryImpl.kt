@@ -56,7 +56,8 @@ class EditorEngineFactoryImpl(
      * both doors grey out before anything is edited.
      */
     override fun create(path: String, frameIndex: Int): EditorEngine? {
-        if (capability(path) == EditCapability.Unavailable) return null
-        return ImageEditorEngine(File(path), frameIndex, registry)
+        val capability = capability(path)
+        if (capability == EditCapability.Unavailable) return null
+        return ImageEditorEngine(File(path), frameIndex, registry, capability)
     }
 }

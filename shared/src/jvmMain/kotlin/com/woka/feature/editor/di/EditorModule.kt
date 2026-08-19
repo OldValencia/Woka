@@ -5,7 +5,6 @@ import com.woka.feature.editor.core.EditorSession
 import com.woka.feature.editor.core.EditorEngineFactory
 import com.woka.feature.editor.core.EditorTool
 import com.woka.feature.editor.core.EditorToolRegistry
-import com.woka.feature.editor.core.OverwriteConsent
 import com.woka.feature.editor.engine.EditorEngineFactoryImpl
 import com.woka.feature.editor.tools.transform.TransformTool
 import org.koin.dsl.module
@@ -42,8 +41,4 @@ val editorModule = module {
     // The one place that answers "is this file editable" — both Edit entry points
     // resolve it, so neither can grow its own extension list (§4.1).
     single<EditorEngineFactory> { EditorEngineFactoryImpl(get()) }
-
-    // `single`, so "don't ask again" holds for the run of the app rather than for
-    // one file. It is in memory only, by design (§5).
-    single { OverwriteConsent() }
 }

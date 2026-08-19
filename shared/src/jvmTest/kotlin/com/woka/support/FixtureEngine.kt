@@ -10,10 +10,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.MediaKind
+import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditorEngine
-import com.woka.feature.editor.core.SaveTarget
 
 /**
  * An [EditorEngine] that draws a rectangle, so the shell can be driven with no real
@@ -27,6 +27,7 @@ import com.woka.feature.editor.core.SaveTarget
 class FixtureEngine(
     override val sourceSize: IntSize = IntSize(640, 480),
     override val kind: MediaKind = MediaKind.Image,
+    override val capability: EditCapability = EditCapability.Recorded,
     private val result: EditSaveResult = EditSaveResult.NothingToDo,
     private val colour: Color = Color(0xFF3A5AA0)
 ) : EditorEngine {
@@ -41,7 +42,8 @@ class FixtureEngine(
      */
     val documentsDrawn: List<EditDocument> get() = drawn.toList()
 
-    val saveRequests = mutableListOf<Pair<EditDocument, SaveTarget>>()
+    /** Every document `Done` handed over. There is no target to record any more (§5). */
+    val saveRequests = mutableListOf<EditDocument>()
 
     @Composable
     override fun Surface(document: EditDocument, modifier: Modifier) {
@@ -57,8 +59,8 @@ class FixtureEngine(
         )
     }
 
-    override suspend fun save(document: EditDocument, target: SaveTarget): EditSaveResult {
-        saveRequests += document to target
+    override suspend fun save(document: EditDocument): EditSaveResult {
+        saveRequests += document
         return result
     }
 
