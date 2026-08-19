@@ -29,12 +29,19 @@ import com.woka.core.ui.theme.Theme
  * would put near-white text on a light background.
  */
 
-/** A plain label that reacts to hover and dims rather than disappears when disabled. */
+/**
+ * A plain label that reacts to hover and dims rather than disappears when disabled.
+ *
+ * [color] is a parameter for exactly one caller: Revert, which is red because it is the
+ * only control in the editor that throws work away (ME-107). A second button shape for
+ * one colour would be two things to keep in step.
+ */
 @Composable
 internal fun TopBarButton(
     label: String,
     tag: String,
     enabled: Boolean = true,
+    color: Color? = null,
     onClick: () -> Unit
 ) {
     Row(
@@ -55,7 +62,10 @@ internal fun TopBarButton(
         BasicText(
             text = label,
             style = TextStyle(
-                color = if (enabled) Theme.colors.textPrimary else Theme.colors.textTertiary,
+                color = when {
+                    !enabled -> Theme.colors.textTertiary
+                    else -> color ?: Theme.colors.textPrimary
+                },
                 fontSize = EditorTokens.TopBar.subtitleStyle,
                 fontWeight = FontWeight.SemiBold
             )

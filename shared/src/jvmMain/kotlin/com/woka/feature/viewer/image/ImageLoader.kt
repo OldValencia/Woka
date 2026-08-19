@@ -1,6 +1,7 @@
 package com.woka.feature.viewer.image
 
 import androidx.compose.ui.graphics.ImageBitmap
+import com.woka.core.ui.image.AppliedStillEdits
 import com.woka.core.ui.image.ImageBitmapCache
 import java.io.File
 
@@ -23,7 +24,11 @@ object ImageLoader {
      * format: everything the app lists now has a decoder routed to it.
      */
     fun load(file: File, frameIndex: Int = 0): ImageBitmap {
-        val bitmap = stillDecoderFor(file).frame(file, frameIndex)
+        val decoded = stillDecoderFor(file).frame(file, frameIndex)
+        // **Before caching, not after.** The cache holds what the viewer draws, so an
+        // entry made from the raw decode would serve the unedited picture to every
+        // reader that hits it — and the edit would appear only on a cold miss (ME-133).
+        val bitmap = AppliedStillEdits.apply(file, frameIndex, decoded)
         ImageBitmapCache[ImageBitmapCache.key(file.absolutePath, frameIndex)] = bitmap
         return bitmap
     }

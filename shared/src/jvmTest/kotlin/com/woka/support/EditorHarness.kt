@@ -3,6 +3,7 @@ package com.woka.support
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.MediaItem
 import com.woka.core.data.SettingsRepositoryImpl
+import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditorSession
 import com.woka.feature.editor.core.EditorTool
 import com.woka.feature.editor.core.EditorToolRegistry
@@ -23,9 +24,12 @@ import java.io.File
  *
  * The file need not exist. Nothing in ME-004 reads it — the session is
  * media-agnostic by design (§3.3) and only the engine ever opens anything.
+ *
+ * [initial] stands in for what a file carries (ME-134); the default is a picture
+ * that has never been edited.
  */
-fun onEditorSession(block: (EditorSession) -> Unit) {
-    val session = EditorSession(MediaItem.Image(File("photo.jpg")))
+fun onEditorSession(initial: EditDocument = EditDocument(), block: (EditorSession) -> Unit) {
+    val session = EditorSession(MediaItem.Image(File("photo.jpg")), initial)
     try {
         block(session)
     } finally {
@@ -75,9 +79,13 @@ class EditorHarness(
  * its scope, and a field initialiser runs before [MainDispatcherRule] installs the
  * test dispatcher.
  */
-fun onEditor(tools: List<EditorTool>, block: (EditorHarness) -> Unit) = withTempStorageRoot {
+fun onEditor(
+    tools: List<EditorTool>,
+    initial: EditDocument = EditDocument(),
+    block: (EditorHarness) -> Unit
+) = withTempStorageRoot {
     val settings = SettingsRepositoryImpl()
-    val session = EditorSession(MediaItem.Image(File("photo.jpg")))
+    val session = EditorSession(MediaItem.Image(File("photo.jpg")), initial)
     try {
         block(EditorHarness(session, EditorToolRegistry(tools, settings), settings))
     } finally {

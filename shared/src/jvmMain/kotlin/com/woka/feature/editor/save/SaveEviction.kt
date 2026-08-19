@@ -3,6 +3,7 @@ package com.woka.feature.editor.save
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
 import com.woka.core.ui.image.ImageBitmapCache
+import com.woka.core.ui.image.MediaInvalidation
 import java.io.File
 
 /**
@@ -21,6 +22,10 @@ internal fun evictCachesFor(file: File, frameIndex: Int) {
     ImageBitmapCache.remove(ImageBitmapCache.key(path, frameIndex))
     ImageBitmapCache.remove(ImageBitmapCache.previewKey(path, frameIndex))
     evictCoil(file)
+    // **Last, after every cache is clear** (ME-135). Dropping an entry changes nothing
+    // on screen by itself; this is what makes a reader ask again. Raised before the
+    // eviction above, a reader woken early would re-read the entry about to be dropped.
+    MediaInvalidation.invalidate(path)
 }
 
 /**

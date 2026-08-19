@@ -55,6 +55,16 @@ interface EditorEngine {
      */
     fun drawnSize(document: EditDocument): IntSize = sourceSize
 
+    /**
+     * The edit this file already carries, or an empty document (ME-134).
+     *
+     * The shell asks the engine rather than reading it itself: a recipe is a thing
+     * only the medium's implementation knows how to find, and `EditRecipe` lives in
+     * `jvmMain` where the shell cannot name it (§3.3). Defaulted, so a medium with
+     * no notion of a stored edit is unaffected.
+     */
+    fun storedDocument(): EditDocument = EditDocument()
+
     /** The live canvas for this medium, drawing [document] as it stands. */
     @Composable
     fun Surface(document: EditDocument, modifier: Modifier)
@@ -68,4 +78,17 @@ interface EditorEngine {
      * failure path.
      */
     suspend fun save(document: EditDocument): EditSaveResult
+
+    /**
+     * Puts the file back exactly as it was shot, removing everything Woka wrote into
+     * it (ME-107).
+     *
+     * Asked of the engine for the same reason [storedDocument] is: what an edit is
+     * stored *in* is the medium's own business, and the shell cannot name it (§3.3).
+     * Answers [EditSaveResult.NothingToDo] for a file that carries nothing, so the
+     * control can be honest without the shell reading the file itself.
+     *
+     * Defaulted, so a medium that has nothing to remove is unaffected.
+     */
+    suspend fun revert(): EditSaveResult = EditSaveResult.NothingToDo
 }

@@ -6,6 +6,7 @@ import androidx.compose.ui.focus.FocusRequester
 import com.woka.core.data.MediaItem
 import com.woka.core.data.SettingsRepository
 import com.woka.core.data.WokaSettings
+import com.woka.core.ui.image.rememberReloadKey
 import com.woka.feature.viewer.pip.PipManager
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import kotlinx.coroutines.delay
@@ -93,7 +94,12 @@ internal fun MediaViewerActiveItemEffects(
     //
     // Keyed on the frame too, so stepping through a burst goes through the same
     // two stages as opening a file does.
-    LaunchedEffect(activeItem, showConflictDialog, state.frameIndex) {
+    //
+    // ...and on the reload key, which is how a save reaches the screen (ME-135). The
+    // editor is mounted over a viewer that stays composed, so nothing above moves
+    // while an edit is made: `Done` changed nothing until the viewer was re-entered.
+    val reloadKey = rememberReloadKey(activeItem?.file?.absolutePath)
+    LaunchedEffect(activeItem, showConflictDialog, state.frameIndex, reloadKey) {
         if (showConflictDialog || activeItem == null) return@LaunchedEffect
         val frame = state.frameIndex
         state.sourceSize = thumbnails.sourceSize(activeItem)

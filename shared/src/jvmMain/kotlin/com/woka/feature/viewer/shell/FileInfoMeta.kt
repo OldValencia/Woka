@@ -6,6 +6,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.SpanStyle
@@ -17,7 +22,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.woka.app.shell.LocalCanvasOverride
 import com.woka.core.data.MediaItem
+import com.woka.core.ui.image.AppliedStillEdits
+import com.woka.core.ui.image.rememberReloadKey
 import com.woka.core.ui.theme.Theme
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -29,7 +37,7 @@ internal fun FileMetaBlock(item: MediaItem) {
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            NameLine(item.file.name)
+            NameLine(item.file)
             InfoLine("Path: ${item.file.absolutePath}")
             InfoLine("Size: ${item.file.length().toReadableSize()}")
             InfoLine("Created: ${SimpleDateFormat("yyyy-MM-dd HH:mm").format(Date(item.file.lastModified()))}")
@@ -38,16 +46,26 @@ internal fun FileMetaBlock(item: MediaItem) {
 }
 
 /**
- * The name, and whether an editor is holding changes the file does not have yet.
+ * The name, and whether this photograph is edited.
  *
- * Read from the shell rather than passed in: "there is an unsaved edit" is a fact about
- * the app, not about the `MediaItem`, and this dialog opens from the pill the editor has
- * already taken over. It replaced a `· Edited` in the top bar, which went when the file
- * name there gave its place back to that pill (§4.4, 2026-08-18).
+ * **Two sources, because there are two ways to be edited.** The shell's override says an
+ * editor is open over unsaved work — a fact about the app, not about the `MediaItem`.
+ * The file itself says whether it carries a recipe, and that is the one the *viewer*
+ * needs: outside the editor nothing sets the override, so an edited photograph read as
+ * an untouched one (found by hand, 2026-08-19).
+ *
+ * Keyed on the reload signal, so pressing `Done` behind this dialog moves the mark
+ * (ME-135) instead of leaving the answer taken when it opened.
  */
 @Composable
-private fun NameLine(name: String) {
-    val edited = LocalCanvasOverride.current.edited
+private fun NameLine(file: File) {
+    var carries by remember(file.absolutePath) { mutableStateOf(false) }
+    val reloadKey = rememberReloadKey(file.absolutePath)
+    LaunchedEffect(file.absolutePath, reloadKey) {
+        carries = AppliedStillEdits.carries(file)
+    }
+    val edited = LocalCanvasOverride.current.edited || carries
+    val name = file.name
     // One text, not a `Row` of two: beside a name that already wraps, the mark was
     // handed whatever width was left over and broke to one letter per line.
     val text = buildAnnotatedString {

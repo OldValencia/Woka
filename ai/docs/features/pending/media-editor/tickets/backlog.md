@@ -309,5 +309,9 @@ invalidates the poster frame and the watch record with the file.
 - Re-opening a saved edit to adjust a previous crop — the document is already serialisable; this is
   where it starts being written to disk, as a sidecar beside the copy.
 - A user-configurable copy-name pattern (`-edited` is hardcoded until someone wants otherwise).
+- **Saving a flattened copy to a file.** The clipboard answers "get this picture out of Woka" without
+  minting anything (`Copy`, 2026-08-19), and an export step is precisely what §5 removed. ME-136 was
+  raised for this on 2026-08-19 and closed the same day by making `Copy` the picture; the number is
+  retired rather than reused.
 - Batch apply across a selection in the grid — the grid's `Edit` entry is single-selection only.
 - RAW, layers, masks, healing — out of scope for this feature entirely.

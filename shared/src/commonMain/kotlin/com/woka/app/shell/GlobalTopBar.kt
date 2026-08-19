@@ -47,11 +47,16 @@ fun GlobalTopBar(
             .height(60.dp)
             .padding(horizontal = 24.dp)
     ) {
-        // Back Button on the left
-        if (onNavigateBack != null) {
-            Box(modifier = Modifier.align(Alignment.CenterStart)) {
+        // Back Button on the left, and whatever the screen puts beside it
+        Row(
+            modifier = Modifier.align(Alignment.CenterStart),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (onNavigateBack != null) {
                 BackButton(onClick = topBarAccessories.backActionOverride ?: onNavigateBack)
             }
+            topBarAccessories.leadingAccessory?.invoke()
         }
 
         // Centered Content (Breadcrumbs or Accessory)

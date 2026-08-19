@@ -1,6 +1,7 @@
 package com.woka.core.utils
 
 import androidx.compose.ui.graphics.ImageBitmap
+import com.woka.core.ui.image.AppliedStillEdits
 import com.woka.core.ui.image.ImageBitmapCache
 import com.woka.core.ui.image.encodePng
 import com.woka.feature.viewer.image.stillDecoderFor
@@ -20,7 +21,11 @@ actual suspend fun exportFramesToPng(
     frames.indices.forEach { position ->
         onProgress(position, total)
         val written = runCatching {
-            val bitmap = decoder.frame(source, frames[position].index)
+            val frame = frames[position].index
+            // An exported frame is the picture the user is looking at, edit included
+            // (ME-133) — an export that quietly returned the original would be the one
+            // place in the app where what is on screen and what is written disagree.
+            val bitmap = AppliedStillEdits.apply(source, frame, decoder.frame(source, frame))
             bitmap.writePng(File(destination, nameFor(source, position, total)))
         }.isSuccess
         if (written) exported++ else failed++

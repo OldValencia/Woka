@@ -26,7 +26,9 @@ fun EditorUnderShell(
     accessories: TopBarAccessoriesState,
     override: CanvasOverrideState = CanvasOverrideState(),
     onCancel: () -> Unit = {},
-    onDone: () -> Unit = {}
+    onDone: () -> Unit = {},
+    canRevert: Boolean = false,
+    onRevert: () -> Unit = {}
 ) {
     CompositionLocalProvider(
         LocalTopBarAccessories provides accessories,
@@ -34,6 +36,9 @@ fun EditorUnderShell(
     ) {
         Column {
             Row {
+                // The leading slot too: Revert lives beside Back, and a test that
+                // rendered only the other two would report it as missing (ME-107).
+                accessories.leadingAccessory?.invoke()
                 accessories.centerAccessory?.invoke()
                 accessories.rightAccessory?.invoke()
             }
@@ -42,7 +47,9 @@ fun EditorUnderShell(
                 engine = FixtureEngine(),
                 registry = harness.registry,
                 onCancel = onCancel,
-                onDone = onDone
+                onDone = onDone,
+                canRevert = canRevert,
+                onRevert = onRevert
             )
         }
     }

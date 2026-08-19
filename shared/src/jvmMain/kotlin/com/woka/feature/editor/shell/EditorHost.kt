@@ -57,8 +57,17 @@ internal fun EditorHost(
     }
 
     val file = remember(target) { File(target.path) }
-    val session = remember(target) { EditorSession(MediaItem.Image(file)) }
+    // Opened on what the file already holds (ME-134): a session starting empty made
+    // the second `Done` on a photograph replace the first one's edit instead of
+    // continuing it. A few kilobytes off the file's head, once per open.
+    val stored = remember(target) { engine.storedDocument() }
+    val session = remember(target) { EditorSession(MediaItem.Image(file), stored) }
     DisposableEffect(session) { onDispose { session.close() } }
+
+    // Whether the *file* still carries something to remove — read once, and moved by
+    // the only thing in this session that can change it (ME-107).
+    var carriesEdit by remember(target) { mutableStateOf(!stored.isEmpty) }
+    var askingToRevert by remember { mutableStateOf(false) }
 
     val isDirty by session.isDirty.collectAsState()
     val canUndo by session.canUndo.collectAsState()
@@ -80,6 +89,20 @@ internal fun EditorHost(
         Unit
     }
 
+    // Revert removes the recipe and then tells the session, in that order: the engine
+    // owns the file and the session only mirrors it (ME-107). A failed write leaves
+    // both alone, so the editor never claims a revert the disk refused.
+    val revert = {
+        scope.launch {
+            if (engine.revert() !is EditSaveResult.Failed) {
+                carriesEdit = false
+                session.revertedToOriginal()
+            }
+            askingToRevert = false
+        }
+        Unit
+    }
+
     EditorKeyEffect(
         globalShortcuts = LocalGlobalShortcuts.current,
         canUndo = canUndo,
@@ -95,8 +118,16 @@ internal fun EditorHost(
         engine = engine,
         registry = dependencies.registry,
         onCancel = leave,
-        onDone = done
+        onDone = done,
+        // Enabled while there is anything to take back: what the file carries, or what
+        // this sitting has done and not saved. Both end at the same picture.
+        canRevert = carriesEdit || isDirty,
+        onRevert = { askingToRevert = true }
     )
+
+    if (askingToRevert) {
+        RevertDialog(onRevert = revert, onKeepEditing = { askingToRevert = false })
+    }
 
     if (askingToDiscard) {
         DiscardChangesDialog(

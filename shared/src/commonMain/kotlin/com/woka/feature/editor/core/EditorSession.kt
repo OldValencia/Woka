@@ -32,17 +32,42 @@ import kotlinx.coroutines.flow.stateIn
  * **Selection is not history** (§3.1). A `CanvasTool`'s selected shape, its drag
  * handles and its hover state live in the tool's own scope, never in the document,
  * so clicking a markup arrow never produces an undo step. Only [commit] does.
+ *
+ * **`initial` is what the file already carries** (ME-134). A session used to start
+ * from an empty document whatever the file held, so the second `Done` on a
+ * photograph wrote only that sitting and replaced the first one's edit. Starting
+ * here is also what makes [isDirty] mean "differs from the file" rather than "the
+ * document is non-empty" — reopening an edited picture is not a change to it.
+ *
+ * **The history opens on the recipe, not on this sitting** (`EditorHistory.startingAt`,
+ * decided by hand 2026-08-19). Undo therefore walks back through operations made in
+ * earlier sittings and reaches the original photograph at the end of them. What the
+ * *mark* in Information says is a separate question, answered by the document rather
+ * than by [isDirty]: a file that carries an edit reads as edited the moment it opens.
  */
-class EditorSession(val media: MediaItem) {
+class EditorSession(val media: MediaItem, initial: EditDocument = EditDocument()) {
 
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
-    private val _document = MutableStateFlow(EditDocument())
+    /**
+     * What the file holds. A `var` for exactly one reason: Revert removes the recipe
+     * from the file, and a session still measuring itself against the old one would
+     * be instantly dirty against a document that no longer exists (ME-107).
+     *
+     * **Named apart from the constructor parameter deliberately.** A property and a
+     * parameter of the same name are both in scope in an initialiser, and the
+     * *parameter* wins there — so [isDirty] would have captured the opening document
+     * for the life of the session and gone on comparing against it after a revert.
+     * `RevertTest` caught exactly that.
+     */
+    private var openedWith = initial
+
+    private val _document = MutableStateFlow(openedWith)
 
     /** The live document, including any operation still being dragged. */
     val document: StateFlow<EditDocument> = _document.asStateFlow()
 
-    private val _history = MutableStateFlow(EditorHistory())
+    private val _history = MutableStateFlow(EditorHistory.startingAt(openedWith))
 
     // Eagerly, not WhileSubscribed: these gate toolbar buttons and are read
     // before anything collects them. A five-second replay window would show a
@@ -55,7 +80,7 @@ class EditorSession(val media: MediaItem) {
 
     /** Whether anything would be lost by closing — what the Cancel dialog asks about. */
     val isDirty: StateFlow<Boolean> =
-        _document.map { !it.isEmpty }.stateIn(scope, SharingStarted.Eagerly, false)
+        _document.map { it != openedWith }.stateIn(scope, SharingStarted.Eagerly, false)
 
     /**
      * Replaces the operation in flight. Pushes **no** history entry, so a slider
@@ -82,12 +107,30 @@ class EditorSession(val media: MediaItem) {
 
     fun redo() = moveTo(_history.value.redo())
 
-    /** Back to the document the editor opened with, in one undoable step. */
+    /**
+     * Back to the document the editor opened with, in one undoable step.
+     *
+     * **Not Revert** (ME-107): this undoes *this sitting*, and the document it
+     * returns to is the one the file carries, not an empty one.
+     */
     fun reset() {
-        if (_document.value.isEmpty) return
-        val cleared = EditDocument()
-        _document.value = cleared
-        _history.value = _history.value.push(cleared)
+        if (_document.value == openedWith) return
+        _document.value = openedWith
+        _history.value = _history.value.push(openedWith)
+    }
+
+    /**
+     * The file no longer carries anything: document, history and [openedWith] all go back
+     * to empty (ME-107).
+     *
+     * **It writes nothing.** The engine has already removed the recipe by the time this
+     * is called — this is the session catching up with the file, which is why it is not
+     * undoable: there is nothing on disk left to undo to.
+     */
+    fun revertedToOriginal() {
+        openedWith = EditDocument()
+        _document.value = openedWith
+        _history.value = EditorHistory.startingAt(openedWith)
     }
 
     /** Cancels [scope]. Called by the owner; the session cannot be reused after it. */

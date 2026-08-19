@@ -44,10 +44,11 @@ internal fun EditorScreen(
     registry: EditorToolRegistry,
     onCancel: () -> Unit,
     onDone: () -> Unit,
+    canRevert: Boolean = false,
+    onRevert: () -> Unit = {},
     unavailable: Map<String, String> = emptyMap()
 ) {
     val document by session.document.collectAsState()
-    val isDirty by session.isDirty.collectAsState()
     val canUndo by session.canUndo.collectAsState()
     val canRedo by session.canRedo.collectAsState()
     val tools by registry.tools(engine.kind).collectAsState()
@@ -58,10 +59,14 @@ internal fun EditorScreen(
     // is also what removes the folder path and the viewer's own controls from above
     // it — see EditorTopBarSetup.
     EditorTopBarSetup(
-        isDirty = isDirty,
+        // "This photograph carries an edit", which includes the one already in the
+        // file — not "there is unsaved work", which is `isDirty` and the exit dialog's.
+        isEdited = !document.isEmpty,
         canUndo = canUndo,
         canRedo = canRedo,
+        canRevert = canRevert,
         onLeave = onCancel,
+        onRevert = onRevert,
         onUndo = session::undo,
         onRedo = session::redo,
         onDone = onDone
@@ -114,7 +119,6 @@ internal fun EditorScreen(
             if (activeTool != null) {
                 EditorInspector(
                     title = activeTool.manifest.title,
-                    onReset = session::reset,
                     content = { ParamRows(activeTool, session, document) }
                 )
             }

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -14,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import com.woka.core.ui.theme.Theme
+import kotlinx.coroutines.launch
 import java.io.File
 import com.woka.core.ui.components.DropdownItem
 import com.woka.core.ui.components.RenameDialog
@@ -41,6 +43,17 @@ fun FolderOverlays(
                 viewModel.renameFile(renamePath, finalName)
                 overlays.itemToRename = null
             }
+        )
+    }
+
+    overlays.itemToRevert?.let { revertPath ->
+        val scope = rememberCoroutineScope()
+        RevertEditDialog(
+            onRevert = {
+                scope.launch { revertEdit(revertPath) }
+                overlays.itemToRevert = null
+            },
+            onKeepEdit = { overlays.itemToRevert = null }
         )
     }
 

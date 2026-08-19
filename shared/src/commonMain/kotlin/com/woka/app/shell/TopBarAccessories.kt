@@ -8,6 +8,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.input.key.KeyEvent
 
 class TopBarAccessoriesState {
+    /**
+     * Beside the Back button, on the left — where a screen puts the control that
+     * *undoes* rather than the one that proceeds (ME-107). The editor's Revert is the
+     * first tenant: red, destructive, and deliberately at the end the hand leaves by.
+     */
+    var leadingAccessory by mutableStateOf<(@Composable () -> Unit)?>(null)
     var centerAccessory by mutableStateOf<(@Composable () -> Unit)?>(null)
     var rightAccessory by mutableStateOf<(@Composable () -> Unit)?>(null)
     var backActionOverride by mutableStateOf<(() -> Unit)?>(null)

@@ -18,6 +18,9 @@ import androidx.compose.ui.unit.IntOffset
 @Stable
 class FolderOverlayState {
     var itemToRename by mutableStateOf<String?>(null)
+
+    /** The photograph whose edit is about to be thrown away, pending its question. */
+    var itemToRevert by mutableStateOf<String?>(null)
     var showCreateFolderDialog by mutableStateOf(false)
     var showBgContextMenu by mutableStateOf(false)
         private set

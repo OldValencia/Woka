@@ -30,6 +30,13 @@ internal const val PROXY_MAX_PX = 2560
  * must do neither. What is worth taking from it is the technique below.
  *
  * Native resolution is decoded exactly once, at save, by ME-104 — never here.
+ *
+ * **It does not apply the file's recipe, and that is not an omission.** Every other
+ * reader in the app folds the edit in on the way out (`AppliedStillEdits`, ME-133);
+ * this is the one place that must read the file raw, because the editor folds the
+ * document live over what it gets. Applying here would apply the recipe twice — once
+ * into the proxy and once over it — so reopening an edited photograph would draw two
+ * rotations for one.
  */
 internal object EditorProxy {
 

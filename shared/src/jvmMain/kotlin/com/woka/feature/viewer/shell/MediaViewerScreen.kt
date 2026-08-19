@@ -7,7 +7,6 @@ import androidx.compose.ui.focus.FocusRequester
 import com.woka.app.AppDependencies
 import com.woka.core.data.MediaItem
 import com.woka.app.shell.LocalGlobalShortcuts
-import com.woka.core.utils.copyFilesToClipboard
 import com.woka.feature.viewer.shell.frames.rememberFrameExportEntry
 import com.woka.feature.viewer.shell.frames.rememberFrameStrip
 
@@ -62,9 +61,7 @@ fun MediaViewerScreen(
     MediaViewerAmbientEffects(state, videoState, mediaVolume, settingsRepo, focusRequester)
 
     var showInfoDialog by remember { mutableStateOf(false) }
-    val copyAction = {
-        if (activeItem != null) copyFilesToClipboard(listOf(activeItem.file.absolutePath))
-    }
+    val copyAction = rememberCopyAction(activeItem, state.frameIndex)
     val infoAction = { if (activeItem != null) showInfoDialog = true }
     // Was a stub that closed the viewer; the editor now opens *over* it, so the
     // viewer stays mounted and Cancel returns to this exact zoom and frame (§4.1).

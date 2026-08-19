@@ -24,6 +24,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.woka.core.data.MediaItem
 import com.woka.core.ui.icons.Icons
+import com.woka.core.ui.image.rememberReloadKey
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 
@@ -80,7 +81,9 @@ fun MediaViewerCarousel(
     ) {
         items(mediaItems, key = { it.file.absolutePath }) { item ->
             var thumbnailBitmap by remember(item.file.absolutePath) { mutableStateOf<ImageBitmap?>(null) }
-            LaunchedEffect(item.file.absolutePath) {
+            // The tile follows its file's saves (ME-135); the path alone never moves.
+            val reloadKey = rememberReloadKey(item.file.absolutePath)
+            LaunchedEffect(item.file.absolutePath, reloadKey) {
                 thumbnailBitmap = thumbnails.preview(item)
             }
             var lastClickTime by remember { mutableStateOf(0L) }

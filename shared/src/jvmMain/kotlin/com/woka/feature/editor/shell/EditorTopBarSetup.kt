@@ -10,6 +10,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import com.woka.app.shell.LocalCanvasOverride
 import com.woka.app.shell.LocalTopBarAccessories
+import com.woka.core.ui.theme.Theme
 import com.woka.feature.viewer.shell.CanvasZoomPill
 
 /**
@@ -35,10 +36,12 @@ import com.woka.feature.viewer.shell.CanvasZoomPill
  */
 @Composable
 internal fun EditorTopBarSetup(
-    isDirty: Boolean,
+    isEdited: Boolean,
     canUndo: Boolean,
     canRedo: Boolean,
+    canRevert: Boolean,
     onLeave: () -> Unit,
+    onRevert: () -> Unit,
     onUndo: () -> Unit,
     onRedo: () -> Unit,
     onDone: () -> Unit
@@ -49,23 +52,44 @@ internal fun EditorTopBarSetup(
     // Registered once, reading live values — re-registering per keystroke would
     // rebuild the accessory while the user is looking at it.
     val curCanUndo by rememberUpdatedState(canUndo)
+    val curCanRevert by rememberUpdatedState(canRevert)
+    val curRevert by rememberUpdatedState(onRevert)
     val curCanRedo by rememberUpdatedState(canRedo)
     val curLeave by rememberUpdatedState(onLeave)
     val curUndo by rememberUpdatedState(onUndo)
     val curRedo by rememberUpdatedState(onRedo)
     val curDone by rememberUpdatedState(onDone)
 
-    // Where the dirty mark went when the file name left the top bar: the pill has no
+    // Where the edited mark went when the file name left the top bar: the pill has no
     // room for a word, and Information is the panel that already answers "what is this
     // file" (§4.4, 2026-08-18).
-    SideEffect { override.edited = isDirty }
+    //
+    // **The document, not `isDirty`** (decided by hand 2026-08-19). Since ME-134 a
+    // session opened on an edited photograph is *clean* — it matches the file — and
+    // marking only unsaved work left an edited picture reading as an original one. The
+    // discard dialog keeps the other meaning; these are two different questions.
+    SideEffect { override.edited = isEdited }
 
     DisposableEffect(Unit) {
+        val previousLeading = accessories.leadingAccessory
         val previousCenter = accessories.centerAccessory
         val previousRight = accessories.rightAccessory
         val previousBack = accessories.backActionOverride
 
         override.editing = true
+        // Beside Back, not beside Undo/Redo: those two give work back and this one
+        // throws it away, and three controls in a row read as three steps of one kind
+        // (ME-107). Always drawn, disabled when there is nothing to remove — a control
+        // that appears and vanishes is a control nobody learns the position of.
+        accessories.leadingAccessory = {
+            TopBarButton(
+                label = "Revert",
+                tag = "editor-revert",
+                enabled = curCanRevert,
+                color = Theme.colors.danger,
+                onClick = { curRevert() }
+            )
+        }
         // Empty centre means no viewer underneath — opened from the grid's context menu.
         if (previousCenter == null) {
             accessories.centerAccessory = { CanvasZoomPill() }
@@ -84,6 +108,7 @@ internal fun EditorTopBarSetup(
         onDispose {
             override.editing = false
             override.edited = false
+            accessories.leadingAccessory = previousLeading
             accessories.centerAccessory = previousCenter
             accessories.rightAccessory = previousRight
             accessories.backActionOverride = previousBack

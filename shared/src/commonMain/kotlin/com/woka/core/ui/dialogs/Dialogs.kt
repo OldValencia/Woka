@@ -22,6 +22,18 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.woka.core.ui.theme.Theme
 
+/**
+ * The app's dialog chrome: one shell, one title, one button, and the four dialogs
+ * every screen builds out of them.
+ *
+ * **`commonMain`, moved there 2026-08-19.** Nothing here is JVM-specific — the AWT
+ * `FileDialog` pickers CLAUDE.md sends to `jvmMain` live in `ui/components/dialogs/`,
+ * not in this file — and the folder feature is `commonMain` all the way down, so a
+ * confirmation asked from a grid menu (ME-107) could not see it. The alternative was a
+ * second dialog chrome for one dialog. The file moved whole and unchanged; every caller
+ * is in the same package and none of them noticed.
+ */
+
 @Composable
 fun AbstractDialog(
     onDismissRequest: () -> Unit,

@@ -26,6 +26,31 @@ data class EditorHistory(
     val index: Int = 0
 ) {
 
+    companion object {
+
+        /**
+         * The history a session opens with (ME-134): **the file's own recipe, replayed
+         * one operation per entry**, ending on the document as the file holds it.
+         *
+         * The recipe *is* the history. That is what makes Undo work across sittings —
+         * reopen a photograph turned yesterday and the turn is still a step you can
+         * take back — and it is what lets undoing to the beginning reach the original
+         * picture, since the first entry is the empty document.
+         *
+         * A **reconstruction**, not a recording. A `Single` tool's operation has
+         * already absorbed every drag that produced it, so these are the steps the
+         * file can still describe rather than the clicks that were made. `pending` is
+         * not represented: nothing writes an operation in flight to a file.
+         */
+        fun startingAt(document: EditDocument): EditorHistory {
+            val steps = document.ops.indices.map { at ->
+                EditDocument(ops = document.ops.take(at + 1))
+            }
+            val entries = (listOf(EditDocument()) + steps).takeLast(HISTORY_CAP)
+            return EditorHistory(entries, entries.lastIndex)
+        }
+    }
+
     val current: EditDocument get() = entries[index]
 
     val canUndo: Boolean get() = index > 0

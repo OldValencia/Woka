@@ -38,7 +38,6 @@ import com.woka.core.ui.theme.Theme
 @Composable
 internal fun EditorInspector(
     title: String,
-    onReset: () -> Unit,
     content: @Composable () -> Unit
 ) {
     Column(
@@ -55,13 +54,22 @@ internal fun EditorInspector(
             .testTag("editor-inspector"),
         verticalArrangement = Arrangement.spacedBy(EditorTokens.Inspector.rowGap)
     ) {
-        InspectorHeader(title, onReset)
+        InspectorHeader(title)
         content()
     }
 }
 
+/**
+ * The tool's name, and nothing else.
+ *
+ * **`Reset` was removed here on 2026-08-19.** It cleared the working document — every
+ * tool's operations, not the open panel's — from a header that named one tool, and
+ * beside an Undo that already takes work back a step at a time. What it was reached
+ * for was "put this photograph back as it was", and that is Revert, which now sits
+ * beside Back where a destructive control belongs (ME-107).
+ */
 @Composable
-private fun InspectorHeader(title: String, onReset: () -> Unit) {
+private fun InspectorHeader(title: String) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -74,20 +82,6 @@ private fun InspectorHeader(title: String, onReset: () -> Unit) {
                 color = Theme.viewer.onScrim,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold
-            )
-        )
-        BasicText(
-            text = "Reset",
-            modifier = Modifier
-                .clip(RoundedCornerShape(6.dp))
-                .pointerHoverIcon(PointerIcon.Hand)
-                .clickable(onClick = onReset)
-                .padding(horizontal = 6.dp, vertical = 2.dp)
-                .testTag("editor-reset"),
-            style = TextStyle(
-                color = Theme.viewer.onScrimSecondary,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold
             )
         )
     }

@@ -1,5 +1,6 @@
 package com.woka.unit
 
+import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.FloatParam
 import com.woka.feature.editor.core.ParamSet
 import com.woka.feature.editor.core.ToolCardinality
@@ -17,6 +18,12 @@ import kotlin.test.assertTrue
 private val Brightness = FloatParam("brightness", "Brightness", -1f..1f, default = 0f)
 
 private fun adjust(value: Float) = ToolOp("adjust", ParamSet().with(Brightness, value))
+
+/** What a file already carries — the document a reopened session starts from. */
+private val carried = EditDocument(ops = listOf(adjust(0.25f)))
+
+/** Two operations, so undo has somewhere to stop between the file and the original. */
+private val twoCarried = EditDocument(ops = listOf(adjust(0.25f), adjust(0.5f)))
 
 /**
  * Undo granularity is the contract under test: a drag is one step, not one per
@@ -86,4 +93,48 @@ class EditorSessionTest {
         session.undo()
         assertEquals(0.5f, session.document.value.ops.single().params[Brightness])
     }
+
+    /**
+     * Reopening an edited photograph is not a change to it (ME-134): `isDirty` means
+     * "differs from what is in the file", so `Cancel` must not ask about changes
+     * nobody made — **and yet Undo is live**, because the file's own recipe is the
+     * history behind it.
+     */
+    @Test
+    fun `a session opened on an edited file is clean but can undo`() =
+        onEditorSession(carried) { session ->
+            assertEquals(carried, session.document.value)
+            assertFalse(session.isDirty.value)
+            assertTrue(session.canUndo.value, "the file's own edit is not undoable")
+            assertFalse(session.canRedo.value)
+        }
+
+    /** The dead-buttons symptom, asserted: undo walks back into earlier sittings. */
+    @Test
+    fun `undo steps back through the operations the file carries`() =
+        onEditorSession(twoCarried) { session ->
+            session.undo()
+            assertEquals(1, session.document.value.ops.size)
+            assertTrue(session.isDirty.value, "the document no longer matches the file")
+
+            session.undo()
+            assertTrue(session.document.value.isEmpty, "undo never reached the original")
+            assertFalse(session.canUndo.value)
+
+            session.redo()
+            assertEquals(1, session.document.value.ops.size)
+        }
+
+    /** `reset` is "back to where this sitting started", never Revert (ME-107). */
+    @Test
+    fun `reset returns to the file's document rather than to empty`() =
+        onEditorSession(carried) { session ->
+            session.preview(adjust(0.75f))
+            session.commit(ToolCardinality.Single)
+
+            session.reset()
+
+            assertEquals(carried, session.document.value)
+            assertFalse(session.isDirty.value)
+        }
 }

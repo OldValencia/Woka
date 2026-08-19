@@ -1,15 +1,18 @@
 package com.woka.feature.folder
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import com.woka.core.data.MediaItem
 import com.woka.core.data.WatchRecord
 import com.woka.core.data.mayHoldFrames
 import com.woka.core.ui.components.DropdownItem
 import com.woka.core.ui.theme.Theme
 import com.woka.core.utils.copyFilesToClipboard
+import com.woka.core.utils.copyImageToClipboard
 import com.woka.core.utils.openDirectoryPicker
 import com.woka.feature.editor.core.EditorEngineFactory
 import com.woka.feature.editor.isEditable
+import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -18,7 +21,7 @@ import org.koin.core.component.inject
  * "is this editable" (§4.1). Held as an object rather than injected per item, because a
  * grid draws a menu per right-click and the factory is a `single` either way.
  */
-private object EditorMenuDependencies : KoinComponent {
+internal object EditorMenuDependencies : KoinComponent {
     val factory: EditorEngineFactory by inject()
 }
 
@@ -44,6 +47,8 @@ internal fun FolderItemContextMenu(
 ) {
     val target = item.file.absolutePath
     val engineFactory = EditorMenuDependencies.factory
+    // The decode a picture copy needs; the menu is gone by the time it finishes.
+    val scope = rememberCoroutineScope()
 
     if (item is MediaItem.Folder) {
         DropdownItem("Open") { dismiss(); onNavigateToFolder(target) }
@@ -79,11 +84,17 @@ internal fun FolderItemContextMenu(
         }
     }
     DropdownItem("Rename") { dismiss(); overlays.itemToRename = target }
-    // Copy means the clipboard, the way it does everywhere else on the desktop;
-    // copying into a chosen folder is Duplicate below (TC-SYS-06).
+    // **Copy is the picture**, not the file (2026-08-19). Putting the file on the
+    // clipboard made this a second Duplicate — and Duplicate is right below. Pasting
+    // now gives the photograph as it is drawn, edit folded in. A video has no picture
+    // to hand over, so there Copy still means the file.
     DropdownItem("Copy") {
         dismiss()
-        copyFilesToClipboard(listOf(target))
+        if (item is MediaItem.Image) {
+            scope.launch { copyImageToClipboard(target) }
+        } else {
+            copyFilesToClipboard(listOf(target))
+        }
     }
     DropdownItem("Duplicate") {
         dismiss()
@@ -94,6 +105,19 @@ internal fun FolderItemContextMenu(
         dismiss()
         val dest = openDirectoryPicker("Move to...", path)
         if (dest != null) viewModel.moveFiles(listOf(target), dest)
+    }
+    // Back to as shot, without opening the editor (ME-107). Greyed when the file
+    // carries nothing, so the entry is honest rather than absent — and confirmed,
+    // because in this menu it takes effect on the file with no document to undo from.
+    if (item is MediaItem.Image) {
+        DropdownItem(
+            "Revert to Original",
+            enabled = rememberCarriesEdit(item.file),
+            textColor = Theme.colors.danger
+        ) {
+            dismiss()
+            overlays.itemToRevert = target
+        }
     }
     DropdownItem("Delete", textColor = Theme.colors.danger) {
         dismiss()

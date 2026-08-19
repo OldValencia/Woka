@@ -1,11 +1,13 @@
 package com.woka.feature.editor.di
 
 import com.woka.core.data.MediaItem
+import com.woka.core.ui.image.AppliedStillEdits
 import com.woka.feature.editor.core.EditorSession
 import com.woka.feature.editor.core.EditorEngineFactory
 import com.woka.feature.editor.core.EditorTool
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.engine.EditorEngineFactoryImpl
+import com.woka.feature.editor.engine.image.RecipeStillEdits
 import com.woka.feature.editor.tools.transform.TransformTool
 import org.koin.dsl.module
 
@@ -41,4 +43,13 @@ val editorModule = module {
     // The one place that answers "is this file editable" — both Edit entry points
     // resolve it, so neither can grow its own extension list (§4.1).
     single<EditorEngineFactory> { EditorEngineFactoryImpl(get()) }
+
+    // **`createdAtStart`, and that is the whole point of the line.** Every still in the
+    // app asks `AppliedStillEdits` whether its file carries an edit, and none of those
+    // readers resolves anything from Koin — so a lazy `single` would sit unbuilt and an
+    // edited photograph would draw unedited forever (ME-133). `startKoin` builds the
+    // eager instances, and building this one installs it.
+    single(createdAtStart = true) {
+        RecipeStillEdits(get()).also { AppliedStillEdits.install(it) }
+    }
 }

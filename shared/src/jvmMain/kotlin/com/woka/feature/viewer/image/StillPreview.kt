@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asSkiaBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import com.woka.core.data.WokaStorage
+import com.woka.core.ui.image.AppliedStillEdits
 import com.woka.core.ui.image.ImageBitmapCache
 import com.woka.core.ui.image.encodePng
 import org.jetbrains.skia.Image
@@ -52,9 +53,15 @@ internal object StillPreview {
     /**
      * The one expensive pass, paid once per file ever: decode at full size,
      * scale down, write the PNG.
+     *
+     * **The edit is folded in here and never on [readCached]'s path**, which is
+     * already the edited picture: the disk entry is keyed on path, size *and*
+     * mtime, all three of which writing a recipe changes, so an edited file simply
+     * misses its old thumbnail and rebuilds this once (ME-133). Applying on the
+     * cached path too would fold the recipe over a picture that already carries it.
      */
     private fun build(file: File, cached: File, frameIndex: Int): ImageBitmap {
-        val source = decodeSmall(file, frameIndex)
+        val source = AppliedStillEdits.apply(file, frameIndex, decodeSmall(file, frameIndex))
         val scaled = source.scaledToPreview()
         runCatching { cached.writeBytes(scaled.encodePng()) }
         return scaled.toComposeImageBitmap()

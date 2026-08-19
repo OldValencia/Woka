@@ -13,7 +13,10 @@ import kotlin.test.assertTrue
 private fun document(marker: String) =
     EditDocument(ops = listOf(ToolOp(marker, ParamSet())))
 
-private fun EditorHistory.markers() = entries.map { it.ops.firstOrNull()?.toolId ?: "start" }
+private fun op(marker: String) = ToolOp(marker, ParamSet())
+
+/** The **last** op names the entry: `startingAt` builds prefixes, not single ops. */
+private fun EditorHistory.markers() = entries.map { it.ops.lastOrNull()?.toolId ?: "start" }
 
 class EditorHistoryTest {
 
@@ -69,5 +72,30 @@ class EditorHistoryTest {
         // …and what fell off the front is the oldest, not the newest.
         assertEquals("op11", history.markers().first())
         assertFalse(history.markers().contains("start"))
+    }
+
+    /**
+     * The file's recipe replayed as a history (ME-134): one entry per operation, the
+     * cursor on the last, and the original photograph at the very beginning.
+     */
+    @Test
+    fun `startingAt replays a carried document one operation at a time`() {
+        val carried = EditDocument(ops = listOf(op("a"), op("b"), op("c")))
+
+        val history = EditorHistory.startingAt(carried)
+
+        assertEquals(listOf("start", "a", "b", "c"), history.markers())
+        assertEquals(3, history.index)
+        assertEquals(carried, history.current)
+        assertTrue(history.canUndo)
+        assertFalse(history.canRedo)
+    }
+
+    @Test
+    fun `startingAt on an unedited file is a plain fresh history`() {
+        val history = EditorHistory.startingAt(EditDocument())
+
+        assertTrue(history.current.isEmpty)
+        assertFalse(history.canUndo)
     }
 }

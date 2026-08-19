@@ -48,6 +48,16 @@ internal class ImageEditorEngine(
         stillDecoderFor(file).nativeSize(file, frameIndex)
     }
 
+    /**
+     * What the file carries, so a second sitting continues the first (ME-134).
+     *
+     * The canvas is corrected by seeding the session and **not** by folding this into
+     * the proxy: `EditorProxy` reads raw pixels by design (ME-133) and the session
+     * folds the document over them, so applying it here as well would draw two
+     * rotations for one.
+     */
+    override fun storedDocument(): EditDocument = EditRecipe.read(file) ?: EditDocument()
+
     internal fun recipe(document: EditDocument): RasterRecipe =
         fold(document, registry, sourceSize)
 
@@ -93,7 +103,7 @@ internal class ImageEditorEngine(
     override suspend fun save(document: EditDocument): EditSaveResult =
         withContext(Dispatchers.IO) {
             val result = when (capability) {
-                EditCapability.Recorded -> record(document)
+                EditCapability.Recorded -> recordRecipe(file, document, stamp)
                 EditCapability.Destructive -> reEncode(document)
                 EditCapability.Unavailable -> EditSaveResult.Failed(
                     "${file.extension.uppercase()} files cannot be edited."
@@ -107,25 +117,17 @@ internal class ImageEditorEngine(
         }
 
     /**
-     * Bucket A: the recipe goes into the file and the pixels are not touched.
-     *
-     * **An emptied document clears rather than reporting nothing to do.** Undoing
-     * every operation on a photograph that carries a recipe and pressing `Done` must
-     * remove the recipe — it is Revert reached from the other direction (§5.2), and it
-     * is the branch that decides whether undo-then-save means anything.
+     * Back to as shot, in one action (ME-107) — and the only place that *removes*
+     * rather than writes. Answered by the same [EditSaveResult] as a save, so the
+     * shell has one outcome type and one banner to draw.
      */
-    private fun record(document: EditDocument): EditSaveResult {
-        if (!stamp.matches(file)) {
-            return EditSaveResult.Failed(
-                "${file.name} changed on disk since it was opened. Nothing was written."
-            )
+    override suspend fun revert(): EditSaveResult = withContext(Dispatchers.IO) {
+        val result = revertRecipe(file)
+        if (result is EditSaveResult.Saved) {
+            stamp = SourceStamp.of(file)
+            evictCachesFor(file, frameIndex)
         }
-        val written =
-            if (document.isEmpty) EditRecipe.clear(file) else EditRecipe.write(file, document)
-        return written.fold(
-            onSuccess = { EditSaveResult.Saved(file.absolutePath) },
-            onFailure = { EditSaveResult.Failed("${file.name} could not be written. The picture is untouched.") }
-        )
+        result
     }
 
     /** Bucket B: no slot to record in, so the picture itself is re-encoded in place. */
