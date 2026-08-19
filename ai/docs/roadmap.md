@@ -70,6 +70,9 @@ of that pass; the rare formats are the one part still outstanding.
 - **Rare image formats:** `features/pending/rare-image-formats-and-frame-sets.md` — HEIC/HEIF and
   AVIF decoding, one "frames inside a file" mechanic for bursts, Live Photos and animated
   GIF/WebP alike, and HDR tone mapping for stills.
+- **Animated stills:** `features/pending/animated-stills.md` — that mechanic *plays* an animation
+  rather than only counting its frames. Everything but the clock is already built, and the media
+  editor's GIF carrier (ME-138) waits on it.
 
 ### Phase 5: Media Editor (Editing tools)
 In `features/pending/media-editor/` — `media-editor.md` is the feature file, `tickets/` holds the

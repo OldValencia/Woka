@@ -54,9 +54,9 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-107](tickets/ME-107-revert-to-original.md) | Revert to Original — **un-dropped** | **done** 2026-08-19 |
 | [ME-108](tickets/ME-108-isobmff-carrier.md) | ISOBMFF carrier — HEIC, HEIF, AVIF | **done** 2026-08-19 — by hand outstanding |
 | [ME-137](tickets/ME-137-webp-carrier.md) | RIFF carrier — WebP, and bucket B empties | **done** 2026-08-19 — by hand outstanding |
-| [ME-138](tickets/ME-138-gif-carrier.md) | GIF carrier — Application Extension | specified — **next** |
-| [ME-139](tickets/ME-139-tiff-carrier.md) | TIFF carrier — private IFD tag | specified |
-| [ME-109](tickets/ME-109-crop-tool.md) | Crop tool, and the fold at preview scale | specified |
+| [ME-138](tickets/ME-138-gif-carrier.md) | GIF carrier — Application Extension | **deferred** — waits on [animated stills](../animated-stills.md) |
+| [ME-139](tickets/ME-139-tiff-carrier.md) | TIFF carrier — private IFD tag | **done** 2026-08-20 — by hand outstanding |
+| [ME-109](tickets/ME-109-crop-tool.md) | Crop tool, and the fold at preview scale | specified — **next** |
 | [ME-110](tickets/ME-110-resize-tool.md) | Resize tool | specified |
 | [ME-111…ME-130](tickets/backlog.md) | Image editor | backlog |
 | [ME-201…ME-204](tickets/backlog.md) | Video editor | backlog |
@@ -378,8 +378,8 @@ anything, because the original pixels never left the file they were always in.
 | **B** | no carrier, but Skia can encode it | a notice in the editor says there will be no history; `Done` re-encodes the file in place. |
 | **C** | neither | `Edit` is unavailable, with the reason in the menu. |
 
-At the time of writing: **A** = `jpg`, `jpeg`, `png`, `heic`, `heif`, `avif`, `webp` ·
-**B** = *nothing* · **C** = `tif`, `tiff`, `gif`, `bmp`.
+At the time of writing: **A** = `jpg`, `jpeg`, `png`, `heic`, `heif`, `avif`, `webp`, `tif`, `tiff` ·
+**B** = *nothing* · **C** = `gif` (deferred, not missing — ME-138) and `bmp` (no slot, ever).
 
 C is not a permanent state. Almost every image container has a **sanctioned** private extension point,
 and a new carrier moves formats straight from C to A, never through B:
@@ -390,8 +390,8 @@ and a new carrier moves formats straight from C to A, never through B:
 | `png` | ancillary private chunk | done first |
 | `heic`/`heif`/`avif` | ISOBMFF `uuid` box — the slot the spec provides for exactly this | done (ME-108) |
 | `webp` | RIFF chunk, needs promotion to the extended `VP8X` container | done (ME-137) |
-| `gif` | Application Extension block | later |
-| `tif`/`tiff` | private IFD tag (numbers ≥ 32768 are reserved for it) | later |
+| `gif` | Application Extension block | deferred (ME-138) — nothing animates it yet |
+| `tif`/`tiff` | private IFD tag (numbers ≥ 32768 are reserved for it) | done (ME-139) |
 | `bmp` | none | never |
 
 **A carrier needs no encoder, which is what makes this reach formats a save never could.** `libx265`
@@ -618,6 +618,8 @@ sheet instead of a dead Edit button.
 | 2026-08-19 | Does the stale-source stamp survive a save? | **No — it is re-read after every successful write** (ME-132) | The save now lands on the file the editor is still holding open, so the stamp taken at open no longer describes it. Without the re-read the second `Done` of a sitting reports the user's own first one as somebody else's change |
 | 2026-08-19 | How does a Coil tile re-request a file that has not moved? | **`key(reloadKey) { AsyncImage(…) }`** — a new composition identity, not a rebuilt `ImageRequest` (ME-135) | The memory key is the bare file URI and the `File` model compares equal across a write, so Coil keeps the painter it already resolved and never asks again — evicting its entry alone changes nothing. A new key is a new `AsyncImagePainter`, which then misses the evicted entry and reads the file. The recipe case does not even reach here: `carries` goes true and the tile moves to Woka's road. What is left is the bucket-B re-encode and a revert coming back |
 | 2026-08-19 | Does undo step back **past** what the file carries? | ~~No — the history is seeded with it and the first undo lands *on* it~~ **Superseded the same day by the row below** | The reasoning was that stepping past the file's own state is Revert's job (ME-107), not undo's. The by-hand run disagreed, and it was the user's call to make |
+| 2026-08-20 | How does a TIFF gain a tag without moving anything? | **The payload and a rebuilt IFD0 are appended, and the header's pointer is repointed at the copy** (ME-139) | An IFD entry is 12 bytes and every value in a TIFF is addressed by an absolute file offset, so adding one in place moves the picture out from under every offset that names it. Appending moves nothing. The block carries **the offset it replaced**, so a clear puts the pointer back and cuts the file — byte-identical, which is what ME-107 promises and what the fixture test measures. The rebuilt IFD keeps the link to the next page, or a three-page scan would show one |
+| 2026-08-20 | Does GIF get a carrier now? | **No — ME-138 is deferred until an animation plays** ([animated stills](../animated-stills.md)) | Measured before writing it: nothing in Woka animates a GIF. The viewer shows a frame set — `SkiaFrameDecoder` collapses animation to one frame by design — and the grid draws frame 0 through a Coil with no animated decoder on its classpath. An edit would apply to every frame the app draws, and the app draws one, so the result is invisible where the format is normally *watched*. Animated **WebP** keeps the carrier ME-137 gave it: a WebP is overwhelmingly a still photograph, and the carrier earns its place on that case |
 | 2026-08-19 | What happens to a **simple** WebP that has to carry a recipe? | **It is promoted to the extended `VP8X` container on the way in** (ME-137) | The simple form allows nothing beside its one bitstream chunk, so there is no slot to write into — the choice is promote it or keep re-encoding the picture. Promotion copies the canvas out of the bitstream and touches no pixel, which the fixture tests assert. **Bucket B is now empty**: `Destructive`, the re-encode path and its notice are unreachable, kept as the fallback for a format that ever gains an encoder before a carrier. One cost, stated: a clear leaves the `VP8X` in place, so for WebP alone Revert restores the picture exactly rather than the file exactly |
 | 2026-08-19 | What does an edit mean for a **frame set**? | **Every frame of it** — one recipe per file, and that is the MVP answer, not a placeholder (ME-126) | Confirmed by hand the day HEIC became editable: turning one frame of a burst turns the burst, and that reads as the file being edited rather than as a bug. Per-frame is a keyed payload in the same segment and is wanted, not needed. The **consequence that was a bug**: a save evicted only the edited frame's cache entries, so the other frames' thumbnails kept the pre-edit picture until something remounted the strip — `ImageBitmapCache.removeAllFor` now forgets the whole file, and the strip subscribes to the save signal like every other reader |
 | 2026-08-19 | Where in an ISOBMFF file does the recipe go? | **A `uuid` box appended after the last box**, and readers read the **tail** (ME-108) | HEIF stores item positions in `iloc` as absolute file offsets, so inserting anywhere earlier silently rewrites every one of them and the picture stops decoding. Appending disturbs nothing — an unrecognised top-level box is skipped by its size. The cost is that the head window `carries` was built around cannot see it, so `RecipeCarrier` now says which end it lives at and `EditRecipe` reads 64 KB from there. A payload that would not fit that window is **refused at write time**, which is what makes "not in the tail" a real answer rather than a reason to read 4 MB per grid tile |

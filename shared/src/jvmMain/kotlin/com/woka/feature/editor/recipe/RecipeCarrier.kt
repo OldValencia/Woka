@@ -67,9 +67,9 @@ internal class RecipeScan(
  * the same reason it was extracted: six copies of an extension list disagreed with
  * each other. **Null is bucket B or C** (§5.1), never an error.
  *
- * The three remaining extensions are not gaps to be filled here. `gif` takes an
- * Application Extension block (ME-138) and `tif`/`tiff` a private IFD tag (ME-139).
- * Only `bmp` has no slot at all.
+ * `gif` is the one extension left out on purpose, and not for want of a slot: it has an
+ * Application Extension block waiting for it in ME-138, deferred until something in the
+ * app actually animates a GIF. `bmp` is the only format with no slot at all.
  */
 internal fun carrierFor(file: File): RecipeCarrier? =
     when (file.extension.lowercase()) {
@@ -80,5 +80,7 @@ internal fun carrierFor(file: File): RecipeCarrier? =
         "heic", "heif", "avif" -> IsoBmffRecipe
         // Extended by us when it arrives simple (ME-137) — the last of bucket B.
         "webp" -> WebpRecipe
+        // A private tag in a rebuilt IFD0, both spellings, every page (ME-139).
+        "tif", "tiff" -> TiffRecipe
         else -> null
     }

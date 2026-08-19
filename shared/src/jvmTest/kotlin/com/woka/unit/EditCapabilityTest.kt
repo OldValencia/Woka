@@ -66,10 +66,20 @@ class EditCapabilityTest {
         assertEquals(EditCapability.Recorded, factory.of(STILL_AVIF))
     }
 
+    /** ME-139 took TIFF; what is left is GIF, and it is left on purpose. */
+    @Test
+    fun `a tiff records its edit, pages and all`() = withFactory { factory ->
+        assertEquals(EditCapability.Recorded, factory.of(MULTIPAGE_TIFF))
+    }
+
+    /**
+     * **GIF is deferred, not missing** (ME-138): nothing in Woka animates one, so the slot
+     * its format provides is left unwritten until something plays it. `bmp` has no slot at
+     * all and never will.
+     */
     @Test
     fun `a container with neither a slot nor an encoder is not editable`() = withFactory { factory ->
         assertEquals(EditCapability.Unavailable, factory.of(ANIM_GIF))
-        assertEquals(EditCapability.Unavailable, factory.of(MULTIPAGE_TIFF))
     }
 
     @Test

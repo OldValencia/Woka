@@ -2,9 +2,15 @@
 
 | | |
 |---|---|
-| **Order** | 30 |
-| **Depends on** | ME-131, ME-108 |
+| **Order** | **deferred 2026-08-20** — after animated playback |
+| **Depends on** | ME-131, ME-108, and [animated stills](../../animated-stills.md) |
 | **Feature** | [Media Editor](../media-editor.md) |
+
+> **Deferred 2026-08-20, and specified anyway.** The study below is what deferred it: Woka does not
+> animate a GIF anywhere, so an edit would apply to every frame the app draws and the app draws one
+> frame. Editing a picture nobody can watch move is a feature whose result is invisible. GIF stays in
+> bucket C — `Edit` greyed, with the reason in the menu — until
+> [animated stills](../../animated-stills.md) lands, and then this ticket is picked up as written.
 
 **Goal.** Give GIF a recipe block, so an animation can be turned and flipped like every other
 picture.
@@ -12,6 +18,26 @@ picture.
 **Why now.** It is the simplest of the three writers left — a block the format was built to carry —
 and it is the one people have most of: a folder of GIFs is currently a folder where `Edit` is greyed
 out for no reason the user can see.
+
+## What "editing an animated GIF" actually means here
+
+Asked before writing a line, and worth writing down because the answer is not obvious:
+**Woka never animates a GIF anywhere.** Measured in the tree on 2026-08-20.
+
+- **The viewer** shows it as a *frame set*: `SkiaFrameDecoder` says so in its own doc — an animated
+  GIF "has always sat still in the viewer" — and `mayHoldFrames` puts `gif` in the frame-strip family,
+  so what the user sees is eight still pictures and the strip down the left edge to step through them.
+- **The grid** draws it through Coil, and only `coil-compose` is on the classpath: no `coil-gif`, no
+  animated decoder registered anywhere. The tile is frame 0.
+
+So an edit applies to **every frame the app draws** — viewer frame N, the strip's thumbnails, the grid
+tile — because one recipe covers the file (ME-126) and every one of those readers folds it.
+`Export Frames` folds it per frame too (ME-133), which is the way to get actually-rotated pictures out.
+
+**Nothing regresses, because there is no animation to lose.** And one limit, stated rather than
+discovered later: outside Woka the file is untouched (§5.3), so it still plays its original animation
+unrotated — and if Woka ever gains animated playback, that path has to fold the recipe per frame or an
+edited GIF will animate unedited. That belongs to whichever ticket brings animation, not to this one.
 
 ## The block
 
