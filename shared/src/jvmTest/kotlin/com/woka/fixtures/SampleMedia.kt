@@ -40,6 +40,16 @@ const val STILL_PNG = "still.png"
 const val STILL_JPG = "still.jpg"
 const val STILL_WEBP = "still.webp"
 
+/**
+ * The one format with nowhere to keep an edit and no encoder to rewrite it — §5.1's
+ * bucket C, which after ME-138 is this file and nothing else.
+ *
+ * 160×120 rather than the corpus's usual 640×480: a BMP is uncompressed, so the
+ * full-sized one weighed 900 KB against a 3.3 MB corpus, and nothing asked of it is
+ * about its pixels.
+ */
+const val STILL_BMP = "still.bmp"
+
 /** The same image as [STILL_JPG] with EXIF `Orientation=6` spliced in. */
 const val EXIF_ROTATED = "exif_rot90.jpg"
 

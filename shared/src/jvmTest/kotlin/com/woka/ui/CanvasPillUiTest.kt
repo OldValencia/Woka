@@ -103,15 +103,12 @@ class CanvasPillUiTest {
 
         onNodeWithText("−").performClick()
 
-        // A tenth down from 55 is 50, and `zoomBounds` would have gone on to 5 — the
-        // editor has one mode and Fit is its floor, so that is where the control stops.
+        // A tenth down from 55 is 50, and `zoomBounds` would have gone on to 5: the
+        // control stops at the floor its **owner published**, computing none of its own.
         assertEquals(50, written)
     }
 
-    /**
-     * Asserted against the published bounds rather than against a number: the canvas's
-     * size in a test window is not the one a user has, and Fit follows it.
-     */
+    /** Against the published bounds: a test window's canvas is not a user's, and Fit follows it. */
     @Test
     fun `the editor's canvas hands its zoom to the pill`() {
         onEditor(listOf(FixtureTool())) { harness ->
@@ -122,16 +119,21 @@ class CanvasPillUiTest {
 
                 val zoom = override.zoom
                 assertTrue(zoom != null, "the canvas published nothing")
-                // Opens at Fit, its own floor.
-                assertEquals(zoom.minPercent, zoom.percent)
+                // Fit is where it rests, no longer where it stops (2026-08-21).
+                val fit = zoom.percent
+                assertTrue(zoom.minPercent < fit, "Fit is still the floor")
 
                 zoom.onPercent(zoom.maxPercent)
                 waitForIdle()
                 assertEquals(zoom.maxPercent, override.zoom?.percent)
 
+                zoom.onPercent(zoom.minPercent)
+                waitForIdle()
+                assertEquals(zoom.minPercent, override.zoom?.percent, "the canvas refused to zoom out")
+
                 override.zoom?.onReset()
                 waitForIdle()
-                assertEquals(zoom.minPercent, override.zoom?.percent)
+                assertEquals(fit, override.zoom?.percent, "reset did not return to Fit")
             }
         }
     }

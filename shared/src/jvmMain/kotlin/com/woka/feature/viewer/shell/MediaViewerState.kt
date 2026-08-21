@@ -22,7 +22,7 @@ class MediaViewerState(initialId: String) {
     var frameIndex by mutableStateOf(0)
     // Whether an animation is running. True by default: a GIF opens playing, which is
     // what every viewer that shows one does — and it is inert for a photograph, whose
-    // frame set declares no durations and so has no clock (ME-140).
+    // frame set declares no durations and so has no clock (animated-stills).
     var isFramePlaying by mutableStateOf(true)
     // How many pictures the current file holds, published by the frame strip so
     // PageUp/PageDown can stop at the ends without the key handler having to

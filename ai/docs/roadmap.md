@@ -71,8 +71,10 @@ of that pass; the rare formats are the one part still outstanding.
   AVIF decoding, one "frames inside a file" mechanic for bursts, Live Photos and animated
   GIF/WebP alike, and HDR tone mapping for stills.
 - **Animated stills:** `features/pending/animated-stills.md` — that mechanic *plays* an animation
-  rather than only counting its frames. Everything but the clock is already built, and the media
-  editor's GIF carrier (ME-138) waits on it.
+  rather than only counting its frames. **Built 2026-08-20** in the viewer: a GIF or animated WebP
+  runs at the speed it declares, loops as it says to, and a click pauses it. The grid still draws
+  frame 0 and that is its own decision (phase 4 of the plan). It unblocked the media editor's GIF
+  carrier, ME-138, which shipped the next day.
 
 ### Phase 5: Media Editor (Editing tools)
 In `features/pending/media-editor/` — `media-editor.md` is the feature file, `tickets/` holds the

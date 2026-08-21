@@ -15,8 +15,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import com.woka.core.ui.theme.Theme
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditorEngine
 import com.woka.feature.editor.core.EditorSession
@@ -87,7 +87,9 @@ internal fun EditorScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
+            // The app's own surface, not black: a transparent PNG or GIF sat on a
+            // black plate here while the viewer one panel below showed it on this.
+            .background(Theme.colors.background)
             .testTag("editor-screen")
     ) {
         EditorCanvasHost(

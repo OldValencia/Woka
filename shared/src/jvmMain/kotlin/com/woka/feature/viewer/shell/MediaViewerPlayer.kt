@@ -1,9 +1,7 @@
 package com.woka.feature.viewer.shell
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -12,9 +10,6 @@ import com.woka.core.data.MediaItem
 import com.woka.core.ui.components.WokaSpinner
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.viewer.shell.frames.FRAME_STRIP_WIDTH
-import com.woka.feature.viewer.shell.frames.FrameStrip
-import com.woka.feature.viewer.shell.frames.FramePauseRequestEffect
-import com.woka.feature.viewer.shell.frames.FramePlaybackEffect
 import com.woka.feature.viewer.shell.frames.FrameStripModel
 
 @Composable
@@ -33,7 +28,9 @@ fun MediaViewerPlayer(
     onSizeModeChange: (SizeMode) -> Unit,
     onToggleFullscreen: () -> Unit,
     thumbnails: ViewerThumbnails,
-    strip: FrameStripModel = FrameStripModel()
+    strip: FrameStripModel = FrameStripModel(),
+    /** Something is drawn over this viewer, so its animation must stand still. */
+    isFrozen: Boolean = false
 ) {
     Box(modifier = modifier) {
         val hasCarousel = chrome.isCarouselEnabled && mediaItems.size > 1 && !chrome.isFullscreen
@@ -50,6 +47,8 @@ fun MediaViewerPlayer(
         val showStrip = !strip.isSingle && state.isUiVisible
         val navStartInset = if (showStrip) FRAME_STRIP_WIDTH else 0.dp
 
+        // An animation's frames are not new pictures arriving, so the crossfade is keyed
+        // on the file rather than on the poster it happens to be showing right now.
         val contentKey = if (strip.isAnimated) state.currentId else media?.poster ?: state.currentId
 
         if (media != null) {
@@ -70,8 +69,7 @@ fun MediaViewerPlayer(
                 onZoomHud = { state.zoomHudEvent.raise() },
                 onPlayPause = { state.playPauseEvent.raise() },
                 onToggleFullscreen = onToggleFullscreen,
-                ambientFill = chrome.isFullscreen && chrome.ambientFill,
-                isAnimated = strip.isAnimated
+                ambientFill = chrome.isFullscreen && chrome.ambientFill
             )
             MediaViewerToolbar(
                 currentId = state.currentId,
@@ -112,31 +110,15 @@ fun MediaViewerPlayer(
             )
         }
 
-        // Only for a file that has more than one picture in it, so an ordinary
-        // photograph composes byte for byte the tree it always did.
-        LaunchedEffect(strip) { state.frameCount = strip.frames.size.coerceAtLeast(1) }
-        // The clock, which returns before its first delay for anything that is not an
-        // animation — a photograph composes the tree it always did (ME-140).
-        FramePlaybackEffect(state, strip)
-        FramePauseRequestEffect(state, strip)
-        if (activeItem != null && showStrip) {
-            FrameStrip(
-                item = activeItem,
-                frames = strip.frames,
-                selectedIndex = state.frameIndex,
-                loadPreview = { item, frame -> thumbnails.preview(item, frame) },
-                onSelectFrame = {
-                    // Reaching for a frame by hand is asking the animation to stand
-                    // still; one that walked away from the frame just chosen would be
-                    // the only surprising thing here.
-                    state.isFramePlaying = false
-                    state.frameIndex = it
-                },
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .padding(start = 12.dp, top = 72.dp, bottom = bottomOverlayPadding)
-            )
-        }
+        MediaViewerPlayerFrames(
+            state = state,
+            strip = strip,
+            activeItem = activeItem,
+            thumbnails = thumbnails,
+            showStrip = showStrip,
+            bottomPadding = bottomOverlayPadding,
+            isFrozen = isFrozen
+        )
 
         MediaViewerPlayerOverlays(
             state = state,
@@ -147,7 +129,7 @@ fun MediaViewerPlayer(
             showInfoDialog = showInfoDialog,
             onShowInfoDialogChange = onShowInfoDialogChange,
             onVolumeChange = onVolumeChange,
-            isFramePlaying = strip.isAnimated && state.isFramePlaying
+            framePlaying = if (strip.isAnimated) state.isFramePlaying else null
         )
     }
 }

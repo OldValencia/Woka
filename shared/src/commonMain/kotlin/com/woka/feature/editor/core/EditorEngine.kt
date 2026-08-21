@@ -70,6 +70,16 @@ interface EditorEngine {
     fun Surface(document: EditDocument, modifier: Modifier)
 
     /**
+     * "Start or stop whatever is moving on the canvas", raised by a click on it.
+     *
+     * Media-agnostic on purpose: an animated still runs a frame clock and the video
+     * editor (5b) will run a player, and the shell asks the same question of both
+     * without learning what either is. Defaulted to nothing, which is the honest
+     * answer for a photograph — the click still happens and nothing moves.
+     */
+    fun togglePlayback() = Unit
+
+    /**
      * Writes [document] into the file that was opened — the only save there is
      * (§5). Nothing is chosen: no target, no name, no confirmation.
      *

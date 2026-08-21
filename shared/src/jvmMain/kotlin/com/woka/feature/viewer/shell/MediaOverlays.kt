@@ -26,14 +26,20 @@ import com.woka.core.ui.icons.Icons
 import com.woka.core.ui.theme.Theme
 import org.jetbrains.compose.resources.painterResource
 
+/**
+ * [enabled] is "there is something here that plays". A photograph is not, and the tap
+ * and Space that reach it must not answer with a pause glyph over a picture that was
+ * never moving.
+ */
 @Composable
-fun PlayPauseOverlay(event: ViewerEvent, isPlaying: Boolean) {
+fun PlayPauseOverlay(event: ViewerEvent, isPlaying: Boolean, enabled: Boolean = true) {
     TransientOverlay(
         event = event,
         durationMs = 400L,
         enter = fadeIn(tween(150)) +
             scaleIn(tween(150, easing = LinearOutSlowInEasing), initialScale = 0.8f),
-        exit = fadeOut(tween(200)) + scaleOut(tween(200), targetScale = 1.2f)
+        exit = fadeOut(tween(200)) + scaleOut(tween(200), targetScale = 1.2f),
+        enabled = enabled
     ) {
         Box(
             modifier = Modifier

@@ -1,6 +1,5 @@
 package com.woka.feature.editor.shell
 
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
@@ -12,13 +11,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -30,9 +25,6 @@ import kotlin.math.roundToInt
 
 /** Where a `CanvasTool`'s overlay is drawn, once one exists (ME-109, ME-113). */
 internal const val CANVAS_HOST_TAG = "editor-canvas"
-
-/** One notch of the wheel. Multiplicative, so zooming feels the same at every level. */
-private const val ZOOM_STEP = 1.15f
 
 /**
  * The frame the medium draws itself into, and the magnifier over it.
@@ -49,7 +41,6 @@ private const val ZOOM_STEP = 1.15f
  * practice. A crop opened at 400 % on a corner of the picture is a crop nobody can
  * frame (§4.3).
  */
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 internal fun EditorCanvasHost(
     engine: EditorEngine,
@@ -78,7 +69,7 @@ internal fun EditorCanvasHost(
     // The wheel is not the only way in: the top bar's pill drives the same two values.
     PublishCanvasZoom(
         geometry = geometry,
-        onZoom = { next -> zoom = next.coerceIn(1f, geometry.maxZoom) },
+        onZoom = { next -> zoom = next.coerceIn(geometry.minZoom, geometry.maxZoom) },
         onReset = {
             zoom = 1f
             pan = Offset.Zero
@@ -91,28 +82,16 @@ internal fun EditorCanvasHost(
             .clipToBounds()
             .testTag(CANVAS_HOST_TAG)
             .onSizeChanged { canvasSize = it }
-            .onPointerEvent(PointerEventType.Scroll) { event ->
-                val change = event.changes.firstOrNull() ?: return@onPointerEvent
-                val notches = change.scrollDelta.y
-                if (notches == 0f) return@onPointerEvent
-                // Scrolling *up* is negative, and up means closer.
-                val next = (zoom * if (notches < 0f) ZOOM_STEP else 1f / ZOOM_STEP)
-                    .coerceIn(1f, geometry.maxZoom)
-                if (next != zoom) {
-                    pan = geometry.panForZoomAbout(change.position, next)
+            .editorCanvasGestures(
+                engine = engine,
+                geometry = geometry,
+                zoom = zoom,
+                onZoomAt = { next, at ->
+                    pan = geometry.panForZoomAbout(at, next)
                     zoom = next
-                }
-                change.consume()
-            }
-            .pointerInput(Unit) {
-                // Any drag pans. There is no competing gesture on the canvas until a
-                // `CanvasTool` exists (ME-109), and at that point the overlay gets
-                // first refusal and this becomes the fallback.
-                detectDragGestures { change, dragged ->
-                    pan += dragged
-                    change.consume()
-                }
-            },
+                },
+                onPan = { dragged -> pan += dragged }
+            ),
         contentAlignment = Alignment.Center
     ) {
         // Nothing before the first measurement: at `IntSize.Zero` the fit scale is a

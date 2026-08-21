@@ -30,8 +30,13 @@ internal fun MediaViewerPlayerOverlays(
     showInfoDialog: Boolean,
     onShowInfoDialogChange: (Boolean) -> Unit,
     onVolumeChange: (Float) -> Unit,
-    /** True while an animated still is running, so the flash shows the right glyph. */
-    isFramePlaying: Boolean = false
+    /**
+     * Whether the still on screen is running, or **null** when it is not an animation
+     * at all. Null is what tells the play/pause flash to stay down: a photograph
+     * receives the same tap and the same Space as everything else, and answering it
+     * with a pause glyph is the HUD claiming something stopped that never moved.
+     */
+    framePlaying: Boolean? = null
 ) {
     // Read unconditionally: inside the `||` below it would be a conditional
     // composable call, which Compose cannot key.
@@ -41,7 +46,8 @@ internal fun MediaViewerPlayerOverlays(
 
     PlayPauseOverlay(
         event = state.playPauseEvent,
-        isPlaying = video?.player?.isPlaying == true || isFramePlaying
+        isPlaying = video?.player?.isPlaying == true || framePlaying == true,
+        enabled = video != null || framePlaying != null
     )
     SkipOverlay(event = state.skipEvent, direction = state.skipDirection)
     ZoomHudOverlay(

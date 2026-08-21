@@ -24,13 +24,15 @@ actual fun NativeMediaViewer(
     initialId: String,
     mediaItems: List<MediaItem>,
     onClose: (String) -> Unit,
-    onEdit: (String) -> Unit
+    onEdit: (String, Int) -> Unit,
+    isFrozen: Boolean
 ) {
     MediaViewerScreen(
         initialMediaId = initialId,
         mediaItems = mediaItems,
         onClose = onClose,
         onEdit = onEdit,
-        thumbnails = RealViewerThumbnails
+        thumbnails = RealViewerThumbnails,
+        isFrozen = isFrozen
     )
 }

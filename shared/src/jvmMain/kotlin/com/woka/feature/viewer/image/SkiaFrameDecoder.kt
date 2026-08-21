@@ -61,7 +61,7 @@ internal object SkiaFrameDecoder : StillDecoder {
             )
         }
         // Carried from the codec, not inferred: a GIF says how many times it loops in
-        // its own Application Extension block and skia is what reads it (ME-140).
+        // its own Application Extension block and skia is what reads it (animated-stills).
         ImageFrameSet(frames, repeatCount = codec.repetitionCount)
     }
 
@@ -121,7 +121,7 @@ private fun frameDuration(codec: Codec, index: Int): Int? =
  * Both it and the [Codec] are closed in reverse order — a codec outliving the
  * data it was built from reads freed memory, and skia does not check.
  */
-private fun <T> onCodec(file: File, block: (Codec) -> T): T =
+internal fun <T> onCodec(file: File, block: (Codec) -> T): T =
     Data.makeFromBytes(file.readBytes()).use { data ->
         Codec.makeFromData(data).use(block)
     }

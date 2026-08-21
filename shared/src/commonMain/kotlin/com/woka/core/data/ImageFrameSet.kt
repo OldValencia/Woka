@@ -62,15 +62,8 @@ data class ImageFrameSet(
 ) {
     val isSingle: Boolean get() = frames.size <= 1
 
-    /**
-     * Whether this file is something to *play* rather than to step through.
-     *
-     * A duration is the distinction the decoders already draw: skia reports one per
-     * animation frame and nothing for a burst, so a photograph, a HEIC burst and a
-     * multi-page TIFF all answer false here and behave exactly as they always have.
-     */
-    val isAnimated: Boolean
-        get() = frames.size > 1 && frames.any { (it.durationMs ?: 0) > 0 }
+    /** Whether this file is something to *play* — see [isAnimation]. */
+    val isAnimated: Boolean get() = frames.isAnimation
 
     /**
      * The frames the viewer offers, in file order — [FrameKind.Depth] and
@@ -99,3 +92,17 @@ data class ImageFrameSet(
         val Single = ImageFrameSet(listOf(ImageFrame(0, FrameKind.Primary)))
     }
 }
+
+/**
+ * Whether a run of frames is something to *play* rather than to step through.
+ *
+ * A duration is the distinction the decoders already draw: skia reports one per
+ * animation frame and nothing for a burst, so a photograph, a HEIC burst and a
+ * multi-page TIFF all answer false and behave exactly as they always have.
+ *
+ * An extension over the list rather than a property of the set, because the viewer's
+ * strip asks it of a list it assembled itself and a decoder asks it of a whole set.
+ * It was written out twice, which is two places for one rule to drift.
+ */
+val List<ImageFrame>.isAnimation: Boolean
+    get() = size > 1 && any { (it.durationMs ?: 0) > 0 }

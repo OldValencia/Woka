@@ -142,7 +142,7 @@ class FrameSetDecodeTest {
     }
 
     /**
-     * What the clock reads (ME-140): an animation declares durations and how often it
+     * What the clock reads (animated-stills): an animation declares durations and how often it
      * repeats; a burst and a page chain declare neither and must stay unplayable.
      */
     @Test

@@ -14,7 +14,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * The clock (ME-140), driven at the level it lives: two composable effects over a state
+ * The clock (animated-stills), driven at the level it lives: two composable effects over a state
  * object, with no window, no decoder and no file.
  *
  * **The clock is the test's, not the wall's.** `runComposeUiTest` drives the composition
@@ -80,6 +80,26 @@ class FramePlaybackUiTest {
             setContent { FramePlaybackEffect(state, animation(repeat = 0)) }
             waitUntil("playback stops") { !state.isFramePlaying }
             assertEquals(2, state.frameIndex, "it stopped somewhere other than the last frame")
+        }
+    }
+
+    /**
+     * And pressing play *there* has to show it again. The clock counts its remaining
+     * passes from where it resumes, so without a rewind the first step wraps, spends
+     * the last pass and stops on the frame it started from — a play button that
+     * visibly does nothing.
+     */
+    @Test
+    fun `a finished animation plays again when asked`() {
+        val state = state()
+        onUi {
+            setContent { FramePlaybackEffect(state, animation(repeat = 0)) }
+            waitUntil("playback stops") { !state.isFramePlaying }
+
+            state.isFramePlaying = true
+            waitUntil("it starts over") { state.frameIndex == 0 }
+            waitUntil("and runs to the end again") { !state.isFramePlaying }
+            assertEquals(2, state.frameIndex)
         }
     }
 

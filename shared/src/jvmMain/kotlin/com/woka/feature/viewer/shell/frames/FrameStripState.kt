@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import com.woka.core.data.FrameKind
 import com.woka.core.data.ImageFrame
 import com.woka.core.data.ImageFrameSet
+import com.woka.core.data.isAnimation
 import com.woka.core.data.MediaItem
 import com.woka.core.data.mediaKind
 import com.woka.core.data.MediaKind
@@ -33,14 +34,13 @@ data class FrameStripModel(
     val isSingle: Boolean get() = frames.size <= 1
 
     /**
-     * Whether this file plays. A burst and a page chain have frames and no
-     * durations, so they keep the strip and never get a clock (ME-140).
+     * Whether this file plays ([isAnimation]). A burst and a page chain have frames
+     * and no durations, so they keep the strip and never get a clock.
      *
      * A Live Photo's appended motion entry carries no duration either, which is
      * right: the movement is a *different file*, played by the video engine.
      */
-    val isAnimated: Boolean
-        get() = frames.size > 1 && frames.any { (it.durationMs ?: 0) > 0 }
+    val isAnimated: Boolean get() = frames.isAnimation
 
     /**
      * True when [frameIndex] is the motion clip rather than a still frame.
@@ -48,6 +48,19 @@ data class FrameStripModel(
      */
     fun isMotionFrame(frameIndex: Int): Boolean = motion != null &&
         frames.firstOrNull { it.index == frameIndex }?.kind == FrameKind.Motion
+
+    /**
+     * The frame an editor may open on — [frameIndex] when it addresses a real picture
+     * inside this file, and the first frame otherwise.
+     *
+     * A Live Photo's motion entry is indexed one past the last real frame and belongs
+     * to a *different file*, so handing it to a decoder is asking for a frame that is
+     * not there. Answered here because the strip is what knows the difference.
+     */
+    fun editableFrameOf(frameIndex: Int): Int {
+        val frame = frames.firstOrNull { it.index == frameIndex } ?: return 0
+        return if (frame.kind == FrameKind.Motion) 0 else frame.index
+    }
 }
 
 /**

@@ -1,7 +1,6 @@
 package com.woka.feature.editor.engine.image
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.MediaKind
@@ -64,16 +63,24 @@ internal class ImageEditorEngine(
     /** The frame the recipe produces — a crop's dimensions, not the original's. */
     override fun drawnSize(document: EditDocument): IntSize = recipe(document).outputSize
 
+    /** Whether the canvas is running, when the file is something that runs. */
+    private val playback = EditorPlayback()
+
+    override fun togglePlayback() = playback.toggle()
+
     /**
      * The proxy is remembered on the file, **not on the document**: editing changes
      * the recipe, never the pixels it is applied to, so re-decoding on every stroke
      * would be re-reading a file that has not changed to draw a picture that has.
+     *
+     * An animation is the one file where the picture *does* change without the
+     * document: `rememberEditorFrame` holds its frames and hands over whichever is due.
+     * A photograph never gets one and composes what it always did.
      */
     @Composable
     override fun Surface(document: EditDocument, modifier: Modifier) {
-        val proxy = remember(file, frameIndex) { EditorProxy.load(file, frameIndex) }
         RasterSurface(
-            proxy = proxy,
+            proxy = rememberEditorFrame(file, frameIndex, playback),
             sourceSize = sourceSize,
             recipe = recipe(document),
             modifier = modifier

@@ -8,6 +8,7 @@ import com.woka.feature.editor.core.ToolOp
 import com.woka.feature.editor.recipe.EditRecipe
 import com.woka.feature.viewer.image.stillDecoderFor
 import com.woka.fixtures.SampleMedia
+import com.woka.fixtures.STILL_BMP
 import com.woka.fixtures.STILL_JPG
 import com.woka.fixtures.STILL_PNG
 import java.io.File
@@ -116,23 +117,15 @@ class EditRecipeTest {
     }
 
     /**
-     * `bmp` is the one format left with no slot at all, and there is none in the
-     * corpus — the extension is what `carrierFor` keys on, so a JPEG under that name is
-     * exactly the case being asked about.
+     * `bmp` is the one format left with no slot at all — nothing to record an edit in
+     * and no Skia encoder to rewrite the picture with, which is the whole of §5.1's
+     * bucket C now that ME-138 has taken GIF.
      */
     @Test
-    fun `a format with no carrier answers nothing rather than failing`() {
-        val dir = Files.createTempDirectory("woka-recipe").toFile()
-        try {
-            val file = File(dir, "photo.bmp")
-            file.writeBytes(SampleMedia.file(STILL_JPG).readBytes())
-
-            assertNull(EditRecipe.read(file))
-            assertTrue(EditRecipe.write(file, document("transform")).isFailure)
-            // Clearing is a success because there is nothing there to clear.
-            assertTrue(EditRecipe.clear(file).isSuccess)
-        } finally {
-            dir.deleteRecursively()
-        }
+    fun `a format with no carrier answers nothing rather than failing`() = onCopy(STILL_BMP) { file ->
+        assertNull(EditRecipe.read(file))
+        assertTrue(EditRecipe.write(file, document("transform")).isFailure)
+        // Clearing is a success because there is nothing there to clear.
+        assertTrue(EditRecipe.clear(file).isSuccess)
     }
 }

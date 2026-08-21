@@ -16,8 +16,9 @@ fun MediaViewerScreen(
     initialMediaId: String,
     mediaItems: List<MediaItem>,
     onClose: (String) -> Unit,
-    onEdit: (String) -> Unit,
-    thumbnails: ViewerThumbnails
+    onEdit: (String, Int) -> Unit,
+    thumbnails: ViewerThumbnails,
+    isFrozen: Boolean = false
 ) {
     val settingsRepo = remember { AppDependencies.settingsRepository }
     val settings by settingsRepo.settings.collectAsState()
@@ -65,7 +66,9 @@ fun MediaViewerScreen(
     val infoAction = { if (activeItem != null) showInfoDialog = true }
     // Was a stub that closed the viewer; the editor now opens *over* it, so the
     // viewer stays mounted and Cancel returns to this exact zoom and frame (§4.1).
-    val editAction = { onEdit(state.currentId) }
+    // The frame goes with the path: editing what is on screen means *this* picture,
+    // and a strip stopped on frame 5 of an animation was handing over frame 0.
+    val editAction = { onEdit(state.currentId, strip.editableFrameOf(state.frameIndex)) }
     val onSizeModeChange: (SizeMode) -> Unit = { mode ->
         state.sizeMode = mode
         if (settings.rememberSizeState) persistSizeState(settingsRepo, mode)
@@ -123,7 +126,8 @@ fun MediaViewerScreen(
             onSizeModeChange = onSizeModeChange,
             onToggleFullscreen = toggleFullscreen,
             thumbnails = thumbnails,
-            strip = strip
+            strip = strip,
+            isFrozen = isFrozen
         )
     }
 

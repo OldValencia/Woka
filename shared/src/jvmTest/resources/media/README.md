@@ -32,6 +32,7 @@ in the file names or in the stream metadata.
 | `noaudio.mkv` | video, no audio stream | volume and media keys on the boundary case |
 | `broken.mkv` | first 2 KB of a valid container | error paths |
 | `still.png` / `still.jpg` / `still.webp` | 640×480 | `ImageLoader` |
+| `still.bmp` | 160×120, uncompressed | §5.1's bucket C: the one format with neither a recipe slot nor an encoder. Small because a BMP is uncompressed — at 640×480 it would be 900 KB of a 3.3 MB corpus, and nothing asks about its pixels |
 | `exif_rot90.jpg` | `still.jpg` with EXIF `Orientation=6` | **F3**: a correct loader returns 480×640 |
 | `burst.heic` | **5** HEIC images in one container, 320×240 | frame sets: the HEIC burst case |
 | `livephoto.heic` / `livephoto.mov` | still plus a 1.5 s hevc clip sharing a stem | Live Photo — the motion frame is a **sibling file**, not a track |

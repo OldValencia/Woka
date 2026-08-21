@@ -8,6 +8,7 @@ import com.woka.fixtures.ANIM_GIF
 import com.woka.fixtures.BURST_HEIC
 import com.woka.fixtures.MULTIPAGE_TIFF
 import com.woka.fixtures.SampleMedia
+import com.woka.fixtures.STILL_BMP
 import com.woka.fixtures.STILL_JPG
 import com.woka.fixtures.STILL_PNG
 import com.woka.fixtures.ANIM_WEBP
@@ -66,20 +67,29 @@ class EditCapabilityTest {
         assertEquals(EditCapability.Recorded, factory.of(STILL_AVIF))
     }
 
-    /** ME-139 took TIFF; what is left is GIF, and it is left on purpose. */
+    /** ME-139's row: a private tag in a rebuilt IFD0, every page of it. */
     @Test
     fun `a tiff records its edit, pages and all`() = withFactory { factory ->
         assertEquals(EditCapability.Recorded, factory.of(MULTIPAGE_TIFF))
     }
 
     /**
-     * **GIF is deferred, not missing** (ME-138): nothing in Woka animates one, so the slot
-     * its format provides is left unwritten until something plays it. `bmp` has no slot at
-     * all and never will.
+     * ME-138 took the last of them. The Application Extension had been sitting unwritten
+     * while nothing in Woka animated a GIF; the clock landed (`animated-stills`) and the
+     * block was claimed.
+     */
+    @Test
+    fun `an animated gif records one edit for all of its frames`() = withFactory { factory ->
+        assertEquals(EditCapability.Recorded, factory.of(ANIM_GIF))
+    }
+
+    /**
+     * **Bucket C is one format wide**, and `bmp` is it: no container slot to record an
+     * edit in, and no Skia encoder to rewrite the picture with. Both doors grey out.
      */
     @Test
     fun `a container with neither a slot nor an encoder is not editable`() = withFactory { factory ->
-        assertEquals(EditCapability.Unavailable, factory.of(ANIM_GIF))
+        assertEquals(EditCapability.Unavailable, factory.of(STILL_BMP))
     }
 
     @Test

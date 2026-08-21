@@ -4,6 +4,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.unit.IntSize
+import com.woka.feature.viewer.shell.zoomBounds
 import kotlin.math.max
 import kotlin.math.min
 
@@ -25,12 +26,16 @@ private const val MAX_SCALE = 10f
  * against `SizeMode` — a viewer concept with `Fit`, `Fill` and `Actual` — while the
  * editor has one mode and a magnifier on top of it. Sharing would mean widening their
  * model to carry a case the viewer does not have.
+ *
+ * **`zoomBounds` is the exception, and it is reused on purpose.** It takes two sizes
+ * and answers a range of percentages; it names no `SizeMode` and knows nothing about
+ * presets. How far a picture may be zoomed is one rule in this app, not one per panel.
  */
 @Immutable
 internal class EditorCanvasGeometry(
     val sourceSize: IntSize,
     val canvasSize: IntSize,
-    /** 1.0 is Fit. Above that magnifies, up to [maxZoom]. */
+    /** 1.0 is Fit. Above it magnifies to [maxZoom], below it shrinks to [minZoom]. */
     val zoom: Float = 1f,
     /** Where the user dragged it, before clamping. */
     val pan: Offset = Offset.Zero
@@ -57,12 +62,27 @@ internal class EditorCanvasGeometry(
      * ≤2560 px proxy goes soft above that — true, and ME-116 is what sharpens it, but a
      * magnifier that will not magnify is the worse of the two failures.
      *
-     * Never below 1.0: Fit is the floor, and a picture already drawn past 1000 % to fit
-     * the canvas has nothing left to magnify into.
+     * Never below 1.0, so Fit is always reachable: a picture the canvas already draws
+     * past 1000 % has nothing left to magnify into, and its ceiling *is* Fit.
      */
     val maxZoom: Float = max(1f, MAX_SCALE / fitScale)
 
-    val scale: Float = fitScale * zoom.coerceIn(1f, maxZoom)
+    /**
+     * **Fit is not the floor** (2026-08-21). It was, and that made the editor the one
+     * panel where a picture could be made larger but never smaller — while the viewer,
+     * one layer below on the same file, zooms out to a tenth of the fitted size.
+     *
+     * The number is the viewer's own `zoomBounds`, converted from percent-of-native
+     * onto this scale, so neither panel can drift from the other. Never above 1.0: a
+     * floor that sits past Fit would put the picture's own resting place out of reach.
+     */
+    val minZoom: Float = if (fitScale <= 0f) {
+        1f
+    } else {
+        (zoomBounds(canvasSize, sourceSize).first / (fitScale * 100f)).coerceAtMost(1f)
+    }
+
+    val scale: Float = fitScale * zoom.coerceIn(minZoom, maxZoom)
 
     /** Half the amount the picture overflows the canvas, per axis, or zero. */
     private val slack: Offset = Offset(
@@ -106,7 +126,7 @@ internal class EditorCanvasGeometry(
      */
     fun panForZoomAbout(focus: Offset, nextZoom: Float): Offset {
         val source = canvasToSource.map(focus)
-        val nextScale = fitScale * nextZoom.coerceIn(1f, maxZoom)
+        val nextScale = fitScale * nextZoom.coerceIn(minZoom, maxZoom)
         val centredX = (canvasSize.width - sourceSize.width * nextScale) / 2f
         val centredY = (canvasSize.height - sourceSize.height * nextScale) / 2f
         return Offset(

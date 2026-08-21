@@ -47,9 +47,12 @@ internal fun Modifier.mediaTapGestures(
             onZoomHud()
         },
         onTap = {
-            // **Raised for a still as well** (ME-140): an animated frame set listens for
-            // the same signal the keyboard's Space raises, so a GIF pauses under the
-            // gesture people already know. A photograph has nothing listening.
+            // **Raised for a still as well** (animated-stills): an animated frame set
+            // listens for the same signal the keyboard's Space raises, so a GIF pauses
+            // under the gesture people already know. A photograph raises it too and
+            // nothing acts on it — `PlayPauseOverlay` is told to stay down rather than
+            // the raise being suppressed here, because this modifier is handed a video
+            // player and knows nothing about frame sets.
             videoState?.togglePlayPause()
             onPlayPause()
         }

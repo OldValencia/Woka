@@ -51,26 +51,6 @@ class EditorCanvasGeometryTest {
         assertEquals(1f, g.scale)
     }
 
-
-    @Test
-    fun `zoom stops at ten source pixels per screen pixel`() {
-        // 1000x500 fitted into 500x900 draws at 0.5, so 1000 % of native is 20x Fit.
-        val g = EditorCanvasGeometry(IntSize(1000, 500), IntSize(500, 900))
-        assertEquals(20f, g.maxZoom)
-
-        val zoomed = EditorCanvasGeometry(IntSize(1000, 500), IntSize(500, 900), zoom = 99f)
-        // Asked for 99x, given 1000 % of native — the same ceiling the viewer has.
-        assertEquals(10f, zoomed.scale)
-    }
-
-    @Test
-    fun `a picture the canvas already enlarges keeps the same ceiling`() {
-        // Fit draws it fourfold, so there are 2.5 magnifications left, not 10.
-        val g = EditorCanvasGeometry(IntSize(100, 100), IntSize(400, 400))
-        assertEquals(2.5f, g.maxZoom)
-        assertEquals(10f, EditorCanvasGeometry(IntSize(100, 100), IntSize(400, 400), zoom = 8f).scale)
-    }
-
     @Test
     fun `a picture that fits cannot be dragged off centre`() {
         val g = EditorCanvasGeometry(IntSize(1000, 500), IntSize(500, 900), pan = Offset(400f, 400f))

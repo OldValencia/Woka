@@ -59,6 +59,14 @@ class FixtureEngine(
         )
     }
 
+    /** How many times the canvas asked for playback to start or stop. */
+    var playbackToggles = 0
+        private set
+
+    override fun togglePlayback() {
+        playbackToggles++
+    }
+
     override suspend fun save(document: EditDocument): EditSaveResult {
         saveRequests += document
         return result

@@ -124,4 +124,24 @@ class FrameStripUiTest {
         )
         assertFalse(withoutFile.isMotionFrame(1))
     }
+
+    /**
+     * Which frame the editor is opened on. A still frame is itself — a viewer stopped
+     * on frame 5 of an animation edits frame 5 — and anything that does not address a
+     * picture inside *this* file falls back to the first: the motion entry is indexed
+     * one past the last real frame and belongs to a `.mov`.
+     */
+    @Test
+    fun `the frame handed to the editor is always one this file holds`() {
+        val strip = FrameStripModel(
+            frames = listOf(
+                ImageFrame(0, FrameKind.Primary, durationMs = 40),
+                ImageFrame(1, FrameKind.Sequence, durationMs = 40),
+                ImageFrame(2, FrameKind.Motion)
+            )
+        )
+        assertEquals(1, strip.editableFrameOf(1))
+        assertEquals(0, strip.editableFrameOf(2), "the motion entry was handed to a decoder")
+        assertEquals(0, strip.editableFrameOf(9), "an index this file does not have was passed on")
+    }
 }

@@ -61,7 +61,7 @@ internal object EditorProxy {
  * A source already within the cap is returned **as it is** — round-tripping it through
  * a surface would copy every pixel to produce an identical bitmap.
  */
-private fun ImageBitmap.cappedToProxy(): ImageBitmap {
+internal fun ImageBitmap.cappedToProxy(): ImageBitmap {
     val scale = PROXY_MAX_PX.toDouble() / max(width, height)
     if (scale >= 1.0) return this
 

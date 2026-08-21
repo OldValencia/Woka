@@ -67,9 +67,8 @@ internal class RecipeScan(
  * the same reason it was extracted: six copies of an extension list disagreed with
  * each other. **Null is bucket B or C** (§5.1), never an error.
  *
- * `gif` is the one extension left out on purpose, and not for want of a slot: it has an
- * Application Extension block waiting for it in ME-138, deferred until something in the
- * app actually animates a GIF. `bmp` is the only format with no slot at all.
+ * `bmp` is now the only format with no slot at all — every other extension Woka lists
+ * carries its own edit, so bucket C is one format wide.
  */
 internal fun carrierFor(file: File): RecipeCarrier? =
     when (file.extension.lowercase()) {
@@ -82,5 +81,8 @@ internal fun carrierFor(file: File): RecipeCarrier? =
         "webp" -> WebpRecipe
         // A private tag in a rebuilt IFD0, both spellings, every page (ME-139).
         "tif", "tiff" -> TiffRecipe
+        // An Application Extension in the head of the stream, one recipe for every
+        // frame of the animation (ME-138).
+        "gif" -> GifRecipe
         else -> null
     }

@@ -37,11 +37,11 @@ internal fun PublishCanvasZoom(
         val fitPercent = percentOf(fit)
         CanvasZoom(
             percent = percentOf(geometry.scale),
-            minPercent = fitPercent,
+            minPercent = minOf(fitPercent, percentOf(fit * geometry.minZoom)),
             maxPercent = maxOf(fitPercent, percentOf(fit * geometry.maxZoom)),
             containerSize = geometry.canvasSize,
             nativeSize = geometry.sourceSize,
-            // The host clamps: this is a request, and Fit is its own floor.
+            // The host clamps: this is a request, and the floor is the viewer's.
             onPercent = { percent -> curOnZoom(percent / 100f / fit) },
             onReset = { curOnReset() }
         )
