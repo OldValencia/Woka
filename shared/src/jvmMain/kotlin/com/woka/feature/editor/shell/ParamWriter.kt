@@ -7,6 +7,7 @@ import com.woka.feature.editor.core.EditorSession
 import com.woka.feature.editor.core.EditorTool
 import com.woka.feature.editor.core.ParamSpec
 import com.woka.feature.editor.core.ToolInteraction
+import androidx.compose.ui.unit.IntSize
 import com.woka.feature.editor.core.ToolOp
 
 /**
@@ -23,7 +24,14 @@ import com.woka.feature.editor.core.ToolOp
 internal class ParamWriter(
     private val session: EditorSession,
     private val tool: EditorTool,
-    private val document: EditDocument
+    private val document: EditDocument,
+    /**
+     * The frame the picture currently has, for the one thing a tool cannot work out
+     * for itself: turning "long edge 2560" into a scale (`EditorTool.resolve`, ME-110).
+     * Zero before the canvas has measured, which resolves to nothing and writes the
+     * plain value.
+     */
+    private val frame: IntSize = IntSize.Zero
 ) {
 
     /**
@@ -40,7 +48,11 @@ internal class ParamWriter(
         // pressing Rotate and then Flip would produce one op claiming both and the
         // picture would rotate twice (ME-105).
         val base = if (spec is ActionParam) tool.defaults() else paramsOf(document, tool)
-        val params = base.with(spec, value)
+        val written = base.with(spec, value)
+        // A tool may rewrite its own parameters now that the frame is known — a preset
+        // that means "this many pixels on the long edge" resolves to a scale here, so
+        // the document stores the number and `stage()` never needs the frame (§3.4).
+        val params = tool.resolve(spec, written, frame) ?: written
         session.preview(ToolOp(tool.manifest.id, params))
 
         val commit = when (tool.manifest.interaction) {

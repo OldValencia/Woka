@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Order** | 33 — **moved back 2026-08-19**: the carriers first, then the tools |
+| **Order** | **built 2026-08-22** — by hand outstanding |
 | **Depends on** | ME-105, ME-109 |
 | **Feature** | [Media Editor](../media-editor.md) |
 
@@ -33,6 +33,22 @@ survives a crop changing the frame underneath it, which an absolute pair of numb
 
 Absolute targets stay reachable where the source size is actually known — the inspector — as presets
 that resolve to a scale before they are written.
+
+## Built — two things the ticket left open, decided here
+
+- **The scale is held in percent (`5..100`), not as a `0.05..1` factor.** The inspector's existing
+  readout prints value plus unit, so a factor would have shown `0.5%`. A percentage costs the shell
+  nothing and `stage()` divides by a hundred; no renderer learns a special case.
+- **Steps 3 and 4 collapsed into two hooks on `EditorTool`, both defaulted and both taking the
+  frame.** The ticket's rule — *no tool learns the frame* — is kept where it matters, which is
+  `stage()`: the fold stays a pure function of parameters. What the ticket had not separated is that
+  a *chip* and a *footnote* are UI-time questions, asked when the frame is known:
+  - `resolve(spec, params, frame)` — "long edge 1280" becomes a scale **before** it is stored, so
+    the document holds a number and nothing downstream needs the picture's size;
+  - `footnote(params, frame)` — the `4000 × 3000 → 2000 × 1500` line, which the inspector prints
+    and every other tool declines by not overriding.
+
+  The alternative was a `when` over tool ids in the shell, which is the thing §3.4 exists to prevent.
 
 ## Steps
 

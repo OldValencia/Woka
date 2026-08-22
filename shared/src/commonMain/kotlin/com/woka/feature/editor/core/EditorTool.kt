@@ -1,5 +1,7 @@
 package com.woka.feature.editor.core
 
+import androidx.compose.ui.unit.IntSize
+
 /**
  * One editing element: what it is, what it edits, what it performs (§3.4).
  *
@@ -26,6 +28,30 @@ interface EditorTool {
     val params: List<ParamSpec<*>>
 
     fun stage(params: ParamSet): ToolStage?
+
+    /**
+     * A chance to rewrite this tool's own parameters when one of them is set, knowing
+     * the frame — the escape hatch [stage] deliberately does not have (ME-110).
+     *
+     * "Long edge 2560" is a scale of `2560 / frame`, and [stage] never sees a frame, so
+     * a choice like that could not otherwise become anything. It is resolved **at the
+     * moment of the click**, where the shell knows the picture's size, and what lands in
+     * the document is the resolved value — the fold stays a pure function of parameters.
+     *
+     * Null means "nothing to rewrite", which is every tool but one today, and is why
+     * this is defaulted rather than added to each of them.
+     */
+    fun resolve(spec: ParamSpec<*>, params: ParamSet, frame: IntSize): ParamSet? = null
+
+    /**
+     * One line the inspector prints under this tool's rows — `4000 × 3000 → 2000 × 1500`
+     * for a resize (ME-110), nothing for everything else.
+     *
+     * The frame is passed rather than learned, for the same reason [resolve] takes one:
+     * it is a fact about the picture at this moment, not about the tool, and [stage]
+     * must go on being a pure function of parameters.
+     */
+    fun footnote(params: ParamSet, frame: IntSize): String? = null
 
     /**
      * Every parameter at its declared default.

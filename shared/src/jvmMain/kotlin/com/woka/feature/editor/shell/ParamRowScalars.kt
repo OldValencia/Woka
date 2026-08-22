@@ -57,7 +57,7 @@ internal fun FloatParamRow(spec: FloatParam, params: ParamSet, writer: ParamWrit
                 modifier = Modifier.testTag("param-${spec.key}")
             )
         }
-        Readout(text = formatFloat(value, spec))
+        Readout(text = formatFloat(value, spec), tag = "param-${spec.key}-readout")
     }
 }
 

@@ -17,7 +17,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import com.woka.core.ui.theme.Theme
-import com.woka.feature.editor.core.CanvasTool
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditorEngine
 import com.woka.feature.editor.core.EditorSession
@@ -83,11 +82,7 @@ internal fun EditorScreen(
     }
 
     val activeTool = tools.firstOrNull { it.manifest.id == activeToolId }
-    // The document the canvas draws: minus the open tool's own work when that tool
-    // shows its result itself (`CanvasTool.previewsThroughOverlay`).
-    val canvasDocument = (activeTool as? CanvasTool)
-        ?.takeIf { it.previewsThroughOverlay }
-        ?.let { document.without(it.manifest.id) } ?: document
+    val canvasDocument = canvasDocumentFor(activeTool, document)
     val skipped = skippedOps(document, registry, engine.kind)
 
     Box(
@@ -136,9 +131,12 @@ internal fun EditorScreen(
                 EditorSkippedNotice(skipped.size, skippedToolTitles(skipped, registry))
             }
             if (activeTool != null) {
+                // Only the screen may name the frame; a tool is handed it (ME-110).
+                val frame = engine.drawnSize(document)
                 EditorInspector(
                     title = activeTool.manifest.title,
-                    content = { ParamRows(activeTool, session, document) }
+                    footnote = activeTool.footnote(paramsOf(document, activeTool), frame),
+                    content = { ParamRows(activeTool, session, document, frame) }
                 )
             }
             EditorRail(

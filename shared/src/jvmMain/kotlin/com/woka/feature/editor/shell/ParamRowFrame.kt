@@ -8,6 +8,7 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import com.woka.core.ui.theme.Theme
@@ -23,10 +24,12 @@ import com.woka.core.ui.theme.Theme
 
 /** The right-hand column, the same width on every row so the numbers line up. */
 @Composable
-internal fun Readout(text: String) {
+internal fun Readout(text: String, tag: String? = null) {
     BasicText(
         text = text,
-        modifier = Modifier.width(EditorTokens.Inspector.readoutWidth),
+        modifier = Modifier
+            .width(EditorTokens.Inspector.readoutWidth)
+            .then(if (tag == null) Modifier else Modifier.testTag(tag)),
         style = TextStyle(
             color = Theme.viewer.onScrim,
             fontSize = EditorTokens.TopBar.subtitleStyle,

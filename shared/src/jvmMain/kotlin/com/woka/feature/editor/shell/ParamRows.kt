@@ -19,6 +19,7 @@ import com.woka.feature.editor.core.ObjectParam
 import com.woka.feature.editor.core.ParamSet
 import com.woka.feature.editor.core.ParamSpec
 import com.woka.feature.editor.core.PreviewChoiceParam
+import androidx.compose.ui.unit.IntSize
 
 /**
  * A tool's whole panel, from its schema — the composable form of §3.4's claim that a
@@ -33,10 +34,12 @@ import com.woka.feature.editor.core.PreviewChoiceParam
 internal fun ParamRows(
     tool: EditorTool,
     session: EditorSession,
-    document: EditDocument
+    document: EditDocument,
+    /** What the picture measures right now — see `ParamWriter.frame`. */
+    frame: IntSize = IntSize.Zero
 ) {
     val params = paramsOf(document, tool)
-    val writer = ParamWriter(session, tool, document)
+    val writer = ParamWriter(session, tool, document, frame)
     Column(
         verticalArrangement = Arrangement.spacedBy(EditorTokens.Inspector.rowGap)
     ) {

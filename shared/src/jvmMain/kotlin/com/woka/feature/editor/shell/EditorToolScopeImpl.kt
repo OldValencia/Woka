@@ -36,9 +36,8 @@ internal class ToolSelection {
  * A separate file because `EditorCanvasHost` is at the size mandate, and a separate
  * class because the scope is what a `CanvasTool`'s overlay is handed.
  *
- * **Immutable, and rebuilt rather than mutated.** Every field is a value read at
- * composition time; a scope that carried mutable state would be one an overlay could
- * observe mid-change, drawing a rect against a matrix from the frame before.
+ * **Immutable, and rebuilt rather than mutated**: a scope carrying mutable state is one
+ * an overlay could observe mid-change.
  *
  * **The cardinality is the tool's own**, carried here rather than assumed: a crop is
  * `Single` and replaces itself, markup will be `Repeating` and accumulate, and it is
@@ -65,6 +64,19 @@ internal class EditorToolScopeImpl(
 
     override fun commit() = session.commit(cardinality)
 }
+
+/**
+ * What the canvas draws: [document], minus the open tool's own work when that tool
+ * shows its result itself (`CanvasTool.previewsThroughOverlay`, ME-109).
+ *
+ * A crop folded into the picture underneath its own rectangle is a crop measuring
+ * itself — the frame shrinks, the rect is clamped into it, and it shrinks again.
+ */
+internal fun canvasDocumentFor(tool: EditorTool?, document: EditDocument): EditDocument =
+    (tool as? CanvasTool)
+        ?.takeIf { it.previewsThroughOverlay }
+        ?.let { document.without(it.manifest.id) }
+        ?: document
 
 /**
  * The open tool's overlay, when it has one (ME-109).

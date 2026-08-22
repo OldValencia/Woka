@@ -38,6 +38,12 @@ import com.woka.core.ui.theme.Theme
 @Composable
 internal fun EditorInspector(
     title: String,
+    /**
+     * One line under the rows, or null for the tools that have nothing to add — which
+     * is all of them but Resize (ME-110). Supplied by the screen, because the screen is
+     * what may name `engine.drawnSize(document)`; a tool never learns the frame.
+     */
+    footnote: String? = null,
     content: @Composable () -> Unit
 ) {
     Column(
@@ -56,7 +62,21 @@ internal fun EditorInspector(
     ) {
         InspectorHeader(title)
         content()
+        if (footnote != null) InspectorFootnote(footnote)
     }
+}
+
+/** The result of what the rows above are set to, in the picture's own numbers. */
+@Composable
+private fun InspectorFootnote(text: String) {
+    BasicText(
+        text = text,
+        modifier = Modifier.testTag("editor-inspector-footnote"),
+        style = TextStyle(
+            color = Theme.viewer.onScrimSecondary,
+            fontSize = 12.sp
+        )
+    )
 }
 
 /**
