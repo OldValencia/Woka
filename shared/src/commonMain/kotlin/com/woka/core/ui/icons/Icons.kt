@@ -80,6 +80,7 @@ object Icons {
         val ZoomOut = Res.drawable.minus_magnifyingglass
         val Editor = Res.drawable.square_and_pencil
         val Crop = Res.drawable.rectangle_arrowtriangle_2_inward
+        val Adjust = Res.drawable.slash_circle
         val Navigation = Res.drawable.photo_on_rectangle_angled
         val ChevronRightMac = Res.drawable.chevron_right
         val Eye = Res.drawable.eye

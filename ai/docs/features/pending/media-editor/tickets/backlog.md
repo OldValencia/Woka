@@ -13,22 +13,12 @@ Order inside a track is dependency order. Between tracks, only the marked depend
 
 ## 100 — Image editor
 
-### ME-111 — Adjustments tool
-`Color`, `Single`, `Continuous`, pure data: **Exposure, Brightness, Contrast, Saturation, Warmth,
-Tint** (§9) composing into **one** `ColorMatrix`, neutral at all-zero, plus an auto action. No Compose
-code in the tool at all. Highlights/Shadows are deliberately absent: they need a per-luminance curve,
-which is a fourth fold primitive against §3.2's three.
-*Depends on ME-105.*
-
-### ME-112 — Filter presets
-`Color`, `Single`, `Continuous`, pure data: **Original, Vivid, Dramatic, Warm, Cool, Mono, Noir,
-Silvertone** (§9) as colour-matrix constants, an intensity that lerps toward identity, and the
-thumbnail strip rendered by the schema's preview-choice row — one texture, one filter per thumbnail,
-no extra decode.
-
-**Also carries the `PreviewChoiceParam` renderer itself**, deferred here from ME-102: it draws each
-option through that option's own `stage()`, so it needs filters to preview and cannot be tested without
-them.
+### ME-1xx — Auto adjust
+Lifted out of ME-111 when that ticket was written (2026-08-22), because it cannot be a tool as tools
+are defined: an automatic correction reads the **picture** — a histogram, a black point — and
+`stage()` receives parameters and nothing else (§3.4). `EditorTool.resolve` hands over the frame, not
+the pixels. It needs a hook that does not exist, and inventing one before something asks for it is
+the kind of engine change that should follow a want rather than precede it.
 *Depends on ME-111.*
 
 ### ME-113 — Markup engine

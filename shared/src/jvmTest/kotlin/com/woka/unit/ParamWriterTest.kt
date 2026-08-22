@@ -37,7 +37,7 @@ class ParamWriterTest {
     fun `an Instant tool commits on every edit`() {
         val t = tool(ToolInteraction.Instant)
         onEditor(listOf(t)) { harness ->
-            val writer = ParamWriter(harness.session, t, harness.session.document.value)
+            val writer = ParamWriter(harness.session, t)
             writer.edit(FixtureParams.Flag, true)
 
             assertTrue(harness.session.canUndo.value)
@@ -50,12 +50,12 @@ class ParamWriterTest {
         val t = tool(ToolInteraction.Continuous)
         onEditor(listOf(t)) { harness ->
             repeat(50) { step ->
-                ParamWriter(harness.session, t, harness.session.document.value)
+                ParamWriter(harness.session, t)
                     .edit(FixtureParams.Amount, step / 50f, settled = false)
             }
             assertFalse(harness.session.canUndo.value, "a drag must not push history")
 
-            ParamWriter(harness.session, t, harness.session.document.value).settle()
+            ParamWriter(harness.session, t).settle()
 
             assertTrue(harness.session.canUndo.value)
             assertEquals(1, harness.session.document.value.ops.size)
@@ -69,7 +69,7 @@ class ParamWriterTest {
     fun `an unsettled drag is visible without being undoable`() {
         val t = tool(ToolInteraction.Continuous)
         onEditor(listOf(t)) { harness ->
-            ParamWriter(harness.session, t, harness.session.document.value)
+            ParamWriter(harness.session, t)
                 .edit(FixtureParams.Amount, 0.5f, settled = false)
 
             val document = harness.session.document.value
@@ -85,7 +85,7 @@ class ParamWriterTest {
         val single = tool(ToolInteraction.Instant, ToolCardinality.Single)
         onEditor(listOf(single)) { harness ->
             repeat(2) {
-                ParamWriter(harness.session, single, harness.session.document.value)
+                ParamWriter(harness.session, single)
                     .edit(FixtureParams.Count, it + 2)
             }
             assertEquals(1, harness.session.document.value.ops.size)
@@ -94,7 +94,7 @@ class ParamWriterTest {
         val repeating = tool(ToolInteraction.Instant, ToolCardinality.Repeating)
         onEditor(listOf(repeating)) { harness ->
             repeat(2) {
-                ParamWriter(harness.session, repeating, harness.session.document.value)
+                ParamWriter(harness.session, repeating)
                     .edit(FixtureParams.Press, true)
             }
             assertEquals(2, harness.session.document.value.ops.size)
@@ -105,7 +105,7 @@ class ParamWriterTest {
     fun `a value is clamped to its spec's range on the way in`() {
         val t = tool(ToolInteraction.Instant)
         onEditor(listOf(t)) { harness ->
-            ParamWriter(harness.session, t, harness.session.document.value)
+            ParamWriter(harness.session, t)
                 .edit(FixtureParams.Count, 9999)
 
             // `IntParam.encode` clamps, so the document can never hold a value the

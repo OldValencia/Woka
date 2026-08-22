@@ -39,7 +39,7 @@ internal fun ParamRows(
     frame: IntSize = IntSize.Zero
 ) {
     val params = paramsOf(document, tool)
-    val writer = ParamWriter(session, tool, document, frame)
+    val writer = ParamWriter(session, tool, frame)
     Column(
         verticalArrangement = Arrangement.spacedBy(EditorTokens.Inspector.rowGap)
     ) {

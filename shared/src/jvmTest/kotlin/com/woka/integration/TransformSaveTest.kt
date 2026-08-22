@@ -65,7 +65,7 @@ class TransformSaveTest {
 
     /** A fresh writer per press, exactly as a recomposition would build one. */
     private fun EditorHarness.press(action: ActionParam) {
-        ParamWriter(session, TransformTool, session.document.value).edit(action, true)
+        ParamWriter(session, TransformTool).edit(action, true)
     }
 
     @Test

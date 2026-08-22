@@ -2,7 +2,6 @@ package com.woka.feature.editor.shell
 
 import androidx.compose.runtime.Stable
 import com.woka.feature.editor.core.ActionParam
-import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditorSession
 import com.woka.feature.editor.core.EditorTool
 import com.woka.feature.editor.core.ParamSpec
@@ -24,7 +23,6 @@ import com.woka.feature.editor.core.ToolOp
 internal class ParamWriter(
     private val session: EditorSession,
     private val tool: EditorTool,
-    private val document: EditDocument,
     /**
      * The frame the picture currently has, for the one thing a tool cannot work out
      * for itself: turning "long edge 2560" into a scale (`EditorTool.resolve`, ME-110).
@@ -47,7 +45,13 @@ internal class ParamWriter(
         // the previous operation would carry that operation's flag forward, so
         // pressing Rotate and then Flip would produce one op claiming both and the
         // picture would rotate twice (ME-105).
-        val base = if (spec is ActionParam) tool.defaults() else paramsOf(document, tool)
+        // **Read now, not at composition.** `DetentSlider` keeps its gesture lambda in a
+        // `pointerInput` keyed on the track's width, so a writer holding a captured
+        // document goes on writing against the document as it was when that gesture was
+        // set up — and every drag rebuilt its parameters from a stale base, wiping the
+        // slider moved before it (2026-08-22).
+        val live = session.document.value
+        val base = if (spec is ActionParam) tool.defaults() else paramsOf(live, tool)
         val written = base.with(spec, value)
         // A tool may rewrite its own parameters now that the frame is known — a preset
         // that means "this many pixels on the long edge" resolves to a scale here, so

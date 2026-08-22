@@ -66,6 +66,27 @@ fun fold(
 }
 
 /**
+ * The operations a document currently *means*: committed, with the one in flight folded
+ * in **exactly as committing it would** (2026-08-22).
+ *
+ * `ops + pending` was wrong for every `Single` tool. A crop or an adjustment already in
+ * the document, plus a pending one from the same tool, applied **both** — so dragging
+ * Tint from −100 to +100 previewed as roughly neutral and jumped to green on release.
+ * §3.1's promise is that a preview renders what committing produces, and the only way to
+ * keep that honest is to ask the same function: `commitPending`, with the tool's own
+ * cardinality.
+ *
+ * A tool the registry cannot resolve keeps the old behaviour — it is on its way to
+ * [skipped] regardless, and dropping it here would lose the report.
+ */
+private fun applied(document: EditDocument, registry: EditorToolRegistry): List<ToolOp> {
+    val pending = document.pending ?: return document.ops
+    val cardinality = registry.toolFor(pending)?.manifest?.cardinality
+        ?: return document.ops + pending
+    return document.commitPending(cardinality).ops
+}
+
+/**
  * Operations in **application** order, not click order (§3.4).
  *
  * `sortedBy` is stable, which is the whole point: ranking is by domain, so two
@@ -84,7 +105,7 @@ private fun orderedStages(
 ): List<RasterStage> {
     // The raster fold is the image engine's, so enablement is asked for images.
     val enabled = registry.tools(MediaKind.Image).value
-    return (document.ops + listOfNotNull(document.pending))
+    return applied(document, registry)
         .mapNotNull { op -> resolve(op, registry, enabled, skipped) }
         .sortedBy { (_, tool) -> tool.manifest.domain.ordinal }
         .mapNotNull { (op, tool) -> tool.stage(op.params) as? RasterStage }

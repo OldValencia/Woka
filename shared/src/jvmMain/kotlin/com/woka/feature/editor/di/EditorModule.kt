@@ -8,6 +8,7 @@ import com.woka.feature.editor.core.EditorTool
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.engine.EditorEngineFactoryImpl
 import com.woka.feature.editor.engine.image.RecipeStillEdits
+import com.woka.feature.editor.tools.adjust.AdjustTool
 import com.woka.feature.editor.tools.crop.CropTool
 import com.woka.feature.editor.tools.resize.ResizeTool
 import com.woka.feature.editor.tools.transform.TransformTool
@@ -42,6 +43,7 @@ val editorModule = module {
     // arrived (2026-08-22).
     single<EditorTool>(named(TransformTool.manifest.id)) { TransformTool }
     single<EditorTool>(named(CropTool.manifest.id)) { CropTool }
+    single<EditorTool>(named(AdjustTool.manifest.id)) { AdjustTool }
     single<EditorTool>(named(ResizeTool.manifest.id)) { ResizeTool }
 
     // `getAll` is what makes declaring a tool the only step in joining the set.
