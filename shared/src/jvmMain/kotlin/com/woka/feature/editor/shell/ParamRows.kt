@@ -19,6 +19,7 @@ import com.woka.feature.editor.core.ObjectParam
 import com.woka.feature.editor.core.ParamSet
 import com.woka.feature.editor.core.ParamSpec
 import com.woka.feature.editor.core.PreviewChoiceParam
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntSize
 
 /**
@@ -36,7 +37,12 @@ internal fun ParamRows(
     session: EditorSession,
     document: EditDocument,
     /** What the picture measures right now — see `ParamWriter.frame`. */
-    frame: IntSize = IntSize.Zero
+    frame: IntSize = IntSize.Zero,
+    /**
+     * How to draw one option of a preview-choice row (ME-112). Supplied by the screen,
+     * which may name the engine; the rows themselves never learn what a picture is.
+     */
+    thumbnail: @Composable (EditDocument, Modifier) -> Unit = { _, _ -> }
 ) {
     val params = paramsOf(document, tool)
     val writer = ParamWriter(session, tool, frame)
@@ -52,10 +58,10 @@ internal fun ParamRows(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    run.forEach { spec -> ParamRow(spec, params, writer) }
+                    run.forEach { spec -> ParamRow(spec, params, writer, tool.manifest.id, thumbnail) }
                 }
             } else {
-                ParamRow(run.first(), params, writer)
+                ParamRow(run.first(), params, writer, tool.manifest.id, thumbnail)
             }
         }
     }
@@ -70,7 +76,13 @@ internal fun ParamRows(
  * without a way to edit it.
  */
 @Composable
-internal fun ParamRow(spec: ParamSpec<*>, params: ParamSet, writer: ParamWriter) {
+internal fun ParamRow(
+    spec: ParamSpec<*>,
+    params: ParamSet,
+    writer: ParamWriter,
+    toolId: String = "",
+    thumbnail: @Composable (EditDocument, Modifier) -> Unit = { _, _ -> }
+) {
     when (spec) {
         is FloatParam -> FloatParamRow(spec, params, writer)
         is IntParam -> IntParamRow(spec, params, writer)
@@ -79,10 +91,10 @@ internal fun ParamRow(spec: ParamSpec<*>, params: ParamSet, writer: ParamWriter)
         is ColorParam -> ColorParamRow(spec, params, writer)
         is ActionParam -> ActionParamRow(spec, writer)
 
-        // Deferred to ME-112, which is the only ticket that has anything to preview:
-        // this row draws each option through that option's own `stage()`, so built
-        // now it would render a strip of identical thumbnails and prove nothing.
-        is PreviewChoiceParam<*> -> Unit
+        // A strip of the picture through each option's own `stage()` (ME-112). The row
+        // draws no bitmap itself: it asks the engine, through `thumbnail`, for a picture
+        // of a document — which is what keeps the shell free of raster types (§3.3).
+        is PreviewChoiceParam<*> -> PreviewChoiceRow(spec, params, writer, toolId, thumbnail)
 
         // Draws nothing, by design (§3.4). The value belongs to a `CanvasTool`'s
         // overlay, and a spec that cannot be drawn by a generic row says so in its

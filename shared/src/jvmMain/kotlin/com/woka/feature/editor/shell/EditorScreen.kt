@@ -136,7 +136,11 @@ internal fun EditorScreen(
                 EditorInspector(
                     title = activeTool.manifest.title,
                     footnote = activeTool.footnote(paramsOf(document, activeTool), frame),
-                    content = { ParamRows(activeTool, session, document, frame) }
+                    content = {
+                        ParamRows(activeTool, session, document, frame) { preview, modifier ->
+                            engine.Thumbnail(preview, modifier)
+                        }
+                    }
                 )
             }
             EditorRail(

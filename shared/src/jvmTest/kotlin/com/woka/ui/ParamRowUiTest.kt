@@ -35,7 +35,7 @@ class ParamRowUiTest {
     private val tool = FixtureTool(id = "adjust", domain = ToolDomain.Color)
 
     @Test
-    fun `every spec type that has a renderer draws a row, and the two that do not draw none`() {
+    fun `every spec type that has a renderer draws a row, and the one that does not draws none`() {
         onEditor(listOf(tool)) { harness ->
             onUi {
                 setContent {
@@ -45,15 +45,17 @@ class ParamRowUiTest {
 
                 listOf(
                     FixtureParams.Amount, FixtureParams.Count, FixtureParams.Flag,
-                    FixtureParams.Choice, FixtureParams.Tint, FixtureParams.Press
+                    FixtureParams.Choice, FixtureParams.Tint, FixtureParams.Press,
+                    // ME-112 gave `PreviewChoiceParam` its strip; until there were
+                    // filters to preview it drew nothing.
+                    FixtureParams.Preview
                 ).forEach { spec ->
                     onNodeWithTag("param-${spec.key}").assertIsDisplayed()
                 }
 
-                // `ObjectParam` belongs to an overlay and `PreviewChoiceParam` waits
-                // for ME-112 — both draw nothing rather than an empty placeholder.
+                // `ObjectParam` belongs to an overlay — nothing rather than an empty
+                // placeholder, and the last spec type the inspector answers with `Unit`.
                 onNodeWithTag("param-${FixtureParams.Payload.key}").assertDoesNotExist()
-                onNodeWithTag("param-${FixtureParams.Preview.key}").assertDoesNotExist()
             }
         }
     }

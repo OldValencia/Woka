@@ -86,6 +86,20 @@ class FixtureEngine(
         playbackToggles++
     }
 
+    private val thumbnails = mutableListOf<EditDocument>()
+
+    /**
+     * Every document this was asked to draw **small** — how a test proves a preview
+     * strip asked for one thumbnail per option and not one per option per frame.
+     */
+    val thumbnailsDrawn: List<EditDocument> get() = thumbnails.toList()
+
+    @Composable
+    override fun Thumbnail(document: EditDocument, modifier: Modifier) {
+        SideEffect { thumbnails += document }
+        Box(modifier = modifier.background(colour).testTag(THUMBNAIL_TAG))
+    }
+
     override suspend fun save(document: EditDocument): EditSaveResult {
         saveRequests += document
         return result
@@ -93,5 +107,6 @@ class FixtureEngine(
 
     companion object {
         const val SURFACE_TAG = "editor-surface"
+        const val THUMBNAIL_TAG = "editor-thumbnail"
     }
 }

@@ -73,23 +73,18 @@ internal class ImageEditorEngine(
     override fun togglePlayback() = playback.toggle()
 
     /**
-     * The proxy is remembered on the file, **not on the document**: editing changes
-     * the recipe, never the pixels it is applied to, so re-decoding on every stroke
-     * would be re-reading a file that has not changed to draw a picture that has.
-     *
-     * An animation is the one file where the picture *does* change without the
-     * document: `rememberEditorFrame` holds its frames and hands over whichever is due.
-     * A photograph never gets one and composes what it always did.
+     * The proxy is remembered on the file, **not on the document**: editing changes the
+     * recipe, never the pixels it is applied to. An animation is the exception, and
+     * `rememberEditorFrame` is where it lives.
      */
     @Composable
-    override fun Surface(document: EditDocument, modifier: Modifier) {
-        RasterSurface(
-            proxy = rememberEditorFrame(file, frameIndex, playback),
-            sourceSize = sourceSize,
-            recipe = recipe(document),
-            modifier = modifier
-        )
-    }
+    override fun Surface(document: EditDocument, modifier: Modifier) =
+        ImageCanvas(file, frameIndex, playback, sourceSize, recipe(document), modifier)
+
+    /** One option of a filter strip, from the **same proxy** — see `ImageCanvas`. */
+    @Composable
+    override fun Thumbnail(document: EditDocument, modifier: Modifier) =
+        ImageCanvas(file, frameIndex, playback, sourceSize, recipe(document), modifier)
 
     /**
      * The stamp is taken **when the engine is built**, not when a save starts.

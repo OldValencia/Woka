@@ -49,7 +49,9 @@ data class ChoiceParam<E : Enum<E>>(
 data class PreviewChoiceParam<E : Enum<E>>(
     override val key: String,
     val options: List<E>,
-    override val default: E
+    override val default: E,
+    /** What the option is called under its thumbnail — see [ChoiceParam.labelOf]. */
+    val labelOf: (E) -> String = { it.name }
 ) : ParamSpec<E> {
     override fun encode(value: E) = TextValue(value.name)
     override fun decode(value: ParamValue): E? {

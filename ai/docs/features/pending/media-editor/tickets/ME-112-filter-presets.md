@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Order** | 35 — immediately after ME-111, which it previews |
+| **Order** | **done 2026-08-22** — tests green, by hand outstanding |
 | **Depends on** | ME-111 (a colour matrix to look at), ME-102 (the row it completes) |
 | **Feature** | [Media Editor](../media-editor.md) |
 
@@ -66,6 +66,7 @@ it is named as one above rather than left to discretion.
 `shared/src/jvmMain/kotlin/com/woka/feature/editor/tools/filter/FilterMatrix.kt` (new) ·
 `.../tools/filter/FilterTool.kt` (new) · `.../shell/ParamRowPreviewChoice.kt` (new) ·
 `.../shell/ParamRows.kt` (edit) · `.../shell/EditorScreen.kt` (edit) ·
+`.../engine/image/ImageEditorCanvas.kt` (new — the canvas `Surface` and `Thumbnail` share, extracted to keep `ImageEditorEngine` inside the size mandate) ·
 `.../engine/image/ImageEditorEngine.kt` (edit) · `.../di/EditorModule.kt` (edit) ·
 `shared/src/commonMain/kotlin/com/woka/feature/editor/core/EditorEngine.kt` (edit) ·
 `shared/src/commonMain/kotlin/com/woka/core/ui/icons/Icons.kt` (edit)
@@ -78,9 +79,11 @@ it is named as one above rather than left to discretion.
   RGB coefficients per row.
 - `jvmTest/unit/FilterToolTest.kt`: a filter and an adjustment in one document fold to **one**
   `colorFilter`, not two — the claim `multiply` exists for; the fold's stage count is one.
-- `jvmTest/ui/PreviewChoiceRowUiTest.kt`: the strip draws one thumbnail per option; clicking one
-  writes that option and commits a single undo step; the selected option is the document's, not the
-  default, on a reopened file.
+- `jvmTest/ui/PreviewChoiceRowUiTest.kt`: the strip draws one thumbnail per option, each asked for
+  with its own operation and nothing else. Clicking one — it writes that option, commits a single
+  undo step, and a reopened file shows what it carries rather than the default — is
+  `jvmTest/ui/PreviewChoiceWriteUiTest.kt`, split off when one file could not hold both inside
+  the size mandate.
 - `jvmTest/ui/`: the row asks for exactly **one** thumbnail per option per composition — a counting
   fixture engine, because "no extra decode" is the property that will regress silently.
 - By hand: the strip shows the photograph eight ways, choosing one applies it, and the intensity

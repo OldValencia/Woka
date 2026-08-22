@@ -86,6 +86,20 @@ interface EditorEngine {
     fun Surface(document: EditDocument, modifier: Modifier)
 
     /**
+     * The same picture, small — one option of a preview-choice row (ME-112).
+     *
+     * **A thumbnail is a picture, and the shell may not name one** (§3.3). The row asks
+     * for one per option, each with a document holding only that option's operation, and
+     * never learns what comes back. Defaulted to drawing nothing, so a medium with
+     * nothing to preview is unaffected.
+     *
+     * Implementations must reuse whatever [Surface] already holds: a decode per
+     * thumbnail per recomposition is eight decodes a frame.
+     */
+    @Composable
+    fun Thumbnail(document: EditDocument, modifier: Modifier) = Unit
+
+    /**
      * "Start or stop whatever is moving on the canvas", raised by a click on it.
      *
      * Media-agnostic on purpose: an animated still runs a frame clock and the video
