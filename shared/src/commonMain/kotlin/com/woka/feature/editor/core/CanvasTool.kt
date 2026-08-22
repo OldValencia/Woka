@@ -17,6 +17,19 @@ import androidx.compose.runtime.Composable
  */
 interface CanvasTool : EditorTool {
 
+    /**
+     * Whether the canvas should draw the picture **without** this tool's own work while
+     * the tool is open, because the overlay is already showing it.
+     *
+     * True for a crop: the rectangle is the result, drawn over the whole picture, and
+     * folding it in as well makes the tool measure itself — the frame shrinks, the rect
+     * is clamped into the smaller frame, and it shrinks again on the next event.
+     *
+     * False for markup, which is the case the default serves: a stroke has to be
+     * visible on the canvas as it is drawn, and the overlay only adds handles to it.
+     */
+    val previewsThroughOverlay: Boolean get() = false
+
     @Composable
     fun Overlay(scope: EditorToolScope)
 }

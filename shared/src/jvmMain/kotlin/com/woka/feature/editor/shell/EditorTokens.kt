@@ -29,11 +29,20 @@ object EditorTokens {
     object Rail {
 
         /** `DockItem`: 40.dp tall, 14.dp radius. */
-        val itemSize = 40.dp
         val itemRadius = 14.dp
 
-        /** Square, because a rail button is an icon with no label beside it. */
         val iconSize = 16.dp
+
+        /**
+         * A rail button is an icon **and its name** (2026-08-21). It was the icon
+         * alone, with the name in a tooltip — which meant two tools whose glyphs had
+         * not been drawn yet were two identical squares, and finding a tool meant
+         * hovering over each in turn.
+         */
+        val itemHeight = 40.dp
+        val labelSize = 12.sp
+        val labelGap = 7.dp
+        val itemPadding = 12.dp
 
         val itemGap = 4.dp
 

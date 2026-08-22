@@ -23,7 +23,14 @@ data class ChoiceParam<E : Enum<E>>(
     override val key: String,
     val label: String,
     val options: List<E>,
-    override val default: E
+    override val default: E,
+    /**
+     * What an option is **called on screen**, which is not its constant's name.
+     * `SixteenNine` is a Kotlin identifier; `16:9` is what a person reads. The
+     * default keeps the name, so a tool whose constants already read well says
+     * nothing (2026-08-22).
+     */
+    val labelOf: (E) -> String = { it.name }
 ) : ParamSpec<E> {
     override fun encode(value: E) = TextValue(value.name)
     override fun decode(value: ParamValue): E? {

@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.scale
@@ -37,7 +38,13 @@ internal fun RasterSurface(
     recipe: RasterRecipe,
     modifier: Modifier = Modifier
 ) {
-    Canvas(modifier = modifier.fillMaxSize()) {
+    // **Clipped, and a crop is why** (2026-08-22). The box is `recipe.outputSize`; the
+    // picture drawn inside it is the *source*, which a crop makes larger than the box.
+    // A Compose `Canvas` does not clip, so the discarded part kept being drawn outside
+    // the frame — the editor showed a wider picture than the crop it had applied, and
+    // zooming out revealed the whole of it. Every operation before the crop produced an
+    // output at least as large as what it drew, so nothing had ever exceeded the box.
+    Canvas(modifier = modifier.fillMaxSize().clipToBounds()) {
         val output = recipe.outputSize
         // Before the first layout, and for a document whose fold produced nothing to
         // draw. Returning is invisible for a frame; dividing by zero is not.

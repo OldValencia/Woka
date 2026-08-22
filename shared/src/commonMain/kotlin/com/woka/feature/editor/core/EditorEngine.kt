@@ -2,6 +2,7 @@ package com.woka.feature.editor.core
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.MediaKind
 
@@ -64,6 +65,21 @@ interface EditorEngine {
      * no notion of a stored edit is unaffected.
      */
     fun storedDocument(): EditDocument = EditDocument()
+
+    /**
+     * How a **source** coordinate lands on the picture this engine draws for [document].
+     *
+     * Identity for a medium whose preview is its source laid out plainly, which is why
+     * it is defaulted. It stops being identity the moment an operation moves pixels
+     * about: with a flip applied, source `(100, 80)` is drawn at `(540, 80)`, and an
+     * overlay that placed a stored rectangle without asking would draw it on the
+     * opposite side of the picture from the region it actually keeps — measured, and
+     * exactly what "the crop rectangle flew off the picture" was (2026-08-22).
+     *
+     * A `Matrix` and an `EditDocument`, so no raster type is named and the video engine
+     * can answer it too (§3.3).
+     */
+    fun previewMatrix(document: EditDocument): Matrix = Matrix()
 
     /** The live canvas for this medium, drawing [document] as it stands. */
     @Composable

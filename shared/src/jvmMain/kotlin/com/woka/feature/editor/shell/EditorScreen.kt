@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import com.woka.core.ui.theme.Theme
+import com.woka.feature.editor.core.CanvasTool
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditorEngine
 import com.woka.feature.editor.core.EditorSession
@@ -82,6 +83,11 @@ internal fun EditorScreen(
     }
 
     val activeTool = tools.firstOrNull { it.manifest.id == activeToolId }
+    // The document the canvas draws: minus the open tool's own work when that tool
+    // shows its result itself (`CanvasTool.previewsThroughOverlay`).
+    val canvasDocument = (activeTool as? CanvasTool)
+        ?.takeIf { it.previewsThroughOverlay }
+        ?.let { document.without(it.manifest.id) } ?: document
     val skipped = skippedOps(document, registry, engine.kind)
 
     Box(
@@ -94,11 +100,22 @@ internal fun EditorScreen(
     ) {
         EditorCanvasHost(
             engine = engine,
-            document = document,
+            document = canvasDocument,
             modifier = Modifier.fillMaxSize(),
             // Back to Fit whenever the tool changes: a crop opened at 100 % on a
             // corner of the picture is a crop nobody can frame (§4.3).
-            resetKey = activeToolId
+            resetKey = activeToolId,
+            // A `CanvasTool` draws over the medium and takes the pointer first; every
+            // other tool leaves this empty and the canvas pans as it always did.
+            overlay = { geometry ->
+                ActiveToolOverlay(
+                    tool = activeTool,
+                    session = session,
+                    geometry = geometry,
+                    // Of the document the canvas actually drew, not of the whole one.
+                    previewMatrix = engine.previewMatrix(canvasDocument)
+                )
+            }
         )
 
         Column(

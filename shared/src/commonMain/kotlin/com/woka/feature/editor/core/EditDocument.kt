@@ -51,4 +51,18 @@ data class EditDocument(
     fun clearPending(): EditDocument = copy(pending = null)
 
     fun opsOf(toolId: String): List<ToolOp> = ops.filter { it.toolId == toolId }
+
+    /**
+     * This document with [toolId]'s work taken out, in flight and committed alike.
+     *
+     * **What a canvas tool draws over must not already have been applied to it.** A
+     * crop whose own rect was folded into the picture underneath it is a crop measuring
+     * itself: the frame shrinks, the stored rect is clamped into the smaller frame, the
+     * frame shrinks again. Found by hand, 2026-08-22 — the rectangle collapsed on every
+     * click and the picture could not be dragged anywhere near its own edges.
+     */
+    fun without(toolId: String): EditDocument = copy(
+        ops = ops.filterNot { it.toolId == toolId },
+        pending = pending?.takeIf { it.toolId != toolId }
+    )
 }

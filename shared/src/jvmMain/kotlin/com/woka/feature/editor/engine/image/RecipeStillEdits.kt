@@ -8,6 +8,7 @@ import com.woka.core.ui.image.StillEdits
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.recipe.EditRecipe
 import com.woka.feature.editor.save.renderAtNativeScale
+import com.woka.feature.viewer.image.stillDecoderFor
 import kotlinx.coroutines.withContext
 import java.io.File
 
@@ -35,25 +36,39 @@ internal class RecipeStillEdits(
         }
 
     /**
-     * **Folded against the bitmap it was handed, not against the file's native size.**
+     * **Folded against the file's native size, then scaled to the bitmap** (ME-109).
      *
-     * `StillPreview` may hand over a picture already scaled down by its decoder, and
-     * folding against native would upscale that to full resolution and hand back a
-     * blurred 24-megapixel preview. Every operation that exists today — rotate and flip
-     * — is scale-free, so folding at the size actually present is exactly right.
+     * It used to fold against whatever bitmap arrived, and that was right for exactly
+     * as long as every operation was scale-free: a rotation of a 400 px cover and of a
+     * 6000 px original are the same matrix. A crop is not. Its rect is in **source**
+     * pixels, so folded against a grid cover it would cut a region twenty times too
+     * large and land nowhere near the picture the editor showed.
      *
-     * The first tool that addresses pixels (a crop rect, a markup stroke) makes this
-     * the place that has to scale the recipe to the bitmap. It is one line and it is
-     * that tool's ticket, not a debt this one is leaving quietly.
+     * So the fold happens where the operations are addressed — native — and
+     * [scaledBy] moves the finished recipe into the bitmap's coordinates. A reader
+     * handed a native bitmap scales by 1.0 and comes back bit-for-bit what it was.
+     *
+     * The native size is read from the decoder, which answers without decoding
+     * anything. When it cannot answer, the bitmap's own size stands in: that is the
+     * old behaviour, still correct for the scale-free tools and no worse than
+     * refusing to draw.
      */
     override fun apply(file: File, frameIndex: Int, decoded: ImageBitmap): ImageBitmap {
         val document = EditRecipe.read(file) ?: return decoded
         if (document.isEmpty) return decoded
 
         return runCatching {
-            val size = IntSize(decoded.width, decoded.height)
-            renderAtNativeScale(decoded, size, fold(document, registry, size))
-                .toComposeImageBitmap()
+            val drawn = IntSize(decoded.width, decoded.height)
+            val native = nativeSizeOf(file, frameIndex) ?: drawn
+            val factor = if (native.width > 0) drawn.width.toFloat() / native.width else 1f
+            val recipe = fold(document, registry, native).scaledBy(factor)
+            renderAtNativeScale(decoded, drawn, recipe).toComposeImageBitmap()
         }.getOrDefault(decoded)
     }
+
+    /** Null rather than throwing: a decoder that cannot measure must not stop a draw. */
+    private fun nativeSizeOf(file: File, frameIndex: Int): IntSize? =
+        runCatching { stillDecoderFor(file).nativeSize(file, frameIndex) }
+            .getOrNull()
+            ?.takeIf { it.width > 0 && it.height > 0 }
 }

@@ -5,6 +5,8 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.unit.IntSize
 import com.woka.feature.editor.core.ToolOp
+import kotlin.math.max
+import kotlin.math.roundToInt
 
 /**
  * A whole document collapsed into what one draw call needs (§3.2).
@@ -31,3 +33,41 @@ data class RasterRecipe(
     val paints: List<RasterStage.Paint>,
     val skipped: List<ToolOp>
 )
+
+/**
+ * The same recipe, expressed in the coordinates of a bitmap [factor] times the source
+ * (ME-109).
+ *
+ * **This is what a crop needs and a rotation never did.** A recipe is folded in source
+ * pixels — that is what a tool's `stage()` returns and what a crop rect is measured in
+ * — while a reader may have decoded the picture small. Rotate and flip are scale-free,
+ * so folding them against whatever bitmap arrived happened to be right; a crop rect of
+ * `(1200, 800, 600×400)` applied to a 400 px grid cover lands somewhere else entirely.
+ *
+ * The matrix becomes **S · M · S⁻¹**: scale down into source coordinates, do the work
+ * there, scale back. Written as "apply S⁻¹, then M, then S", which is the order
+ * [concat] takes and the order this reads in.
+ *
+ * [RasterRecipe.paints] are carried through untouched, and that is **ME-113's** to fix:
+ * nothing produces a paint yet, and a stroke will need the same treatment its own
+ * ticket can give it once there is one to scale.
+ */
+internal fun RasterRecipe.scaledBy(factor: Float): RasterRecipe {
+    // Not merely an optimisation: a reader handed a native bitmap must come back
+    // bit-for-bit what it is today, and the identity path is how that is guaranteed.
+    if (factor == 1f || factor <= 0f || !factor.isFinite()) return this
+
+    val scaled = Matrix().apply { scale(1f / factor, 1f / factor) }
+    concat(scaled, matrix)
+    concat(scaled, Matrix().apply { scale(factor, factor) })
+
+    return copy(
+        matrix = scaled,
+        // At least one pixel: a recipe scaled into a thumbnail must not describe a
+        // zero-sized frame that the renderer then hands to Skia.
+        outputSize = IntSize(
+            width = max(1, (outputSize.width * factor).roundToInt()),
+            height = max(1, (outputSize.height * factor).roundToInt())
+        )
+    )
+}

@@ -48,10 +48,11 @@ internal fun <E : Enum<E>> ChoiceParamRow(
         Box(modifier = Modifier.weight(1f).testTag("param-${spec.key}")) {
             if (spec.options.size <= SEGMENTED_LIMIT) {
                 SegmentedControl(
-                    options = spec.options.map { it.name },
-                    selected = selected.name,
-                    onSelect = { name ->
-                        spec.options.firstOrNull { it.name == name }?.let { writer.edit(spec, it) }
+                    options = spec.options.map(spec.labelOf),
+                    selected = spec.labelOf(selected),
+                    onSelect = { label ->
+                        spec.options.firstOrNull { spec.labelOf(it) == label }
+                            ?.let { writer.edit(spec, it) }
                     },
                     colors = SegmentedControlDefaults.onScrim
                 )
@@ -74,7 +75,7 @@ private fun <E : Enum<E>> ChipRow(spec: ChoiceParam<E>, selected: E, writer: Par
         spec.options.forEach { option ->
             val isSelected = option == selected
             BasicText(
-                text = option.name,
+                text = spec.labelOf(option),
                 modifier = Modifier
                     .clip(RoundedCornerShape(7.dp))
                     .background(

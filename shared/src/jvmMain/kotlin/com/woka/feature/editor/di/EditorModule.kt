@@ -8,7 +8,9 @@ import com.woka.feature.editor.core.EditorTool
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.engine.EditorEngineFactoryImpl
 import com.woka.feature.editor.engine.image.RecipeStillEdits
+import com.woka.feature.editor.tools.crop.CropTool
 import com.woka.feature.editor.tools.transform.TransformTool
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 /**
@@ -32,8 +34,13 @@ val editorModule = module {
     // edited, and owns a scope its caller cancels on close (`di.md`).
     factory { (media: MediaItem) -> EditorSession(media) }
 
-    // The whole of adding a tool: one line, and nothing else learns it exists.
-    single<EditorTool> { TransformTool }
+    // The whole of adding a tool: one line, and nothing else learns it exists —
+    // **with its own qualifier**. Two unqualified `single<EditorTool>` declarations are
+    // one definition declared twice: the second replaces the first, and `getAll` then
+    // returns a single tool. That is how Transform vanished from the rail the day Crop
+    // arrived (2026-08-22).
+    single<EditorTool>(named(TransformTool.manifest.id)) { TransformTool }
+    single<EditorTool>(named(CropTool.manifest.id)) { CropTool }
 
     // `getAll` is what makes declaring a tool the only step in joining the set.
     // `single`, because the registry's per-kind flows are built once and every

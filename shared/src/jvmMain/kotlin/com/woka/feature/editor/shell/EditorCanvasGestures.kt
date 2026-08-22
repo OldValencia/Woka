@@ -6,6 +6,8 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.isCtrlPressed
+import androidx.compose.ui.input.pointer.isMetaPressed
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import com.woka.feature.editor.core.EditorEngine
@@ -32,6 +34,11 @@ internal fun Modifier.editorCanvasGestures(
     onPan: (Offset) -> Unit
 ): Modifier = this
     .onPointerEvent(PointerEventType.Scroll) { event ->
+        // **Ctrl, exactly as in the viewer** (`mediaZoomAndButtonPan`). A bare wheel
+        // used to zoom here and nowhere else in the app, so a scroll over a picture
+        // meant one thing in the viewer and another one panel up.
+        val zooming = event.keyboardModifiers.isCtrlPressed || event.keyboardModifiers.isMetaPressed
+        if (!zooming) return@onPointerEvent
         val change = event.changes.firstOrNull() ?: return@onPointerEvent
         val notches = change.scrollDelta.y
         if (notches == 0f) return@onPointerEvent

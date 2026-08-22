@@ -2,6 +2,7 @@ package com.woka.feature.editor.engine.image
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.MediaKind
 import com.woka.feature.editor.core.EditCapability
@@ -62,6 +63,9 @@ internal class ImageEditorEngine(
 
     /** The frame the recipe produces — a crop's dimensions, not the original's. */
     override fun drawnSize(document: EditDocument): IntSize = recipe(document).outputSize
+
+    /** Where the recipe puts a source pixel, which is what an overlay has to follow. */
+    override fun previewMatrix(document: EditDocument): Matrix = recipe(document).matrix
 
     /** Whether the canvas is running, when the file is something that runs. */
     private val playback = EditorPlayback()

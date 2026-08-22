@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntSize
@@ -29,8 +30,26 @@ class FixtureEngine(
     override val kind: MediaKind = MediaKind.Image,
     override val capability: EditCapability = EditCapability.Recorded,
     private val result: EditSaveResult = EditSaveResult.NothingToDo,
-    private val colour: Color = Color(0xFF3A5AA0)
+    private val colour: Color = Color(0xFF3A5AA0),
+    /**
+     * What the canvas measures itself with, per document — null keeps [sourceSize],
+     * which is every medium whose edits never change the frame.
+     *
+     * A real engine's answer moves once a crop lands, and the shell has to survive
+     * that: the canvas is measured with it while the tool that *produced* it is still
+     * open. Fixing that (2026-08-22) needed a fixture that could tell the two sizes
+     * apart, which this is.
+     */
+    private val drawnSizeOf: ((EditDocument) -> IntSize)? = null,
+    /** How the source lands on what was drawn — identity unless a test says otherwise. */
+    private val previewMatrixOf: ((EditDocument) -> Matrix)? = null
 ) : EditorEngine {
+
+    override fun drawnSize(document: EditDocument): IntSize =
+        drawnSizeOf?.invoke(document) ?: sourceSize
+
+    override fun previewMatrix(document: EditDocument): Matrix =
+        previewMatrixOf?.invoke(document) ?: Matrix()
 
     private val drawn = mutableListOf<EditDocument>()
 
