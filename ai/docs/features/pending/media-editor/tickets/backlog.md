@@ -21,19 +21,6 @@ the pixels. It needs a hook that does not exist, and inventing one before someth
 the kind of engine change that should follow a want rather than precede it.
 *Depends on ME-111.*
 
-### ME-113 — Markup engine
-`Annotate`, `Repeating`, `Canvas`. The shape hierarchy in source coordinates for **arrow, rectangle,
-ellipse and freehand** — text is ME-122 — one draw routine shared by the overlay, the recipe and the
-save path, which is what makes native-resolution rasterisation automatic, and hit-testing with handle
-positions. Style parameters come from the schema.
-*Depends on ME-105.*
-
-### ME-114 — Markup interaction
-The overlay for the four geometric shapes: draw, select, move, resize, bend an arrow, Delete removes.
-Text and its inline editing are ME-122. Selection state lives outside the history — selecting is not
-an edit.
-*Depends on ME-113.*
-
 ### ME-115 — Editor settings panel
 Settings → Editor, with one row per manifest: icon, title, summary, switch. No per-tool settings code
 now or ever; a tool disabled here disappears from the rail, the shortcut table and the fold, and its
@@ -53,6 +40,89 @@ the proxy when it is not. Shipping the gesture without the native draw would loo
 hand once and the result dated in this ticket; the `-edited` naming checked against a folder
 that already holds a dozen of them.
 *Depends on ME-108, ME-115.*
+
+### ME-141 — Styles: two carousels, a pad and a palette slider
+Requested 2026-08-22, after iOS 27. **Filters stops being called Filters.** The section is *Styles*,
+and it holds two families in one strip: the looks ME-112 shipped (Vivid, Dramatic, Mono, Noir…) on the
+right, and **undertone presets** on the left — Amber, Gold, Rose Gold, Bright, Neutral, Cool Rose.
+They are the same kind of object: a colour matrix. Nothing about the fold changes, and both families
+still collapse into the one `ColorFilter` §3.2 promises.
+
+What *does* change is the control, and it is the reason this is not a rename:
+
+- **A two-axis pad.** One square, dragged in x and y — **Tone** on one axis, **Colour** on the other.
+  That is a **ninth `ParamSpec`**, and `ParamRows`'s `when` is exhaustive with no `else`, so the type
+  cannot land without its renderer. It writes **two** numbers per pointer event from one gesture,
+  which no existing spec does: `ParamWriter.edit` takes one spec and one value.
+- **A slider under it for Palette**, which is the preset's strength — the role `Intensity` plays today.
+  Whether Palette and Intensity are the same number under two names is the first thing to settle.
+- **One strip, two sections.** `PreviewChoiceParam` is a flat option list; a carousel with a left half
+  and a right half needs the options grouped, or two rows that scroll as one.
+
+**This supersedes ME-112's inspector**, not its matrices. `FilterMatrix` keeps its eight constants and
+gains six; `FilterTool` keeps `stage()`; the panel is rebuilt. Say so when promoting — a ticket that
+reads as new work will duplicate what is already there.
+
+Open before it can be written: what Tone and Colour mean numerically (exposure-vs-contrast? warmth-vs-
+tint?), and whether an undertone preset and a look can be chosen **at once** or replace each other.
+*Depends on ME-112.*
+
+### ME-142 — The rest of the adjustments
+Adjust ships six — Exposure, Brightness, Contrast, Saturation, Warmth, Tint. Photos offers around
+fifteen. The missing ones are wanted, and they do **not** all cost the same.
+
+**The ones that are still one matrix**, and therefore cost a slider each and nothing more: Vibrance
+(saturation weighted away from skin tones), Black Point, and a second look at Brilliance.
+
+**The ones that a `ColorMatrix` cannot express at all** — Highlights, Shadows, Sharpness, Definition,
+Noise Reduction, Vignette. Every one of them is either per-luminance (a tone curve) or per-neighbourhood
+(a convolution), and `RasterStage.Pixels` carries a `ColorMatrix`. A curve is not a linear map of the
+channels; a blur reads the pixels around the one being written.
+
+So this block is really two: the matrix ones, which are ME-111 again with more constants, and the rest,
+which need a **fourth thing a stage can be** — a Skia `RuntimeEffect` shader carried through the fold and
+run identically on the canvas, in `renderAtNativeScale` and in `RecipeStillEdits`. That is an engine
+change, and §3.2's "three shapes and no more" is the sentence it argues with. Splitting the promotion
+along that line is the whole point of writing this down now.
+
+**Also a panel problem.** Fifteen sliders in one inspector is a wall. Photos groups them and scrolls;
+the editor's inspector has never had to scroll.
+*Depends on ME-111.*
+
+### ME-143 — Crop that can pull one edge
+Requested 2026-08-22; **the exact behaviour is the author's to describe when it is promoted**, and the
+two readings are far apart, so this block deliberately records both rather than choosing.
+
+- **Non-uniform stretch** — drag the bottom edge down and the picture gets taller, the pixels stretched
+  rather than the frame recut. Free in the current model: `RasterStage.Geometry` carries a `Matrix`, a
+  scale is a matrix, and the reader path already scales the recipe.
+- **Perspective / keystone** — pull the top edge wider than the bottom to straighten a building. Also a
+  matrix, but a projective one: Compose's `Matrix` is 4×4 and Skia honours the perspective row, so it
+  fits `Geometry` too — what does *not* fit is `CropRect`, which is four integers and cannot describe a
+  quadrilateral, and `CropHandle`, whose handles resize a rectangle.
+
+Either way it is a **Geometry** stage in source pixels and needs no new stage kind. Whether it belongs
+to Crop or becomes its own tool depends on which of the two it is.
+*Depends on ME-109.*
+
+### ME-144 — Icons where the panels currently use words
+Requested 2026-08-22. Several controls say in text what a glyph says faster, and the rail already
+proved the point from the other side — it carried icons *alone* until two undrawn glyphs became two
+identical squares, and gained labels (ME-109, 2026-08-21). This is the same judgement applied per row
+rather than per tool.
+
+The candidates as the tree stands: Crop's `Portrait` switch (an orientation, drawn in a heartbeat),
+Crop's aspect chips where a ratio has a shape, Resize's presets, and any adjustment whose name is
+longer than its effect.
+
+**The work is mostly SVGs, not Kotlin.** `composeResources/drawable` holds around ninety and none of
+them is an orientation, a rectangle outline or an arrow; `Icons.Static` is a flat list of one-line
+aliases. A row renderer that can show a glyph instead of a label is a small change to
+`ParamRowChoice`/`ParamRowScalars`; drawing the glyphs is the ticket.
+
+**Not everywhere.** A number stays a number, and a slider keeps its name — an inspector of unlabelled
+pictograms is the submenu problem in a different costume.
+*Depends on nothing.*
 
 ### ME-118 — HDR tool
 `Output` domain, `Single`, one `ChoiceParam` — **`Keep` and `To SDR` only in v1** (§9, 2026-08-18).
