@@ -102,6 +102,11 @@ data class ActionParam(
  * The shell renders **nothing** for it (§3.4). That is the point: a value that
  * cannot be drawn by a generic row must say so in its type, rather than arriving
  * at a row renderer that then has to guess.
+ *
+ * **One payload holds markup's whole list** (ME-113), rather than one shape per
+ * operation as the earlier plan had it: a shape has to be movable, and only a value the
+ * open tool can rewrite and re-preview is. That is what makes this the spec markup
+ * needed rather than merely one it could use.
  */
 data class ObjectParam<T>(
     override val key: String,

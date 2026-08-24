@@ -40,8 +40,8 @@ internal class ToolSelection {
  * an overlay could observe mid-change.
  *
  * **The cardinality is the tool's own**, carried here rather than assumed: a crop is
- * `Single` and replaces itself, markup will be `Repeating` and accumulate, and it is
- * the commit — not the tool — that has to know which.
+ * `Single` and replaces itself, a rotation is `Repeating` and accumulates, markup is
+ * `Single` and previews a whole new shape list (ME-113) — the commit has to know which.
  */
 @Stable
 internal class EditorToolScopeImpl(

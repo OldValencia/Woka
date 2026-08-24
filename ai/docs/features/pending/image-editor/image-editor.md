@@ -65,8 +65,8 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-110](tickets/ME-110-resize-tool.md) | Resize tool | **done** 2026-08-22 — by hand outstanding |
 | [ME-111](tickets/ME-111-adjustments-tool.md) | Adjustments — six sliders, one colour matrix | **done** 2026-08-22 — confirmed by hand |
 | [ME-112](tickets/ME-112-filter-presets.md) | Filter presets, and the preview-choice row | **done** 2026-08-22 — by hand outstanding |
-| [ME-113](tickets/ME-113-markup-engine.md) | Markup engine — four shapes, one draw routine | specified — **next** |
-| [ME-114](tickets/ME-114-markup-interaction.md) | Markup interaction — the overlay and `Delete` | specified |
+| [ME-113](tickets/ME-113-markup-engine.md) | Markup engine — four shapes, one draw routine | **done** 2026-08-24 — by hand outstanding; nothing can be drawn until ME-114 |
+| [ME-114](tickets/ME-114-markup-interaction.md) | Markup interaction — the overlay and `Delete` | specified — **next** |
 | [ME-115…ME-144](tickets/backlog.md) | Image editor | backlog |
 
 ME-201…ME-204, the video editor's own tickets, moved to
