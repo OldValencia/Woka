@@ -70,16 +70,19 @@ of that pass; the rare formats are the one part still outstanding.
 - **Rare image formats:** `features/pending/rare-image-formats-and-frame-sets.md` — HEIC/HEIF and
   AVIF decoding, one "frames inside a file" mechanic for bursts, Live Photos and animated
   GIF/WebP alike, and HDR tone mapping for stills.
-- **Animated stills:** `features/pending/animated-stills.md` — that mechanic *plays* an animation
+- **Animated stills:** `features/implemented/animated-stills.md` — that mechanic *plays* an animation
   rather than only counting its frames. **Built 2026-08-20** in the viewer: a GIF or animated WebP
   runs at the speed it declares, loops as it says to, and a click pauses it. The grid still draws
-  frame 0 and that is its own decision (phase 4 of the plan). It unblocked the media editor's GIF
-  carrier, ME-138, which shipped the next day.
+  frame 0 and that is its own decision (phase 4 of the plan). It unblocked the image editor's GIF
+  carrier, ME-138, which shipped the next day. Moved to `implemented/` 2026-08-24.
 
 ### Phase 5: Media Editor (Editing tools)
-In `features/pending/media-editor/` — `media-editor.md` is the feature file, `tickets/` holds the
-fourteen foundation tickets plus `backlog.md` for the image (ME-1xx) and video (ME-2xx) tracks.
-Image editor first (5a), video editor second (5b) on the same shell.
+Two folders since 2026-08-24, one per shipping half. `features/pending/image-editor/` is **5a** —
+`image-editor.md` is the feature file, and `tickets/` holds the fourteen foundation tickets, the
+shipped image tickets and `backlog.md` for the ME-1xx track. `features/pending/video-editor/` is
+**5b** — nothing built, ME-201…ME-204 in its backlog. The ticket IDs are shared and unchanged,
+because the foundation is shared: the video editor adds a tool set, an engine and a saver to the
+image editor's shell and changes none of it.
 
 **The foundation is built** — ME-001…ME-014 all done as of 2026-08-18: the document, history and
 session; the parameter schema and tool contract; the registry with settings-backed enablement; the
