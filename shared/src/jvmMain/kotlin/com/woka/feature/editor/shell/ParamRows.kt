@@ -38,6 +38,8 @@ internal fun ParamRows(
     document: EditDocument,
     /** What the picture measures right now — see `ParamWriter.frame`. */
     frame: IntSize = IntSize.Zero,
+    /** What the canvas has selected, for `CanvasTool.restyled` (ME-114). */
+    selectedId: String? = null,
     /**
      * How to draw one option of a preview-choice row (ME-112). Supplied by the screen,
      * which may name the engine; the rows themselves never learn what a picture is.
@@ -45,7 +47,7 @@ internal fun ParamRows(
     thumbnail: @Composable (EditDocument, Modifier) -> Unit = { _, _ -> }
 ) {
     val params = paramsOf(document, tool)
-    val writer = ParamWriter(session, tool, frame)
+    val writer = ParamWriter(session, tool, frame, selectedId)
     Column(
         verticalArrangement = Arrangement.spacedBy(EditorTokens.Inspector.rowGap)
     ) {

@@ -30,6 +30,39 @@ interface CanvasTool : EditorTool {
      */
     val previewsThroughOverlay: Boolean get() = false
 
+    /**
+     * `Delete` or `Backspace`, while this tool is open (ME-114).
+     *
+     * Returns whether the press was *used*. Markup removes the selected shape and says
+     * true; Crop has nothing to delete and says false, which is why this is defaulted
+     * rather than added to both. The editor consumes the key either way — it owns the
+     * keyboard while it is open, including for the presses it has no work for
+     * (`EditorKeys`) — so the answer decides what happens, not whether the viewer
+     * underneath also hears it.
+     *
+     * Not a `@Composable`: it is called from the key handler, which is an effect.
+     */
+    fun onDelete(scope: EditorToolScope): Boolean = false
+
+    /**
+     * A chance to apply an inspector edit to **what is selected on the canvas**, rather
+     * than only to the tool's own parameters (ME-114, asked for 2026-08-24).
+     *
+     * Markup's `Color` and `Width` are the pen for the *next* shape, because each shape
+     * stores its own style. That is right while nothing is selected and wrong the moment
+     * something is: selecting an arrow and choosing red plainly means "make this one red",
+     * and without this hook the shape sat there unchanged.
+     *
+     * Returns the rewritten parameter set, or null for "nothing to apply" — which is every
+     * spec but two, every tool but one, and every moment with no selection. It runs after
+     * [EditorTool.resolve] and its result is what reaches the document, so a restyle is
+     * part of the same operation as the pen change and therefore the same undo step.
+     *
+     * [selectedId] is the *scope's* selection, never the document's: §3.1 keeps selection
+     * out of the document so that clicking a shape records no history.
+     */
+    fun restyled(spec: ParamSpec<*>, params: ParamSet, selectedId: String?): ParamSet? = null
+
     @Composable
     fun Overlay(scope: EditorToolScope)
 }

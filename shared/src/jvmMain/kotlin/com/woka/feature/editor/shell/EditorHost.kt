@@ -103,6 +103,10 @@ internal fun EditorHost(
         Unit
     }
 
+    // Built here so its lifetime is the editor's: the key handler installed just below
+    // reads it, and the active canvas tool — two composables down — writes it (ME-114).
+    val canvasKeys = remember(session) { CanvasKeys() }
+
     EditorKeyEffect(
         globalShortcuts = LocalGlobalShortcuts.current,
         canUndo = canUndo,
@@ -110,13 +114,15 @@ internal fun EditorHost(
         onCancel = leave,
         onUndo = session::undo,
         onRedo = session::redo,
-        onDone = done
+        onDone = done,
+        canvasKeys = canvasKeys
     )
 
     EditorScreen(
         session = session,
         engine = engine,
         registry = dependencies.registry,
+        canvasKeys = canvasKeys,
         onCancel = leave,
         onDone = done,
         // Enabled while there is anything to take back: what the file carries, or what

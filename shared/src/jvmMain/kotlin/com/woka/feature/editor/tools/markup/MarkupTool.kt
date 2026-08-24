@@ -1,10 +1,9 @@
 package com.woka.feature.editor.tools.markup
 
+import androidx.compose.runtime.Composable
 import com.woka.core.ui.icons.Icons
-import com.woka.feature.editor.core.ChoiceParam
-import com.woka.feature.editor.core.ColorParam
-import com.woka.feature.editor.core.EditorTool
-import com.woka.feature.editor.core.FloatParam
+import com.woka.feature.editor.core.CanvasTool
+import com.woka.feature.editor.core.EditorToolScope
 import com.woka.feature.editor.core.ObjectParam
 import com.woka.feature.editor.core.ParamSet
 import com.woka.feature.editor.core.ParamSpec
@@ -15,23 +14,6 @@ import com.woka.feature.editor.core.ToolManifest
 import com.woka.feature.editor.core.ToolStage
 import com.woka.feature.editor.engine.image.RasterStage
 import kotlinx.serialization.builtins.ListSerializer
-
-/**
- * The seven offered colours: the editor's own accent first, then the five the rest of
- * the app already speaks (`Theme.Colors`), then white for a dark picture.
- *
- * `Long` ARGB rather than `Color`, because a swatch is a document value before it is a
- * pixel (`ParamValue.ColorValue`).
- */
-private val SWATCHES = listOf(
-    0xFFFF9F0AL,
-    0xFFFF3B30L,
-    0xFFFFD60AL,
-    0xFF30D158L,
-    0xFF0A84FFL,
-    0xFF000000L,
-    0xFFFFFFFFL
-)
 
 /**
  * Markup — the first `Annotate` tool, and the first thing in the app that ever produced
@@ -54,11 +36,12 @@ private val SWATCHES = listOf(
  * list, which is safe because `paramsOf` hands the whole set to `ParamWriter` — writing a
  * colour carries the shapes through untouched, the way Crop's aspect chip carries its rect.
  *
- * **Not a `CanvasTool` yet.** `ToolInteraction.Canvas` is a manifest claim the type does
- * not have to back — `FixtureTool` documents exactly that — so this ships a tool that
- * renders a document it cannot yet create. Drawing one is ME-114.
+ * **A `CanvasTool` since ME-114**, which added the overlay that draws, selects, moves,
+ * resizes and deletes. `previewsThroughOverlay` stays false — the default, and the case
+ * its doc comment was written for: a stroke has to be visible as it is drawn, so the
+ * fold must go on applying the list rather than the overlay drawing a second copy.
  */
-object MarkupTool : EditorTool {
+object MarkupTool : CanvasTool {
 
     /**
      * The shapes, in the order they were drawn and are painted.
@@ -69,28 +52,10 @@ object MarkupTool : EditorTool {
      */
     val Shapes = ObjectParam("shapes", ListSerializer(MarkupShape.serializer()), emptyList())
 
-    val Kind = ChoiceParam(
-        key = "kind",
-        label = "Shape",
-        options = MarkupKind.entries.toList(),
-        default = MarkupKind.Arrow
-    )
-
-    val Color = ColorParam(
-        key = "color",
-        label = "Color",
-        swatches = SWATCHES,
-        // The editor accent, which is what the design log settled markup's colour on
-        // (2026-08-18) and what every other editor control already uses.
-        default = 0xFFFF9F0AL
-    )
-
-    /**
-     * Stroke width in **source** pixels, so a mark keeps its size relative to the picture
-     * rather than to the window it was drawn in. 6 px reads on a photograph and is thin
-     * enough to point at something on a screenshot.
-     */
-    val Width = FloatParam("width", "Width", 1f..64f, default = 6f, unit = "px")
+    /** The pen — declared in `MarkupPen`, named here because a tool's specs are its own. */
+    val Kind = MarkupKindParam
+    val Color = MarkupColorParam
+    val Width = MarkupWidthParam
 
     override val manifest = ToolManifest(
         id = "markup",
@@ -123,4 +88,14 @@ object MarkupTool : EditorTool {
 
         return RasterStage.Paint { shapes.forEach { shape -> drawMarkup(shape) } }
     }
+
+    /** One shape removed, one undo step — the arithmetic is `deleteSelectedShape`. */
+    override fun onDelete(scope: EditorToolScope): Boolean = scope.deleteSelectedShape()
+
+    /** Colour and width apply to what is selected, too — see `restyleSelected`. */
+    override fun restyled(spec: ParamSpec<*>, params: ParamSet, selectedId: String?): ParamSet? =
+        restyleSelected(spec, params, selectedId)
+
+    @Composable
+    override fun Overlay(scope: EditorToolScope) = MarkupOverlay(scope)
 }

@@ -34,7 +34,12 @@ internal fun EditorKeyEffect(
     onCancel: () -> Unit,
     onUndo: () -> Unit,
     onRedo: () -> Unit,
-    onDone: () -> Unit
+    onDone: () -> Unit,
+    /**
+     * The open canvas tool's `Delete`, through the editor's one keyboard slot (ME-114).
+     * Null when no such tool is open, which is every tool but Markup today.
+     */
+    canvasKeys: CanvasKeys? = null
 ) {
     val curCancel by rememberUpdatedState(onCancel)
     val curUndo by rememberUpdatedState(onUndo)
@@ -42,6 +47,7 @@ internal fun EditorKeyEffect(
     val curDone by rememberUpdatedState(onDone)
     val curCanUndo by rememberUpdatedState(canUndo)
     val curCanRedo by rememberUpdatedState(canRedo)
+    val curCanvasKeys by rememberUpdatedState(canvasKeys)
 
     DisposableEffect(globalShortcuts) {
         val previous = globalShortcuts.onPreviewKey
@@ -57,6 +63,11 @@ internal fun EditorKeyEffect(
                     consumeIf(curCanRedo) { curRedo() }
                 event.isCtrlPressed && event.key == Key.Y -> consumeIf(curCanRedo) { curRedo() }
                 event.isCtrlPressed && event.key == Key.Z -> consumeIf(curCanUndo) { curUndo() }
+                // Both spellings, and **consumed either way**: the editor owns the
+                // keyboard while it is open, including for a press the open tool had no
+                // shape selected to use it on.
+                event.key == Key.Delete || event.key == Key.Backspace ->
+                    consume { curCanvasKeys?.onDelete?.invoke() }
                 else -> false
             }
         }

@@ -1,11 +1,8 @@
 package com.woka.feature.editor.shell
 
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.unit.IntSize
@@ -77,74 +74,3 @@ internal fun canvasDocumentFor(tool: EditorTool?, document: EditDocument): EditD
         ?.takeIf { it.previewsThroughOverlay }
         ?.let { document.without(it.manifest.id) }
         ?: document
-
-/**
- * The open tool's overlay, when it has one (ME-109).
- *
- * **The type answers "needs an overlay", not a null check** — `CanvasTool` is a
- * separate interface for exactly this, so the shell asks once, here, and nothing else
- * in the editor repeats the question. A tool that is not one draws nothing and costs a
- * cast.
- */
-@Composable
-internal fun ActiveToolOverlay(
-    tool: EditorTool?,
-    session: EditorSession,
-    geometry: EditorCanvasGeometry,
-    previewMatrix: Matrix
-) {
-    val canvasTool = tool as? CanvasTool ?: return
-    canvasTool.Overlay(
-        rememberToolScope(session, canvasTool.manifest.cardinality, geometry, previewMatrix)
-    )
-}
-
-/**
- * The scope for the tool currently open.
- *
- * Rebuilt whenever the document or the geometry moves — both are read by the overlay on
- * every frame, and a scope holding a stale one would draw against a fold that has since
- * moved on. The selection is keyed on the session alone, so it survives that.
- */
-@Composable
-internal fun rememberToolScope(
-    session: EditorSession,
-    cardinality: ToolCardinality,
-    geometry: EditorCanvasGeometry,
-    previewMatrix: Matrix
-): EditorToolScope {
-    val document by session.document.collectAsState()
-    val selection = remember(session) { ToolSelection() }
-    val values = previewMatrix.values.toList()
-
-    return remember(session, cardinality, selection, document, geometry, values) {
-        // Source → what the engine drew → where the canvas put it. Composed rather
-        // than assumed identity: with a flip in the document the two disagree by the
-        // width of the picture, and an overlay drawn without this lands on the far
-        // side of it (2026-08-22).
-        val sourceToCanvas = previewMatrix.thenApplying(geometry.sourceToCanvas)
-        EditorToolScopeImpl(
-            session = session,
-            cardinality = cardinality,
-            selection = selection,
-            document = document,
-            sourceSize = geometry.sourceSize,
-            canvasToSource = sourceToCanvas.inverted(),
-            sourceToCanvas = sourceToCanvas
-        )
-    }
-}
-
-/**
- * "Apply this, then [next]" — Compose's `timesAssign` computes `this = other * this`,
- * so the factor that acts first is the receiver (the same order `concat` documents in
- * the raster fold, and the same trap: written the other way round it composes the
- * shift before the turn).
- */
-private fun Matrix.thenApplying(next: Matrix): Matrix {
-    val composed = Matrix(values.copyOf())
-    composed *= next
-    return composed
-}
-
-private fun Matrix.inverted(): Matrix = Matrix(values.copyOf()).apply { invert() }

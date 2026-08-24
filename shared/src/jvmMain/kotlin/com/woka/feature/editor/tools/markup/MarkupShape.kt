@@ -91,6 +91,22 @@ sealed interface MarkupShape {
 }
 
 /**
+ * The same shape in a different pen (ME-114).
+ *
+ * A `when` over the four rather than a field on the interface: `color` and `width` are
+ * `val`s on an immutable hierarchy, so restyling is `copy`, and `copy` is per class. The
+ * alternative — a mutable style object shared by reference — is how two arrows drawn a
+ * minute apart end up changing colour together.
+ */
+internal fun MarkupShape.styled(color: Long = this.color, width: Float = this.width): MarkupShape =
+    when (this) {
+        is MarkupShape.Arrow -> copy(color = color, width = width)
+        is MarkupShape.Rectangle -> copy(color = color, width = width)
+        is MarkupShape.Ellipse -> copy(color = color, width = width)
+        is MarkupShape.Freehand -> copy(color = color, width = width)
+    }
+
+/**
  * A point of a shape, in source pixels.
  *
  * Its own type rather than `Offset` for two reasons that both have to hold: `Offset` is

@@ -46,7 +46,9 @@ internal fun EditorScreen(
     onDone: () -> Unit,
     canRevert: Boolean = false,
     onRevert: () -> Unit = {},
-    unavailable: Map<String, String> = emptyMap()
+    unavailable: Map<String, String> = emptyMap(),
+    /** The open canvas tool's keyboard slot — built above, because the handler is (ME-114). */
+    canvasKeys: CanvasKeys? = null
 ) {
     val document by session.document.collectAsState()
     val canUndo by session.canUndo.collectAsState()
@@ -54,6 +56,11 @@ internal fun EditorScreen(
     val tools by registry.tools(engine.kind).collectAsState()
 
     var activeToolId by remember { mutableStateOf<String?>(null) }
+
+    // **Hoisted out of the overlay's scope** (ME-114). The inspector needs it too, so that
+    // choosing a colour with a shape selected restyles that shape — and a selection living
+    // inside the scope would be rebuilt, and forgotten, several times a second.
+    val selection = remember(session) { ToolSelection() }
 
     // The editor takes over the shell's bar rather than drawing a second one, which
     // is also what removes the folder path and the viewer's own controls from above
@@ -108,47 +115,25 @@ internal fun EditorScreen(
                     session = session,
                     geometry = geometry,
                     // Of the document the canvas actually drew, not of the whole one.
-                    previewMatrix = engine.previewMatrix(canvasDocument)
+                    previewMatrix = engine.previewMatrix(canvasDocument),
+                    canvasKeys = canvasKeys,
+                    selection = selection
                 )
             }
         )
 
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = EditorTokens.Rail.bottomInset),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(EditorTokens.Inspector.bottomInset)
-        ) {
-            // Bucket B, for the whole session: the cost of `Done` on a format with
-            // no carrier is stated before the work, never after it (§4.5).
-            if (engine.capability == EditCapability.Destructive) {
-                EditorNoHistoryNotice()
-            }
-            // Above the inspector and independent of it: the warning has to be
-            // visible whether or not a tool happens to be open.
-            if (skipped.isNotEmpty()) {
-                EditorSkippedNotice(skipped.size, skippedToolTitles(skipped, registry))
-            }
-            if (activeTool != null) {
-                // Only the screen may name the frame; a tool is handed it (ME-110).
-                val frame = engine.drawnSize(document)
-                EditorInspector(
-                    title = activeTool.manifest.title,
-                    footnote = activeTool.footnote(paramsOf(document, activeTool), frame),
-                    content = {
-                        ParamRows(activeTool, session, document, frame) { preview, modifier ->
-                            engine.Thumbnail(preview, modifier)
-                        }
-                    }
-                )
-            }
-            EditorRail(
-                tools = tools,
-                activeToolId = activeToolId,
-                unavailable = unavailable,
-                onSelect = { id -> activeToolId = if (activeToolId == id) null else id }
-            )
-        }
+        EditorBottomPanel(
+            session = session,
+            engine = engine,
+            registry = registry,
+            document = document,
+            tools = tools,
+            activeTool = activeTool,
+            activeToolId = activeToolId,
+            skipped = skipped,
+            unavailable = unavailable,
+            selectedId = selection.id,
+            onSelectTool = { id -> activeToolId = if (activeToolId == id) null else id }
+        )
     }
 }
