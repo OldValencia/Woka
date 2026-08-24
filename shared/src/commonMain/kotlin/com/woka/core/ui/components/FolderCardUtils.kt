@@ -26,8 +26,38 @@ fun getFolderCardSubtitle(isDir: Boolean, file: File): String {
         MediaKind.Video -> "Video"
         null -> "File"
     }
-    return "$type • ${formatFileSize(file.length())}"
+    return "$type · ${formatFileSize(file.length())}"
 }
+
+/**
+ * Shortens a name from the middle rather than the end. What tells two long names
+ * apart is usually in the tail — `f0fb96fb…19e18f` is identifiable where
+ * `f0fb96fb-49f7-…` is not, and a linked folder really can be named after a UUID.
+ *
+ * Deliberately generous: this is the guard against a pathological name, not the
+ * fit-to-width rule. Width is still handled by `TextOverflow.Ellipsis` on the label,
+ * which is the only thing that knows how wide the card was actually drawn.
+ */
+fun middleEllipsis(name: String, max: Int = 26): String {
+    if (name.length <= max) return name
+    val head = (max - 1) / 2
+    return name.take(head) + "…" + name.takeLast(max - 1 - head)
+}
+
+/**
+ * The second line of a folder card's caption. One line replaced two: the word
+ * "Folder" under the cover and the "51 ITEMS" badge on it said the same thing from
+ * two places, both fighting the picture.
+ */
+fun folderCardMeta(itemCount: Int): String = when (itemCount) {
+    0 -> "Folder · empty"
+    1 -> "Folder · 1 item"
+    else -> "Folder · $itemCount items"
+}
+
+/** Splices a multi-frame still's frame count into its "Image · 2.1 MB" line. */
+fun withFrameCount(subtitle: String, frameCount: Int): String =
+    subtitle.replaceFirst(" · ", " · $frameCount frames · ")
 
 data class FolderStateData(val itemCount: Int, val previews: List<File>)
 
@@ -61,7 +91,7 @@ suspend fun fetchFolderStateData(file: File): FolderStateData {
                 MediaKind.Video -> WokaStorage.thumbnailFile(f).takeIf { it.exists() }
                 null -> null
             }
-        }.take(3)
+        }.take(1)
         FolderStateData(count, previews).also { folderStateCache[key] = stamp to it }
     }
 }

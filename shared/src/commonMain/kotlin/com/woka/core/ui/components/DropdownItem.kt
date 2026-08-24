@@ -32,9 +32,13 @@ fun DropdownItem(
     enabled: Boolean = true,
     textColor: Color? = null,
     iconRes: DrawableResource? = null,
+    // Passed in by the one caller that needs the row's hover for something other
+    // than its own background: a submenu opens on it (see `DropdownSubmenu`).
+    interactionSource: MutableInteractionSource? = null,
+    trailing: (@Composable () -> Unit)? = null,
     onClick: () -> Unit
 ) {
-    val src = remember { MutableInteractionSource() }
+    val src = interactionSource ?: remember { MutableInteractionSource() }
     val isHovered by src.collectIsHoveredAsState()
     val bg by animateColorAsState(if (isHovered && enabled) Theme.colors.surfaceHover else Color.Transparent)
     val fg = if (!enabled) Theme.colors.textTertiary else textColor ?: Theme.colors.textPrimary
@@ -67,5 +71,9 @@ fun DropdownItem(
             text = text,
             style = TextStyle(color = fg, fontSize = 13.sp)
         )
+        if (trailing != null) {
+            Spacer(modifier = Modifier.weight(1f))
+            trailing()
+        }
     }
 }

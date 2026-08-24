@@ -19,6 +19,7 @@ import androidx.compose.ui.input.key.*
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.woka.core.ui.components.GridDensityHud
 import com.woka.core.ui.components.rememberWatchMarks
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -122,5 +123,7 @@ fun FolderGrid(
                 .padding(end = 4.dp, top = 20.dp, bottom = 120.dp),
             adapter = rememberScrollbarAdapter(gridState)
         )
+
+        GridDensityHud(zoom.layout, modifier = Modifier.align(Alignment.Center))
     }
 }

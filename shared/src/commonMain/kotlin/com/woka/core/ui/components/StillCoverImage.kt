@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
@@ -38,7 +39,7 @@ import java.io.File
  * without opening anything.
  */
 @Composable
-fun StillCoverImage(file: File, modifier: Modifier = Modifier) {
+fun StillCoverImage(file: File, modifier: Modifier = Modifier, colorFilter: ColorFilter? = null) {
     var bitmap by remember(file.absolutePath) { mutableStateOf<ImageBitmap?>(null) }
     // Null while the answer is unknown. **Coil draws in the meantime rather than the
     // tile staying blank**: the check is a few kilobytes off the file's head and
@@ -68,7 +69,8 @@ fun StillCoverImage(file: File, modifier: Modifier = Modifier) {
                 bitmap = it,
                 contentDescription = null,
                 modifier = modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.Crop,
+                colorFilter = colorFilter
             )
         }
         return
@@ -85,7 +87,8 @@ fun StillCoverImage(file: File, modifier: Modifier = Modifier) {
             model = file,
             contentDescription = null,
             modifier = modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
+            contentScale = ContentScale.Crop,
+            colorFilter = colorFilter
         )
     }
 }

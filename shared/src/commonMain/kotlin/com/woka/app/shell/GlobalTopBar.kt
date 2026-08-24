@@ -56,20 +56,30 @@ fun GlobalTopBar(
             if (onNavigateBack != null) {
                 BackButton(onClick = topBarAccessories.backActionOverride ?: onNavigateBack)
             }
-            topBarAccessories.leadingAccessory?.invoke()
-        }
 
-        // Centered Content (Breadcrumbs or Accessory)
-        Box(modifier = Modifier.align(Alignment.Center)) {
-            if (topBarAccessories.centerAccessory != null) {
-                topBarAccessories.centerAccessory?.invoke()
-            } else if (currentPath != null) {
+            // The path and a screen's leading accessory are one slot, not two: both
+            // answer "what is this screen". Beside Back rather than centred in the
+            // bar, because that is where Home's title starts too.
+            //
+            // Exclusive on purpose. `AnimatedContent` keeps the outgoing screen
+            // composed for the length of the slide, so drawing both would put Home's
+            // title beside the folder's path for 220 ms and then jump the path left
+            // when Home was finally disposed. The path yields in turn to an overlay
+            // that has taken the centre — the viewer and the editor speak for the
+            // whole bar, and the editor's Revert wants this slot while they do.
+            if (currentPath != null && topBarAccessories.centerAccessory == null) {
                 SmartBreadcrumbs(
                     path = currentPath,
                     linkedFolders = linkedFolders,
                     onBreadcrumbClick = onBreadcrumbClick
                 )
+            } else {
+                topBarAccessories.leadingAccessory?.invoke()
             }
+        }
+
+        Box(modifier = Modifier.align(Alignment.Center)) {
+            topBarAccessories.centerAccessory?.invoke()
         }
 
         // Win Controls & Right Accessory on the right

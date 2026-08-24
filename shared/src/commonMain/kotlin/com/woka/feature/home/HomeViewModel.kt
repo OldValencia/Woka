@@ -9,10 +9,18 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import java.io.File
 import com.woka.core.data.PinnedSession
+import com.woka.core.data.ViewLayout
+
+/**
+ * Home has no path of its own, so its grid density borrows the per-folder map under
+ * a reserved key — the same trick `folderShowTitles` already plays for this screen.
+ */
+private const val HOME_LAYOUT_KEY = "HOME"
 
 data class HomeState(
     val linkedFolders: List<String> = emptyList(),
-    val showTitles: Boolean = true
+    val showTitles: Boolean = true,
+    val layout: ViewLayout = ViewLayout.Grid
 )
 
 class HomeViewModel(
@@ -27,7 +35,8 @@ class HomeViewModel(
             
             HomeState(
                 linkedFolders = sortedFolders,
-                showTitles = settings.folderShowTitles["HOME"] ?: settings.showTitles
+                showTitles = settings.folderShowTitles["HOME"] ?: settings.showTitles,
+                layout = settings.folderLayouts[HOME_LAYOUT_KEY] ?: ViewLayout.Grid
             )
         }
         .stateIn(
@@ -39,6 +48,10 @@ class HomeViewModel(
     fun removeLinkedFolder(path: String) {
         settingsRepository.removeLinkedFolder(path)
         settingsRepository.removePinnedSession(path)
+    }
+
+    fun setLayout(layout: ViewLayout) {
+        settingsRepository.setFolderLayout(HOME_LAYOUT_KEY, layout)
     }
 
     fun pinFolder(path: String) {

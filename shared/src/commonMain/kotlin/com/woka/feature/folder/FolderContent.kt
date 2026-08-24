@@ -106,6 +106,8 @@ fun FolderContent(
     FolderOverlays(
         overlays = overlays,
         viewModel = viewModel,
-        path = path
+        path = path,
+        zoom = zoom,
+        settingsRepo = settingsRepo
     )
 }

@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Woka — Home, quieter (v2)</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root{
+  --bg-canvas:#0E1015;
+  --bg-island:rgba(22,26,34,.8);
+  --bg-card:#161920;
+  --color-home:#0A84FF;
+  --color-folders:#FF9F0A;
+  --color-search:#30D158;
+  --text-main:#F4F4F6;
+  --text-muted:#515764;
+  --text-second:#8A909D;
+  --border:rgba(255,255,255,.04);
+  --border-glow:rgba(255,255,255,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',sans-serif}
+body{background:var(--bg-canvas);color:var(--text-main);padding:40px;line-height:1.55}
+.wrap{max-width:1240px;margin:0 auto}
+
+h1{font-size:26px;font-weight:800;letter-spacing:-.5px}
+h2{font-size:17px;font-weight:700;margin:44px 0 6px;letter-spacing:-.2px}
+.lede{color:var(--text-second);font-size:14px;max-width:78ch;margin-top:8px}
+.note{color:var(--text-muted);font-size:12.5px;margin-top:6px;max-width:86ch}
+code{background:rgba(255,255,255,.05);padding:1px 5px;border-radius:4px;font-size:12px;
+     font-family:ui-monospace,Menlo,Consolas,monospace;color:#CDCDD2}
+hr{border:0;border-top:1px solid var(--border);margin:34px 0}
+
+/* ---------- decision list ---------- */
+.findings{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:18px}
+.finding{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px 18px}
+.finding .n{font-size:11px;font-weight:800;color:var(--color-folders);letter-spacing:.08em}
+.finding.out .n{color:#5B4B8A}
+.finding h3{font-size:14px;font-weight:700;margin:6px 0 6px}
+.finding p{font-size:13px;color:var(--text-second)}
+.finding .fix{font-size:12.5px;color:#9FB4D8;margin-top:9px;border-top:1px solid var(--border);padding-top:9px}
+.finding.out{opacity:.5}
+.finding.out .fix{color:#7B8296}
+
+/* ---------- the toggle ---------- */
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 20px;align-items:center}
+.tg{display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--border);
+    border-radius:11px;padding:8px 14px;font-size:12.5px;font-weight:600;color:var(--text-second);cursor:pointer;
+    user-select:none;transition:.15s}
+.tg:hover{border-color:var(--border-glow);color:var(--text-main)}
+.tg .dot{width:9px;height:9px;border-radius:50%;background:#3A3F4B;transition:.15s}
+.tg.on{color:#fff}
+.tg.on .dot{background:var(--color-search);box-shadow:0 0 10px rgba(48,209,88,.5)}
+.hint{font-size:12px;color:var(--text-muted);max-width:70ch}
+
+/* ---------- the app frame ---------- */
+.app{position:relative;height:660px;border-radius:14px;overflow:hidden;background:var(--bg-canvas);
+     border:1px solid var(--border-glow);box-shadow:0 30px 70px rgba(0,0,0,.55)}
+
+/* top bar */
+header{height:60px;display:flex;align-items:center;gap:12px;padding:0 22px;position:relative;z-index:20}
+.title-block{display:flex;align-items:baseline;gap:10px}
+.scr-title{font-size:19px;font-weight:800;letter-spacing:-.4px}
+.scr-count{font-size:12.5px;color:var(--text-muted);font-weight:600}
+.spacer{flex:1}
+/* the mockup's own stepper, not app UI — it stands in for Ctrl+wheel, which the
+   browser has already spoken for */
+.seg{display:flex;background:var(--bg-card);border:1px solid var(--border);border-radius:9px;padding:2px}
+.seg span{padding:4px 11px;border-radius:7px;font-size:12px;font-weight:600;color:var(--text-muted);cursor:pointer;
+  user-select:none;transition:.15s}
+.seg span.sel{background:rgba(255,255,255,.08);color:#fff}
+
+/* the density readout: centre of the grid, only while it is changing */
+.hud{position:absolute;left:50%;top:50%;z-index:35;pointer-events:none;opacity:0;
+  transform:translate(-50%,-50%) scale(.92);display:flex;flex-direction:column;align-items:center;
+  background:var(--bg-card);border:1px solid var(--border-glow);border-radius:16px;
+  padding:16px 22px;box-shadow:0 28px 60px rgba(0,0,0,.5);
+  transition:opacity .13s ease,transform .16s cubic-bezier(.2,.8,.2,1)}
+.hud.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.hud .row{display:flex;align-items:center;gap:10px}
+.hud .from{font-size:20px;font-weight:600;color:var(--text-muted)}
+.hud .arr{font-size:16px;color:var(--text-muted)}
+.hud .to{font-size:28px;font-weight:800;color:var(--text-main);letter-spacing:-.5px}
+.hud .name{font-size:12px;color:var(--text-second);margin-top:4px}
+
+/* static renderings of the two background menus */
+.menus{display:flex;gap:56px;margin-top:22px;flex-wrap:wrap}
+.menu-cap{font-size:12px;color:var(--text-muted);margin-bottom:10px}
+.menu{width:180px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:6px;
+  box-shadow:0 12px 24px rgba(0,0,0,.35);position:relative}
+.mi{display:flex;align-items:center;padding:8px 12px;border-radius:6px;font-size:13px;color:var(--text-main)}
+.mi.accent{color:var(--color-home)}
+.mi.folders{color:var(--color-folders)}
+.mi.dim{color:#4A4F5B}
+.mi.hot{background:rgba(255,255,255,.05)}
+.mi .chev{margin-left:auto;color:var(--text-muted);font-size:14px}
+.fly{position:absolute;left:calc(100% + 4px);top:32px;width:180px;background:var(--bg-card);
+  border:1px solid var(--border);border-radius:10px;padding:6px;box-shadow:0 12px 24px rgba(0,0,0,.35)}
+.win{display:flex;gap:2px;margin-left:6px}
+.win i{width:30px;height:28px;display:grid;place-items:center;font-style:normal;font-size:11px;
+       color:var(--text-muted);border-radius:6px}
+.app.crowded header > *:not(.win){opacity:0;pointer-events:none}
+
+/* back button + the path — plain text beside it, no container of its own */
+.back{width:34px;height:34px;flex:none;display:grid;place-items:center;border-radius:6px;
+  font-size:16px;font-weight:700;color:var(--text-main);cursor:pointer;transition:.15s}
+.back:hover{background:rgba(255,255,255,.06)}
+.crumbs{display:flex;align-items:center;font-size:15px;font-weight:600;letter-spacing:-.1px;white-space:nowrap}
+.crumbs .name{display:inline-block;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  color:var(--text-second);cursor:pointer;transition:color .15s;vertical-align:bottom}
+.crumbs .crumb:hover .name{color:var(--text-main)}
+.crumbs .name.here{color:var(--text-main)}
+.crumbs .sep{color:rgba(138,144,157,.6);padding:0 8px;font-weight:400}
+
+/* the grid */
+.view{position:absolute;inset:60px 0 0 0;overflow-y:auto;padding:10px 34px 150px 34px}
+.view::-webkit-scrollbar{width:10px}
+.view::-webkit-scrollbar-thumb{background:rgba(255,255,255,.09);border-radius:8px;border:3px solid transparent;background-clip:content-box}
+.app.crowded .view{padding-bottom:20px}          /* content dies under the dock */
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:26px}
+.app.d-s .grid{grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:18px}
+.app.d-l .grid{grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:30px}
+
+.card{position:relative;cursor:pointer;display:flex;flex-direction:column;
+  transition:transform .2s cubic-bezier(.2,.8,.2,1)}
+.card:hover{transform:translateY(-2px)}
+
+/* the stacked-paper edge: "there is more inside", without a collage */
+.stack{position:relative}
+.stack::before,.stack::after{content:'';position:absolute;left:8px;right:8px;bottom:-4px;height:14px;
+  border-radius:0 0 11px 11px;background:#1A1E27;border:1px solid var(--border);border-top:0;z-index:-1}
+.stack::after{left:15px;right:15px;bottom:-8px;background:#141821;z-index:-2}
+.app.crowded .stack::before,.app.crowded .stack::after{display:none}
+
+.thumb{position:relative;width:100%;aspect-ratio:16/10;border-radius:11px;overflow:hidden;
+  background:var(--bg-card);border:1px solid var(--border);box-shadow:0 6px 18px rgba(0,0,0,.28);
+  transition:border-color .2s,box-shadow .2s}
+.card:hover .thumb{border-color:var(--border-glow);box-shadow:0 18px 34px rgba(0,0,0,.4)}
+
+/* the cover itself, calm at rest */
+.cover{position:absolute;inset:0;transition:filter .25s ease,transform .35s ease}
+.calm .cover{filter:saturate(.62) brightness(.78)}
+.calm .card:hover .cover{filter:saturate(1) brightness(1);transform:scale(1.02)}
+
+/* mosaic — kept only to show the "as today" state */
+.cover.mosaic{display:none;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px}
+.cover.mosaic > i{display:block}
+.app.crowded .cover.mosaic{display:grid}
+.app.crowded .cover.single{display:none}
+
+/* THE CAPTION LIVES ON THE COVER --------------------------------------- */
+/* scrim: opaque at the very bottom, gone by the middle of the card       */
+.scrim{position:absolute;left:0;right:0;bottom:0;height:52%;pointer-events:none;
+  background:linear-gradient(to top,rgba(0,0,0,.86) 0%,rgba(0,0,0,.62) 28%,rgba(0,0,0,.22) 66%,rgba(0,0,0,0) 100%)}
+.label{position:absolute;left:12px;right:12px;bottom:9px;z-index:2}
+.label .t{font-size:13.5px;font-weight:650;color:#fff;letter-spacing:-.1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.label .m{font-size:11.5px;font-weight:550;color:rgba(255,255,255,.62);margin-top:1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.card:hover .label .m{color:rgba(255,255,255,.82)}
+.app.d-s .label{left:10px;right:10px;bottom:7px}
+.app.d-s .label .t{font-size:12.5px}
+.app.d-s .label .m{font-size:10.5px}
+.app.d-l .label .t{font-size:14.5px}
+.app.d-l .label .m{font-size:12px}
+.app.crowded .scrim,.app.crowded .label{display:none}
+
+/* hover tooltip — on the path, not on the tile.
+   `pointer-events:none` is the whole point: it must never eat the click. */
+.crumb{position:relative;display:inline-flex}
+.tip{position:absolute;top:calc(100% + 14px);left:0;z-index:40;pointer-events:none;
+  background:rgba(10,12,16,.94);border:1px solid var(--border-glow);border-radius:9px;
+  padding:8px 11px;box-shadow:0 16px 34px rgba(0,0,0,.55);white-space:nowrap;
+  opacity:0;transform:translateY(-4px);transition:opacity .13s ease,transform .13s ease}
+.crumb:hover .tip{opacity:1;transform:translateY(0);transition-delay:.5s}
+.tip .n{display:block;font-size:12px;font-weight:600;color:#fff;letter-spacing:0}
+.tip .s{display:block;font-size:11px;font-weight:400;color:var(--text-second);margin-top:2px;letter-spacing:0}
+.app.crowded .tip{display:none}
+
+/* the two things that existed before and now do not */
+.badge{position:absolute;right:9px;bottom:9px;background:rgba(14,16,21,.82);backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.06);padding:3px 8px;border-radius:6px;font-size:10px;font-weight:800;
+  letter-spacing:.04em;color:#fff;display:none}
+.app.crowded .badge{display:block}
+.info{display:none;padding:10px 3px 0}
+.info .t{font-size:13.5px;font-weight:650;color:#CDCDD2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.info .m{font-size:12px;color:var(--text-muted);margin-top:2px}
+.app.crowded .info{display:block}
+
+/* dock */
+.dock{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg-island);
+  backdrop-filter:blur(30px);border:1px solid rgba(255,255,255,.05);padding:6px;border-radius:20px;
+  display:flex;align-items:center;gap:4px;box-shadow:0 24px 48px rgba(0,0,0,.5);z-index:30}
+.di{height:38px;padding:0 15px;border-radius:14px;display:flex;align-items:center;gap:8px;color:#838893;
+    font-size:13px;font-weight:650;cursor:pointer}
+.di.act{color:#fff;background:rgba(255,255,255,.04)}
+.di.act .ic{color:var(--color-home)}
+.ic{width:15px;height:15px;fill:currentColor}
+.dsep{width:1px;height:20px;background:rgba(255,255,255,.06);margin:0 4px}
+.dsq{width:38px;padding:0;justify-content:center}
+/* the detached "+" island, only in the "as today" state */
+.plus{position:absolute;bottom:24px;left:calc(50% - 210px);width:46px;height:46px;border-radius:50%;
+  background:var(--bg-island);backdrop-filter:blur(30px);border:1px solid rgba(255,255,255,.05);
+  display:none;place-items:center;font-size:22px;color:var(--text-second);z-index:30;
+  box-shadow:0 24px 48px rgba(0,0,0,.5)}
+.app.crowded .plus{display:grid}
+.app.crowded .dock .plus-in{display:none}
+.bar-scrim{position:absolute;left:0;right:0;bottom:0;height:110px;z-index:25;pointer-events:none;
+  background:linear-gradient(to top,rgba(14,16,21,.92),rgba(14,16,21,0))}
+.app.crowded .bar-scrim{display:none}
+
+/* fake photography */
+.p1{background:linear-gradient(135deg,#5B4B8A,#2B2140)}
+.p2{background:linear-gradient(135deg,#1B4D3E,#0E2A22)}
+.p3{background:linear-gradient(135deg,#8A5B2B,#3A2413)}
+.p4{background:linear-gradient(135deg,#1F4068,#12233A)}
+.p5{background:linear-gradient(135deg,#7A2E4E,#33121F)}
+.p6{background:linear-gradient(160deg,#2C3440,#171B22)}
+.p7{background:linear-gradient(135deg,#2E6E8A,#12333F)}
+.p8{background:linear-gradient(135deg,#6E7A2E,#2B300F)}
+.empty{display:grid;place-items:center;color:#2E333D;font-size:34px}
+
+/* the standalone caption anatomy diagram */
+.anat{display:grid;grid-template-columns:300px 1fr;gap:26px;margin-top:18px;align-items:start}
+.anat .demo{position:relative}
+.anat ul{list-style:none;font-size:13px;color:var(--text-second);display:grid;gap:9px}
+.anat li b{color:var(--text-main);font-weight:650}
+.anat li span{display:inline-block;min-width:22px;color:var(--color-folders);font-weight:800;font-size:11px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Home, quieter — v2</h1>
+<p class="lede">
+  The agreed design. Three things from the first proposal are gone: the “Linked folders” section,
+  the caption under the card, and moving search up into the bar. The name and metadata are drawn
+  <b>on the cover</b> instead, over a scrim that runs from the bottom edge to the middle. Folder size
+  is answered by a <b>tooltip on the path</b> — hovering the folder you are standing in, not each of
+  the twelve you can see. Nothing at all is left on the right of the bar: search stays in the dock
+  where it was, and grid density lives in Ctrl+wheel, the background menu, and a readout in the
+  middle of the frame. The toggles below compare all of this against what the app does today.
+</p>
+
+<h2>What was accepted</h2>
+<div class="findings">
+  <div class="finding">
+    <div class="n">A · ACCEPTED</div>
+    <h3>Calm colour at rest</h3>
+    <p>The cover is drawn desaturated and slightly darkened, and comes to full strength under the cursor. The screen becomes readable immediately, and it costs <b>one <code>ColorFilter</code></b> on the preview.</p>
+    <div class="fix"><code>FolderCardPreview.kt</code> · no model change, no grid change.</div>
+  </div>
+  <div class="finding">
+    <div class="n">B · ACCEPTED</div>
+    <h3>One cover instead of a mosaic</h3>
+    <p>Removes 18 of the 24 competing pictures. “There is more inside” is said by the stacked edge under the tile, not by a collage.</p>
+    <div class="fix"><code>FolderCoverMosaic.kt</code> leaves the card; <code>FolderCardPreview</code> takes the first frame. Side effect: fewer decodes per tile.</div>
+  </div>
+  <div class="finding">
+    <div class="n">C · ACCEPTED</div>
+    <h3>A top bar that says something</h3>
+    <p>Sixty pixels in the most prominent part of the window held three Windows buttons and nothing else. Home now puts its title and folder count on the left — and that is all it puts anywhere.</p>
+    <p><b>Nothing</b> appears on the right. <b>Search stays in the dock</b>, beside the settings gear, where it already was; the bar gains nothing by taking it. <b>Density</b> gets no permanent control either — see the section below. Inside a folder the bar keeps the Back arrow and the path, and carries no screen counter: that went into the tooltip.</p>
+    <div class="fix">A new screen slot, not a new component: <code>leadingAccessory</code>, and only on Home. Density is stored in <code>folderLayouts["HOME"]</code>; both screens walk one ladder.</div>
+  </div>
+  <div class="finding">
+    <div class="n">D · ACCEPTED, DIFFERENTLY</div>
+    <h3>Name and count, on the cover</h3>
+    <p>Neither a row under the tile nor a badge in the corner: the name sits bottom-left <b>on the cover itself</b>, with type and size beneath it. The scrim runs from the bottom edge to the middle, so the card lost 34&nbsp;px of height and the cover did not end up orphaned.</p>
+    <div class="fix"><code>FolderCardCaption.kt</code> (scrim + two lines) · <code>FolderCardBody.kt</code> loses its bottom block.</div>
+  </div>
+  <div class="finding">
+    <div class="n">E · ACCEPTED</div>
+    <h3>Size, as a tooltip on the path</h3>
+    <p>Hover a path segment: item count and total size for that folder. Not on the tile in the grid — the tile already wrote its count in the caption, and “how much is in here” is asked about the folder you are standing in, not about each of the twelve on screen. It is also what keeps the counter out of the bar, where it would hang permanently.</p>
+    <p><b>The name appears only if the path had to ellipsise it.</b> If it fits, the cursor is already pointing at it and a second copy is noise. If it does not, the full name is the tooltip's first line. Truncation is decided by the text layout itself (<code>hasVisualOverflow</code>), not by counting characters: what fits is a question about glyphs.</p>
+    <div class="fix">New <code>FolderInfoTooltip.kt</code>, called from <code>SmartBreadcrumbs.kt</code> · the walk that measures size runs only while the tooltip is up, cached against mtime · <code>pointer-events</code> are off, so a click still navigates.</div>
+  </div>
+  <div class="finding">
+    <div class="n">F · ACCEPTED</div>
+    <h3>The path, flattened</h3>
+    <p>The breadcrumbs used to be a shadowed, bordered pill floating in the middle of the bar: a container that looked like a control, did not behave like one, and drifted sideways whenever the path changed length. It is now plain text beside the Back arrow — so both screens have the same anatomy, identity on the left and nothing on the right.</p>
+    <div class="fix"><code>SmartBreadcrumbs.kt</code> loses its surface; <code>GlobalTopBar.kt</code> moves it out of the centre slot. Losing the container costs the affordance it provided, so a segment answers hover with its colour instead.</div>
+  </div>
+  <div class="finding">
+    <div class="n">G · ACCEPTED</div>
+    <h3>The dock and the bottom edge</h3>
+    <p>Grid padding the height of the dock plus a gradient, so a photograph slides under the island instead of colliding with it. “+” moves into the dock as its first item — one island, not two.</p>
+    <div class="fix"><code>HomeScreen.kt</code> (padding) · <code>FloatingDock</code>/<code>DockSecondaryItem</code> (the button).</div>
+  </div>
+  <div class="finding out">
+    <div class="n">H · REJECTED</div>
+    <h3>A “Linked folders” section</h3>
+    <p>A section header with a rule is not needed — Home has no other group, and the band eats 40&nbsp;px for one word. The grid starts directly under the bar.</p>
+    <div class="fix">What remains from it is the middle-truncation of long names — <code>FolderCardUtils.kt</code>.</div>
+  </div>
+</div>
+
+<h2>How the caption is built</h2>
+<p class="note">
+  Two lines, both bottom-left, both inside the cover. The upper one is the name; the lower one is
+  what used to be the word “Folder” and the “51 ITEMS” badge at the same time. The separator is a
+  middle dot, which is why one line serves a folder and a file equally.
+</p>
+<div class="anat">
+  <div class="demo app calm" style="height:auto;border:0;box-shadow:none;background:none;overflow:visible">
+    <div class="card"><div class="stack"><div class="thumb">
+      <div class="cover single p4"></div>
+      <div class="scrim"></div>
+      <div class="label"><div class="t">f0fb96fb…19e18f</div><div class="m">Folder · 51 items</div></div>
+    </div></div>
+    </div>
+  </div>
+  <ul>
+    <li><span>1</span><b>Name.</b> 13.5&nbsp;sp / 650, white. A long one is cut <b>from the middle</b>, not from the end: <code>f0fb96fb…19e18f</code> is identifiable, <code>f0fb96fb-49f7-…</code> is not.</li>
+    <li><span>2</span><b>Meta line.</b> 11.5&nbsp;sp / 550, white at 62&nbsp;%, 82&nbsp;% on hover. Folder → <code>Folder · 51 items</code>. File → <code>Image · 213 KB</code>, <code>Video · 4:21 · 88 MB</code>.</li>
+    <li><span>3</span><b>Scrim.</b> A vertical gradient, black 86&nbsp;% → 0 across 52&nbsp;% of the card. Drawn over the cover and under the text; hover does not touch it, or the text would swim.</li>
+    <li><span>4</span><b>Text shadow.</b> An additional <code>0 1 3 · black 50%</code> on both lines — insurance for a bright photograph, where there is little gradient left.</li>
+    <li><span>5</span><b>At S</b> the meta line stays but drops to 10.5&nbsp;sp; at L it is 12&nbsp;sp. It never hides, or there would be nowhere to read the count again.</li>
+    <li><span>6</span><b>No tooltip here.</b> Folder size lives on the path, not on the tile — the tile has already said its piece. Hover a path segment in the second frame below.</li>
+  </ul>
+</div>
+
+<h2>The mockup</h2>
+<div class="controls">
+  <div class="tg on" id="tg"><span class="dot"></span>Proposal</div>
+  <div class="seg" id="seg"><span data-d="s">S</span><span class="sel" data-d="m">M</span><span data-d="l">L</span></div>
+  <span class="hint">The first toggle shows what the screen looks like today. The second is a
+  <b>control of the mockup, not of the app</b>: in the app, density is changed by Ctrl+wheel and by
+  the background menu, and Ctrl+wheel is already spoken for in a browser. Click S/M/L and watch the
+  middle of the frame.</span>
+</div>
+
+<div class="app calm d-m" id="app">
+  <header>
+    <div class="title-block">
+      <div class="scr-title">Home</div>
+      <div class="scr-count">7 linked folders</div>
+    </div>
+    <div class="spacer"></div>
+    <div class="win"><i>─</i><i>❑</i><i>✕</i></div>
+  </header>
+
+  <div class="view">
+    <div class="grid">
+
+      <div class="card"><div class="stack"><div class="thumb">
+        <div class="cover single p1"></div>
+        <div class="cover mosaic"><i class="p1"></i><i class="p4"></i><i class="p6"></i><i class="p2"></i></div>
+        <div class="scrim"></div>
+        <div class="label"><div class="t">f0fb96fb…19e18f</div><div class="m">Folder · 51 items</div></div>
+        <div class="badge">51 ITEMS</div></div></div>
+        <div class="info"><div class="t">f0fb96fb-49f7-4996-991e-0e565919e18f</div><div class="m">Folder</div></div>
+        </div>
+
+      <div class="card"><div class="stack"><div class="thumb">
+        <div class="cover single p2"></div>
+        <div class="cover mosaic"><i class="p8"></i><i class="p5"></i><i class="p3"></i><i class="p7"></i></div>
+        <div class="scrim"></div>
+        <div class="label"><div class="t">hdr-probe</div><div class="m">Folder · 6 items</div></div>
+        <div class="badge">6 ITEMS</div></div></div>
+        <div class="info"><div class="t">hdr-probe</div><div class="m">Folder</div></div>
+        </div>
+
+      <div class="card"><div class="stack"><div class="thumb">
+        <div class="cover single p7"></div>
+        <div class="cover mosaic"><i class="p7"></i><i class="p4"></i><i class="p2"></i><i class="p8"></i></div>
+        <div class="scrim"></div>
+        <div class="label"><div class="t">Heic</div><div class="m">Folder · 4 items</div></div>
+        <div class="badge">4 ITEMS</div></div></div>
+        <div class="info"><div class="t">Heic</div><div class="m">Folder</div></div>
+        </div>
+
+      <div class="card"><div class="stack"><div class="thumb">
+        <div class="cover single p5"></div>
+        <div class="cover mosaic"><i class="p5"></i><i class="p1"></i><i class="p6"></i><i class="p3"></i></div>
+        <div class="scrim"></div>
+        <div class="label"><div class="t">Movies</div><div class="m">Folder · 5 items</div></div>
+        <div class="badge">5 ITEMS</div></div></div>
+        <div class="info"><div class="t">Movies</div><div class="m">Folder</div></div>
+        </div>
+
+      <div class="card"><div class="stack"><div class="thumb">
+        <div class="cover single p6 empty">🗀</div>
+        <div class="cover mosaic"><i class="p6"></i><i class="p6"></i><i class="p6"></i><i class="p6"></i></div>
+        <div class="scrim"></div>
+        <div class="label"><div class="t">Pictures</div><div class="m">Folder · 6 items</div></div>
+        <div class="badge">6 ITEMS</div></div></div>
+        <div class="info"><div class="t">Pictures</div><div class="m">Folder</div></div>
+        </div>
+
+      <div class="card"><div class="stack"><div class="thumb">
+        <div class="cover single p3"></div>
+        <div class="cover mosaic"><i class="p3"></i><i class="p8"></i><i class="p1"></i><i class="p4"></i></div>
+        <div class="scrim"></div>
+        <div class="label"><div class="t">Screenshots</div><div class="m">Folder · 549 items</div></div>
+        <div class="badge">549 ITEMS</div></div></div>
+        <div class="info"><div class="t">Screenshots</div><div class="m">Folder</div></div>
+        </div>
+
+      <div class="card"><div class="stack"><div class="thumb">
+        <div class="cover single p4"></div>
+        <div class="cover mosaic"><i class="p4"></i><i class="p2"></i><i class="p7"></i><i class="p5"></i></div>
+        <div class="scrim"></div>
+        <div class="label"><div class="t">References</div><div class="m">Folder · 128 items</div></div>
+        <div class="badge">128 ITEMS</div></div></div>
+        <div class="info"><div class="t">References</div><div class="m">Folder</div></div>
+        </div>
+
+    </div>
+  </div>
+
+  <div class="hud" id="hud">
+    <div class="row"><span class="from"></span><span class="arr">→</span><span class="to"></span></div>
+    <div class="name"></div>
+  </div>
+
+  <div class="bar-scrim"></div>
+  <div class="plus">+</div>
+
+  <div class="dock">
+    <div class="di dsq plus-in" title="Link a folder">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"/></svg>
+    </div>
+    <div class="dsep plus-in"></div>
+    <div class="di act">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>Home</span>
+    </div>
+    <div class="di">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg><span>Library</span>
+    </div>
+    <div class="di">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg><span>Editor</span>
+    </div>
+    <div class="dsep"></div>
+    <div class="di dsq"><svg class="ic" viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 018.5 12 3.5 3.5 0 0112 8.5a3.5 3.5 0 013.5 3.5 3.5 3.5 0 01-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97 0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0014 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1 0 .33.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66z"/></svg></div>
+  </div>
+</div>
+
+<h2>The same card inside a folder</h2>
+<p class="note">
+  The meta line is not tied to folders — it is the very same component. Inside a Linked Folder the
+  first line is still the file's name and the second takes type, duration and size.
+  <b>The Back arrow stays, and so does the path</b> — but the path is now plain text beside the
+  arrow rather than a pill in the middle of the bar, which is what gives this screen the same
+  left-anchored anatomy as Home. There is no screen counter in the bar: how many files a folder
+  holds and what it weighs is answered by hovering a segment, not by a line that hangs there all the
+  time. <b>Hover both segments</b> — the long one, which the bar had to ellipsise, opens with its
+  full name; the short one goes straight to count and size.
+</p>
+
+<div class="app calm d-m" style="height:340px">
+  <header>
+    <div class="back">‹</div>
+    <div class="crumbs">
+      <span class="crumb">
+        <span class="name">f0fb96fb-49f7-4996-991e-0e565919e18f</span>
+        <span class="tip"><span class="n">f0fb96fb-49f7-4996-991e-0e565919e18f</span><span class="s">51 items · 4.2 GB</span></span>
+      </span>
+      <span class="sep">›</span>
+      <span class="crumb">
+        <span class="name here">Movies</span>
+        <span class="tip"><span class="s">5 items · 1.4 GB</span></span>
+      </span>
+    </div>
+    <div class="spacer"></div>
+    <div class="win"><i>─</i><i>❑</i><i>✕</i></div>
+  </header>
+  <div class="view" style="padding-bottom:40px">
+    <div class="grid">
+      <div class="card"><div class="thumb">
+        <div class="cover single p7"></div><div class="scrim"></div>
+        <div class="label"><div class="t">IMG_0421.HEIC</div><div class="m">Image · 4032×3024 · 2.1 MB</div></div>
+      </div></div>
+      <div class="card"><div class="thumb">
+        <div class="cover single p5"></div><div class="scrim"></div>
+        <div class="label"><div class="t">drone-pass-final.mp4</div><div class="m">Video · 4:21 · 88 MB</div></div>
+      </div></div>
+      <div class="card"><div class="thumb">
+        <div class="cover single p8"></div><div class="scrim"></div>
+        <div class="label"><div class="t">Screenshot 2026-08-22 at 19.04.11.png</div><div class="m">Image · 213 KB</div></div>
+      </div></div>
+      <div class="card"><div class="thumb">
+        <div class="cover single p2"></div><div class="scrim"></div>
+        <div class="label"><div class="t">B-roll</div><div class="m">Folder · 12 items</div></div>
+      </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2>Density without a control</h2>
+<p class="note">
+  The <code>S / M / L</code> segment is gone from the bar entirely. A permanent switch occupies the
+  most prominent row of the window for a setting touched once a session, and all it can show is the
+  current state. The readout in the middle costs nothing at rest and says <b>what changed into
+  what</b> — the half a segmented control could never show. Two gestures move it: <b>Ctrl+wheel</b>
+  (now on Home too, which was the only grid that answered to neither) and the <b>background menu</b>
+  on right-click.
+</p>
+
+<div class="menus">
+  <div>
+    <div class="menu-cap">HOME — right-click on empty space</div>
+    <div class="menu">
+      <div class="mi accent">Link folder</div>
+      <div class="mi hot">View<span class="chev">›</span></div>
+      <div class="fly">
+        <div class="mi">Bigger</div>
+        <div class="mi">Smaller</div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="menu-cap">INSIDE A FOLDER — same place, its own set</div>
+    <div class="menu">
+      <div class="mi">Create folder</div>
+      <div class="mi folders">Pin to Library</div>
+      <div class="mi hot">View<span class="chev">›</span></div>
+      <div class="fly" style="top:66px">
+        <div class="mi dim">Bigger</div>
+        <div class="mi">Smaller</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="note" style="margin-top:22px">
+  Home's menu is not the folder menu with items removed: “Create folder” and “Pin to Library” are
+  questions about a directory you are standing in, and Home is not one. Their place is taken by the
+  only thing Home can be asked to make — a link — running the very same picker the dock's “+” does.
+  The ends of the ladder are shown <b>disabled</b> rather than hidden: a menu whose items move
+  depending on state is one nobody builds muscle memory for. On the right the grid is already at
+  <code>L</code>, which is why “Bigger” is greyed out.
+</p>
+
+<hr>
+
+<p class="note" style="margin-top:26px">
+  Built in one sitting, outside the ticket flow, in stages with a build after each: the card, the
+  tooltip on the path, the top bar, the dock, density.
+</p>
+
+</div>
+
+<script>
+const app = document.getElementById('app');
+const tg  = document.getElementById('tg');
+const seg = document.getElementById('seg');
+
+tg.addEventListener('click', () => {
+  tg.classList.toggle('on');
+  const on = tg.classList.contains('on');
+  app.classList.toggle('crowded', !on);
+  app.classList.toggle('calm', on);
+  tg.lastChild.textContent = on ? 'Proposal' : 'As it is today';
+});
+
+// Density: the grid changes, and the readout in the middle says what it changed
+// *from*, which is the half a permanent S/M/L control could never show.
+const hud = document.getElementById('hud');
+const NAMES = { s: 'Small', m: 'Medium', l: 'Large' };
+let density = 'm';
+let hudTimer = null;
+
+seg.addEventListener('click', e => {
+  const s = e.target.closest('span');
+  if (!s || s.dataset.d === density) return;
+
+  const from = density;
+  density = s.dataset.d;
+  [...seg.children].forEach(c => c.classList.toggle('sel', c === s));
+  app.classList.remove('d-s','d-m','d-l');
+  app.classList.add('d-' + density);
+
+  hud.querySelector('.from').textContent = from.toUpperCase();
+  hud.querySelector('.to').textContent = density.toUpperCase();
+  hud.querySelector('.name').textContent = NAMES[density];
+  hud.classList.add('on');
+  clearTimeout(hudTimer);
+  hudTimer = setTimeout(() => hud.classList.remove('on'), 900);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,88 @@
+package com.woka.core.ui.components
+
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.dp
+import com.woka.core.ui.icons.Icons
+import com.woka.core.ui.theme.Theme
+import com.woka.core.utils.generateVideoThumbnail
+import org.jetbrains.compose.resources.painterResource
+import java.io.File
+
+/** Most of the colour taken out of a cover the viewer has already started. */
+private val WATCHED_TINT = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0.25f) })
+
+/**
+ * A video tile's poster frame and its play glyph. Split out of `FolderCardPreview`
+ * under the §2 file-size mandate when the calm-at-rest treatment arrived — the
+ * preview is left deciding *which* cover a card gets, this is what a video's looks
+ * like.
+ */
+@Composable
+internal fun BoxScope.VideoCover(file: File, dim: Boolean, calm: ColorFilter) {
+    var bitmap by remember(file.absolutePath) { mutableStateOf<ImageBitmap?>(null) }
+    LaunchedEffect(file.absolutePath) {
+        bitmap = generateVideoThumbnail(file)
+    }
+
+    val frame = bitmap
+    if (frame != null) {
+        Image(
+            bitmap = frame,
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
+            // Desaturated rather than merely faded: a washed-out cover still reads
+            // as a picture, where alpha alone just looks like it failed to load.
+            // Watched wins over calm — it is a state of the file, not of the cursor,
+            // and it is the stronger desaturation of the two anyway.
+            alpha = if (dim) 0.55f else 1f,
+            colorFilter = if (dim) WATCHED_TINT else calm
+        )
+    } else {
+        Image(
+            painter = painterResource(Icons.Static.Video),
+            contentDescription = null,
+            modifier = Modifier.size(64.dp).align(Alignment.Center),
+            alpha = 0.5f,
+            colorFilter = ColorFilter.tint(Theme.colors.textPrimary)
+        )
+    }
+}
+
+@Composable
+internal fun PlayBadge(modifier: Modifier) {
+    Box(
+        modifier = modifier
+            .size(48.dp)
+            .clip(CircleShape)
+            .background(Color.Black.copy(alpha = 0.5f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Image(
+            painter = painterResource(Icons.Static.PlayFill),
+            contentDescription = "Video",
+            colorFilter = ColorFilter.tint(Color.White),
+            modifier = Modifier.size(24.dp)
+        )
+    }
+}

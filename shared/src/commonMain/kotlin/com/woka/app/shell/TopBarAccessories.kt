@@ -12,11 +12,36 @@ class TopBarAccessoriesState {
      * Beside the Back button, on the left — where a screen puts the control that
      * *undoes* rather than the one that proceeds (ME-107). The editor's Revert is the
      * first tenant: red, destructive, and deliberately at the end the hand leaves by.
+     *
+     * Two disciplines share these slots and both are correct for who uses them.
+     * A **screen** claims one by key ([setLeading]): `AnimatedContent` keeps the
+     * outgoing screen composed for the length of the slide, so its `onDispose` runs
+     * *after* the incoming screen has claimed the slot, and without the key it would
+     * null out its successor's accessory. An **overlay** — the viewer, the editor —
+     * assigns directly and restores what it found, because it means to give the slot
+     * back to whichever screen is still underneath it.
+     *
+     * Only [leadingAccessory] has a keyed claim, because only Home claims one. A
+     * screen that wants another slot mirrors [setLeading] for it.
      */
     var leadingAccessory by mutableStateOf<(@Composable () -> Unit)?>(null)
     var centerAccessory by mutableStateOf<(@Composable () -> Unit)?>(null)
     var rightAccessory by mutableStateOf<(@Composable () -> Unit)?>(null)
     var backActionOverride by mutableStateOf<(() -> Unit)?>(null)
+
+    private var leadingKey by mutableStateOf<String?>(null)
+
+    fun setLeading(key: String, content: @Composable () -> Unit) {
+        leadingKey = key
+        leadingAccessory = content
+    }
+
+    fun clearLeading(key: String) {
+        if (leadingKey == key) {
+            leadingKey = null
+            leadingAccessory = null
+        }
+    }
 }
 
 val LocalTopBarAccessories = compositionLocalOf { TopBarAccessoriesState() }

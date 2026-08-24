@@ -31,6 +31,7 @@ fun FloatingDock(
     val settingsRepo = remember { AppDependencies.settingsRepository }
     val settings by settingsRepo.settings.collectAsState()
     val pinnedSessions = settings.pinnedSessions
+    val inlineAccessory = LocalDockAccessories.current.inlineAccessory
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically
@@ -42,6 +43,13 @@ fun FloatingDock(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
+            // Before the separator, so the screen's own action reads as a tool and
+            // the tabs after it read as navigation.
+            if (inlineAccessory != null) {
+                inlineAccessory()
+                DockSeparator()
+            }
+
             DockItem(
                 text = "Home",
                 iconRes = Icons.Static.Home,
@@ -92,13 +100,7 @@ fun FloatingDock(
                 onClick = { onTabSelected(DockTab.Editor) }
             )
 
-            Box(
-                modifier = Modifier
-                    .padding(horizontal = 4.dp)
-                    .width(1.dp)
-                    .height(20.dp)
-                    .background(Theme.colors.border)
-            )
+            DockSeparator()
 
             DockSecondaryItem(
                 iconRes = Icons.Static.Search,
@@ -113,4 +115,15 @@ fun FloatingDock(
             )
         }
     }
+}
+
+@Composable
+private fun DockSeparator() {
+    Box(
+        modifier = Modifier
+            .padding(horizontal = 4.dp)
+            .width(1.dp)
+            .height(20.dp)
+            .background(Theme.colors.border)
+    )
 }

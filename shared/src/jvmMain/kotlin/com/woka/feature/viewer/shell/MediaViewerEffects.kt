@@ -43,7 +43,14 @@ fun MediaViewerTopBarSetup(
     val curOnInfo by rememberUpdatedState(onInfo)
 
     DisposableEffect(Unit) {
+        // Saved and given back rather than cleared by key: the viewer is an overlay
+        // over a screen that is still composed underneath, not a screen replacing it.
+        val previousRight = topBarAccessories.rightAccessory
+
         topBarAccessories.backActionOverride = { curOnClose(curCurrentId) }
+        // The grid's density control goes with the grid. Over a photograph, S/M/L
+        // sets the size of tiles that are not on screen.
+        topBarAccessories.rightAccessory = null
         topBarAccessories.centerAccessory = {
             MediaViewerNormalControls(
                 sizeMode = curSizeMode,
@@ -68,6 +75,7 @@ fun MediaViewerTopBarSetup(
         onDispose {
             topBarAccessories.backActionOverride = null
             topBarAccessories.centerAccessory = null
+            topBarAccessories.rightAccessory = previousRight
         }
     }
 }

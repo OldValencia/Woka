@@ -11,14 +11,17 @@ import com.woka.core.data.mayHoldFrames
 import com.woka.core.utils.countFrames
 import java.io.File
 
-/** Everything a card draws, resolved from its path. */
+/**
+ * Everything a card draws, resolved from its path.
+ *
+ * [name] is the raw name; the caption is what shortens it for display.
+ */
 @Immutable
 data class FolderCardData(
     val file: File,
     val name: String,
     val isDir: Boolean,
-    val subtitle: String,
-    val badge: String,
+    val meta: String,
     val previews: List<File>
 )
 
@@ -53,15 +56,15 @@ fun rememberFolderCardData(path: String): FolderCardData {
         }
     }
 
-    val badge = when {
-        isDir -> if (itemCount > 0) "$itemCount ITEMS" else "EMPTY"
-        // "12 FRAMES" says the same thing about a file that "12 ITEMS" says
-        // about a folder: there is more inside this than one thing. It replaces
-        // the extension rather than joining it — the cover already looks like a
-        // photograph, and which container it arrived in is the lesser fact.
-        frameCount > 1 -> "$frameCount FRAMES"
-        else -> file.extension.uppercase().takeIf { it.isNotEmpty() } ?: "FILE"
+    val meta = when {
+        isDir -> folderCardMeta(itemCount)
+        // "12 frames" says the same thing about a file that "51 items" says about a
+        // folder: there is more inside this than one thing. It joins the size rather
+        // than replacing it — the caption has room for both now that it is one line
+        // on the cover instead of a badge and a subtitle arguing across it.
+        frameCount > 1 -> withFrameCount(subtitle, frameCount)
+        else -> subtitle
     }
 
-    return FolderCardData(file, name, isDir, subtitle, badge, previews)
+    return FolderCardData(file, name, isDir, meta, previews)
 }

@@ -1,24 +1,15 @@
 package com.woka.feature.folder
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Popup
+import com.woka.core.data.SettingsRepository
 import com.woka.core.ui.theme.Theme
 import kotlinx.coroutines.launch
 import java.io.File
+import com.woka.core.ui.components.ContextMenuPopup
 import com.woka.core.ui.components.DropdownItem
 import com.woka.core.ui.components.RenameDialog
+import com.woka.core.ui.components.ViewDensityMenu
 
 /**
  * The folder screen's dialogs and background context menu. State and the eight
@@ -29,7 +20,9 @@ import com.woka.core.ui.components.RenameDialog
 fun FolderOverlays(
     overlays: FolderOverlayState,
     viewModel: FolderViewModel,
-    path: String
+    path: String,
+    zoom: FolderZoom,
+    settingsRepo: SettingsRepository
 ) {
     overlays.itemToRename?.let { renamePath ->
         val file = File(renamePath)
@@ -70,28 +63,23 @@ fun FolderOverlays(
     }
 
     if (overlays.showBgContextMenu) {
-        Popup(
-            alignment = Alignment.TopStart,
+        ContextMenuPopup(
             offset = overlays.bgContextMenuOffset,
-            onDismissRequest = { overlays.dismissBgContextMenu() }
+            onDismiss = { overlays.dismissBgContextMenu() }
         ) {
-            Column(
-                modifier = Modifier
-                    .width(180.dp)
-                    .shadow(12.dp, RoundedCornerShape(10.dp), spotColor = Color.Black.copy(alpha = 0.2f))
-                    .background(Theme.colors.surfaceElevated, RoundedCornerShape(10.dp))
-                    .border(1.dp, Theme.colors.border, RoundedCornerShape(10.dp))
-                    .padding(6.dp)
-            ) {
-                DropdownItem("Create folder") {
-                    overlays.showCreateFolderDialog = true
-                    overlays.dismissBgContextMenu()
-                }
-                DropdownItem("Pin to Library", textColor = Theme.colors.accentFolders) {
-                    viewModel.pinFolder(path)
-                    overlays.dismissBgContextMenu()
-                }
+            DropdownItem("Create folder") {
+                overlays.showCreateFolderDialog = true
+                overlays.dismissBgContextMenu()
             }
+            DropdownItem("Pin to Library", textColor = Theme.colors.accentFolders) {
+                viewModel.pinFolder(path)
+                overlays.dismissBgContextMenu()
+            }
+            ViewDensityMenu(
+                layout = zoom.layout,
+                onSelect = { next -> if (next != zoom.layout) settingsRepo.setFolderLayout(path, next) },
+                onDismiss = { overlays.dismissBgContextMenu() }
+            )
         }
     }
 }
