@@ -20,7 +20,7 @@ foundation was wrong and the fix belongs there, not in a branch.*
 An `EditorEngine` for `MediaKind.Video`: the existing player as the live surface, a timeline stage
 folded from the document, and a saver that runs the Bytedeco-bundled ffmpeg as a background process.
 The shell is not touched.
-*Depends on [ME-106](../../image-editor/tickets/ME-106-entry-points.md).*
+*Depends on [ME-106](../../image-editor/tickets/implemented/ME-106-entry-points.md).*
 
 ### ME-202 — Trim tool
 `Geometry`, `Single`, `Canvas`: dual handles on the timeline, snapping to real keyframes read from the

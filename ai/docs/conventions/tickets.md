@@ -70,5 +70,17 @@ on sight.
 
 ## 7. Bookkeeping
 
-Write `tickets/<ID>-<slug>.md`, delete the block it replaces from `tickets/backlog.md`, and add the row
-to the status table in the feature doc. All three in the same change.
+**Writing one.** Write `tickets/<ID>-<slug>.md`, delete the block it replaces from
+`tickets/backlog.md`, and add the row to the status table in the feature doc. All three in the same
+change.
+
+**Closing one.** Mark the row **done** with the date. If the feature has a `tickets/implemented/`
+folder, **move the file into it** and fix the link in the status table; the ticket's own
+`../<feature>.md` link becomes `../../<feature>.md`. Both in the same change — a done ticket left in
+`tickets/` is one a later session reads as work waiting to be picked up.
+
+That folder is rare and is not created by default (`feature-docs.md`): it exists only where a feature
+has grown so many tickets that the shipped ones drown the two or three that are still open. **Aim for
+fifteen tickets per feature.** Past that the feature was scoped as a chunk of work rather than as a
+feature, and the fix is to split the feature — `image-editor/` passed thirty-five and grew the folder
+instead, which is the example, not the pattern.

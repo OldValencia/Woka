@@ -129,7 +129,7 @@ keyed on before an animation had a reason to say otherwise.
 ## The clock left the viewer — 2026-08-21
 
 Two more things came out of the editor learning to play the same files
-([ME-140](../pending/image-editor/tickets/ME-140-the-canvas-plays.md)), and both belong to this plan:
+([ME-140](../pending/image-editor/tickets/implemented/ME-140-the-canvas-plays.md)), and both belong to this plan:
 
 - **The loop is `core/data/FrameClock.kt` now.** The viewer drives `MediaViewerState.frameIndex`
   with it and the editing canvas drives a local index; the durations, the wrap, the minimum delay

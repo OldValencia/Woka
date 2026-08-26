@@ -29,6 +29,8 @@ ai/docs/features/pending/<feature>/
                  in an editor tab. One document, not three — it is what someone reads to
                  understand the feature, and it names no source files.
   tickets/
+    implemented/   a very rare folder, when there are a lot of tickets in a feature,
+                   normally it should not exist
     <ID>-<slug>.md   one file per specified ticket: goal, steps, files, done-when
     backlog.md       everything after them, one short block each, no file lists
   archive/       superseded plans, banner-marked (optional)
