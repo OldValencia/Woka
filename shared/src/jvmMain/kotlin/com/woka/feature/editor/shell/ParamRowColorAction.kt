@@ -57,7 +57,9 @@ internal fun ColorParamRow(spec: ColorParam, params: ParamSet, writer: ParamWrit
         ) {
             spec.swatches.forEachIndexed { index, argb ->
                 ColorSwatch(
-                    fill = solidFill(argb),
+                    // `swatchFill`, not `solidFill`: a swatch with no alpha is an offered
+                    // "none" and draws as a slash rather than as nothing (ME-146).
+                    fill = swatchFill(argb),
                     ringed = argb == selected,
                     onClick = { writer.edit(spec, argb) },
                     // Indexed rather than named by value: a test says "the fifth swatch",

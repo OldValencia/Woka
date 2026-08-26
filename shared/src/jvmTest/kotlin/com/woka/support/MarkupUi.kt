@@ -1,15 +1,13 @@
 package com.woka.support
 
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.pressKey
+import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.shell.EditorScreen
 import com.woka.feature.editor.tools.markup.MARKUP_OVERLAY_TAG
 import com.woka.feature.editor.tools.markup.MARKUP_TEXT_FIELD_TAG
@@ -57,6 +55,22 @@ fun ComposeUiTest.clickPicture(at: Offset) {
     waitForIdle()
 }
 
+/**
+ * Open the tool, choose the text pen, click the picture once — and answer the document as
+ * it stood **before** the caret, which is what an abandoned edit has to restore.
+ *
+ * Was private to `MarkupTextUiTest` until 2026-08-27, when a second file needed it and that
+ * one crossed the size mandate.
+ */
+@OptIn(ExperimentalTestApi::class)
+fun ComposeUiTest.openCaret(harness: EditorHarness): EditDocument {
+    openMarkupTool(harness)
+    chooseMarkupPen("Text")
+    val before = harness.session.document.value
+    clickPicture(Offset(60f, 60f))
+    return before
+}
+
 /** Types into the open caret without finishing — the field keeps the keyboard. */
 @OptIn(ExperimentalTestApi::class)
 fun ComposeUiTest.typeIntoCaret(text: String) {
@@ -64,11 +78,17 @@ fun ComposeUiTest.typeIntoCaret(text: String) {
     waitForIdle()
 }
 
-/** …and `Enter`, which commits it and leaves it selected. */
+/**
+ * …and finishing it, which since 2026-08-27 is **a click on the picture** and no longer
+ * `Enter` — that key breaks a line now that a caption has a box to break inside.
+ *
+ * [at] defaults to a corner well clear of where `clickPicture(60, 60)` puts a caret, so the
+ * press lands on empty picture: `MarkupPointer` ends any open edit before it decides what
+ * else a press means, so the click commits and does nothing more.
+ */
 @OptIn(ExperimentalTestApi::class)
-fun ComposeUiTest.finishCaret() {
-    onNodeWithTag(MARKUP_TEXT_FIELD_TAG).performKeyInput { pressKey(Key.Enter) }
-    waitForIdle()
+fun ComposeUiTest.finishCaret(at: Offset = Offset(400f, 300f)) {
+    clickPicture(at)
 }
 
 /** A tap on the middle of a parameter's track, which is how a slider is moved by hand. */

@@ -47,7 +47,13 @@ internal fun EditorToolScope.textEditAt(
         color = document.markupColor(),
         width = document.markupTextSize(),
         at = at,
-        text = ""
+        text = "",
+        // Inherited from the picture, never typed (ME-146) — and only here, on a caption
+        // being minted. The reopen branch above returns the stored shape untouched, or a
+        // second click would overwrite a wrap a corner drag had scaled.
+        wrap = wrapAt(sourceSize.width, at.x),
+        fill = document.markupFill(),
+        corner = document.markupCorner()
     )
 }
 

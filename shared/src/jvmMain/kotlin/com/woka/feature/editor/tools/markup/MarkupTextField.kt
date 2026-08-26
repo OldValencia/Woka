@@ -1,9 +1,9 @@
 package com.woka.feature.editor.tools.markup
 
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,27 +31,6 @@ import kotlin.math.roundToInt
 
 /** Where the caret is, for the UI tests. */
 internal const val MARKUP_TEXT_FIELD_TAG = "markup-text-field"
-
-/**
- * One caption being typed: the shape as it was found, and the string as it stands now
- * (ME-145).
- *
- * Two values rather than one mutated shape, because both are needed at the end —
- * `commitTextEdit` compares them to decide whether anything happened at all, and a
- * caption reopened and closed unchanged must cost no undo step.
- */
-@Immutable
-internal data class MarkupTextEdit(
-    val shape: MarkupShape.Text,
-    val text: String,
-    /**
-     * Whether the document already held this caption when the edit began — the one thing
-     * that cannot be worked out at the end, because the caption is previewed **into** the
-     * list the moment the caret is placed (`MarkupTextEdits`). Without it, "typed nothing
-     * into a new caret" and "emptied a caption that was there" look identical.
-     */
-    val existed: Boolean
-)
 
 /**
  * The caret on the picture (ME-145).
@@ -99,7 +78,11 @@ internal fun MarkupTextField(
     BasicTextField(
         value = edit.text,
         onValueChange = onChange,
-        singleLine = true,
+        // **Not single-line since ME-146.** The canvas under this wraps the string at the
+        // caption's own `wrap`, and a single-line field lays the same string out on one
+        // line — so the caret walked off to the right while the glyphs went down a line.
+        // `Enter` is still consumed below, so this can never insert a newline.
+        singleLine = false,
         textStyle = TextStyle(
             // Transparent: the canvas underneath is drawing this very string.
             color = Color.Transparent,
@@ -110,6 +93,16 @@ internal fun MarkupTextField(
         cursorBrush = SolidColor(Color(edit.shape.color)),
         modifier = Modifier
             .offset { IntOffset(origin.x.roundToInt(), origin.y.roundToInt()) }
+            // The caption's wrap width, through the same canvas scale as its font size, so
+            // the field breaks its lines exactly where the fold breaks the glyphs beneath.
+            // Zero means unconstrained — an ME-122 document — and constrains nothing.
+            .then(
+                if (edit.shape.wrap > 0f) {
+                    Modifier.width(with(density) { (edit.shape.wrap * scale).toDp() })
+                } else {
+                    Modifier
+                }
+            )
             .focusRequester(focus)
             .onFocusChanged { state ->
                 // Clicking away commits, which is the rule for every inline editor
@@ -123,13 +116,16 @@ internal fun MarkupTextField(
             }
             .onPreviewKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                // Both are consumed here rather than in `EditorKeys`, which stands aside
-                // entirely while a field is open (`CanvasKeys.typing`).
-                when (event.key) {
-                    Key.Enter, Key.NumPadEnter -> finish(onCommit) { finished = true }
-                    Key.Escape -> finish(onCancel) { finished = true }
-                    else -> false
-                }
+                // **`Enter` is a line break, not a commit** (asked for 2026-08-27). It
+                // shipped as the commit with ME-145, when a caption was one line and had
+                // nowhere to break to; ME-146 gave it a box and a wrap, so the key that
+                // ends a paragraph has to end a paragraph. The edit is finished by
+                // clicking elsewhere — the blur below, and the press handler in
+                // `MarkupPointer` for the canvas, which is not focusable.
+                //
+                // Only `Esc` is consumed here, and here rather than in `EditorKeys`, which
+                // stands aside entirely while a field is open (`CanvasKeys.typing`).
+                if (event.key == Key.Escape) finish(onCancel) { finished = true } else false
             }
             .testTag(MARKUP_TEXT_FIELD_TAG)
     )

@@ -17,39 +17,98 @@ Order is dependency order.
 
 ## 100 — Image editor
 
-### ME-146 — Markup text: a box, a background and a face
-**First in this track** (asked for 2026-08-26). ME-122 and ME-145 ship a caption as one line of
-type in one colour; this is the rest of what a caption is, and it is deliberately one block rather
-than four because every part of it lands on the same shape and the same draw routine.
+### ME-147 — Markup text: the four faces, and a chip row that lights more than one
+**First in this track.** Bold, italic, underline and strikethrough, asked for 2026-08-26 as part of
+ME-146 and left behind when that ticket was written on 2026-08-27 — the four together are ~20 files
+with the box and the plate, and this is the half that costs a *shell* change rather than a markup one.
 
-**What is wanted**, in the author's words: a background behind the text, bold, italic, underline and
-strikethrough, and a frame you can grab to drag its width and height — with words wrapping when the
-frame narrows. In short, the iOS text object.
+The markup half is cheap and unchanged: four booleans on `MarkupShape.Text` reaching `TextStyle`
+(`FontWeight`, `FontStyle`, `TextDecoration`), carried into `textLayoutOf` beside the wrap width
+ME-146 put there, and restyled onto the selection the way the colour already is.
 
-**None of it fits the shape as it stands.** `MarkupShape.Text` is a point, a string, a colour and a
-size, and `drawMarkupText` measures that string unconstrained on one line. Wrapping needs a **width**
-on the shape and a `TextLayoutResult` measured against it; `textBounds` then comes from the layout
-rather than from a single line, and `hitTest` and the selection box follow it for free. The four
-faces are four booleans reaching `TextStyle` (`FontWeight`, `FontStyle`, `TextDecoration`), which is
-the cheap half. The background is a second colour plus padding and a corner radius, drawn **before**
-the glyphs in the same `RasterStage.Paint` — no new stage kind, so §3.2 is untouched.
+**The panel half is the ticket. Settled 2026-08-27 — a multi-select chip row**, not four switches:
+four full-width `IosSwitch` rows under `Shape`, `Color`, `Fill` and `Text size` is a wall, and the
+glyph row is what iOS Photos draws and what ME-144 argues for from the other side.
 
-What genuinely grows is the overlay: `handles()` is `emptyList()` for a caption today, and this gives
-it a frame with grabbable edges, which is `CropHandle`'s problem in a second place and worth reading
-before inventing a second answer to it.
+`ChoiceParam` cannot express it — it picks **one** of a set, and these are independent. So:
 
-**The decision to make before this can be written** — what dragging the frame *does*:
+- a ninth `ParamSpec`, `ToggleSetParam<E : Enum<E>>` — `options`, `default: Set<E>`, `labelOf`,
+  `iconOf`, encoded as the constants' names joined on the wire so **no new `ParamValue` subtype** is
+  needed and an unknown name is dropped rather than throwing (`TextValue`, the rule `ChoiceParam`
+  already follows);
+- the chip itself **extracted out of `ParamRowChoice.kt`**, which is at 150 lines and whose `ChipRow`
+  is `ChoiceParam`-shaped — including the one-scale-for-the-row glyph sizing that 2026-08-27 was
+  spent getting right. Two renderers must draw the same chip or they drift;
+- a row renderer, a branch in `ParamRows`' deliberately exhaustive `when`, and the fixture tool's
+  ninth spec — `EditorFixtureTest` asserts one of *every* spec type and fails until it has one;
+- **four SVGs**, which is most of the work: `composeResources/drawable` has `textformat` and nothing
+  else of this family. `bold`, `italic`, `underline`, `strikethrough`.
 
-- **iOS Photos**: a corner scales the type, the frame's width only decides where words wrap;
-- **a text editor**: the frame sets the width, the kegel is untouched, the height follows the wrap;
-- **both**: corners scale, side handles set the width.
+**And a `TextPen` value.** ME-146 left `newMarkupShape` taking `wrap`, `fill` and `corner` beside the
+pen; four more booleans make eleven parameters on a factory where four of its five branches ignore
+most of them. That is this ticket's first step, not a later tidy-up.
+*Depends on ME-146.*
 
-Until that is answered the ticket cannot say what `withHandle` computes, which is most of the work.
+### ME-148 — Markup text: the frame you can grab
+The last quarter of the ME-146 block, left in the backlog when that ticket was written on 2026-08-27.
+`handles()` is `emptyList()` for a caption today; this is what makes it four corners, and it is
+`CropHandle`'s problem in a second place — worth reading before inventing a second answer to it.
 
-**Also settle**: whether the four faces are a chip row of glyphs or four switches — ME-144 is the
-block that argues for glyphs, and this is its first real candidate. And whether the background colour
-reuses `ColorParam` with a "none" swatch, since a caption without one is the common case.
-*Depends on ME-145.*
+**Dragging the frame: settled 2026-08-27 — iOS Photos.** A corner **scales the type**; the frame's
+width only decides where words wrap. Not the text-editor reading, where the frame sets the width and
+the size is untouched, and not both at once.
+
+Two things follow, and they are most of `withHandle`:
+
+- a corner drag is a **ratio**, not a rectangle. It multiplies the caption's `width` — which has been
+  the font size since ME-122 — and `wrap` — which ME-146 added — by the same factor, so the block
+  keeps its proportions and the line breaks land where they did. Dragging a corner is therefore the
+  same operation as the `Text size` row, reached with a pointer instead of a slider, and it must
+  produce the same single undo step;
+- **the four corners are the only handles.** Side handles would set the wrap width independently,
+  which is the reading that was not chosen.
+
+Where the wrap width comes from was the sub-question, and ME-146 answered it: the picture's own width
+at the moment the caret is placed, so a caption never carries a width the user set — only one it
+inherited and a scale factor. What is left here is `handles()`, `withHandle`, and the frame drawn in
+`MarkupCanvas`, which today draws four dots for a box and a dashed outline for a freehand stroke.
+*Depends on ME-146.*
+
+### ME-149 — Moving a mark with no tool open
+Asked for 2026-08-27: a shape drawn with Markup should be draggable without Markup being the open
+tool. The answer that was **not** chosen is "draggable whatever tool is open" — four things in the
+editor say no, and the first is not about convenience:
+
+- **`EditorSession` holds one `pending`.** Markup is `Single`, one operation carrying the whole shape
+  list, so moving a shape *is* a preview of that operation. Drag Crop's frame — also a pending — and
+  nudge an arrow, and one preview overwrites the other. That is a lost edit, not an awkward moment.
+- **`CanvasKeys.onDelete` is a single mutable slot**, handed to the open tool by `DisposableEffect`
+  and given back on dispose. Two claimants make `Delete` mean whichever registered last, which is
+  composition order rather than intent — the defect ME-124 already records for PiP.
+- **Two overlays would contest the pointer.** A Crop handle sits on the frame; an arrow's body may
+  lie under it.
+- **The geometry moves.** Markup lives in source pixels outside the matrix, and `sourceToCanvas` is
+  rebuilt on every preview — dragging a shape while Crop reshapes the frame is dragging it inside a
+  coordinate system that is itself moving.
+
+**The reading that was chosen: when no tool is open at all.** `EditorScreen.activeToolId` is a
+`String?` and a second click on a rail item clears it, so this state exists today and `ActiveToolOverlay`
+returns immediately in it — nothing is mounted and nothing claims the pointer. None of the four
+objections applies there: the pending is free, the `Delete` slot is free, there is no rival overlay
+and the matrix is still. Panning survives untouched, because `MarkupPointer` deliberately leaves a
+press on empty picture unconsumed for the host beneath it.
+
+Three things it has to answer, and none of them is mechanical:
+
+- **The pen is off.** `MarkupGesture.Draw` mints a shape today when nothing is selected; in this mode
+  a press on empty picture may only deselect. A flag on the overlay, never a second copy of the
+  gesture recogniser.
+- **Whose overlay is it when nobody is open?** Nailing Markup in is easy and wrong the moment a second
+  object-carrying `CanvasTool` exists — ME-143 could well be one. The shape that survives is "every
+  canvas tool that has something to select, in select-only mode".
+- **The inspector is not on screen**, so `restyleSelected` is out of reach: select, move, delete, and
+  nothing else. That is the right answer and it is still a decision.
+*Depends on ME-146.*
 
 ### ME-1xx — Auto adjust
 Lifted out of ME-111 when that ticket was written (2026-08-22), because it cannot be a tool as tools

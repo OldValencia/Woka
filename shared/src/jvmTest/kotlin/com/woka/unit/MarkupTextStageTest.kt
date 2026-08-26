@@ -37,6 +37,10 @@ class MarkupTextStageTest {
             listOf(
                 MarkupTool.Kind,
                 MarkupTool.Color,
+                // The plate sits with the colour it belongs beside, not with the sizes
+                // (ME-146) — two swatch rows, then two sliders.
+                MarkupTool.Fill,
+                MarkupTool.Corner,
                 MarkupTool.Width,
                 MarkupTool.TextSize,
                 MarkupTool.Shapes

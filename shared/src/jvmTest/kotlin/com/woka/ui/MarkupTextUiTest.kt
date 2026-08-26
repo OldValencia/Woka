@@ -1,25 +1,19 @@
 package com.woka.ui
 
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
-import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.tools.markup.MARKUP_TEXT_FIELD_TAG
 import com.woka.feature.editor.tools.markup.MarkupShape
 import com.woka.feature.editor.tools.markup.MarkupTool
 import com.woka.feature.editor.tools.markup.markupShapes
-import com.woka.support.EditorHarness
 import com.woka.support.MainDispatcherRule
-import com.woka.support.chooseMarkupPen
-import com.woka.support.clickPicture
 import com.woka.support.finishCaret
 import com.woka.support.onEditor
 import com.woka.support.onUi
-import com.woka.support.openMarkupTool
+import com.woka.support.openCaret
 import com.woka.support.typeIntoCaret
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -65,7 +59,7 @@ class MarkupTextUiTest {
     }
 
     @Test
-    fun `typing shows on the canvas and Enter commits one undo step`() {
+    fun `typing shows on the canvas and a click elsewhere commits one undo step`() {
         onEditor(listOf(MarkupTool)) { harness ->
             onUi {
                 val before = openCaret(harness)
@@ -123,17 +117,5 @@ class MarkupTextUiTest {
                 assertEquals(before, harness.session.document.value, "Esc committed the caption")
             }
         }
-    }
-
-    /**
-     * Open the tool, choose the text pen, click the picture once — and answer the document
-     * as it stood **before** the caret, which is what an abandoned edit has to restore.
-     */
-    private fun ComposeUiTest.openCaret(harness: EditorHarness): EditDocument {
-        openMarkupTool(harness)
-        chooseMarkupPen("Text")
-        val before = harness.session.document.value
-        clickPicture(Offset(60f, 60f))
-        return before
     }
 }

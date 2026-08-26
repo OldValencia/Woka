@@ -3,6 +3,7 @@ package com.woka.ui
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import com.woka.feature.editor.tools.markup.MarkupTool
 import com.woka.support.MainDispatcherRule
 import com.woka.support.chooseMarkupPen
@@ -41,6 +42,50 @@ class MarkupRowVisibilityUiTest {
                 // And back, because a pen chosen twice must not leave two rows behind.
                 chooseMarkupPen("Arrow")
                 assertOnlyRow(MarkupTool.Width.key, hidden = MarkupTool.TextSize.key)
+            }
+        }
+    }
+
+    /**
+     * The plate row is the same rule with only one side (ME-146): a background does nothing
+     * to an arrow, an ellipse, a rectangle or a freehand stroke, so it is drawn for the text
+     * pen and for nothing else.
+     */
+    @Test
+    fun `the plate row is drawn for the text pen alone`() {
+        onEditor(listOf(MarkupTool)) { harness ->
+            onUi {
+                openMarkupTool(harness)
+                onNodeWithTag("param-${MarkupTool.Fill.key}").assertDoesNotExist()
+
+                chooseMarkupPen("Text")
+                onNodeWithTag("param-${MarkupTool.Fill.key}").assertExists()
+
+                chooseMarkupPen("Freehand")
+                onNodeWithTag("param-${MarkupTool.Fill.key}").assertDoesNotExist()
+            }
+        }
+    }
+
+    /**
+     * **`Corner` needs a plate, not merely a caption.** With no fill chosen it rounds
+     * nothing that can be seen, which is the same "a row that changes nothing reads as
+     * broken" rule one level down — keyed on the value in the row above rather than on the
+     * pen (asked for 2026-08-27).
+     */
+    @Test
+    fun `the corner row appears only once a plate is chosen`() {
+        onEditor(listOf(MarkupTool)) { harness ->
+            onUi {
+                openMarkupTool(harness)
+                chooseMarkupPen("Text")
+                onNodeWithTag("param-${MarkupTool.Corner.key}").assertDoesNotExist()
+
+                // The second swatch: the first is the "none" the row opens on.
+                onNodeWithTag("param-${MarkupTool.Fill.key}-swatch-1").performClick()
+                waitForIdle()
+
+                onNodeWithTag("param-${MarkupTool.Corner.key}").assertExists()
             }
         }
     }

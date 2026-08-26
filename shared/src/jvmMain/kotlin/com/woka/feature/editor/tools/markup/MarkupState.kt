@@ -40,6 +40,12 @@ fun EditDocument.markupColor(): Long = markupParams()[MarkupTool.Color]
 
 fun EditDocument.markupWidth(): Float = markupParams()[MarkupTool.Width]
 
+/** The plate the next caption is placed on, `0L` for none — the twin of [markupColor]. */
+fun EditDocument.markupFill(): Long = markupParams()[MarkupTool.Fill]
+
+/** How round that plate is, per cent of the type's size. */
+fun EditDocument.markupCorner(): Float = markupParams()[MarkupTool.Corner]
+
 /** The size type is placed at, in source pixels — the twin of [markupWidth] (ME-122). */
 fun EditDocument.markupTextSize(): Float = markupParams()[MarkupTool.TextSize]
 

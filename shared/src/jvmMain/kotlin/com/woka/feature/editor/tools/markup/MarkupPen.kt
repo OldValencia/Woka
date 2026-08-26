@@ -4,16 +4,13 @@ import com.woka.core.ui.icons.Icons
 import com.woka.feature.editor.core.ChoiceParam
 import com.woka.feature.editor.core.ColorParam
 import com.woka.feature.editor.core.FloatParam
-import com.woka.feature.editor.core.ParamSet
-import com.woka.feature.editor.core.ParamSpec
 
 /**
- * The pen — what the *next* shape is drawn with — and what choosing it does to the shape
- * already selected (ME-114).
+ * The pen — what the *next* shape is drawn with (ME-114).
  *
  * Split from `MarkupTool` for the size mandate, at the seam that was already there: the
- * manifest and `stage()` on one side, and on this one the three controls plus the rule that
- * ties them to the selection.
+ * manifest and `stage()` on one side, the controls on this one. What choosing one of them
+ * does to the shape already selected went the same way at ME-146 — `MarkupRestyle`.
  */
 
 /**
@@ -87,50 +84,31 @@ internal val MarkupTextSizeParam =
     FloatParam("textSize", "Text size", 12f..512f, default = 64f, unit = "px")
 
 /**
- * Choosing a colour or a width **with a shape selected restyles that shape** as well as
- * setting the pen (asked for 2026-08-24).
+ * The plate behind a caption, and **`0L` — fully transparent — as its first swatch and its
+ * default** (ME-146).
  *
- * Both, deliberately, and in one operation: the swatch has to show what is selected *and*
- * be what the next shape is drawn with, or the row would mean two different things
- * depending on whether anything happened to be selected.
- *
- * Only the colour and **the size row that means something for the selected shape**:
- * `Width` for the four stroked ones, `Text size` for a text shape (ME-122). Both write the
- * same field — a shape carries one number and a `Text` calls it a font size — so the
- * routing is which spec is allowed to reach it, not which field it lands in.
- *
- * `Kind` is not among them: a drawn rectangle cannot become an arrow, because the two are
- * different classes carrying different geometry, and "convert this shape" is a feature
- * rather than a restyle. `Shapes` is excluded for the obvious reason — it *is* the list,
- * and rewriting it here would recurse.
- *
- * Null for "nothing to apply", including a selection naming a shape the document no longer
- * holds — an id outlives the undo that took its shape away.
+ * `ColorParam` whole, rather than a nullable colour spec or a `BoolParam` beside a colour
+ * row: a caption without a plate is the common case, so "none" has to be one press away,
+ * and `0L` is already a legal `ColorValue`. `ColorSwatch` draws a zero-alpha value as a
+ * diagonal slash, which is the entire cost of expressing it. A switch plus a colour row
+ * that silently does nothing while it is off is the defect ME-122 already fixed once for
+ * the size rows.
  */
-internal fun restyleSelected(
-    spec: ParamSpec<*>,
-    params: ParamSet,
-    selectedId: String?
-): ParamSet? {
-    if (selectedId == null) return null
+internal val MarkupFillParam = ColorParam(
+    key = "fill",
+    label = "Fill",
+    swatches = listOf(0L) + MARKUP_SWATCHES,
+    default = 0L
+)
 
-    val shapes = params[MarkupTool.Shapes]
-    val selected = shapes.firstOrNull { it.id == selectedId } ?: return null
-    val sizeParam = sizeParamFor(selected)
-    if (spec != MarkupColorParam && spec != sizeParam) return null
-
-    return params.with(
-        MarkupTool.Shapes,
-        shapes.map { shape ->
-            if (shape.id == selectedId) {
-                shape.styled(color = params[MarkupColorParam], width = params[sizeParam])
-            } else {
-                shape
-            }
-        }
-    )
-}
-
-/** Which of the two size rows this shape's `width` is spelled by. */
-private fun sizeParamFor(shape: MarkupShape): FloatParam =
-    if (shape is MarkupShape.Text) MarkupTextSizeParam else MarkupWidthParam
+/**
+ * How round that plate's corners are (asked for 2026-08-27).
+ *
+ * **A per cent of the type's size, not a count of pixels.** A radius in pixels would have
+ * to be multiplied by ME-148's corner-drag ratio like the font size and the wrap width;
+ * expressed against the size it already is, it scales for free and one field fewer takes
+ * part in the drag. It is also the number that stays meaningful across a 12 px caption and
+ * a 512 px one, which a pixel radius is not.
+ */
+internal val MarkupCornerParam =
+    FloatParam("corner", "Corner", 0f..100f, default = 25f, unit = "%")

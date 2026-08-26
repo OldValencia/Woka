@@ -63,12 +63,20 @@ private fun MarkupShape.handleAt(x: Float, y: Float, grab: Float): Int? = handle
  *
  * **Not created on the press** (see `MarkupOverlay`): it is minted on the first movement,
  * so a stray click on empty picture leaves nothing behind.
+ *
+ * [wrap] and [fill] mean nothing to the four stroked kinds and are read for all five
+ * anyway (ME-146). The alternative — defaulting them here — would let this factory and
+ * `textEditAt` mint two different captions, which is precisely the drift `wrapAt` exists
+ * to prevent.
  */
 internal fun newMarkupShape(
     kind: MarkupKind,
     color: Long,
     width: Float,
-    at: MarkupPoint
+    at: MarkupPoint,
+    wrap: Float,
+    fill: Long,
+    corner: Float
 ): MarkupShape {
     val id = newShapeId()
     return when (kind) {
@@ -78,7 +86,8 @@ internal fun newMarkupShape(
         MarkupKind.Freehand -> Freehand(id, color, width, listOf(at))
         // Empty, and [width] is the type size rather than a stroke: the caller reads the
         // row that means something for the kind it asked for (ME-122).
-        MarkupKind.Text -> Text(id, color, width, at, text = "")
+        MarkupKind.Text ->
+            Text(id, color, width, at, "", wrap = wrap, fill = fill, corner = corner)
     }
 }
 

@@ -58,6 +58,12 @@ object MarkupTool : CanvasTool {
     val Color = MarkupColorParam
     val Width = MarkupWidthParam
 
+    /** The plate behind a caption, `0L` for none (ME-146) — shown for the text pen alone. */
+    val Fill = MarkupFillParam
+
+    /** How round that plate is — shown only once there **is** a plate to round. */
+    val Corner = MarkupCornerParam
+
     /**
      * Type's own size, because a stroke's 1-64 px is nowhere near it (ME-122). Shown for
      * every kind: a row that appeared and vanished with the chooser would need a
@@ -78,22 +84,34 @@ object MarkupTool : CanvasTool {
     )
 
     /** The pen first, then the payload the inspector deliberately draws nothing for. */
-    override val params: List<ParamSpec<*>> = listOf(Kind, Color, Width, TextSize, Shapes)
+    override val params: List<ParamSpec<*>> =
+        listOf(Kind, Color, Fill, Corner, Width, TextSize, Shapes)
 
     /**
-     * **One size row at a time.** A stroke width does nothing to a caption and a font size
-     * does nothing to an arrow, and a row that changes nothing when dragged is worse than
-     * a missing one — it reads as broken (reported by hand 2026-08-26).
+     * **One size row at a time, and the plate only where there is one.** A stroke width
+     * does nothing to a caption, a font size does nothing to an arrow and a background
+     * does nothing to either, and a row that changes nothing when used is worse than a
+     * missing one — it reads as broken (reported by hand 2026-08-26).
      *
      * Keyed on the pen rather than on what happens to be selected, because the pen is what
-     * the panel is describing: `Kind` is the chooser directly above these two rows, and a
-     * row that moved with the *selection* would appear and vanish under a click on the
+     * the panel is describing: `Kind` is the chooser directly above these rows, and a row
+     * that moved with the *selection* would appear and vanish under a click on the
      * picture that the inspector gives no sign of. Restyling a caption therefore wants the
      * text pen chosen, which is where a caption is drawn from anyway.
      */
     override fun rows(params: ParamSet): List<ParamSpec<*>> {
-        val hidden = if (params[Kind] == MarkupKind.Text) Width else TextSize
-        return this.params.filterNot { it == hidden }
+        val typed = params[Kind] == MarkupKind.Text
+        // **`Corner` needs a plate to round, not merely a caption to sit under.** With no
+        // fill chosen, dragging it changes nothing that can be seen — the same rule the
+        // size rows follow, applied one level down: the row is keyed on the value above it
+        // rather than on the pen.
+        val plated = typed && (params[Fill] ushr 24) != 0L
+        val hidden = when {
+            !typed -> setOf(TextSize, Fill, Corner)
+            !plated -> setOf(Width, Corner)
+            else -> setOf(Width)
+        }
+        return this.params.filterNot { it in hidden }
     }
 
     /**

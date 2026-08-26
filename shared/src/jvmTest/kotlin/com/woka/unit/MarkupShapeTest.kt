@@ -14,6 +14,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertNull
 
 /**
@@ -83,6 +84,26 @@ class MarkupShapeTest {
         assertNull(MarkupTool.Shapes.decode(JsonValue(payload)), "an unknown shape decoded")
         assertEquals(emptyList(), params[MarkupTool.Shapes])
         assertEquals(MarkupKind.Ellipse, params[MarkupTool.Kind], "the rest of the op was lost")
+    }
+
+    /**
+     * **The ME-146 wire contract.** A caption written by ME-122 or ME-145 carries neither
+     * `wrap` nor `fill`, and must go on meaning what it meant: one unwrapped line, no
+     * plate. Asserted against a literal payload rather than a round trip, because a round
+     * trip of the *current* class cannot show what an older document does.
+     */
+    @Test
+    fun `a caption written before the box and the plate decodes to neither`() {
+        val payload = Json.parseToJsonElement(
+            """[{"type":"text","id":"e","color":255,"width":72.0,""" +
+                """"at":{"x":40.0,"y":90.0},"text":"Kondakov"}]"""
+        )
+
+        val decoded = requireNotNull(MarkupTool.Shapes.decode(JsonValue(payload))).single()
+
+        val caption = assertIs<MarkupShape.Text>(decoded)
+        assertEquals(0f, caption.wrap, "an old caption gained a wrap width")
+        assertEquals(0L, caption.fill, "an old caption gained a plate")
     }
 
     /**

@@ -90,13 +90,18 @@ sealed interface MarkupShape {
     ) : MarkupShape
 
     /**
-     * A line of type, with [at] its top-left corner in source pixels (ME-122).
+     * A block of type, with [at] its top-left corner in source pixels (ME-122).
      *
      * **[width] is the font size**: type has no outline to thicken, and a sixth field
      * beside a `width` nothing reads is one every `when` here would have to ignore. It is
      * written by `MarkupTextSizeParam`, not by the stroke row, whose 1-64 px is nowhere
      * near enough for type on a 6000 px photograph. An empty string draws nothing and
      * hits nothing (`MarkupText`), so a shape nobody typed into leaves no mark.
+     *
+     * **Both fields below default to zero, and zero is the wire contract** (ME-146). A
+     * document written by ME-122 or ME-145 carries neither key, decodes to both defaults,
+     * and goes on meaning exactly what it meant — one unwrapped line, no plate. There is
+     * no migration and no version field because there is nothing to migrate.
      */
     @Immutable
     @Serializable
@@ -106,45 +111,33 @@ sealed interface MarkupShape {
         override val color: Long,
         override val width: Float,
         val at: MarkupPoint,
-        val text: String
+        val text: String,
+        /**
+         * The width the words wrap against, in source pixels — **0 for unconstrained**,
+         * which lays the string out on one line however long it is.
+         *
+         * Never set by the user: it is inherited from the picture when the caret is
+         * placed (`wrapAt`) and multiplied by a corner drag (ME-148). A caption therefore
+         * carries a width it was given and a scale factor, never one it typed.
+         */
+        val wrap: Float = 0f,
+        /**
+         * The plate behind the glyphs, as packed ARGB — **0 for none**, which is the
+         * common case and is why it is the default rather than a `null`.
+         *
+         * A second colour beside [color] rather than a `Boolean` plus a shared one: the
+         * plate is picked against the photograph the same way the type is, and the two
+         * are rarely the same colour.
+         */
+        val fill: Long = 0L,
+        /**
+         * How round the plate's corners are, as a **per cent of the type's size** — so a
+         * caption scaled by a corner drag (ME-148) keeps its roundness without the ratio
+         * touching a second field. 0 is a square corner, 100 a capsule.
+         *
+         * Its default is the constant the plate shipped with earlier the same day, which
+         * is why a caption written between the two looks identical either way.
+         */
+        val corner: Float = 25f
     ) : MarkupShape
 }
-
-/**
- * The same shape in a different pen (ME-114).
- *
- * A `when` over the four rather than a field on the interface: `color` and `width` are
- * `val`s on an immutable hierarchy, so restyling is `copy`, and `copy` is per class. The
- * alternative — a mutable style object shared by reference — is how two arrows drawn a
- * minute apart end up changing colour together.
- */
-internal fun MarkupShape.styled(color: Long = this.color, width: Float = this.width): MarkupShape =
-    when (this) {
-        is MarkupShape.Arrow -> copy(color = color, width = width)
-        is MarkupShape.Rectangle -> copy(color = color, width = width)
-        is MarkupShape.Ellipse -> copy(color = color, width = width)
-        is MarkupShape.Freehand -> copy(color = color, width = width)
-        is MarkupShape.Text -> copy(color = color, width = width)
-    }
-
-/**
- * A point of a shape, in source pixels.
- *
- * Its own type rather than `Offset` for two reasons that both have to hold: `Offset` is
- * not serialisable, and it is a Compose value class over packed floats whose layout is
- * Compose's to change — which `code-style/model.md` keeps out of anything written to a
- * document. Float, not Int: a shape is dragged, and rounding every drag to whole pixels
- * makes a slow diagonal move in steps.
- */
-@Immutable
-@Serializable
-data class MarkupPoint(val x: Float, val y: Float)
-
-/**
- * What the pen draws next — the inspector's chooser, **not** a field of a shape.
- *
- * A shape's type is its class, so nothing needs to store this alongside it; the enum
- * exists because a `ChoiceParam` is how the shell renders "one of a fixed set" — at five
- * options, as a chip row rather than a `SegmentedControl` (`ChoiceParamRow`).
- */
-enum class MarkupKind { Arrow, Rectangle, Ellipse, Freehand, Text }

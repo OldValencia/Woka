@@ -87,3 +87,30 @@ internal fun ColorSwatch(
 
 /** A flat colour as a `Brush`, so [ColorSwatch] takes one type rather than two. */
 internal fun solidFill(argb: Long): Brush = SolidColor(Color(argb))
+
+/**
+ * The circle a **row** is filled with: a colour, or the "none" slash when that colour has
+ * no alpha at all (ME-146).
+ *
+ * `0L` is a legal `ColorValue` and it is how markup's plate says "no plate", so it has to
+ * be drawable rather than invisible — six filled circles beside one that is not there
+ * reads as a rendering fault. Hard stops rather than a fade, and no explicit start and end
+ * offsets: `linearGradient` defaults to corner-to-corner, so the band comes out diagonal
+ * by construction.
+ *
+ * Fixed whites rather than `Theme`, for the reason the whole row is drawn in on-scrim
+ * colours: this sits over a photograph, not over a surface, and the pair is light in both
+ * themes. It also keeps this a plain function rather than a composable one, which
+ * [solidFill] beside it already is.
+ */
+internal fun swatchFill(argb: Long): Brush =
+    if ((argb ushr 24) != 0L) solidFill(argb) else Brush.linearGradient(*NONE_SLASH)
+
+private val NONE_SLASH = arrayOf(
+    0f to Color.White.copy(alpha = 0.12f),
+    0.46f to Color.White.copy(alpha = 0.12f),
+    0.46f to Color.White.copy(alpha = 0.75f),
+    0.54f to Color.White.copy(alpha = 0.75f),
+    0.54f to Color.White.copy(alpha = 0.12f),
+    1f to Color.White.copy(alpha = 0.12f)
+)
