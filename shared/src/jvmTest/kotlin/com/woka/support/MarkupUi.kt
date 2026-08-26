@@ -5,7 +5,6 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
@@ -36,12 +35,14 @@ fun ComposeUiTest.openMarkupTool(harness: EditorHarness) {
 }
 
 /**
- * The pen, by the name on its chip. `Text` is the fifth kind, which is what makes the row
- * a chip row rather than a `SegmentedControl` — and what makes this a text lookup.
+ * The pen, by its constant's name.
+ *
+ * **By tag, not by text**: the chips are glyphs since 2026-08-27 and their names live in a
+ * tooltip, so there is no word on screen to click.
  */
 @OptIn(ExperimentalTestApi::class)
 fun ComposeUiTest.chooseMarkupPen(name: String) {
-    onNodeWithText(name).performClick()
+    onNodeWithTag("param-kind-$name").performClick()
     waitForIdle()
 }
 

@@ -68,6 +68,13 @@ object Icons {
         val Share = Res.drawable.share
 
         val MagicWand = Res.drawable.magic_wand
+
+        // The five markup shapes, for the chip row that used to spell them out
+        val ShapeArrow = Res.drawable.arrow_up_right
+        val ShapeRectangle = Res.drawable.rectangle
+        val ShapeEllipse = Res.drawable.circle
+        val ShapeFreehand = Res.drawable.scribble
+        val ShapeText = Res.drawable.textformat
         
         val Undo = Res.drawable.undo
         val Redo = Res.drawable.redo

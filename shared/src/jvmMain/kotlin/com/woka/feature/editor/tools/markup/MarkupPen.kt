@@ -1,5 +1,6 @@
 package com.woka.feature.editor.tools.markup
 
+import com.woka.core.ui.icons.Icons
 import com.woka.feature.editor.core.ChoiceParam
 import com.woka.feature.editor.core.ColorParam
 import com.woka.feature.editor.core.FloatParam
@@ -32,11 +33,28 @@ internal val MARKUP_SWATCHES = listOf(
     0xFFFFFFFFL
 )
 
+/**
+ * The five shapes, **as glyphs** (asked for 2026-08-27).
+ *
+ * Five names is past `ChoiceParamRow`'s segmented limit, so this is a chip row — and
+ * "Rectangle", "Freehand" and "Ellipse" spelled out wrapped it onto two lines, which
+ * reflowed the whole inspector as the pen was changed. `labelOf` still names every one of
+ * them; `ChipRow` moves that name into a tooltip rather than dropping it.
+ */
 internal val MarkupKindParam = ChoiceParam(
     key = "kind",
     label = "Shape",
     options = MarkupKind.entries.toList(),
-    default = MarkupKind.Arrow
+    default = MarkupKind.Arrow,
+    iconOf = { kind ->
+        when (kind) {
+            MarkupKind.Arrow -> Icons.Static.ShapeArrow
+            MarkupKind.Rectangle -> Icons.Static.ShapeRectangle
+            MarkupKind.Ellipse -> Icons.Static.ShapeEllipse
+            MarkupKind.Freehand -> Icons.Static.ShapeFreehand
+            MarkupKind.Text -> Icons.Static.ShapeText
+        }
+    }
 )
 
 internal val MarkupColorParam = ColorParam(

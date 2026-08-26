@@ -1,5 +1,6 @@
 package com.woka.feature.editor.core
 
+import org.jetbrains.compose.resources.DrawableResource
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.JsonElement
 
@@ -30,7 +31,17 @@ data class ChoiceParam<E : Enum<E>>(
      * default keeps the name, so a tool whose constants already read well says
      * nothing (2026-08-22).
      */
-    val labelOf: (E) -> String = { it.name }
+    val labelOf: (E) -> String = { it.name },
+    /**
+     * A glyph for an option, or null to spell it out.
+     *
+     * **[labelOf] is still what names it** — the chip row moves that name into a tooltip
+     * rather than dropping it, so nothing becomes unnameable by gaining a picture. Null
+     * for every option is the default and the case every other tool is in: an icon is
+     * worth it where the words are longer than the thing they name and the row wraps
+     * (ME-144), not everywhere.
+     */
+    val iconOf: (E) -> DrawableResource? = { null }
 ) : ParamSpec<E> {
     override fun encode(value: E) = TextValue(value.name)
     override fun decode(value: ParamValue): E? {
