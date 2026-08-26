@@ -25,4 +25,14 @@ internal class CanvasKeys {
 
     /** True when the press was used — see `CanvasTool.onDelete`. */
     var onDelete: (() -> Boolean)? by mutableStateOf(null)
+
+    /**
+     * Whether the open tool is taking typed input, in which case the editor's handler
+     * declines **every** key (ME-145).
+     *
+     * The same slot pattern as [onDelete] and for the same reason: the field that wants
+     * the keyboard lives inside the active tool's overlay, and the handler that has to
+     * stand aside is registered two composables above it.
+     */
+    var typing: Boolean by mutableStateOf(false)
 }

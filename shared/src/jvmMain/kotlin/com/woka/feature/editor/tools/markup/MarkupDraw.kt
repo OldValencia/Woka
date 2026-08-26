@@ -12,6 +12,7 @@ import com.woka.feature.editor.tools.markup.MarkupShape.Arrow
 import com.woka.feature.editor.tools.markup.MarkupShape.Ellipse
 import com.woka.feature.editor.tools.markup.MarkupShape.Freehand
 import com.woka.feature.editor.tools.markup.MarkupShape.Rectangle
+import com.woka.feature.editor.tools.markup.MarkupShape.Text
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -58,6 +59,9 @@ fun DrawScope.drawMarkup(shape: MarkupShape) {
             style = stroke
         )
         is Freehand -> drawFreehand(shape, color, stroke)
+        // The only branch that owns a font, and therefore the only one that lives in a
+        // file of its own — see `MarkupText`.
+        is Text -> drawMarkupText(shape, color)
     }
 }
 

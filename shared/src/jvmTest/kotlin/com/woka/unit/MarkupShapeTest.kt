@@ -7,6 +7,7 @@ import com.woka.feature.editor.tools.markup.MarkupKind
 import com.woka.feature.editor.tools.markup.MarkupPoint
 import com.woka.feature.editor.tools.markup.MarkupShape
 import com.woka.feature.editor.tools.markup.MarkupTool
+import com.woka.feature.editor.tools.markup.styled
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -33,7 +34,10 @@ class MarkupShapeTest {
             color = 0xFFFFFFFFL,
             width = 1f,
             points = listOf(MarkupPoint(1f, 1f), MarkupPoint(2f, 4f), MarkupPoint(9f, 3f))
-        )
+        ),
+        // `width` here is the font size, which is the one thing about this variant a
+        // reader has to know and the reason it is asserted beside the other four.
+        MarkupShape.Text("e", 0xFFFF3B30L, 72f, MarkupPoint(40f, 90f), "Kondakov")
     )
 
     @Test
@@ -45,7 +49,7 @@ class MarkupShapeTest {
 
     /**
      * The discriminators are the **wire format**, not an implementation detail: the one
-     * kotlinx would derive is the fully qualified class name, so without these four
+     * kotlinx would derive is the fully qualified class name, so without these five
      * moving the file would rewrite the meaning of every document already saved.
      */
     @Test
@@ -53,7 +57,7 @@ class MarkupShapeTest {
         val encoded = MarkupTool.Shapes.encode(shapes)
 
         assertEquals(
-            listOf("arrow", "rectangle", "ellipse", "freehand"),
+            listOf("arrow", "rectangle", "ellipse", "freehand", "text"),
             encoded.element.jsonArray.map { it.jsonObject.getValue("type").jsonPrimitive.content }
         )
     }
@@ -79,5 +83,22 @@ class MarkupShapeTest {
         assertNull(MarkupTool.Shapes.decode(JsonValue(payload)), "an unknown shape decoded")
         assertEquals(emptyList(), params[MarkupTool.Shapes])
         assertEquals(MarkupKind.Ellipse, params[MarkupTool.Kind], "the rest of the op was lost")
+    }
+
+    /**
+     * `styled` on the variant whose `width` means something else (ME-122): it is the font
+     * size, so restyling changes it, and the string and the point it was placed at are not
+     * style and must survive untouched.
+     */
+    @Test
+    fun `restyling a text shape moves its colour and its size and nothing else`() {
+        val text = MarkupShape.Text("e", 0xFFFF3B30L, 72f, MarkupPoint(40f, 90f), "Kondakov")
+
+        val restyled = text.styled(color = 0xFF0A84FFL, width = 120f)
+
+        assertEquals(
+            MarkupShape.Text("e", 0xFF0A84FFL, 120f, MarkupPoint(40f, 90f), "Kondakov"),
+            restyled
+        )
     }
 }

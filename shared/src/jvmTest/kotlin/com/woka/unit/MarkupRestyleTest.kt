@@ -21,6 +21,9 @@ class MarkupRestyleTest {
     private fun arrow(id: String, color: Long = 0xFFFF9F0AL, width: Float = 6f) =
         MarkupShape.Arrow(id, color, width, MarkupPoint(0f, 0f), MarkupPoint(50f, 50f))
 
+    private fun text(id: String, color: Long = 0xFFFF9F0AL, size: Float = 64f) =
+        MarkupShape.Text(id, color, size, MarkupPoint(10f, 10f), "Woka")
+
     private fun params(vararg shapes: MarkupShape) =
         MarkupTool.defaults().with(MarkupTool.Shapes, shapes.toList())
 
@@ -67,6 +70,50 @@ class MarkupRestyleTest {
         val set = params(arrow("a")).with(MarkupTool.Color, 0xFF0A84FFL)
 
         assertNull(MarkupTool.restyled(MarkupTool.Color, set, selectedId = "gone"))
+    }
+
+    /**
+     * **The two size rows route by the selected shape's class** (ME-122). Both write the
+     * same field — a shape carries one number and a `Text` calls it a font size — so what
+     * the routing decides is which row is allowed to reach it. Getting this wrong is not a
+     * crash: it is a stroke slider silently resizing a caption to 6 px.
+     */
+    @Test
+    fun `the text size row restyles a text shape and the width row does not`() {
+        val set = params(text("t")).with(MarkupTool.TextSize, 120f).with(MarkupTool.Width, 6f)
+
+        val restyled = requireNotNull(MarkupTool.restyled(MarkupTool.TextSize, set, "t"))
+        assertEquals(120f, restyled[MarkupTool.Shapes].single().width)
+
+        assertNull(MarkupTool.restyled(MarkupTool.Width, set, "t"), "the stroke row resized type")
+    }
+
+    @Test
+    fun `the width row restyles a stroke and the text size row does not`() {
+        val set = params(arrow("a")).with(MarkupTool.Width, 20f).with(MarkupTool.TextSize, 120f)
+
+        val restyled = requireNotNull(MarkupTool.restyled(MarkupTool.Width, set, "a"))
+        assertEquals(20f, restyled[MarkupTool.Shapes].single().width)
+
+        assertNull(MarkupTool.restyled(MarkupTool.TextSize, set, "a"), "the type row thickened a stroke")
+    }
+
+    /**
+     * Colour reaches both, and carries the size row that belongs to the shape it lands on
+     * — so recolouring a caption must not also resize it to the stroke width sitting in
+     * the row above.
+     */
+    @Test
+    fun `recolouring a text shape keeps its own size rather than the stroke width`() {
+        val set = params(text("t", size = 64f))
+            .with(MarkupTool.Color, 0xFF0A84FFL)
+            .with(MarkupTool.TextSize, 64f)
+            .with(MarkupTool.Width, 6f)
+
+        val shape = requireNotNull(MarkupTool.restyled(MarkupTool.Color, set, "t"))[MarkupTool.Shapes]
+
+        assertEquals(0xFF0A84FFL, shape.single().color)
+        assertEquals(64f, shape.single().width, "the caption took the stroke slider's number")
     }
 
     /** `Kind` is not a restyle: a drawn rectangle cannot become an arrow. */

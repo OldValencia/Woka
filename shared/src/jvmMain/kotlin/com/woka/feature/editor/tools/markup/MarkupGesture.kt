@@ -4,6 +4,7 @@ import com.woka.feature.editor.tools.markup.MarkupShape.Arrow
 import com.woka.feature.editor.tools.markup.MarkupShape.Ellipse
 import com.woka.feature.editor.tools.markup.MarkupShape.Freehand
 import com.woka.feature.editor.tools.markup.MarkupShape.Rectangle
+import com.woka.feature.editor.tools.markup.MarkupShape.Text
 import kotlin.math.hypot
 
 /**
@@ -75,6 +76,9 @@ internal fun newMarkupShape(
         MarkupKind.Rectangle -> Rectangle(id, color, width, at, at)
         MarkupKind.Ellipse -> Ellipse(id, color, width, at, at)
         MarkupKind.Freehand -> Freehand(id, color, width, listOf(at))
+        // Empty, and [width] is the type size rather than a stroke: the caller reads the
+        // row that means something for the kind it asked for (ME-122).
+        MarkupKind.Text -> Text(id, color, width, at, text = "")
     }
 }
 
@@ -94,4 +98,7 @@ internal fun MarkupShape.extendedTo(point: MarkupPoint): MarkupShape = when (thi
         val last = points.last()
         if (hypot(point.x - last.x, point.y - last.y) < 1f) this else copy(points = points + point)
     }
+    // Type is **placed**, not dragged out: its extent comes from the string and the size,
+    // so a drag from the point it was put at has nothing to change.
+    is Text -> this
 }

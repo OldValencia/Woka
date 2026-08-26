@@ -40,6 +40,9 @@ fun EditDocument.markupColor(): Long = markupParams()[MarkupTool.Color]
 
 fun EditDocument.markupWidth(): Float = markupParams()[MarkupTool.Width]
 
+/** The size type is placed at, in source pixels — the twin of [markupWidth] (ME-122). */
+fun EditDocument.markupTextSize(): Float = markupParams()[MarkupTool.TextSize]
+
 /**
  * The operation that records [shapes], carrying every other parameter the document
  * already held — a drag must not reset the pen the inspector just set.

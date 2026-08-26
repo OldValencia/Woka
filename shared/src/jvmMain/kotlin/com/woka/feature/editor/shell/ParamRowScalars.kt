@@ -51,6 +51,13 @@ internal fun FloatParamRow(spec: FloatParam, params: ParamSet, writer: ParamWrit
                     fill = Theme.viewer.onScrim
                 ),
                 detents = listOf(toFraction(spec.detent)),
+                // **Keyed on the spec, not only on the track's width.** A tool may swap one
+                // row for another in the same position — Markup trades `Width` for
+                // `Text size` with the pen — and the gesture must go with it. Without this
+                // the node is reused, its `pointerInput` keys are unchanged, and the
+                // coroutine still running closes over the spec it was built with: the row
+                // reads "Text size" and writes `width` (found by hand 2026-08-26).
+                gestureKey = spec.key,
                 onTap = { writer.edit(spec, toValue(it), settled = true) },
                 onDrag = { writer.edit(spec, toValue(it), settled = false) },
                 onDragEnd = writer::settle,

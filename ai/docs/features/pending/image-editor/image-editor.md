@@ -30,44 +30,49 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 
 | Ticket | Title | State |
 |---|---|---|
-| [ME-001](tickets/ME-001-toolchain-refresh.md) | Toolchain and dependency refresh | **done** 2026-08-16 |
-| [ME-013](tickets/ME-013-ffmpeg-8-1-2.md) | JavaCV 1.5.14 / FFmpeg 8.1.2 | **done** 2026-08-16 |
-| [ME-002](tickets/ME-002-package-skeleton.md) | Editor package skeleton and DI seam | **done** 2026-08-16 |
-| [ME-003](tickets/ME-003-param-schema.md) | Parameter schema | **done** 2026-08-16 |
-| [ME-004](tickets/ME-004-document-history-session.md) | Document, history, session | **done** 2026-08-16 |
-| [ME-005](tickets/ME-005-tool-contract.md) | Tool contract | **done** 2026-08-16 |
-| [ME-006](tickets/ME-006-tool-registry.md) | Tool registry, enablement, settings | **done** 2026-08-16 |
-| [ME-007](tickets/ME-007-raster-fold.md) | Raster stage and the fold | **done** 2026-08-16 |
-| [ME-008](tickets/ME-008-engine-seam.md) | Editor engine seam | **done** 2026-08-16 |
-| [ME-009](tickets/ME-009-save-targets.md) | Save targets and the atomic write | **done** 2026-08-17 |
-| [ME-010](tickets/ME-010-probes.md) | Capability probes | **done** 2026-08-18 |
-| [ME-011](tickets/ME-011-test-harness.md) | Test harness and the fixture tool | **done** 2026-08-18 |
-| [ME-012](tickets/ME-012-mockup-tokens.md) | Editor mockup and tokens | **done** 2026-08-18 |
-| [ME-014](tickets/ME-014-remove-material3.md) | Remove `material3` — before ME-101 | **done** 2026-08-18 |
-| [ME-101](tickets/ME-101-editor-shell.md) | Editor shell | **done** 2026-08-18 |
-| [ME-102](tickets/ME-102-param-row-renderers.md) | Parameter row renderers | **done** 2026-08-18 |
-| [ME-103](tickets/ME-103-image-surface.md) | Image surface | **done** 2026-08-18 |
-| [ME-104](tickets/ME-104-save-pipeline.md) | Save pipeline | **done** 2026-08-18, ~~superseded~~ by ME-132 |
-| [ME-105](tickets/ME-105-transform-tool.md) | Transform tool | **done** 2026-08-18 |
-| [ME-106](tickets/ME-106-entry-points.md) | Entry points | **done** 2026-08-18 |
-| [ME-131](tickets/ME-131-recipe-carrier.md) | Recipe carrier — JPEG and PNG | **done** 2026-08-19 |
-| [ME-132](tickets/ME-132-done-writes-the-recipe.md) | `Done` writes it; Export removed | **done** 2026-08-19 |
-| [ME-133](tickets/ME-133-readers-apply-the-recipe.md) | Every reader applies the recipe | **done** 2026-08-19 |
-| [ME-134](tickets/ME-134-reopening-an-edited-file.md) | Reopening an edited file | **done** 2026-08-19 |
-| [ME-135](tickets/ME-135-readers-notice-a-save.md) | Readers notice a save | **done** 2026-08-19 |
-| [ME-107](tickets/ME-107-revert-to-original.md) | Revert to Original — **un-dropped** | **done** 2026-08-19 |
-| [ME-108](tickets/ME-108-isobmff-carrier.md) | ISOBMFF carrier — HEIC, HEIF, AVIF | **done** 2026-08-19 — by hand outstanding |
-| [ME-137](tickets/ME-137-webp-carrier.md) | RIFF carrier — WebP, and bucket B empties | **done** 2026-08-19 — by hand outstanding |
-| [ME-138](tickets/ME-138-gif-carrier.md) | GIF carrier — Application Extension, one recipe for every frame | **done** 2026-08-21 — confirmed by hand |
-| [ME-139](tickets/ME-139-tiff-carrier.md) | TIFF carrier — private IFD tag | **done** 2026-08-20 — by hand outstanding |
-| [ME-140](tickets/ME-140-the-canvas-plays.md) | The editing canvas plays what the viewer plays | **done** 2026-08-21 — confirmed by hand |
-| [ME-109](tickets/ME-109-crop-tool.md) | Crop tool, and the fold at preview scale | **done** 2026-08-22 — confirmed by hand; the shape every later tool takes |
-| [ME-110](tickets/ME-110-resize-tool.md) | Resize tool | **done** 2026-08-22 — by hand outstanding |
-| [ME-111](tickets/ME-111-adjustments-tool.md) | Adjustments — six sliders, one colour matrix | **done** 2026-08-22 — confirmed by hand |
-| [ME-112](tickets/ME-112-filter-presets.md) | Filter presets, and the preview-choice row | **done** 2026-08-22 — by hand outstanding |
-| [ME-113](tickets/ME-113-markup-engine.md) | Markup engine — four shapes, one draw routine | **done** 2026-08-24 |
-| [ME-114](tickets/ME-114-markup-interaction.md) | Markup interaction — the overlay and `Delete` | **done** 2026-08-24 — by hand outstanding |
-| [ME-115…ME-144](tickets/backlog.md) | Image editor | backlog |
+| [ME-001](tickets/implemented/ME-001-toolchain-refresh.md) | Toolchain and dependency refresh | **done** 2026-08-16 |
+| [ME-013](tickets/implemented/ME-013-ffmpeg-8-1-2.md) | JavaCV 1.5.14 / FFmpeg 8.1.2 | **done** 2026-08-16 |
+| [ME-002](tickets/implemented/ME-002-package-skeleton.md) | Editor package skeleton and DI seam | **done** 2026-08-16 |
+| [ME-003](tickets/implemented/ME-003-param-schema.md) | Parameter schema | **done** 2026-08-16 |
+| [ME-004](tickets/implemented/ME-004-document-history-session.md) | Document, history, session | **done** 2026-08-16 |
+| [ME-005](tickets/implemented/ME-005-tool-contract.md) | Tool contract | **done** 2026-08-16 |
+| [ME-006](tickets/implemented/ME-006-tool-registry.md) | Tool registry, enablement, settings | **done** 2026-08-16 |
+| [ME-007](tickets/implemented/ME-007-raster-fold.md) | Raster stage and the fold | **done** 2026-08-16 |
+| [ME-008](tickets/implemented/ME-008-engine-seam.md) | Editor engine seam | **done** 2026-08-16 |
+| [ME-009](tickets/implemented/ME-009-save-targets.md) | Save targets and the atomic write | **done** 2026-08-17 |
+| [ME-010](tickets/implemented/ME-010-probes.md) | Capability probes | **done** 2026-08-18 |
+| [ME-011](tickets/implemented/ME-011-test-harness.md) | Test harness and the fixture tool | **done** 2026-08-18 |
+| [ME-012](tickets/implemented/ME-012-mockup-tokens.md) | Editor mockup and tokens | **done** 2026-08-18 |
+| [ME-014](tickets/implemented/ME-014-remove-material3.md) | Remove `material3` — before ME-101 | **done** 2026-08-18 |
+| [ME-101](tickets/implemented/ME-101-editor-shell.md) | Editor shell | **done** 2026-08-18 |
+| [ME-102](tickets/implemented/ME-102-param-row-renderers.md) | Parameter row renderers | **done** 2026-08-18 |
+| [ME-103](tickets/implemented/ME-103-image-surface.md) | Image surface | **done** 2026-08-18 |
+| [ME-104](tickets/implemented/ME-104-save-pipeline.md) | Save pipeline | **done** 2026-08-18, ~~superseded~~ by ME-132 |
+| [ME-105](tickets/implemented/ME-105-transform-tool.md) | Transform tool | **done** 2026-08-18 |
+| [ME-106](tickets/implemented/ME-106-entry-points.md) | Entry points | **done** 2026-08-18 |
+| [ME-131](tickets/implemented/ME-131-recipe-carrier.md) | Recipe carrier — JPEG and PNG | **done** 2026-08-19 |
+| [ME-132](tickets/implemented/ME-132-done-writes-the-recipe.md) | `Done` writes it; Export removed | **done** 2026-08-19 |
+| [ME-133](tickets/implemented/ME-133-readers-apply-the-recipe.md) | Every reader applies the recipe | **done** 2026-08-19 |
+| [ME-134](tickets/implemented/ME-134-reopening-an-edited-file.md) | Reopening an edited file | **done** 2026-08-19 |
+| [ME-135](tickets/implemented/ME-135-readers-notice-a-save.md) | Readers notice a save | **done** 2026-08-19 |
+| [ME-107](tickets/implemented/ME-107-revert-to-original.md) | Revert to Original — **un-dropped** | **done** 2026-08-19 |
+| [ME-108](tickets/implemented/ME-108-isobmff-carrier.md) | ISOBMFF carrier — HEIC, HEIF, AVIF | **done** 2026-08-19 — by hand outstanding |
+| [ME-137](tickets/implemented/ME-137-webp-carrier.md) | RIFF carrier — WebP, and bucket B empties | **done** 2026-08-19 — by hand outstanding |
+| [ME-138](tickets/implemented/ME-138-gif-carrier.md) | GIF carrier — Application Extension, one recipe for every frame | **done** 2026-08-21 — confirmed by hand |
+| [ME-139](tickets/implemented/ME-139-tiff-carrier.md) | TIFF carrier — private IFD tag | **done** 2026-08-20 — by hand outstanding |
+| [ME-140](tickets/implemented/ME-140-the-canvas-plays.md) | The editing canvas plays what the viewer plays | **done** 2026-08-21 — confirmed by hand |
+| [ME-109](tickets/implemented/ME-109-crop-tool.md) | Crop tool, and the fold at preview scale | **done** 2026-08-22 — confirmed by hand; the shape every later tool takes |
+| [ME-110](tickets/implemented/ME-110-resize-tool.md) | Resize tool | **done** 2026-08-22 — by hand outstanding |
+| [ME-111](tickets/implemented/ME-111-adjustments-tool.md) | Adjustments — six sliders, one colour matrix | **done** 2026-08-22 — confirmed by hand |
+| [ME-112](tickets/implemented/ME-112-filter-presets.md) | Filter presets, and the preview-choice row | **done** 2026-08-22 — by hand outstanding |
+| [ME-113](tickets/implemented/ME-113-markup-engine.md) | Markup engine — four shapes, one draw routine | **done** 2026-08-24 |
+| [ME-114](tickets/implemented/ME-114-markup-interaction.md) | Markup interaction — the overlay and `Delete` | **done** 2026-08-24 — by hand outstanding |
+| [ME-122](tickets/implemented/ME-122-markup-text.md) | Markup text — the fifth shape | **done** 2026-08-26 — confirmed by hand with ME-145 |
+| [ME-145](tickets/implemented/ME-145-markup-text-editing.md) | Markup text — editing on the canvas | **done** 2026-08-27 — confirmed by hand after four fixes |
+| [ME-115](tickets/ME-115-editor-settings-panel.md) | Editor settings panel | specified 2026-08-26 |
+| [ME-116](tickets/ME-116-zoomed-canvas-fidelity.md) | Zoomed canvas fidelity — the zoom itself shipped with ME-109 | specified 2026-08-26 |
+| [ME-141](tickets/ME-141-styles-pad-and-palette.md) | Styles: two carousels, a pad and a palette slider | specified 2026-08-26 |
+| [ME-117…ME-146](tickets/backlog.md) | Image editor | backlog |
 
 ME-201…ME-204, the video editor's own tickets, moved to
 [`../video-editor/tickets/backlog.md`](../video-editor/tickets/backlog.md) on 2026-08-24 and are
@@ -339,14 +344,18 @@ in the shell instead of once per tool. The selected tool and the `Done` pill use
 
 ### 4.3 Canvas interaction
 
-The canvas is `Fit` at all times in v1 and the size control is gone in edit mode. **Zoom arrives with
-ME-116**, not before: above 100 % the canvas draws the ≤2560 px proxy, so wheel zoom without the
-native-region draw would ship blurred (§9, 2026-08-18).
+The canvas rests at `Fit` and the viewer's size control is gone in edit mode — the top bar's zoom
+pill drives the canvas instead (`PublishCanvasZoom`). **The zoom itself shipped with ME-109**,
+revising the "`Fit` only in v1" decision twice (§9, 2026-08-18 and 2026-08-21). What is still
+outstanding is the *fidelity*: above the proxy's own resolution the canvas draws the ≤2560 px copy
+and the picture is soft, which is ME-116 and all that is left of it.
 
-- **Primary drag** goes to the active `CanvasTool`'s `Overlay` first. If it does not consume, nothing
-  happens (no accidental pan).
-- **Wheel** zooms 100–800 % about the cursor, reusing `ScaleMath`; **middle-drag** or **Space+drag**
-  pans, clamped by `PanBounds`. Zoom exists for markup precision only and resets on tool change.
+- **Primary drag** goes to the active `CanvasTool`'s `Overlay` first. If it does not consume, the
+  canvas pans.
+- **Ctrl+wheel** zooms about the cursor — as in the viewer, and at the viewer's own notch — from the
+  floor `zoomBounds` gives to 1000 % of native; a bare wheel does nothing, because a scroll over a
+  picture must not mean two different things one panel apart. Pan is clamped by
+  `EditorCanvasGeometry`, and both reset to Fit on tool change.
 - Hovering a markup shape shows its handles; `Delete`/`Backspace` removes the selected one.
 
 ### 4.4 Keyboard
@@ -648,6 +657,16 @@ sheet instead of a dead Edit button.
 | 2026-08-24 | How does `Delete` reach the open canvas tool? | **One `@Stable` slot, `CanvasKeys`, built in `EditorHost` and written by `ActiveToolOverlay`** (ME-114) | `GlobalShortcutState.onPreviewKey` is a single mutable handler, and the active tool lives two composables below it — so the overlay cannot register its own, and a second claimant is how the viewer's arrow keys died. A slot rather than a lookup because "which tool is open" is `EditorScreen`'s state and the key handler must not learn it. `CanvasTool.onDelete` is defaulted to false so Crop says nothing, and the key is consumed either way |
 | 2026-08-24 | Does the markup overlay draw its own shapes? | **No — only the selection. The fold draws the shapes, including the one in flight** (ME-114, departing from ME-114 step 2 as written) | `previewsThroughOverlay` stays false for markup, and the fold folds `pending` in exactly like a committed operation. Drawing the list in the overlay as well would put a second copy of every stroke on top of the first and double every translucent overlap. What the overlay draws is what the fold cannot know: handles and the dashed box, which live in the tool's scope and never reach the document |
 | 2026-08-24 | Can a colour be picked outside the seven swatches? | **Yes — a rainbow circle opens a saturation/value pad over a hue strip** (ME-114, asked for by hand) | The swatches cover what a mark normally wants; "not quite that red" is seen rather than known, so it is a pad and not a hex field. Picking writes unsettled on every pointer event and settles once on dismiss, so sliding through fifty colours is one undo step — `ParamWriter`'s existing slider rule, reused. A value matching no swatch rings the rainbow circle, so a hand-picked colour never leaves the row looking unselected |
+| 2026-08-27 | Where does a caption live while it is being typed? | **In the document, previewed from the moment the caret is placed** | It shipped the other way — the string in the field until it was finished — and the style rows could not reach it: `restyleSelected` looks a shape up by id, and clicking a row is what *blurs* the field, so the write landed before the commit with nothing selected. The row silently moved the pen instead. A preview is not an undo step, so a hundred keystrokes still cost one entry, and the canvas draws the caption through the fold at the size it will be saved with |
+| 2026-08-27 | May a tool hide one of its own rows? | **Yes — `EditorTool.rows(params)`**, defaulted to all of them | A stroke width does nothing to a caption and a font size nothing to an arrow, and a row that changes nothing when dragged reads as broken. The schema is still the UI; which parameters *currently apply* is the one question only the tool can answer. Markup keys it on the pen rather than on the selection, so a row cannot appear and vanish under a click on the picture |
+| 2026-08-27 | Why did a row labelled `Text size` write `width`? | **Rows had no identity.** `key(spec.key)` per row, and `gestureKey = spec.key` on the slider | Swapping one spec for another in the same position let Compose reuse the node: label and value followed the new spec while `DetentSlider`'s `pointerInput` — keyed only on the track's width — kept the coroutine closed over the old one. Found by a log from the running app; **three UI tests failed to reproduce it**, which is the note worth keeping |
+| 2026-08-27 | What is the caret measured from? | The caption **as the document has it now** (`liveEdit`) | `MarkupTextEdit.shape` is frozen on purpose — the commit compares against it to tell an emptied caption from an abandoned caret — so a field drawing from it kept the size it opened at while the text under it changed |
+| 2026-08-26 | What do Styles' two pad axes mean? | **Tone = exposure, Colour = warmth** (ME-141) | Both matrices already exist in `AdjustMatrix`, so the ninth `ParamSpec` costs a renderer and no engine change — the pad trims a chosen style rather than becoming a second Adjust |
+| 2026-08-26 | Undertone and look at once, or one or the other? | **One of each**, two parameters whose matrices multiply | The fold already multiplies an adjustment by a filter; refusing the combination would be a rule the engine does not need. The cost is two strips rather than one, which is why `PreviewChoiceParam` gains a section label |
+| 2026-08-26 | Are Palette and Intensity the same number? | **No — two.** Palette is the undertone's strength, Intensity the look's | Follows from the row above: two independent families need two strengths, or one slider means different things depending on which strip was touched last |
+| 2026-08-26 | How is markup text sized? | **Its own `Text size` slider** (12–512 source px); the shape stores it in `width` | A stroke is 1–64 px and type on a 6000 px photograph starts around 64, so one range cannot serve both. One field rather than two keeps `styled()` and every `when` in `MarkupGeometry` honest; two controls route by the selected shape's class |
+| 2026-08-26 | Is ME-122 one ticket? | **No — ME-122 is the shape, ME-145 is typing into it** | Fourteen files together. The split is ME-113/ME-114's, at the same seam: the model and the raster first, the gesture and the keyboard after |
+| 2026-08-26 | What is left of ME-116? | **Only the fidelity.** The zoom itself shipped with ME-109 | Checked against the tree: Ctrl+wheel, clamped pan, reset on tool change and the top-bar pill are all in `EditorCanvasGeometry`/`Host`/`Gestures`. §4.3 still described the deferral and was corrected |
 | 2026-08-22 | How does the inspector show a picture, when the shell may not name one? | **A second `@Composable` on the engine — `Thumbnail(document, modifier)`, defaulted to drawing nothing** (ME-112) | The preview strip has to render the photograph eight ways, and §3.3 forbids `ParamRows` from learning what a bitmap is. So it asks the same question it asks for the canvas, in miniature: here is a document, draw it. Each option is handed a document containing **only that option's operation**, or every thumbnail would look like the canvas behind it. The cost is a filter rebuild each and no pixel work — the strip draws the proxy `Surface` already holds, never a second decode, which is the property §3.2 was designed for and the one a counting fixture engine now guards, because it regresses invisibly |
 | 2026-08-22 | What does the canvas draw while a slider is moving? | **Exactly what committing would produce — the fold asks `commitPending` rather than appending `pending` to `ops`** (ME-111) | `ops + pending` applied a `Single` tool's committed operation *and* its pending one at once: dragging Tint from −100 to +100 previewed as neutral and snapped to green on release. §3.1 promises a preview renders its own result, and one implementation is the only way to keep that true. The same drag also proved `ParamWriter` must read the document live: `DetentSlider` holds its gesture lambda across recompositions, so a captured document wiped whichever slider had been moved before |
 | 2026-08-22 | How does a control that needs the picture's size work? | **Two defaulted hooks on `EditorTool`, both handed the frame — `resolve` before a value is stored, `footnote` for what the inspector prints** (ME-110) | `stage()` must never see a frame or the fold stops being a pure function of parameters — but "long edge 1280" and "4000 × 3000 → 2000 × 1500" are UI-time questions, asked where the size is known. The alternative was the shell branching on tool ids, which is exactly what the schema exists to prevent |

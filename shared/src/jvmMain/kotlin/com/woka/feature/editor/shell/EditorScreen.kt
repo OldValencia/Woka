@@ -132,7 +132,7 @@ internal fun EditorScreen(
             activeToolId = activeToolId,
             skipped = skipped,
             unavailable = unavailable,
-            selectedId = selection.id,
+            selectedId = { selection.id },
             onSelectTool = { id -> activeToolId = if (activeToolId == id) null else id }
         )
     }

@@ -35,8 +35,12 @@ internal class ParamWriter(
      * What the canvas has selected, for the one hook that needs it:
      * `CanvasTool.restyled` (ME-114). Null for every tool without an overlay, and for an
      * overlay with nothing selected.
+     *
+     * **Read at the moment of the write, exactly like the document below** — for the same
+     * reason, and by symmetry with it rather than in answer to a measured failure
+     * (2026-08-26).
      */
-    private val selectedId: String? = null
+    private val selectedId: () -> String? = { null }
 ) {
 
     /**
@@ -67,7 +71,7 @@ internal class ParamWriter(
         // And a canvas tool may apply the same edit to what is *selected* — choosing red
         // with an arrow selected means "make this one red", not only "draw the next one
         // red" (ME-114). Part of the same operation, so it is the same undo step.
-        val params = (tool as? CanvasTool)?.restyled(spec, resolved, selectedId) ?: resolved
+        val params = (tool as? CanvasTool)?.restyled(spec, resolved, selectedId()) ?: resolved
         session.preview(ToolOp(tool.manifest.id, params))
 
         val commit = when (tool.manifest.interaction) {

@@ -17,6 +17,40 @@ Order is dependency order.
 
 ## 100 — Image editor
 
+### ME-146 — Markup text: a box, a background and a face
+**First in this track** (asked for 2026-08-26). ME-122 and ME-145 ship a caption as one line of
+type in one colour; this is the rest of what a caption is, and it is deliberately one block rather
+than four because every part of it lands on the same shape and the same draw routine.
+
+**What is wanted**, in the author's words: a background behind the text, bold, italic, underline and
+strikethrough, and a frame you can grab to drag its width and height — with words wrapping when the
+frame narrows. In short, the iOS text object.
+
+**None of it fits the shape as it stands.** `MarkupShape.Text` is a point, a string, a colour and a
+size, and `drawMarkupText` measures that string unconstrained on one line. Wrapping needs a **width**
+on the shape and a `TextLayoutResult` measured against it; `textBounds` then comes from the layout
+rather than from a single line, and `hitTest` and the selection box follow it for free. The four
+faces are four booleans reaching `TextStyle` (`FontWeight`, `FontStyle`, `TextDecoration`), which is
+the cheap half. The background is a second colour plus padding and a corner radius, drawn **before**
+the glyphs in the same `RasterStage.Paint` — no new stage kind, so §3.2 is untouched.
+
+What genuinely grows is the overlay: `handles()` is `emptyList()` for a caption today, and this gives
+it a frame with grabbable edges, which is `CropHandle`'s problem in a second place and worth reading
+before inventing a second answer to it.
+
+**The decision to make before this can be written** — what dragging the frame *does*:
+
+- **iOS Photos**: a corner scales the type, the frame's width only decides where words wrap;
+- **a text editor**: the frame sets the width, the kegel is untouched, the height follows the wrap;
+- **both**: corners scale, side handles set the width.
+
+Until that is answered the ticket cannot say what `withHandle` computes, which is most of the work.
+
+**Also settle**: whether the four faces are a chip row of glyphs or four switches — ME-144 is the
+block that argues for glyphs, and this is its first real candidate. And whether the background colour
+reuses `ColorParam` with a "none" swatch, since a caption without one is the common case.
+*Depends on ME-145.*
+
 ### ME-1xx — Auto adjust
 Lifted out of ME-111 when that ticket was written (2026-08-22), because it cannot be a tool as tools
 are defined: an automatic correction reads the **picture** — a histogram, a black point — and
@@ -25,51 +59,11 @@ the pixels. It needs a hook that does not exist, and inventing one before someth
 the kind of engine change that should follow a want rather than precede it.
 *Depends on ME-111.*
 
-### ME-115 — Editor settings panel
-Settings → Editor, with one row per manifest: icon, title, summary, switch. No per-tool settings code
-now or ever; a tool disabled here disappears from the rail, the shortcut table and the fold, and its
-ops are reported as skipped rather than dropped.
-*Depends on ME-106.*
-
-### ME-116 — Zoomed canvas fidelity
-**Introduces canvas zoom, which v1 deliberately ships without** (§9, 2026-08-18): wheel 100–800 % about
-the cursor reusing `ScaleMath`, middle-drag or Space+drag panning clamped by `PanBounds`, reset on tool
-change — *and* the reason it waited, which is that above 100 % the proxy is not enough for markup
-precision, so the canvas draws the native bitmap for the visible region while zoomed and drops back to
-the proxy when it is not. Shipping the gesture without the native draw would look broken.
-*Depends on ME-114.*
-
 ### ME-117 — Housekeeping
 `roadmap.md` Phase 5 updated to "image half shipped, video half pending"; the editor exercised by
 hand once and the result dated in this ticket; the `-edited` naming checked against a folder
 that already holds a dozen of them.
 *Depends on ME-108, ME-115.*
-
-### ME-141 — Styles: two carousels, a pad and a palette slider
-Requested 2026-08-22, after iOS 27. **Filters stops being called Filters.** The section is *Styles*,
-and it holds two families in one strip: the looks ME-112 shipped (Vivid, Dramatic, Mono, Noir…) on the
-right, and **undertone presets** on the left — Amber, Gold, Rose Gold, Bright, Neutral, Cool Rose.
-They are the same kind of object: a colour matrix. Nothing about the fold changes, and both families
-still collapse into the one `ColorFilter` §3.2 promises.
-
-What *does* change is the control, and it is the reason this is not a rename:
-
-- **A two-axis pad.** One square, dragged in x and y — **Tone** on one axis, **Colour** on the other.
-  That is a **ninth `ParamSpec`**, and `ParamRows`'s `when` is exhaustive with no `else`, so the type
-  cannot land without its renderer. It writes **two** numbers per pointer event from one gesture,
-  which no existing spec does: `ParamWriter.edit` takes one spec and one value.
-- **A slider under it for Palette**, which is the preset's strength — the role `Intensity` plays today.
-  Whether Palette and Intensity are the same number under two names is the first thing to settle.
-- **One strip, two sections.** `PreviewChoiceParam` is a flat option list; a carousel with a left half
-  and a right half needs the options grouped, or two rows that scroll as one.
-
-**This supersedes ME-112's inspector**, not its matrices. `FilterMatrix` keeps its eight constants and
-gains six; `FilterTool` keeps `stage()`; the panel is rebuilt. Say so when promoting — a ticket that
-reads as new work will duplicate what is already there.
-
-Open before it can be written: what Tone and Colour mean numerically (exposure-vs-contrast? warmth-vs-
-tint?), and whether an undertone preset and a look can be chosen **at once** or replace each other.
-*Depends on ME-112.*
 
 ### ME-142 — The rest of the adjustments
 Adjust ships six — Exposure, Brightness, Contrast, Saturation, Warmth, Tint. Photos offers around
@@ -181,14 +175,6 @@ The change is mechanical but wide, and it is a *visible* change to a surface tha
 wants the author's eyes rather than a green build: the files to convert are the intersection of "reads
 `Theme.viewer`" and "reads `Theme.colors`". Deliberately kept out of ME-012, whose job was the editor.
 *Depends on nothing. Blocks nothing — the editor is already correct.*
-
-### ME-122 — Markup text
-The fifth markup shape, split from ME-113/114 because it is the only one with focus, a caret and an
-IME (§9, 2026-08-18). A text shape in source coordinates carrying its string, size and colour; inline
-editing on the canvas committed on blur or Enter and **discarded when empty**, so an accidental
-double-click leaves no invisible empty shape in the document. Rasterised at source resolution by the
-same draw routine as every other shape.
-*Depends on ME-114.*
 
 ### ME-123 — Keep a huge source out of the shared cache
 The guard rail §10 measured and did not build. A 100 MP source is **384 MB** of native pixels against a

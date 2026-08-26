@@ -30,6 +30,20 @@ interface EditorTool {
     fun stage(params: ParamSet): ToolStage?
 
     /**
+     * Which of [params] the inspector draws **right now**, given what they currently say.
+     *
+     * Defaulted to all of them, which is every tool but Markup: the schema is the UI and a
+     * row that appears and vanishes is not a rule the shell can derive. What it *can* do is
+     * ask the tool, which is the one place that knows a stroke width means nothing to a
+     * caption and a font size means nothing to an arrow.
+     *
+     * It returns a subset of [params] and never a different spec — the values are still
+     * written, still folded and still saved; only the rows are fewer. A tool that hid a
+     * parameter *and* stopped honouring it would be lying to the document.
+     */
+    fun rows(params: ParamSet): List<ParamSpec<*>> = this.params
+
+    /**
      * A chance to rewrite this tool's own parameters when one of them is set, knowing
      * the frame — the escape hatch [stage] deliberately does not have (ME-110).
      *

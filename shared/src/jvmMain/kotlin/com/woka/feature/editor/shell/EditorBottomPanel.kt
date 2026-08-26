@@ -39,8 +39,8 @@ internal fun BoxScope.EditorBottomPanel(
     activeToolId: String?,
     skipped: List<ToolOp>,
     unavailable: Map<String, String>,
-    /** What the canvas has selected, for `CanvasTool.restyled` (ME-114). */
-    selectedId: String?,
+    /** What the canvas has selected — read live, see `ParamRows`. */
+    selectedId: () -> String?,
     onSelectTool: (String) -> Unit
 ) {
     Column(

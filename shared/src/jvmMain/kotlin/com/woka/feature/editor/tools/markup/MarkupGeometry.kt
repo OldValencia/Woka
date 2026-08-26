@@ -1,9 +1,11 @@
 package com.woka.feature.editor.tools.markup
 
+import androidx.compose.ui.geometry.Offset
 import com.woka.feature.editor.tools.markup.MarkupShape.Arrow
 import com.woka.feature.editor.tools.markup.MarkupShape.Ellipse
 import com.woka.feature.editor.tools.markup.MarkupShape.Freehand
 import com.woka.feature.editor.tools.markup.MarkupShape.Rectangle
+import com.woka.feature.editor.tools.markup.MarkupShape.Text
 import kotlin.math.hypot
 
 /**
@@ -29,6 +31,11 @@ fun MarkupShape.hitTest(x: Float, y: Float, tolerance: Float): Boolean = when (t
     is Ellipse -> distanceToEllipse(x, y, from, to) <= tolerance
     is Freehand -> points.any { hypot(x - it.x, y - it.y) <= tolerance } ||
         points.zipWithNext().any { (a, b) -> distanceToSegment(x, y, a, b) <= tolerance }
+    // **Filled, not outlined** — the one shape tested that way. Type is a solid mark and
+    // the space between its letters belongs to it, unlike the inside of a drawn box. The
+    // empty check is not defensive: `Rect.Zero` inflated by the tolerance is a target a
+    // press in the picture's top-left corner would otherwise hit.
+    is Text -> textBounds(this).let { !it.isEmpty && it.inflate(tolerance).contains(Offset(x, y)) }
 }
 
 /**
@@ -45,6 +52,9 @@ fun MarkupShape.handles(): List<MarkupPoint> = when (this) {
     is Rectangle -> corners(from, to)
     is Ellipse -> corners(from, to)
     is Freehand -> emptyList()
+    // Resizing type is changing its size, which is a row in the inspector rather than a
+    // corner on the canvas.
+    is Text -> emptyList()
 }
 
 /** Every point translated, and nothing else — the whole of dragging a shape. */
@@ -53,6 +63,7 @@ fun MarkupShape.movedBy(dx: Float, dy: Float): MarkupShape = when (this) {
     is Rectangle -> copy(from = from.shifted(dx, dy), to = to.shifted(dx, dy))
     is Ellipse -> copy(from = from.shifted(dx, dy), to = to.shifted(dx, dy))
     is Freehand -> copy(points = points.map { it.shifted(dx, dy) })
+    is Text -> copy(at = at.shifted(dx, dy))
 }
 
 /**
@@ -76,6 +87,7 @@ fun MarkupShape.withHandle(index: Int, x: Float, y: Float): MarkupShape = when (
         ?.let { (a, b) -> copy(from = a, to = b) }
         ?: this
     is Freehand -> this
+    is Text -> this
 }
 
 private fun MarkupPoint.shifted(dx: Float, dy: Float) = MarkupPoint(x + dx, y + dy)

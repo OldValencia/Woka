@@ -39,8 +39,14 @@ internal fun ActiveToolOverlay(
 ) {
     val canvasTool = tool as? CanvasTool ?: return
     val held = selection ?: remember(session) { ToolSelection() }
-    val scope =
-        rememberToolScope(session, canvasTool.manifest.cardinality, geometry, previewMatrix, held)
+    val scope = rememberToolScope(
+        session = session,
+        cardinality = canvasTool.manifest.cardinality,
+        geometry = geometry,
+        previewMatrix = previewMatrix,
+        selection = held,
+        canvasKeys = canvasKeys
+    )
 
     // The tool's `Delete` reaches the key handler through the one slot the editor has
     // (`CanvasKeys`), and gives it back on dispose — a handler left behind would delete
@@ -48,7 +54,12 @@ internal fun ActiveToolOverlay(
     if (canvasKeys != null) {
         DisposableEffect(canvasKeys, canvasTool, scope) {
             canvasKeys.onDelete = { canvasTool.onDelete(scope) }
-            onDispose { canvasKeys.onDelete = null }
+            // And the keyboard goes back unconditionally: a tool torn down mid-edit must
+            // not leave the editor deaf to `Esc` (ME-145).
+            onDispose {
+                canvasKeys.onDelete = null
+                canvasKeys.typing = false
+            }
         }
     }
 
@@ -69,12 +80,13 @@ internal fun rememberToolScope(
     cardinality: ToolCardinality,
     geometry: EditorCanvasGeometry,
     previewMatrix: Matrix,
-    selection: ToolSelection
+    selection: ToolSelection,
+    canvasKeys: CanvasKeys? = null
 ): EditorToolScope {
     val document by session.document.collectAsState()
     val values = previewMatrix.values.toList()
 
-    return remember(session, cardinality, selection, document, geometry, values) {
+    return remember(session, cardinality, selection, canvasKeys, document, geometry, values) {
         // Source → what the engine drew → where the canvas put it. Composed rather
         // than assumed identity: with a flip in the document the two disagree by the
         // width of the picture, and an overlay drawn without this lands on the far
@@ -84,6 +96,7 @@ internal fun rememberToolScope(
             session = session,
             cardinality = cardinality,
             selection = selection,
+            canvasKeys = canvasKeys,
             document = document,
             sourceSize = geometry.sourceSize,
             canvasToSource = sourceToCanvas.inverted(),

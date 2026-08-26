@@ -45,6 +45,12 @@ internal class EditorToolScopeImpl(
     private val session: EditorSession,
     private val cardinality: ToolCardinality,
     private val selection: ToolSelection,
+    /**
+     * The editor's one keyboard slot, so [captureKeys] can reach it (ME-145). Null in the
+     * tests that compose an overlay without a host, where nothing owns the keyboard to
+     * stand aside from.
+     */
+    private val canvasKeys: CanvasKeys?,
     override val document: EditDocument,
     override val sourceSize: IntSize,
     override val canvasToSource: Matrix,
@@ -60,6 +66,12 @@ internal class EditorToolScopeImpl(
     override fun preview(op: ToolOp) = session.preview(op)
 
     override fun commit() = session.commit(cardinality)
+
+    override fun cancel() = session.cancelPending()
+
+    override fun captureKeys(captured: Boolean) {
+        canvasKeys?.typing = captured
+    }
 }
 
 /**

@@ -31,7 +31,8 @@ import kotlinx.serialization.builtins.ListSerializer
  * previewing the moved copy while the original sat in `ops` would draw the arrow **twice**
  * for the length of every drag. Undo granularity is unchanged: one gesture, one entry.
  *
- * **The pen is not the shapes.** [Kind], [Color] and [Width] describe the *next* shape;
+ * **The pen is not the shapes.** [Kind], [Color], [Width] and [TextSize] describe the *next*
+ * shape;
  * each shape stores its own style, copied at creation. They share a `ParamSet` with the
  * list, which is safe because `paramsOf` hands the whole set to `ParamWriter` — writing a
  * colour carries the shapes through untouched, the way Crop's aspect chip carries its rect.
@@ -57,10 +58,17 @@ object MarkupTool : CanvasTool {
     val Color = MarkupColorParam
     val Width = MarkupWidthParam
 
+    /**
+     * Type's own size, because a stroke's 1-64 px is nowhere near it (ME-122). Shown for
+     * every kind: a row that appeared and vanished with the chooser would need a
+     * visibility rule the schema deliberately does not have (§3.4).
+     */
+    val TextSize = MarkupTextSizeParam
+
     override val manifest = ToolManifest(
         id = "markup",
         title = "Markup",
-        summary = "Arrows, boxes and freehand",
+        summary = "Arrows, boxes, freehand and text",
         icon = Icons.Static.PencilLine,
         domain = ToolDomain.Annotate,
         order = 0,
@@ -70,7 +78,23 @@ object MarkupTool : CanvasTool {
     )
 
     /** The pen first, then the payload the inspector deliberately draws nothing for. */
-    override val params: List<ParamSpec<*>> = listOf(Kind, Color, Width, Shapes)
+    override val params: List<ParamSpec<*>> = listOf(Kind, Color, Width, TextSize, Shapes)
+
+    /**
+     * **One size row at a time.** A stroke width does nothing to a caption and a font size
+     * does nothing to an arrow, and a row that changes nothing when dragged is worse than
+     * a missing one — it reads as broken (reported by hand 2026-08-26).
+     *
+     * Keyed on the pen rather than on what happens to be selected, because the pen is what
+     * the panel is describing: `Kind` is the chooser directly above these two rows, and a
+     * row that moved with the *selection* would appear and vanish under a click on the
+     * picture that the inspector gives no sign of. Restyling a caption therefore wants the
+     * text pen chosen, which is where a caption is drawn from anyway.
+     */
+    override fun rows(params: ParamSet): List<ParamSpec<*>> {
+        val hidden = if (params[Kind] == MarkupKind.Text) Width else TextSize
+        return this.params.filterNot { it == hidden }
+    }
 
     /**
      * **One stage for every shape**, drawn in list order.
@@ -83,7 +107,10 @@ object MarkupTool : CanvasTool {
      * closing it again leaves the document exactly as it was found.
      */
     override fun stage(params: ParamSet): ToolStage? {
-        val shapes = params[Shapes]
+        // A text shape nobody typed into draws nothing, so a list holding only those is a
+        // list of nothing — and a stage that paints no pixel is still a stage the fold
+        // walks and sorts on every frame.
+        val shapes = params[Shapes].filterNot { it is MarkupShape.Text && it.text.isBlank() }
         if (shapes.isEmpty()) return null
 
         return RasterStage.Paint { shapes.forEach { shape -> drawMarkup(shape) } }

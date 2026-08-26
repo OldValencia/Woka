@@ -53,6 +53,11 @@ internal fun EditorKeyEffect(
         val previous = globalShortcuts.onPreviewKey
         globalShortcuts.onPreviewKey = handler@{ event ->
             if (event.type != KeyEventType.KeyDown) return@handler false
+            // **Everything through, while a tool is taking typed input** (ME-145). This
+            // handler is previewed at the window root, before focus, so without this
+            // `Backspace` deletes the shape being typed into and `Esc` closes the editor
+            // out from under the field. The field handles both itself.
+            if (curCanvasKeys?.typing == true) return@handler false
             when {
                 event.key == Key.Escape -> consume { curCancel() }
                 event.isCtrlPressed && event.key == Key.S -> consume { curDone() }

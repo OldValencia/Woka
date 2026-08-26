@@ -46,4 +46,26 @@ interface EditorToolScope {
 
     /** Folds the operation in flight in and records one undo step. */
     fun commit()
+
+    /**
+     * Drops the operation in flight without applying it — the escape hatch an abandoned
+     * gesture needs and a finished one never uses (ME-145).
+     *
+     * `ParamWriter` has had this since ME-102; an overlay had no way to reach it, so a
+     * text edit dismissed with `Esc` could only be undone by *committing* the state it was
+     * abandoning and then undoing that. One history entry for changing nothing.
+     */
+    fun cancel()
+
+    /**
+     * "This tool is taking typed input, leave the keyboard alone" (ME-145).
+     *
+     * The editor previews every key at the window root before focus reaches anything
+     * (`EditorKeys`), which is what lets `Esc` and `Delete` work over a canvas nobody has
+     * clicked. A text field inside an overlay is the one thing that breaks under: with the
+     * preview handler in place, `Backspace` deletes the shape being typed into instead of
+     * a character. Set while a field is open, cleared when it closes, and cleared for the
+     * tool by the shell on dispose.
+     */
+    fun captureKeys(captured: Boolean)
 }

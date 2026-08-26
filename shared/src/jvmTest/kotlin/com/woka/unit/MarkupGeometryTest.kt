@@ -36,6 +36,8 @@ class MarkupGeometryTest {
         points = listOf(MarkupPoint(0f, 0f), MarkupPoint(50f, 0f), MarkupPoint(50f, 50f))
     )
 
+    private val caption = MarkupShape.Text("e", 0L, 48f, MarkupPoint(10f, 10f), "Woka")
+
     @Test
     fun `a point on a stroke hits and one beyond the tolerance does not`() {
         assertTrue(arrow.hitTest(50f, 3f, tolerance = 5f), "the shaft was not hit")
@@ -71,6 +73,9 @@ class MarkupGeometryTest {
         )
         assertEquals(4, oval.handles().size)
         assertEquals(emptyList(), scribble.handles())
+        // Type resizes through its size row, not through a corner (ME-122), so it draws
+        // the same dashed selection box a freehand stroke gets.
+        assertEquals(emptyList(), caption.handles())
     }
 
     @Test
@@ -104,5 +109,6 @@ class MarkupGeometryTest {
         assertEquals(arrow, arrow.withHandle(2, 5f, 5f))
         assertEquals(box, box.withHandle(9, 5f, 5f))
         assertEquals(scribble, scribble.withHandle(0, 5f, 5f))
+        assertEquals(caption, caption.withHandle(0, 5f, 5f))
     }
 }

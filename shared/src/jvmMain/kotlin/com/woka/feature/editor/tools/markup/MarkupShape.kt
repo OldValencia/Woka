@@ -28,7 +28,7 @@ import kotlinx.serialization.Serializable
  *
  * The `@SerialName`s are the **wire format**: the discriminator kotlinx would derive is
  * the fully qualified class name, which would make moving this file rewrite the meaning
- * of every document already saved. Text is ME-122 and is deliberately not here yet.
+ * of every document already saved.
  */
 @Immutable
 @Serializable
@@ -88,6 +88,26 @@ sealed interface MarkupShape {
         override val width: Float,
         val points: List<MarkupPoint>
     ) : MarkupShape
+
+    /**
+     * A line of type, with [at] its top-left corner in source pixels (ME-122).
+     *
+     * **[width] is the font size**: type has no outline to thicken, and a sixth field
+     * beside a `width` nothing reads is one every `when` here would have to ignore. It is
+     * written by `MarkupTextSizeParam`, not by the stroke row, whose 1-64 px is nowhere
+     * near enough for type on a 6000 px photograph. An empty string draws nothing and
+     * hits nothing (`MarkupText`), so a shape nobody typed into leaves no mark.
+     */
+    @Immutable
+    @Serializable
+    @SerialName("text")
+    data class Text(
+        override val id: String,
+        override val color: Long,
+        override val width: Float,
+        val at: MarkupPoint,
+        val text: String
+    ) : MarkupShape
 }
 
 /**
@@ -104,6 +124,7 @@ internal fun MarkupShape.styled(color: Long = this.color, width: Float = this.wi
         is MarkupShape.Rectangle -> copy(color = color, width = width)
         is MarkupShape.Ellipse -> copy(color = color, width = width)
         is MarkupShape.Freehand -> copy(color = color, width = width)
+        is MarkupShape.Text -> copy(color = color, width = width)
     }
 
 /**
@@ -123,7 +144,7 @@ data class MarkupPoint(val x: Float, val y: Float)
  * What the pen draws next — the inspector's chooser, **not** a field of a shape.
  *
  * A shape's type is its class, so nothing needs to store this alongside it; the enum
- * exists because a `ChoiceParam` is how the shell renders "one of a fixed set", and it
- * names the four constants in the order that row draws them.
+ * exists because a `ChoiceParam` is how the shell renders "one of a fixed set" — at five
+ * options, as a chip row rather than a `SegmentedControl` (`ChoiceParamRow`).
  */
-enum class MarkupKind { Arrow, Rectangle, Ellipse, Freehand }
+enum class MarkupKind { Arrow, Rectangle, Ellipse, Freehand, Text }

@@ -57,6 +57,18 @@ internal val MarkupWidthParam =
     FloatParam("width", "Width", 1f..64f, default = 6f, unit = "px")
 
 /**
+ * The size of type, in **source** pixels — a separate control from the stroke width and
+ * deliberately not a wider version of it (ME-122).
+ *
+ * A stroke reads at 6 px and 64 is already heavy; type at 64 px on a 6000 px photograph
+ * is a caption nobody can read. One slider spanning both would leave the stroke four
+ * pixels of travel between "thin" and "thick", so there are two, and each is a no-op
+ * against the shapes the other one styles ([restyleSelected]).
+ */
+internal val MarkupTextSizeParam =
+    FloatParam("textSize", "Text size", 12f..512f, default = 64f, unit = "px")
+
+/**
  * Choosing a colour or a width **with a shape selected restyles that shape** as well as
  * setting the pen (asked for 2026-08-24).
  *
@@ -64,10 +76,15 @@ internal val MarkupWidthParam =
  * be what the next shape is drawn with, or the row would mean two different things
  * depending on whether anything happened to be selected.
  *
- * Only these two specs. `Kind` is not among them — a drawn rectangle cannot become an
- * arrow, because the two are different classes carrying different geometry, and "convert
- * this shape" is a feature rather than a restyle. `Shapes` is excluded for the obvious
- * reason: it *is* the list, and rewriting it here would recurse.
+ * Only the colour and **the size row that means something for the selected shape**:
+ * `Width` for the four stroked ones, `Text size` for a text shape (ME-122). Both write the
+ * same field — a shape carries one number and a `Text` calls it a font size — so the
+ * routing is which spec is allowed to reach it, not which field it lands in.
+ *
+ * `Kind` is not among them: a drawn rectangle cannot become an arrow, because the two are
+ * different classes carrying different geometry, and "convert this shape" is a feature
+ * rather than a restyle. `Shapes` is excluded for the obvious reason — it *is* the list,
+ * and rewriting it here would recurse.
  *
  * Null for "nothing to apply", including a selection naming a shape the document no longer
  * holds — an id outlives the undo that took its shape away.
@@ -78,19 +95,24 @@ internal fun restyleSelected(
     selectedId: String?
 ): ParamSet? {
     if (selectedId == null) return null
-    if (spec != MarkupColorParam && spec != MarkupWidthParam) return null
 
     val shapes = params[MarkupTool.Shapes]
-    if (shapes.none { it.id == selectedId }) return null
+    val selected = shapes.firstOrNull { it.id == selectedId } ?: return null
+    val sizeParam = sizeParamFor(selected)
+    if (spec != MarkupColorParam && spec != sizeParam) return null
 
     return params.with(
         MarkupTool.Shapes,
         shapes.map { shape ->
             if (shape.id == selectedId) {
-                shape.styled(color = params[MarkupColorParam], width = params[MarkupWidthParam])
+                shape.styled(color = params[MarkupColorParam], width = params[sizeParam])
             } else {
                 shape
             }
         }
     )
 }
+
+/** Which of the two size rows this shape's `width` is spelled by. */
+private fun sizeParamFor(shape: MarkupShape): FloatParam =
+    if (shape is MarkupShape.Text) MarkupTextSizeParam else MarkupWidthParam
