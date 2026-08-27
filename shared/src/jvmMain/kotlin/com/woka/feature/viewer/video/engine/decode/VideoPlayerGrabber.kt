@@ -64,12 +64,11 @@ internal fun VideoPlayerState.reopenAudioGrabber(
 
     val grabber = openAudioGrabber(audioStreamIndex)
     grabber.start()
-    // TEMPORARY (§audio-icon-regression) — this is the one place that can clear
-    // hasAudio after the authoritative probe set it, and it reads a grabber opened
-    // with a 2MB probesize. On a 4K stream a single keyframe can exceed that, so a
-    // channel count of 0 here may be a probe that ran out of budget rather than a
-    // track without audio.
-    println("WOKA-AUDIO: reopen index=$audioStreamIndex channels=${grabber.audioChannels}")
+    // **The one place that can clear `hasAudio` after the authoritative probe set
+    // it**, and it reads a grabber opened with a 2 MB probesize. On a 4K stream a
+    // single keyframe can exceed that, so a channel count of 0 here may be a probe
+    // that ran out of budget rather than a track without audio — which is the shape
+    // of the crossed-out speaker to look at first if it comes back.
     hasAudio = grabber.audioChannels > 0
     if (hasAudio) initAudio(grabber, audioChannel)
     // Read the live position AFTER the (latency-carrying) open so the new track
