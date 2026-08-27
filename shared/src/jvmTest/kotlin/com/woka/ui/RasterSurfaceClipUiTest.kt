@@ -63,7 +63,7 @@ class RasterSurfaceClipUiTest {
                 ) {
                     Box(modifier = Modifier.size(60.dp)) {
                         RasterSurface(
-                            proxy = redSource(source),
+                            source = redSource(source),
                             sourceSize = IntSize(source, source),
                             recipe = RasterRecipe(
                                 // The crop's own translation: keep a middle square.

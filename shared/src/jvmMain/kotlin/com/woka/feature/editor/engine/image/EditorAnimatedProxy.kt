@@ -1,6 +1,7 @@
 package com.woka.feature.editor.engine.image
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,6 +36,22 @@ internal class EditorPlayback {
 }
 
 /**
+ * What the canvas was handed, and whether it came out of an animation.
+ *
+ * The second field exists because ME-116 must not swap a native still in underneath a
+ * GIF: an animation is held frame by frame at proxy size under a 96 MB budget, and a
+ * native-resolution one is not a thing this canvas will ever hold. Returned rather
+ * than re-derived, because the caller cannot tell a proxy from an animation frame by
+ * looking at it — both are bitmaps capped at [PROXY_MAX_PX].
+ *
+ * [isAnimating] is about the **source**, not about the clock: a paused GIF is still
+ * showing an animation frame, and replacing it with the file's native first frame
+ * would be a different picture, not a sharper one.
+ */
+@Immutable
+internal data class EditorFrame(val bitmap: ImageBitmap, val isAnimating: Boolean)
+
+/**
  * The picture the canvas draws: one frame of an animation while it runs, or the still
  * proxy for everything else.
  *
@@ -56,14 +73,14 @@ internal fun rememberEditorFrame(
     file: File,
     frameIndex: Int,
     playback: EditorPlayback
-): ImageBitmap {
+): EditorFrame {
     val still = remember(file, frameIndex) { EditorProxy.load(file, frameIndex) }
 
     val animation by produceState<EditorAnimation?>(null, file) {
         value = withContext(ImageBitmapCache.ioDispatcher) { editorAnimationOf(file) }
     }
 
-    val playing = animation ?: return still
+    val playing = animation ?: return EditorFrame(still, isAnimating = false)
     var index by remember(playing) { mutableStateOf(frameIndex) }
 
     LaunchedEffect(playing, playback.isPlaying) {
@@ -77,5 +94,5 @@ internal fun rememberEditorFrame(
         )
     }
 
-    return playing.bitmapAt(index) ?: still
+    return EditorFrame(playing.bitmapAt(index) ?: still, isAnimating = true)
 }

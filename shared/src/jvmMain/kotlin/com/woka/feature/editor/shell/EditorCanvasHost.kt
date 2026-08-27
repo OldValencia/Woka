@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,6 +22,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditorEngine
+import com.woka.feature.editor.core.LocalCanvasScale
 import kotlin.math.roundToInt
 
 /** Where a `CanvasTool`'s overlay is drawn, once one exists (ME-109, ME-113). */
@@ -119,7 +121,12 @@ internal fun EditorCanvasHost(
                     )
                 }
             ) {
-                engine.Surface(document, Modifier.fillMaxSize())
+                // What the engine draws at, published rather than passed: `Surface`
+                // takes no zoom by design (§3.3), and this is the only surface in the
+                // editor allowed to answer with a native decode (ME-116).
+                CompositionLocalProvider(LocalCanvasScale provides geometry.scale) {
+                    engine.Surface(document, Modifier.fillMaxSize())
+                }
                 overlay(geometry)
             }
         }

@@ -71,7 +71,7 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-145](tickets/implemented/ME-145-markup-text-editing.md) | Markup text — editing on the canvas | **done** 2026-08-27 — confirmed by hand after four fixes |
 | [ME-146](tickets/implemented/ME-146-markup-text-box-and-background.md) | Markup text — a box and a background | **done** 2026-08-27 — confirmed by hand after three fixes |
 | [ME-115](tickets/implemented/ME-115-editor-settings-panel.md) | Editor settings panel | **done** 2026-08-28 — by hand outstanding |
-| [ME-116](tickets/ME-116-zoomed-canvas-fidelity.md) | Zoomed canvas fidelity — the zoom itself shipped with ME-109 | specified 2026-08-26 |
+| [ME-116](tickets/implemented/ME-116-zoomed-canvas-fidelity.md) | Zoomed canvas fidelity — the zoom itself shipped with ME-109 | **done** 2026-08-28 — by hand outstanding |
 | [ME-141](tickets/ME-141-styles-pad-and-palette.md) | Styles: two carousels, a pad and a palette slider | specified 2026-08-26 |
 | [ME-117…ME-149](tickets/backlog.md) | Image editor | backlog |
 

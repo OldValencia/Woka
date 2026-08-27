@@ -18,11 +18,13 @@ import androidx.compose.ui.unit.IntSize
  *
  * - `recipe.matrix` is expressed in **source** pixels — that is what a tool's stage
  *   returns and what a crop rect is measured in;
- * - the proxy bitmap is source × *proxyScale*, because it was capped at 2560 px;
+ * - [source] is source × *sourceScale*: the ≤2560 px proxy at Fit, the native bitmap
+ *   while the canvas is zoomed past what the proxy can answer (ME-116), and the native
+ *   one again on save — this function cannot tell, and must not need to;
  * - this composable is handed a box measuring `recipe.outputSize` × *fitScale*.
  *
  * So: scale into output space, apply the matrix there — it maps source to output —
- * and stretch the proxy back up to source size as it is drawn. Every scale is named
+ * and stretch the bitmap back up to source size as it is drawn. Every scale is named
  * once, in this function. A second place computing any of them is the bug this comment
  * exists to prevent, and its symptom is a picture that looks perfect **until the first
  * crop**, because until then every matrix is the identity and the errors cancel.
@@ -33,7 +35,7 @@ import androidx.compose.ui.unit.IntSize
  */
 @Composable
 internal fun RasterSurface(
-    proxy: ImageBitmap,
+    source: ImageBitmap,
     sourceSize: IntSize,
     recipe: RasterRecipe,
     modifier: Modifier = Modifier
@@ -56,13 +58,14 @@ internal fun RasterSurface(
         scale(scale = fitScale, pivot = Offset.Zero) {
             withTransform({ transform(recipe.matrix) }) {
                 // `dstSize` is the *source's* dimensions, so everything above this
-                // call reasons in source pixels and never learns the proxy was
+                // call reasons in source pixels and never learns the bitmap was
                 // smaller. That is what lets the same recipe run here against a
                 // 2560 px copy and again on save against the native bitmap, with no
-                // branch between them.
+                // branch between them — and it is what ME-116 spends: swapping the
+                // two at zoom needs no logic here at all.
                 drawImage(
-                    image = proxy,
-                    srcSize = IntSize(proxy.width, proxy.height),
+                    image = source,
+                    srcSize = IntSize(source.width, source.height),
                     dstSize = sourceSize,
                     colorFilter = recipe.colorFilter
                 )

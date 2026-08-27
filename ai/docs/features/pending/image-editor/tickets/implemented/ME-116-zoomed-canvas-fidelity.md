@@ -4,7 +4,7 @@
 |---|---|
 | **Order** | 48 — after ME-115 |
 | **Depends on** | ME-103 (the proxy and `RasterSurface`), ME-109 (the zoom the canvas already has) |
-| **Feature** | [Image Editor](../image-editor.md) |
+| **Feature** | [Image Editor](../../image-editor.md) |
 
 **Goal.** Draw the **native** bitmap on the editing canvas while it is zoomed past the proxy's own
 resolution, and fall back to the proxy the moment it is not.
