@@ -99,8 +99,14 @@ class ViewerZoomUiTest {
         assertTrue(abs(state.offsetX) > 0f, "the drag never moved the frame")
     }
 
+    /**
+     * This asserted the opposite until 2026-08-28, when the overflow gate came off:
+     * a picture that fits the panel used to be pinned to centre, and a drag over it
+     * did nothing at all. It is movable now, as far as `panLimits`' floor of half a
+     * panel — the same reach it has in the editor.
+     */
     @Test
-    fun `dragging does nothing while the content fits`() = onViewer(1) { items ->
+    fun `dragging moves the frame even while the content fits`() = onViewer(1) { items ->
         val state = MediaViewerState(items[0].file.absolutePath)
         setContent { ViewerUnderTest(state, items, ViewerMedia.Still(poster(400, 300))) }
         waitForIdle()
@@ -113,7 +119,7 @@ class ViewerZoomUiTest {
             release()
         }
         waitForIdle()
-        assertEquals(0f, state.offsetX)
-        assertEquals(0f, state.offsetY)
+        assertTrue(state.offsetX < 0f, "the drag never moved the frame across")
+        assertTrue(state.offsetY < 0f, "the drag never moved the frame down")
     }
 }

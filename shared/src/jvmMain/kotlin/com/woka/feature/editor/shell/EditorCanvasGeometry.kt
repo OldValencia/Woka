@@ -84,17 +84,24 @@ internal class EditorCanvasGeometry(
 
     val scale: Float = fitScale * zoom.coerceIn(minZoom, maxZoom)
 
-    /** Half the amount the picture overflows the canvas, per axis, or zero. */
+    /**
+     * How far the picture may travel from centre, per axis — half its overflow, or
+     * half the canvas, whichever is larger.
+     *
+     * The floor is the viewer's own `panLimits`, converted onto this scale rather
+     * than re-argued (asked for 2026-08-28): a picture that fits the canvas used to
+     * be pinned to centre here and in the viewer both, and moving it is now the same
+     * gesture with the same reach in either panel.
+     */
     private val slack: Offset = Offset(
-        x = max(0f, (sourceSize.width * scale - canvasSize.width) / 2f),
-        y = max(0f, (sourceSize.height * scale - canvasSize.height) / 2f)
+        x = max(canvasSize.width / 2f, (sourceSize.width * scale - canvasSize.width) / 2f),
+        y = max(canvasSize.height / 2f, (sourceSize.height * scale - canvasSize.height) / 2f)
     )
 
     /**
-     * The pan actually applied — clamped so an edge can be brought to the middle of
-     * the canvas but the picture can never be dragged out of view. On an axis with no
-     * overflow the clamp is to zero, which is what keeps a Fit picture centred no
-     * matter how hard it is dragged.
+     * The pan actually applied — clamped so the picture's own centre always stays on
+     * the canvas, and a magnified one can be explored edge to edge without letting
+     * background in beside it.
      */
     val clampedPan: Offset = Offset(
         x = pan.x.coerceIn(-slack.x, slack.x),

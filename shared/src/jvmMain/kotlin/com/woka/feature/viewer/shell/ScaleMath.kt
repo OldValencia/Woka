@@ -32,14 +32,3 @@ internal fun computeGraphicsScale(sizeMode: SizeMode, container: IntSize, native
     }
 }
 
-/** True when the media, at [sizeMode], is larger than the [container] on either axis (so it can be panned). */
-internal fun contentOverflows(sizeMode: SizeMode, container: IntSize, native: IntSize): Boolean {
-    if (container == IntSize.Zero || native.width <= 0 || native.height <= 0) return false
-    val cw = container.width.toFloat()
-    val ch = container.height.toFloat()
-    val fitScale = minOf(cw / native.width.toFloat(), ch / native.height.toFloat())
-    val gl = computeGraphicsScale(sizeMode, container, native)
-    val displayedW = native.width * fitScale * gl
-    val displayedH = native.height * fitScale * gl
-    return displayedW > cw + 0.5f || displayedH > ch + 0.5f
-}

@@ -20,18 +20,24 @@ private val FIT = SizeMode.Preset(ScalePreset.Fit)
 class PanBoundsTest {
 
     @Test
-    fun `an axis that does not overflow is pinned to centre`() {
-        assertEquals(0f to 0f, panLimits(FIT, PANEL, LANDSCAPE))
+    fun `an axis that does not overflow can still be moved half a panel`() {
+        // The rule that replaced "pinned to centre" on 2026-08-28: a picture that
+        // fits is movable, as far as its own centre reaching the panel's edge.
+        assertEquals(500f to 500f, panLimits(FIT, PANEL, LANDSCAPE))
     }
 
     @Test
-    fun `only the overflowing axis gets a limit`() {
-        assertEquals(500f to 0f, panLimits(FILL, PANEL, LANDSCAPE))
+    fun `at fill the two rules happen to agree`() {
+        // X overflows by exactly a panel width, so half of it is half a panel — the
+        // same number the floor gives Y. The case that tells them apart is below.
+        assertEquals(500f to 500f, panLimits(FILL, PANEL, LANDSCAPE))
     }
 
     @Test
-    fun `both axes get a limit when the zoom passes fill`() {
+    fun `the larger of the two rules wins on each axis`() {
         val (limitX, limitY) = panLimits(SizeMode.Zoom(800), PANEL, LANDSCAPE)
+        // X: 4000 shown over a 1000 panel, so the overflow rule, and unchanged by
+        // the floor. Y: 2000 over 1000 gives 500, which is also the floor.
         assertEquals(1500f, limitX)
         assertEquals(500f, limitY)
     }
@@ -44,12 +50,12 @@ class PanBoundsTest {
 
     @Test
     fun `clamping never lets the frame past the edge`() {
-        assertEquals(500f to 0f, clampOffset(900f, 50f, FILL, PANEL, LANDSCAPE))
-        // Clamping a negative value into 0f..0f yields -0.0, which is the same
-        // point on screen but not equal to 0f — compare the magnitude instead.
+        // 50 on Y is well inside the floor and survives untouched; 900 on X is past
+        // the overflow limit and is cut back to it.
+        assertEquals(500f to 50f, clampOffset(900f, 50f, FILL, PANEL, LANDSCAPE))
         val (x, y) = clampOffset(-900f, -50f, FILL, PANEL, LANDSCAPE)
         assertEquals(-500f, x)
-        assertEquals(0f, abs(y))
+        assertEquals(-50f, y)
     }
 
     @Test
@@ -58,8 +64,10 @@ class PanBoundsTest {
     }
 
     @Test
-    fun `a pinned axis is clamped back to centre`() {
-        assertEquals(0f to 0f, clampOffset(400f, 400f, FIT, PANEL, LANDSCAPE))
+    fun `a fitting picture keeps the offset it was dragged to`() {
+        // This asserted the opposite until 2026-08-28 — the clamp used to pull a
+        // fitting picture back to centre on every drag end and every zoom step.
+        assertEquals(400f to 400f, clampOffset(400f, 400f, FIT, PANEL, LANDSCAPE))
     }
 
     @Test
@@ -101,9 +109,12 @@ class PanBoundsTest {
     }
 
     @Test
-    fun `a pinned axis still rubber bands from centre`() {
-        val (_, y) = rubberBandOffset(0f, 200f, FIT, PANEL, LANDSCAPE)
-        assertEquals(70f, y)
-        assertTrue(abs(y) < 200f)
+    fun `a fitting axis resists only past its own floor`() {
+        // Inside the floor there is nothing to resist: the drag is followed exactly.
+        assertEquals(200f, rubberBandOffset(0f, 200f, FIT, PANEL, LANDSCAPE).second)
+
+        val (_, y) = rubberBandOffset(0f, 600f, FIT, PANEL, LANDSCAPE)
+        assertEquals(535f, y)
+        assertTrue(abs(y) < 600f, "the edge must resist")
     }
 }

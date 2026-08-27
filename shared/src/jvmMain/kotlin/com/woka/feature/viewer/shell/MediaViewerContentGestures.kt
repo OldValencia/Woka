@@ -77,10 +77,10 @@ fun Modifier.mediaViewerGestures(
                 onDragEnd = { settlePan() },
                 onDragCancel = { settlePan() }
             ) { change, drag ->
-                if (contentOverflows(curMode, curContainer, curNative)) {
-                    change.consume()
-                    pan(drag.x, drag.y)
-                }
+                // Unconditional, as of 2026-08-28: the picture is movable at every
+                // zoom, and `panLimits` is the only thing that says how far.
+                change.consume()
+                pan(drag.x, drag.y)
             }
         }
     }

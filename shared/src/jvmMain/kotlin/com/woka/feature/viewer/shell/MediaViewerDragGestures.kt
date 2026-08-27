@@ -66,8 +66,13 @@ internal fun Modifier.mediaZoomAndButtonPan(
 
             val panButton = event.buttons.isSecondaryPressed ||
                 (ctrlPrimaryPan && event.buttons.isPrimaryPressed)
-            val canPan = contentOverflows(mode(), container(), native())
-            if (isCtrl && panButton && canPan) {
+            // **No overflow gate** (asked for 2026-08-28, found by instrumenting the
+            // loop). It used to refuse unless the media was larger than the panel,
+            // which made the gesture dead below the fit percentage — measured at
+            // 75 % for a 1518×860 picture in a 1100×660 panel. How far the drag may
+            // go is `panLimits`' question, not this one's, and it now answers with
+            // room at every zoom.
+            if (isCtrl && panButton) {
                 if (!panning) {
                     panning = true
                     lastPos = change.position

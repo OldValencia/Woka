@@ -52,21 +52,23 @@ class EditorCanvasGeometryTest {
     }
 
     @Test
-    fun `a picture that fits cannot be dragged off centre`() {
+    fun `a picture that fits can still be dragged half a canvas`() {
         val g = EditorCanvasGeometry(IntSize(1000, 500), IntSize(500, 900), pan = Offset(400f, 400f))
-        // No overflow on either axis at Fit, so the clamp is to zero and the picture
-        // stays centred however hard it is dragged.
-        assertEquals(Offset.Zero, g.clampedPan)
+        // Until 2026-08-28 this clamped to zero and the picture stayed centred however
+        // hard it was dragged. The floor is half the canvas, so 400 across is cut to
+        // 250 and 400 down is inside 450 and survives.
+        assertEquals(Offset(250f, 400f), g.clampedPan)
     }
 
     @Test
-    fun `a magnified picture pans only as far as its own edges`() {
+    fun `a magnified picture pans to its own edges, or half a canvas, whichever is further`() {
         val g = EditorCanvasGeometry(
             IntSize(1000, 500), IntSize(500, 900), zoom = 2f, pan = Offset(9000f, 9000f)
         )
-        // Drawn 1000x500 in a 500x900 canvas: 250 of slack across, none down.
+        // Drawn 1000x500 in a 500x900 canvas. Across: 250 of overflow, which is also
+        // half the canvas. Down: nothing overflows, so the floor of 450 is the reach.
         assertEquals(250f, g.clampedPan.x)
-        assertEquals(0f, g.clampedPan.y)
+        assertEquals(450f, g.clampedPan.y)
     }
 
     @Test
@@ -91,10 +93,12 @@ class EditorCanvasGeometryTest {
     }
 
     @Test
-    fun `an axis with nothing to pan stays centred, even under the cursor`() {
-        // 1000x500 at 100 % in a 500x900 canvas overflows across and fits down. The
-        // focus can be held on x and *cannot* on y — centring wins, because a picture
-        // drifting off centre with empty space on both sides is the worse outcome.
+    fun `the cursor is held on an axis that does not overflow`() {
+        // 1000x500 at 100 % in a 500x900 canvas overflows across and fits down. Until
+        // 2026-08-28 the vertical axis had no slack, so the focus could be held on x
+        // and never on y — the picture snapped back to centre under the cursor. The
+        // floor of half a canvas is 450 here, the pan it wants is -50, so both axes
+        // now hold.
         val source = IntSize(1000, 500)
         val canvas = IntSize(500, 900)
         val g = EditorCanvasGeometry(source, canvas)
@@ -105,9 +109,7 @@ class EditorCanvasGeometryTest {
         val after = next.sourceToCanvas.map(sourceUnderCursor)
 
         assertTrue(abs(after.x - focus.x) < 0.5f, "x should have been held, went to ${after.x}")
-        // `abs`, not `assertEquals(0f, …)`: coercing a negative into a zero-width
-        // range yields -0.0, which Float equality treats as a different value.
-        assertTrue(abs(next.clampedPan.y) < 0.001f, "y had slack it should not have")
+        assertTrue(abs(after.y - focus.y) < 0.5f, "y should have been held, went to ${after.y}")
     }
 
     @Test

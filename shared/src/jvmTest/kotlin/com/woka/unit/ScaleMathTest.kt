@@ -4,11 +4,8 @@ import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.ScalePreset
 import com.woka.feature.viewer.shell.SizeMode
 import com.woka.feature.viewer.shell.computeGraphicsScale
-import com.woka.feature.viewer.shell.contentOverflows
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 /**
  * Panel 1000×1000 over 500×250: the Fit image is already drawn at `native * 2`,
@@ -57,30 +54,5 @@ class ScaleMathTest {
         assertEquals(1f, computeGraphicsScale(zoom, IntSize.Zero, LANDSCAPE))
         assertEquals(1f, computeGraphicsScale(zoom, PANEL, IntSize(0, 250)))
         assertEquals(1f, computeGraphicsScale(zoom, PANEL, IntSize(500, 0)))
-    }
-
-    @Test
-    fun `fit does not overflow and fill does`() {
-        assertFalse(contentOverflows(SizeMode.Preset(ScalePreset.Fit), PANEL, LANDSCAPE))
-        assertTrue(contentOverflows(SizeMode.Preset(ScalePreset.Fill), PANEL, LANDSCAPE))
-    }
-
-    @Test
-    fun `actual does not overflow a panel larger than the media`() {
-        assertFalse(contentOverflows(SizeMode.Preset(ScalePreset.Original), PANEL, LANDSCAPE))
-        assertTrue(contentOverflows(SizeMode.Preset(ScalePreset.Original), IntSize(100, 100), LANDSCAPE))
-    }
-
-    @Test
-    fun `overflow turns over exactly at the fitted percentage`() {
-        assertFalse(contentOverflows(SizeMode.Zoom(200), PANEL, LANDSCAPE))
-        assertTrue(contentOverflows(SizeMode.Zoom(201), PANEL, LANDSCAPE))
-    }
-
-    @Test
-    fun `degenerate sizes cannot be panned`() {
-        val fill = SizeMode.Preset(ScalePreset.Fill)
-        assertFalse(contentOverflows(fill, IntSize.Zero, LANDSCAPE))
-        assertFalse(contentOverflows(fill, PANEL, IntSize(0, 0)))
     }
 }

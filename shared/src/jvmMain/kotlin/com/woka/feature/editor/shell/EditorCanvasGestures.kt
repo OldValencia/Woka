@@ -54,9 +54,9 @@ internal fun Modifier.editorCanvasGestures(
         detectTapGestures { engine.togglePlayback() }
     }
     .pointerInput(Unit) {
-        // Any drag pans. There is no competing gesture on the canvas until a
-        // `CanvasTool` exists (ME-109), and at that point the overlay gets first
-        // refusal and this becomes the fallback.
+        // Any drag pans, with any button. There is no competing gesture on the canvas
+        // until a `CanvasTool` exists (ME-109), and at that point the overlay gets
+        // first refusal and this becomes the fallback.
         detectDragGestures { change, dragged ->
             onPan(dragged)
             change.consume()
