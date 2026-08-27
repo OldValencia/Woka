@@ -1,13 +1,17 @@
 package com.woka.ui
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.woka.core.ui.icons.Icons
 import com.woka.feature.settings.SettingsToggleRow
+import com.woka.support.onUi
 import com.woka.support.onUiWithSettings
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -96,5 +100,37 @@ class SettingsToggleUiTest {
         waitForIdle()
         assertTrue(repository.settings.value.showHiddenFiles)
         assertEquals(true, repository.settings.value.showTitles, "an unrelated setting moved")
+    }
+
+    /**
+     * The icon carries no `contentDescription` — it is decoration beside a title
+     * that already says what the row is — so there is no node to look it up by.
+     * What *is* observable is the space it takes: 16.dp of glyph and 12.dp of gap
+     * push the title 28.dp right, and a row given no icon is laid out exactly where
+     * it was. Composed side by side so the assertion is a difference rather than an
+     * absolute that would move with the row's padding (ME-115).
+     */
+    @Test
+    fun `an icon indents the title, and a row without one is laid out as before`() = onUi {
+        setContent {
+            Column {
+                SettingsToggleRow("Plain", "no icon", checked = true, onCheckedChange = {})
+                SettingsToggleRow(
+                    title = "Iconed",
+                    subtitle = "with an icon",
+                    checked = true,
+                    onCheckedChange = {},
+                    icon = Icons.Static.Close
+                )
+            }
+        }
+        val plain = onNodeWithText("Plain").getUnclippedBoundsInRoot().left
+        val iconed = onNodeWithText("Iconed").getUnclippedBoundsInRoot().left
+        assertEquals(
+            28f,
+            (iconed - plain).value,
+            0.5f,
+            "the icon and its gap did not move the title by 16.dp + 12.dp"
+        )
     }
 }

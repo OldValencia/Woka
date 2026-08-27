@@ -68,6 +68,9 @@ internal fun SettingsOverlayContent(
                 CategoryItem("Library", Icons.Static.Folder, selectedCategory, onSelectCategory)
                 CategoryItem("Media Viewer", Icons.Static.Eye, selectedCategory, onSelectCategory)
                 CategoryItem("Video Player", Icons.Static.Video, selectedCategory, onSelectCategory)
+                // After the players: the sidebar's order follows the app's, and a
+                // file is viewed before it is edited.
+                CategoryItem("Editor", Icons.Static.Editor, selectedCategory, onSelectCategory)
                 // Short label: the column is 140.dp and "Picture in Picture"
                 // clips. The panel carries the full name as its section heading.
                 CategoryItem("PiP", Icons.Static.Collapse, selectedCategory, onSelectCategory)
@@ -87,6 +90,9 @@ internal fun SettingsOverlayContent(
                             // Reads the repository itself, so nothing new is
                             // threaded through SettingsOverlay or App.
                             "Video Player" -> VideoPlayerSettingsPanel()
+                            // `expect`/`actual`: the tool registry is `jvmMain`
+                            // and this file is not.
+                            "Editor" -> EditorSettingsPanel()
                             "PiP" -> PipSettingsPanel(settings, repo)
                         }
                     }

@@ -78,6 +78,7 @@ class SettingsOverlayUiTest {
         onNodeWithText("Library").assertIsDisplayed()
         onNodeWithText("Media Viewer").assertIsDisplayed()
         onNodeWithText("Video Player").assertIsDisplayed()
+        onNodeWithText("Editor").assertIsDisplayed()
         onNodeWithText("PiP").assertIsDisplayed()
     }
 

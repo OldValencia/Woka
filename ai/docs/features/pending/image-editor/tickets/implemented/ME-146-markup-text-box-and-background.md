@@ -4,7 +4,7 @@
 |---|---|
 | **Order** | 47 — immediately after ME-145, on the shape it left behind |
 | **Depends on** | ME-145 (the caret and the live preview), ME-122 (the shape, its measurement and its size row) |
-| **Feature** | [Image Editor](../image-editor.md) |
+| **Feature** | [Image Editor](../../image-editor.md) |
 
 **Goal.** Give `MarkupShape.Text` a width it wraps against and a coloured plate behind its glyphs,
 and draw both in the one routine that already rasterises it.

@@ -5,18 +5,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.woka.app.AppDependencies
 import com.woka.core.data.ResumeMode
-import com.woka.core.ui.theme.Theme
 import com.woka.core.ui.components.SegmentedControl
 
 /**
@@ -127,11 +123,3 @@ fun VideoPlayerSettingsPanel() {
 private const val OFF = "Off"
 private const val LONG_ONLY = "Long videos"
 private const val ALWAYS = "Always"
-
-@Composable
-private fun PanelHint(text: String) {
-    BasicText(
-        text = text,
-        style = TextStyle(color = Theme.colors.textSecondary, fontSize = 11.sp)
-    )
-}

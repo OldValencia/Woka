@@ -4,7 +4,7 @@
 |---|---|
 | **Order** | 47 — after ME-122; the last piece of ME-006 that has no UI |
 | **Depends on** | ME-006 (the registry and `editorDisabledTools`), ME-106 (the editor exists to be configured) |
-| **Feature** | [Image Editor](../image-editor.md) |
+| **Feature** | [Image Editor](../../image-editor.md) |
 
 **Goal.** Add **Settings → Editor**: one row per declared tool — icon, title, summary, switch — writing
 `WokaSettings.editorDisabledTools`.
