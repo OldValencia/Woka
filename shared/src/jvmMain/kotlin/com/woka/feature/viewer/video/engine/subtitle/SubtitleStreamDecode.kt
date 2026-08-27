@@ -50,7 +50,6 @@ internal fun decodeEmbeddedSubtitles(
 ): SubtitleStreams {
     val wanted = textIndices + bitmapIndices
     if (wanted.isEmpty()) return SubtitleStreams.EMPTY
-    val startedAt = System.currentTimeMillis()
     val fc = AVFormatContext(null)
     if (avformat_open_input(fc, filepath, null, null) != 0) return SubtitleStreams.EMPTY
     if (avformat_find_stream_info(fc, null as AVDictionary?) < 0) {
@@ -101,21 +100,7 @@ internal fun decodeEmbeddedSubtitles(
     }.toMap()
     contexts.filterKeys { it !in bitmapSources }.values.forEach { avcodec_free_context(it) }
     avformat_close_input(fc)
-    logBitmapSubtitles(bitmapSources, System.currentTimeMillis() - startedAt)
     return SubtitleStreams(textCues, bitmapSources)
-}
-
-/**
- * The retained size is the number the whole memory model rests on, so it is
- * reported rather than assumed — same spirit as `logMediaTracks`.
- */
-internal fun logBitmapSubtitles(sources: Map<Int, BitmapSubtitleSource>, elapsedMs: Long) {
-    sources.forEach { (index, source) ->
-        println(
-            "[BitmapSubs] stream #$index: ${source.cueCount} cues, " +
-                "${source.retainedBytes / 1024} KB retained, indexed in $elapsedMs ms"
-        )
-    }
 }
 
 private fun openCodecContexts(fc: AVFormatContext, indices: Set<Int>): Map<Int, AVCodecContext> {

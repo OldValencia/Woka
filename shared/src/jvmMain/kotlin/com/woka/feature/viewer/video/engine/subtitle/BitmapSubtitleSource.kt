@@ -72,7 +72,6 @@ internal class BitmapSubtitleSource(
  * needs no special case in the one-path-per-entry model (Step 9).
  */
 internal fun openBitmapSubtitleFile(path: String): BitmapSubtitleSource? {
-    val startedAt = System.currentTimeMillis()
     val fc = AVFormatContext(null)
     if (avformat_open_input(fc, path, null, null) != 0) return null
     if (avformat_find_stream_info(fc, null as AVDictionary?) < 0) {
@@ -105,6 +104,5 @@ internal fun openBitmapSubtitleFile(path: String): BitmapSubtitleSource? {
     } finally {
         avformat_close_input(fc)
     }
-    source?.let { logBitmapSubtitles(mapOf(0 to it), System.currentTimeMillis() - startedAt) }
     return source
 }
