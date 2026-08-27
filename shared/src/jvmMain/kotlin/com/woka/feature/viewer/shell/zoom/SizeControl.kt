@@ -44,7 +44,14 @@ fun SizeControl(
      * floors at Fit (see `CanvasZoom`). A slider that travels somewhere the picture will
      * not follow reads as the zoom being broken, not as a limit.
      */
-    bounds: IntRange? = null
+    bounds: IntRange? = null,
+    /**
+     * Put the frame back at the origin **without touching the zoom** — what picking
+     * Fill or Actual asks for. Defaults to doing nothing, which is what the editor's
+     * pill wants: its only reset is [onOffsetReset], and that one also returns the
+     * zoom to Fit.
+     */
+    onRecentre: () -> Unit = {}
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     var anchorHeight by remember { mutableStateOf(0) }
@@ -61,9 +68,21 @@ fun SizeControl(
         onSizeModeChange(sizeModeFor(clampPercent(value, range), containerSize, nativeSize))
     }
 
+    /**
+     * **Every preset puts the frame back at the origin, not just Fit** (2026-08-28).
+     * It used to be Fit alone and the other two did not need it: the clamp pinned any
+     * axis that did not overflow back to zero by itself. Now that a picture is
+     * draggable at any zoom (`panLimits`), Fill and Actual would come up wherever the
+     * last drag left them — and a named size that lands somewhere different each time
+     * is not a preset.
+     *
+     * Fit goes through [onOffsetReset] and the other two through [onRecentre] because
+     * the two differ for the editor: there the full reset also puts the *zoom* back,
+     * which is right for Fit and would undo the size the user just picked otherwise.
+     */
     fun applyPreset(preset: ScalePreset) {
         onSizeModeChange(SizeMode.Preset(preset))
-        if (preset == ScalePreset.Fit) onOffsetReset()
+        if (preset == ScalePreset.Fit) onOffsetReset() else onRecentre()
         menuOpen = false
     }
 

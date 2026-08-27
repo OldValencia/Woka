@@ -76,7 +76,14 @@ fun MediaViewerNormalControls(
         if (zoom != null) {
             CanvasZoomControl(zoom)
         } else {
-            SizeControl(sizeMode, containerSize, nativeSize, onSizeModeChange, onOffsetReset)
+            // The two callbacks are the same lambda here and that is not an
+            // oversight: for the viewer, "put the frame back" *is* zeroing the
+            // offset, and no zoom rides along with it. Only the editor's pill has
+            // a reset that means more than that.
+            SizeControl(
+                sizeMode, containerSize, nativeSize, onSizeModeChange, onOffsetReset,
+                onRecentre = onOffsetReset
+            )
         }
 
         PillGap()
@@ -120,7 +127,10 @@ fun MediaViewerFullscreenControls(
     modifier: Modifier = Modifier
 ) {
     MediaViewerControlsContainer(modifier) {
-        SizeControl(sizeMode, containerSize, nativeSize, onSizeModeChange, onOffsetReset)
+        SizeControl(
+            sizeMode, containerSize, nativeSize, onSizeModeChange, onOffsetReset,
+            onRecentre = onOffsetReset
+        )
 
         PillDivider()
 
