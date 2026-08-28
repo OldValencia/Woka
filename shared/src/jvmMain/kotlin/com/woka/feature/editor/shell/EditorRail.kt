@@ -47,10 +47,11 @@ internal fun EditorRail(
     tools: List<EditorTool>,
     activeToolId: String?,
     unavailable: Map<String, String>,
-    onSelect: (String) -> Unit
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .clip(RoundedCornerShape(EditorTokens.Rail.containerRadius))
             .background(Theme.viewer.popoverScrim)
             .padding(EditorTokens.Rail.containerPadding)

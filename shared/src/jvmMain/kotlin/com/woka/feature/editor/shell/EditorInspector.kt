@@ -22,6 +22,7 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.woka.core.ui.theme.Theme
@@ -44,11 +45,19 @@ internal fun EditorInspector(
      * what may name `engine.drawnSize(document)`; a tool never learns the frame.
      */
     footnote: String? = null,
+    /**
+     * **The ceiling is the caller's** since 2026-08-28: the panel measures the rail and
+     * lets a card grow to the dock's width. It is still a *range* for the reason it
+     * always was — a fixed 420 dp left Transform's four buttons floating in empty
+     * space — so a card sizes to its content and only stops here.
+     */
+    maxWidth: Dp = EditorTokens.Inspector.maxWidth,
+    modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
     Column(
-        modifier = Modifier
-            .widthIn(min = EditorTokens.Inspector.minWidth, max = EditorTokens.Inspector.maxWidth)
+        modifier = modifier
+            .widthIn(min = EditorTokens.Inspector.minWidth, max = maxWidth)
             .clip(RoundedCornerShape(Theme.viewer.cornerRadius))
             .background(Theme.viewer.popoverScrim)
             .border(

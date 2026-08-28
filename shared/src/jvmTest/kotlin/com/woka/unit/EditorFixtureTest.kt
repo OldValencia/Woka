@@ -7,6 +7,8 @@ import com.woka.feature.editor.core.ColorParam
 import com.woka.feature.editor.core.FloatParam
 import com.woka.feature.editor.core.IntParam
 import com.woka.feature.editor.core.ObjectParam
+import com.woka.feature.editor.core.PadParam
+import com.woka.feature.editor.core.ParamPoint
 import com.woka.feature.editor.core.ParamSpec
 import com.woka.feature.editor.core.PreviewChoiceParam
 import com.woka.feature.editor.core.ToolCardinality
@@ -47,6 +49,7 @@ class EditorFixtureTest {
             .with(FixtureParams.Tint, 0xFF123456L)
             .with(FixtureParams.Press, true)
             .with(FixtureParams.Payload, FixturePayload("arrow", 2))
+            .with(FixtureParams.Pad, ParamPoint(-40f, 25f))
 
         assertEquals(0.5f, set[FixtureParams.Amount])
         assertEquals(7, set[FixtureParams.Count])
@@ -56,6 +59,9 @@ class EditorFixtureTest {
         assertEquals(0xFF123456L, set[FixtureParams.Tint])
         assertTrue(set[FixtureParams.Press])
         assertEquals(FixturePayload("arrow", 2), set[FixtureParams.Payload])
+        // Both axes, and independently: a point that round-tripped as `(x, x)` would
+        // pass an assertion on either one alone.
+        assertEquals(ParamPoint(-40f, 25f), set[FixtureParams.Pad])
     }
 
     @Test
@@ -99,7 +105,7 @@ class EditorFixtureTest {
  * one, and so until every row renderer built against the fixture has one too.
  */
 private val EVERY_SPEC_KIND =
-    setOf("float", "int", "bool", "choice", "previewChoice", "color", "action", "object")
+    setOf("float", "int", "bool", "choice", "previewChoice", "color", "action", "object", "pad")
 
 private fun kindOf(spec: ParamSpec<*>): String = when (spec) {
     is FloatParam -> "float"
@@ -110,4 +116,5 @@ private fun kindOf(spec: ParamSpec<*>): String = when (spec) {
     is ColorParam -> "color"
     is ActionParam -> "action"
     is ObjectParam<*> -> "object"
+    is PadParam -> "pad"
 }

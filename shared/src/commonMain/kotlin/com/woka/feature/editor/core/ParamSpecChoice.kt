@@ -51,27 +51,6 @@ data class ChoiceParam<E : Enum<E>>(
 }
 
 /**
- * A [ChoiceParam] drawn as a thumbnail strip instead of a control — each option
- * rendered through its own stage, which is what makes a filter picker show the
- * picture rather than the filter's name. Same wire format; only the renderer the
- * shell picks differs, so a filter set can change presentation without touching
- * a document.
- */
-data class PreviewChoiceParam<E : Enum<E>>(
-    override val key: String,
-    val options: List<E>,
-    override val default: E,
-    /** What the option is called under its thumbnail — see [ChoiceParam.labelOf]. */
-    val labelOf: (E) -> String = { it.name }
-) : ParamSpec<E> {
-    override fun encode(value: E) = TextValue(value.name)
-    override fun decode(value: ParamValue): E? {
-        val name = (value as? TextValue)?.value ?: return null
-        return options.firstOrNull { it.name == name }
-    }
-}
-
-/**
  * A swatch row plus a custom-colour popover. [swatches] are the offered ARGB
  * values; the stored value is not restricted to them, because the popover exists
  * precisely to leave the set.

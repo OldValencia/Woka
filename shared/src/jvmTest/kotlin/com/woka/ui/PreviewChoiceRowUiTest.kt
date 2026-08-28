@@ -5,10 +5,13 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import com.woka.feature.editor.shell.EditorScreen
 import com.woka.feature.editor.tools.filter.FilterTool
 import com.woka.feature.editor.tools.filter.PhotoFilter
+import com.woka.feature.editor.tools.filter.PhotoUndertone
 import com.woka.support.FixtureEngine
+import com.woka.support.FixtureParams
 import com.woka.support.MainDispatcherRule
 import com.woka.support.onEditor
 import com.woka.support.onUi
@@ -56,8 +59,11 @@ class PreviewChoiceRowUiTest {
                 // Unmerged: each option's card is `clickable`, which merges its
                 // descendants' semantics — the thumbnails inside stop being nodes of
                 // their own in the merged tree.
+                //
+                // **Two strips since ME-141**: Styles draws an undertone above the
+                // look, and they are independent selections rather than one list.
                 onAllNodesWithTag(FixtureEngine.THUMBNAIL_TAG, useUnmergedTree = true)
-                    .assertCountEquals(PhotoFilter.entries.size)
+                    .assertCountEquals(PhotoFilter.entries.size + PhotoUndertone.entries.size)
             }
         }
     }
@@ -118,11 +124,91 @@ class PreviewChoiceRowUiTest {
                 onNodeWithTag("editor-tool-filter").performClick()
                 waitForIdle()
 
+                val expected = PhotoFilter.entries.size + PhotoUndertone.entries.size
                 assertEquals(
-                    PhotoFilter.entries.size,
+                    expected,
                     engine.thumbnailsDrawn.size,
-                    "the strip drew ${engine.thumbnailsDrawn.size} thumbnails for ${PhotoFilter.entries.size} looks"
+                    "the two strips drew ${engine.thumbnailsDrawn.size} thumbnails for $expected options"
                 )
+            }
+        }
+    }
+
+    /**
+     * The heading ME-141 added, and the reason it is optional: two adjacent strips
+     * with no labels read as one strip that wrapped, while every other tool in the
+     * app has a single strip that needs no heading at all.
+     */
+    @Test
+    fun `a strip with a section draws its heading and one without draws none`() {
+        val engine = FixtureEngine()
+        onEditor(listOf(FilterTool)) { harness ->
+            onUi {
+                setContent {
+                    EditorScreen(
+                        session = harness.session,
+                        engine = engine,
+                        registry = harness.registry,
+                        onCancel = {},
+                        onDone = {}
+                    )
+                }
+                onNodeWithTag("editor-tool-filter").performClick()
+                waitForIdle()
+
+                onNodeWithTag("param-undertone-section").assertExists()
+                onNodeWithTag("param-filter-section").assertExists()
+                // The fixture's own preview spec declares no section, and its row is
+                // the one that must be laid out exactly as it was before.
+                onNodeWithTag("param-${FixtureParams.Preview.key}-section").assertDoesNotExist()
+            }
+        }
+    }
+
+    /**
+     * The strength lives **inside the chosen square** (asked for 2026-08-28), and is
+     * absent on the option that is the absence of the effect — scaling `Original` by
+     * 40 % scales nothing, which is the row `rows()` exists to keep off a panel.
+     */
+    @Test
+    fun `the strength appears only on a chosen option that does something`() {
+        val engine = FixtureEngine()
+        onEditor(listOf(FilterTool)) { harness ->
+            onUi {
+                setContent {
+                    EditorScreen(
+                        session = harness.session,
+                        engine = engine,
+                        registry = harness.registry,
+                        onCancel = {},
+                        onDone = {}
+                    )
+                }
+                onNodeWithTag("editor-tool-filter").performClick()
+                waitForIdle()
+
+                // Unmerged throughout: an option's card is `clickable`, which merges
+                // its descendants, so the slider inside one is not a node of its own
+                // in the merged tree.
+                //
+                // Opened on the defaults: Original and Neutral are selected, and
+                // neither carries a strength.
+                onNodeWithTag("param-intensity", useUnmergedTree = true).assertDoesNotExist()
+                onNodeWithTag("param-palette", useUnmergedTree = true).assertDoesNotExist()
+
+                onNodeWithTag("param-filter-${PhotoFilter.Vivid.name}")
+                    .performScrollTo()
+                    .performClick()
+                waitForIdle()
+                onNodeWithTag("param-intensity", useUnmergedTree = true).assertExists()
+                // The undertone is still Neutral, so only one of the two appeared.
+                onNodeWithTag("param-palette", useUnmergedTree = true).assertDoesNotExist()
+
+                onNodeWithTag("param-undertone-${PhotoUndertone.Gold.name}")
+                    .performScrollTo()
+                    .performClick()
+                waitForIdle()
+                onNodeWithTag("param-palette", useUnmergedTree = true).assertExists()
             }
         }
     }

@@ -4,7 +4,7 @@
 |---|---|
 | **Order** | 49 — after ME-116 |
 | **Depends on** | ME-112 (the looks, the matrices and the preview-choice row it supersedes the panel of), ME-111 (`exposureMatrix`, `warmthMatrix`) |
-| **Feature** | [Image Editor](../image-editor.md) |
+| **Feature** | [Image Editor](../../image-editor.md) |
 
 **Goal.** Turn Filters into **Styles**: an undertone family beside the existing looks, a two-axis pad
 for Tone and Colour, and a Palette slider — one tool, still one `ColorFilter`.

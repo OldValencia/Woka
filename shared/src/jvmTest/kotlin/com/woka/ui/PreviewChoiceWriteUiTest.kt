@@ -3,6 +3,7 @@ package com.woka.ui
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.ToolOp
 import com.woka.feature.editor.shell.EditorScreen
@@ -54,7 +55,13 @@ class PreviewChoiceWriteUiTest {
                 onNodeWithTag("editor-tool-filter").performClick()
                 waitForIdle()
 
-                onNodeWithTag("param-filter-${PhotoFilter.Noir.name}").performClick()
+                // Scrolled to first: since ME-141 the undertone and the look share
+                // one line, and Noir is the seventh look — well past the right edge
+                // of a 420 dp panel. A click on a node outside the viewport lands
+                // on whatever is drawn there instead.
+                onNodeWithTag("param-filter-${PhotoFilter.Noir.name}")
+                    .performScrollTo()
+                    .performClick()
                 waitForIdle()
 
                 val op = harness.session.document.value.ops

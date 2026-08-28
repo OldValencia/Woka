@@ -44,6 +44,18 @@ interface EditorTool {
     fun rows(params: ParamSet): List<ParamSpec<*>> = this.params
 
     /**
+     * Whether this tool's inspector may grow to the **dock's** width rather than
+     * stopping at the card's usual ceiling (2026-08-28).
+     *
+     * False for every tool but Styles, and deliberately a declaration rather than
+     * something the shell infers: a wide card is only worth it where the content is a
+     * line that can use any width, and widening the rest put Markup's swatches and
+     * Transform's four buttons in a field of empty space — the defect a fixed 420 dp
+     * caused once already, in the other direction.
+     */
+    val wideInspector: Boolean get() = false
+
+    /**
      * A chance to rewrite this tool's own parameters when one of them is set, knowing
      * the frame — the escape hatch [stage] deliberately does not have (ME-110).
      *

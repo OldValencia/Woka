@@ -3,6 +3,8 @@ package com.woka.feature.editor.tools.filter
 import com.woka.core.ui.icons.Icons
 import com.woka.feature.editor.core.EditorTool
 import com.woka.feature.editor.core.FloatParam
+import com.woka.feature.editor.core.PadParam
+import com.woka.feature.editor.core.ParamPoint
 import com.woka.feature.editor.core.ParamSet
 import com.woka.feature.editor.core.ParamSpec
 import com.woka.feature.editor.core.PreviewChoiceParam
@@ -14,28 +16,32 @@ import com.woka.feature.editor.core.ToolStage
 import com.woka.feature.editor.engine.image.RasterStage
 
 /**
- * Filter presets — eight looks, chosen from a strip that shows each of them (ME-112).
+ * Styles — an undertone, a look, and a pad for tone and colour (ME-112, ME-141).
  *
- * **The tool that finally uses `PreviewChoiceParam`.** That spec has existed since
- * ME-003 and its renderer was the one row the shell answered with `Unit`, deferred in
- * ME-102 with the reason in the code: built before filters existed it would have drawn a
- * strip of identical thumbnails and proved nothing.
+ * **The id stays `filter`.** The title and the summary changed and the panel was
+ * rebuilt, but the manifest id is the settings key, the owner of every operation and
+ * what is already written into every file that has been edited. Renaming it would
+ * orphan every saved document; the new parameters get new keys and old documents fill
+ * them from the defaults, which `ParamSet` already does. A rename, not a migration.
  *
- * **A filter is one matrix**, like an adjustment — so the two collapse into a single
- * `ColorFilter` when both are set, which is what `multiply` in the fold is for. Choosing
- * a look costs a filter rebuild and no pixel work at all (§3.2).
+ * **Four contributions, still one `ColorFilter`.** Every one of them is a
+ * `ColorMatrix` and colour matrices multiply, so nothing about §3.2 changes and the
+ * engine needed no edit at all: a whole style costs a filter rebuild and no pixel work.
  *
  * `order = 1` puts it after Adjustments in the rail; application order is the fold's
- * domain rank, and both are `Color`, so a look and a correction compose in the order the
- * user made them.
+ * domain rank, and both are `Color`, so a style and a correction compose in the order
+ * the user made them.
  */
 object FilterTool : EditorTool {
 
-    val Filter = PreviewChoiceParam(
-        key = "filter",
-        options = PhotoFilter.entries.toList(),
-        default = PhotoFilter.Original,
-        labelOf = PhotoFilter::label
+    /** The undertone's own strength. The look's is [Intensity] — see `undertoneMatrix`. */
+    val Palette = FloatParam(
+        key = "palette",
+        label = "Palette",
+        range = 0f..100f,
+        default = 100f,
+        detent = 100f,
+        unit = "%"
     )
 
     val Intensity = FloatParam(
@@ -47,10 +53,39 @@ object FilterTool : EditorTool {
         unit = "%"
     )
 
+    val Undertone = PreviewChoiceParam(
+        key = "undertone",
+        options = PhotoUndertone.entries.toList(),
+        default = PhotoUndertone.Neutral,
+        labelOf = PhotoUndertone::label,
+        section = "Undertone",
+        strength = Palette
+    )
+
+    val Filter = PreviewChoiceParam(
+        key = "filter",
+        options = PhotoFilter.entries.toList(),
+        default = PhotoFilter.Original,
+        labelOf = PhotoFilter::label,
+        section = "Look",
+        strength = Intensity
+    )
+
+    /** Tone is exposure and Colour is warmth — both matrices already exist in `adjust`. */
+    val Tone = PadParam(
+        key = "tone",
+        label = "Tone & Colour",
+        xLabel = "Colour",
+        yLabel = "Tone",
+        xRange = -100f..100f,
+        yRange = -100f..100f,
+        default = ParamPoint(0f, 0f)
+    )
+
     override val manifest = ToolManifest(
         id = "filter",
-        title = "Filters",
-        summary = "Eight looks, at any strength",
+        title = "Styles",
+        summary = "Undertones, looks and a tone pad",
         // Its own glyph: a rail of identical squares is a mistake made twice already.
         icon = Icons.Static.MagicWand,
         domain = ToolDomain.Color,
@@ -59,12 +94,37 @@ object FilterTool : EditorTool {
         interaction = ToolInteraction.Continuous
     )
 
-    override val params: List<ParamSpec<*>> = listOf(Filter, Intensity)
+    /** One scrolling line of fourteen squares uses every pixel the dock is wide. */
+    override val wideInspector = true
 
     /**
-     * Nothing at `Original`, and nothing at zero intensity — the same rule every other
-     * tool follows, so a panel opened and closed leaves the document untouched.
+     * Every parameter the document carries. The two strengths are declared here and
+     * **not** drawn as rows of their own — see [rows].
+     */
+    override val params: List<ParamSpec<*>> =
+        listOf(Undertone, Filter, Palette, Intensity, Tone)
+
+    /**
+     * The two strips, then the pad — and neither strength.
+     *
+     * `Palette` and `Intensity` are drawn *inside* the square they scale, so a row for
+     * each would be the same number twice. Hidden rather than removed: the values are
+     * still declared, still written and still folded, which is the whole contract
+     * [rows] carries (§3.4). The strips are adjacent so they share one scrolling line.
+     *
+     * **The pad is always shown**, including on an untouched panel (reversed by hand
+     * 2026-08-28, having been hidden on defaults for one sitting). It costs 40 dp at
+     * the end of a line that is there anyway, and hiding it made the panel's width
+     * change the moment a look was picked — a control that appears is a control nobody
+     * knew was there.
+     */
+    override fun rows(params: ParamSet): List<ParamSpec<*>> = listOf(Undertone, Filter, Tone)
+
+    /**
+     * Nothing when none of the four parts does anything — the rule every tool follows,
+     * so a panel opened and closed leaves the document untouched. The arithmetic is
+     * `styleMatrix`, beside the matrices it multiplies.
      */
     override fun stage(params: ParamSet): ToolStage? =
-        filterMatrix(params[Filter], params[Intensity])?.let { RasterStage.Pixels(it) }
+        styleMatrix(params)?.let { RasterStage.Pixels(it) }
 }

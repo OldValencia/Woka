@@ -72,8 +72,8 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-146](tickets/implemented/ME-146-markup-text-box-and-background.md) | Markup text — a box and a background | **done** 2026-08-27 — confirmed by hand after three fixes |
 | [ME-115](tickets/implemented/ME-115-editor-settings-panel.md) | Editor settings panel | **done** 2026-08-28 — by hand outstanding |
 | [ME-116](tickets/implemented/ME-116-zoomed-canvas-fidelity.md) | Zoomed canvas fidelity — the zoom itself shipped with ME-109 | **done** 2026-08-28 — by hand outstanding |
-| [ME-141](tickets/ME-141-styles-pad-and-palette.md) | Styles: two carousels, a pad and a palette slider | specified 2026-08-26 |
-| [ME-117…ME-149](tickets/backlog.md) | Image editor | backlog |
+| [ME-141](tickets/implemented/ME-141-styles-pad-and-palette.md) | Styles: two carousels, a pad and a palette slider | **done** 2026-08-28 — panel reshaped by hand over three passes; the last one not yet seen on screen. What the pad *means* is [ME-150](tickets/backlog.md) |
+| [ME-117…ME-150](tickets/backlog.md) | Image editor | backlog |
 
 ME-201…ME-204, the video editor's own tickets, moved to
 [`../video-editor/tickets/backlog.md`](../video-editor/tickets/backlog.md) on 2026-08-24 and are
@@ -242,10 +242,11 @@ schema, one row renderer per spec type:
 | `IntParam(key, label, range, default)` | numeric field with steppers |
 | `BoolParam(key, label)` | label + `IosSwitch` |
 | `ChoiceParam(key, label, options)` | `SegmentedControl` (≤ 4 options) or a chip row |
-| `PreviewChoiceParam(key, options, preview)` | thumbnail strip, each drawn through that option's own stage |
+| `PreviewChoiceParam(key, options, preview, section)` | thumbnail strip, each drawn through that option's own stage; `section` heads it when a tool stacks two |
 | `ColorParam(key, label, swatches)` | swatch row + custom-colour popover |
 | `ActionParam(key, label, icon)` | icon button; always `Instant` |
 | `ObjectParam<T>(key, serializer)` | **nothing** — structured payload owned by a `CanvasTool`'s overlay |
+| `PadParam(key, label, xLabel, yLabel, xRange, yRange)` | 120.dp square with cross-hairs; one drag writes a `ParamPoint`, y inverted, double-click resets |
 
 ```kotlin
 object AdjustTool : EditorTool {

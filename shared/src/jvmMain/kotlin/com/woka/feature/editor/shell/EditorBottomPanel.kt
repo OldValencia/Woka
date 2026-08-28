@@ -3,10 +3,20 @@ package com.woka.feature.editor.shell
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditorEngine
@@ -43,6 +53,14 @@ internal fun BoxScope.EditorBottomPanel(
     selectedId: () -> String?,
     onSelectTool: (String) -> Unit
 ) {
+    // Measured rather than declared: the dock's width is however many tools are
+    // enabled, and a constant here would drift the first time one is added (ME-115).
+    var railWidth by remember { mutableStateOf(0.dp) }
+    val density = LocalDensity.current
+    // Owned here because this is the one place that has both the card and the room
+    // beside it — see `InspectorAccessory`.
+    val accessory = remember { InspectorAccessory() }
+
     Column(
         modifier = Modifier
             .align(Alignment.BottomCenter)
@@ -63,27 +81,63 @@ internal fun BoxScope.EditorBottomPanel(
         if (activeTool != null) {
             // Only the screen may name the frame; a tool is handed it (ME-110).
             val frame = engine.drawnSize(document)
-            EditorInspector(
-                title = activeTool.manifest.title,
-                footnote = activeTool.footnote(paramsOf(document, activeTool), frame),
-                content = {
-                    ParamRows(
-                        tool = activeTool,
-                        session = session,
-                        document = document,
-                        frame = frame,
-                        selectedId = selectedId
-                    ) { preview, modifier ->
-                        engine.Thumbnail(preview, modifier)
-                    }
+            // **No `weight` here, deliberately** (found by bisecting 2026-08-28). A
+            // `Row` holding a weighted child expands to the whole width offered to it,
+            // so the card stopped being centred by the column above and sat against the
+            // window's edge — which is what made half the inspector's UI tests report
+            // their rows as "not displayed". The narrowing is arithmetic instead.
+            val wide = activeTool.wideInspector && railWidth > 0.dp
+            val ceiling = (if (wide) railWidth else EditorTokens.Inspector.maxWidth)
+                .minus(if (accessory.content != null) ACCESSORY_ALLOWANCE else 0.dp)
+                .coerceAtLeast(EditorTokens.Inspector.minWidth)
+
+            CompositionLocalProvider(LocalInspectorAccessory provides accessory) {
+                Row(
+                    // Bottom, not top: both cards float above the dock and are read off
+                    // that edge. Top-aligned, the taller one hangs below the other and
+                    // the pair stops looking like one panel.
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.spacedBy(EditorTokens.Inspector.bottomInset)
+                ) {
+                    EditorInspector(
+                        title = activeTool.manifest.title,
+                        footnote = activeTool.footnote(paramsOf(document, activeTool), frame),
+                        // The dock is the ceiling: a card sizes to its content and stops
+                        // there, so Styles' fourteen squares reach the rail's width while
+                        // Transform's four buttons stay compact — the reason this was a
+                        // range and never a number.
+                        maxWidth = ceiling,
+                        content = {
+                            ParamRows(
+                                tool = activeTool,
+                                session = session,
+                                document = document,
+                                frame = frame,
+                                selectedId = selectedId
+                            ) { preview, modifier ->
+                                engine.Thumbnail(preview, modifier)
+                            }
+                        }
+                    )
+                    accessory.content?.invoke()
                 }
-            )
+            }
         }
         EditorRail(
             tools = tools,
             activeToolId = activeToolId,
             unavailable = unavailable,
-            onSelect = onSelectTool
+            onSelect = onSelectTool,
+            modifier = Modifier.onSizeChanged {
+                railWidth = with(density) { it.width.toDp() }
+            }
         )
     }
 }
+
+/**
+ * What an open accessory takes off the card's ceiling, so the pair still ends level
+ * with the dock: the pad is 120 dp inside a card of the inspector's own padding, plus
+ * the gap between them.
+ */
+private val ACCESSORY_ALLOWANCE = 160.dp

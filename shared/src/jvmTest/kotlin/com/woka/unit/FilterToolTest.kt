@@ -2,13 +2,18 @@ package com.woka.unit
 
 import androidx.compose.ui.unit.IntSize
 import com.woka.feature.editor.core.EditDocument
+import com.woka.feature.editor.core.ParamPoint
 import com.woka.feature.editor.core.ParamSet
 import com.woka.feature.editor.core.ToolOp
 import com.woka.feature.editor.engine.image.RasterStage
 import com.woka.feature.editor.engine.image.fold
+import com.woka.feature.editor.engine.image.multiply
 import com.woka.feature.editor.tools.adjust.AdjustTool
 import com.woka.feature.editor.tools.filter.FilterTool
 import com.woka.feature.editor.tools.filter.PhotoFilter
+import com.woka.feature.editor.tools.filter.PhotoUndertone
+import com.woka.feature.editor.tools.filter.filterMatrix
+import com.woka.feature.editor.tools.filter.undertoneMatrix
 import com.woka.support.MainDispatcherRule
 import com.woka.support.withFoldRegistry
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -89,5 +94,65 @@ class FilterToolTest {
                 "the strip previewed a blend of both looks"
             )
         }
+    }
+
+    /**
+     * The four contributions ME-141 added, and the one claim that matters about them:
+     * they are matrices, so they multiply into the same single filter a look alone
+     * produced — the tool gained three parameters and no stage.
+     */
+    @Test
+    fun `an undertone and a look compose one stage, in that order`() {
+        val both = FilterTool.defaults()
+            .with(FilterTool.Undertone, PhotoUndertone.Gold)
+            .with(FilterTool.Filter, PhotoFilter.Dramatic)
+        val stage = assertIs<RasterStage.Pixels>(assertNotNull(FilterTool.stage(both)))
+
+        val expected = multiply(
+            undertoneMatrix(PhotoUndertone.Gold, 100f),
+            assertNotNull(filterMatrix(PhotoFilter.Dramatic, 100f))
+        )
+        assertTrue(
+            expected.values.contentEquals(stage.colorMatrix.values),
+            "the two were not multiplied undertone-first"
+        )
+    }
+
+    @Test
+    fun `the pad at the origin contributes nothing`() {
+        // Exposure and warmth both answer the identity at zero, so a pad nobody
+        // touched must leave the product exactly where the look put it.
+        val look = FilterTool.defaults().with(FilterTool.Filter, PhotoFilter.Vivid)
+        val centred = look.with(FilterTool.Tone, ParamPoint(0f, 0f))
+        assertEquals(
+            assertIs<RasterStage.Pixels>(assertNotNull(FilterTool.stage(look))).colorMatrix.values.toList(),
+            assertIs<RasterStage.Pixels>(assertNotNull(FilterTool.stage(centred))).colorMatrix.values.toList()
+        )
+    }
+
+    @Test
+    fun `the pad alone produces a stage`() {
+        // No undertone and no look: without the pad this document folds to nothing.
+        val moved = FilterTool.defaults().with(FilterTool.Tone, ParamPoint(30f, -20f))
+        assertIs<RasterStage.Pixels>(assertNotNull(FilterTool.stage(moved)))
+    }
+
+    /**
+     * The assertion that the rename cost nobody their edits: a document written
+     * before ME-141 carries `filter` and `intensity` and neither of the three new
+     * keys, and must fold to exactly the matrix it always did.
+     */
+    @Test
+    fun `a document written before Styles folds to the matrix it did before`() {
+        val old = ParamSet()
+            .with(FilterTool.Filter, PhotoFilter.Warm)
+            .with(FilterTool.Intensity, 70f)
+        val stage = assertIs<RasterStage.Pixels>(assertNotNull(FilterTool.stage(old)))
+
+        assertTrue(
+            assertNotNull(filterMatrix(PhotoFilter.Warm, 70f)).values
+                .contentEquals(stage.colorMatrix.values),
+            "the new parameters changed what an old document means"
+        )
     }
 }

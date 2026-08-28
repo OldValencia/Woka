@@ -110,6 +110,50 @@ Three things it has to answer, and none of them is mechanical:
   nothing else. That is the right answer and it is still a decision.
 *Depends on ME-146.*
 
+### ME-150 — Tone & Colour must shape the look, not the photograph
+Asked for 2026-08-28, immediately after ME-141 shipped and was exercised by hand: the pad and the
+strength slider are meant to shape **the filter**, the way iOS Photos does, and today they shape the
+picture. Nothing is broken — the panel works and is committed — so this is a change of meaning, not a
+fix.
+
+**What is built.** `styleMatrix` multiplies four independent contributions: undertone × `Palette`,
+look × `Intensity`, `exposureMatrix(tone.y)` and `warmthMatrix(tone.x)`. The last two apply whatever
+look is chosen, including `Original`. So the pad is a property of the photograph.
+
+**Why that is wrong, beyond the ask.** Those two functions are *imported from `tools/adjust`*, where
+Exposure and Warmth are already two sliders of their own. Move the pad, open Adjust, and Exposure
+reads 0 while the picture is visibly brighter — two controls over one effect, neither aware of the
+other. The pad as built duplicates a shipped tool.
+
+Two readings were named, and they are not the same size:
+
+- **A — the pad is a per-look preset.** Each `PhotoFilter` carries a `ParamPoint`, and choosing a look
+  seeds the pad with it. Cheaper than it first looks: the document still holds **one** point, not a
+  map, and `EditorTool.resolve` already exists for exactly this — "rewrite my own parameters when one
+  of them is set". What it costs is a rule for when *not* to re-seed, or picking a second look throws
+  away a tone the user dialled by hand. The duplication with Adjust survives this reading.
+- **B — the axes become the look's own shape.** `x` is the look's saturation and `y` its brightness,
+  applied to the look matrix *before* `Intensity` lerps it toward the identity:
+  `lerp(identity, look × brightness × saturation, intensity)`. Still one matrix, still one
+  `ParamPoint`, no schema change at all — and at `Original` the pad does nothing, because there is no
+  look to shape.
+
+**Opinion (Claude, 2026-08-28): B.** It is the only one of the two that actually answers the ask —
+under A the pad still edits the photograph, it merely starts somewhere different per look. B also
+settles three loose ends at once: the Adjust duplication disappears because these numbers exist only
+inside the look; the question "which of the two strips does the pad belong to" stops needing an
+answer, since it shapes the look and the undertone keeps `Palette`; and a pad that is inert at
+`Original` tells the truth, which is the same rule the strip already applies when it hides a strength
+on `Neutral`. The cost is that "warm this photograph up" leaves Styles entirely — which is right, it
+lives in Adjust.
+
+The two are not exclusive: A is a sensible follow-on *once* B has defined what the axes mean, as a
+set of per-look starting points. Doing A first defines presets for axes we would then redefine.
+
+Whichever is chosen, the labels move with the meaning: `xLabel`/`yLabel` are "Colour" and "Tone"
+today and would become the look's own words.
+*Depends on ME-141.*
+
 ### ME-1xx — Auto adjust
 Lifted out of ME-111 when that ticket was written (2026-08-22), because it cannot be a tool as tools
 are defined: an automatic correction reads the **picture** — a histogram, a black point — and

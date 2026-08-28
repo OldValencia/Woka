@@ -2,11 +2,8 @@ package com.woka.feature.editor.shell
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
-import androidx.compose.ui.unit.dp
 import com.woka.feature.editor.core.ActionParam
 import com.woka.feature.editor.core.BoolParam
 import com.woka.feature.editor.core.ChoiceParam
@@ -17,6 +14,7 @@ import com.woka.feature.editor.core.EditorTool
 import com.woka.feature.editor.core.FloatParam
 import com.woka.feature.editor.core.IntParam
 import com.woka.feature.editor.core.ObjectParam
+import com.woka.feature.editor.core.PadParam
 import com.woka.feature.editor.core.ParamSet
 import com.woka.feature.editor.core.ParamSpec
 import com.woka.feature.editor.core.PreviewChoiceParam
@@ -31,7 +29,6 @@ import androidx.compose.ui.unit.IntSize
  * cannot drift apart in spacing, typography or commit behaviour: there is one
  * implementation and it is this one.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun ParamRows(
     tool: EditorTool,
@@ -64,22 +61,9 @@ internal fun ParamRows(
     Column(
         verticalArrangement = Arrangement.spacedBy(EditorTokens.Inspector.rowGap)
     ) {
-        // Consecutive actions become one wrapping group rather than one row each.
-        // Four buttons stacked vertically, each with an empty label column beside it,
-        // is what made the Transform panel a tall strip of white space.
         groupRuns(visible).forEach { run ->
-            if (run.size > 1 || run.first() is ActionParam) {
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    run.forEach { spec ->
-                        key(spec.key) { ParamRow(spec, params, writer, tool.manifest.id, thumbnail) }
-                    }
-                }
-            } else {
-                val spec = run.first()
-                key(spec.key) { ParamRow(spec, params, writer, tool.manifest.id, thumbnail) }
+            key(run.first().key) {
+                ParamRun(run, params, writer, tool.manifest.id, thumbnail)
             }
         }
     }
@@ -109,10 +93,17 @@ internal fun ParamRow(
         is ColorParam -> ColorParamRow(spec, params, writer)
         is ActionParam -> ActionParamRow(spec, writer)
 
+        // Two numbers from one gesture (ME-141) — which is why it is one spec.
+        is PadParam -> PadParamRow(spec, params, writer)
+
         // A strip of the picture through each option's own `stage()` (ME-112). The row
         // draws no bitmap itself: it asks the engine, through `thumbnail`, for a picture
         // of a document — which is what keeps the shell free of raster types (§3.3).
-        is PreviewChoiceParam<*> -> PreviewChoiceRow(spec, params, writer, toolId, thumbnail)
+        //
+        // A run of one: `ParamRun` sends neighbouring preview specs here together, and
+        // this branch is what a caller reaching for a single spec gets (ME-141).
+        is PreviewChoiceParam<*> ->
+            PreviewChoiceStrip(listOf(spec), params, writer, toolId, thumbnail)
 
         // Draws nothing, by design (§3.4). The value belongs to a `CanvasTool`'s
         // overlay, and a spec that cannot be drawn by a generic row says so in its
@@ -121,23 +112,3 @@ internal fun ParamRow(
     }
 }
 
-/**
- * Splits a tool's specs into runs of the same *shape*: consecutive actions in one run,
- * everything else alone.
- *
- * An action is a button and buttons sit beside each other; a slider is a labelled row
- * and rows stack. Grouping by adjacency rather than by sorting keeps the tool's
- * declared order, which is the order its inspector is meant to read in (§3.4).
- */
-private fun groupRuns(specs: List<ParamSpec<*>>): List<List<ParamSpec<*>>> {
-    val runs = mutableListOf<MutableList<ParamSpec<*>>>()
-    specs.forEach { spec ->
-        val last = runs.lastOrNull()
-        if (last != null && last.first() is ActionParam && spec is ActionParam) {
-            last += spec
-        } else {
-            runs += mutableListOf(spec)
-        }
-    }
-    return runs
-}

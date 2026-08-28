@@ -7,6 +7,8 @@ import com.woka.feature.editor.core.ColorParam
 import com.woka.feature.editor.core.FloatParam
 import com.woka.feature.editor.core.IntParam
 import com.woka.feature.editor.core.ObjectParam
+import com.woka.feature.editor.core.PadParam
+import com.woka.feature.editor.core.ParamPoint
 import com.woka.feature.editor.core.ParamSpec
 import com.woka.feature.editor.core.PreviewChoiceParam
 import kotlinx.serialization.Serializable
@@ -55,7 +57,18 @@ object FixtureParams {
 
     val Payload = ObjectParam("payload", FixturePayload.serializer(), FixturePayload())
 
+    /** Bipolar on both axes, so a drag can be shown to move each one in either direction. */
+    val Pad = PadParam(
+        key = "pad",
+        label = "Pad",
+        xLabel = "Across",
+        yLabel = "Up",
+        xRange = -100f..100f,
+        yRange = -100f..100f,
+        default = ParamPoint(0f, 0f)
+    )
+
     /** In the order an inspector would draw them: scalars, then the rest. */
     val all: List<ParamSpec<*>> =
-        listOf(Amount, Count, Flag, Choice, Preview, Tint, Press, Payload)
+        listOf(Amount, Count, Flag, Choice, Preview, Tint, Press, Payload, Pad)
 }
