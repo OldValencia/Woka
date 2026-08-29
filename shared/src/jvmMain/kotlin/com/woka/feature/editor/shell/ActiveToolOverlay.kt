@@ -35,7 +35,9 @@ internal fun ActiveToolOverlay(
     previewMatrix: Matrix,
     canvasKeys: CanvasKeys? = null,
     /** Owned by `EditorScreen`, because the inspector reads it too (ME-114). */
-    selection: ToolSelection? = null
+    selection: ToolSelection? = null,
+    /** True when [tool] is the idle one, mounted with nothing open (ME-149). */
+    selectOnly: Boolean = false
 ) {
     val canvasTool = tool as? CanvasTool ?: return
     val held = selection ?: remember(session) { ToolSelection() }
@@ -45,12 +47,17 @@ internal fun ActiveToolOverlay(
         geometry = geometry,
         previewMatrix = previewMatrix,
         selection = held,
-        canvasKeys = canvasKeys
+        canvasKeys = canvasKeys,
+        selectOnly = selectOnly
     )
 
     // The tool's `Delete` reaches the key handler through the one slot the editor has
     // (`CanvasKeys`), and gives it back on dispose — a handler left behind would delete
     // out of a tool that is no longer open (ME-114).
+    //
+    // **Unchanged for the idle mounting, deliberately** (ME-149): `Delete` works with
+    // nothing open for the same reason it works with a tool open, through the same slot —
+    // and with nothing open the slot has no other claimant.
     if (canvasKeys != null) {
         DisposableEffect(canvasKeys, canvasTool, scope) {
             canvasKeys.onDelete = { canvasTool.onDelete(scope) }
@@ -81,12 +88,17 @@ internal fun rememberToolScope(
     geometry: EditorCanvasGeometry,
     previewMatrix: Matrix,
     selection: ToolSelection,
-    canvasKeys: CanvasKeys? = null
+    canvasKeys: CanvasKeys? = null,
+    selectOnly: Boolean = false
 ): EditorToolScope {
     val document by session.document.collectAsState()
     val values = previewMatrix.values.toList()
 
-    return remember(session, cardinality, selection, canvasKeys, document, geometry, values) {
+    // `selectOnly` is a key of its own: a scope built in one mode must not survive into
+    // the other, or a tool just opened would go on refusing to draw (ME-149).
+    return remember(
+        session, cardinality, selection, canvasKeys, document, geometry, values, selectOnly
+    ) {
         // Source → what the engine drew → where the **picture** put it. Composed rather
         // than assumed identity: with a flip in the document the two disagree by the
         // width of the picture, and an overlay drawn without this lands on the far
@@ -106,7 +118,8 @@ internal fun rememberToolScope(
             document = document,
             sourceSize = geometry.sourceSize,
             canvasToSource = sourceToCanvas.inverted(),
-            sourceToCanvas = sourceToCanvas
+            sourceToCanvas = sourceToCanvas,
+            selectOnly = selectOnly
         )
     }
 }

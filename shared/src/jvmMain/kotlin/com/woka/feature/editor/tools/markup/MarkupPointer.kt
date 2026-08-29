@@ -28,6 +28,7 @@ private const val GRAB_PX = 14f
 internal fun Modifier.markupGestures(
     frame: IntSize,
     scope: () -> EditorToolScope,
+    selectOnly: () -> Boolean,
     editing: () -> MarkupTextEdit?,
     onEdit: (MarkupTextEdit?) -> Unit
 ): Modifier = pointerInput(frame) {
@@ -62,7 +63,12 @@ internal fun Modifier.markupGestures(
 
         // A press on empty picture with something selected only deselects: a stray click
         // must not mint a shape, and the press stays unconsumed so it can still pan.
-        if (gesture is MarkupGesture.Draw && wasSelected != null) {
+        //
+        // **With no tool open the pen is off** (ME-149), so the same branch is taken
+        // whether or not anything was selected: nothing may be created there, and leaving
+        // the press unconsumed is what still lets it pan the picture.
+        val idle = selectOnly()
+        if (gesture is MarkupGesture.Draw && (idle || wasSelected != null)) {
             live.select(null)
             return@awaitEachGesture
         }
@@ -108,6 +114,10 @@ internal fun Modifier.markupGestures(
             scope().commit()
             return@awaitEachGesture
         }
+        // And no caret with no tool open (ME-149): a second click on a caption may select
+        // it and nothing more, since there is no inspector to type alongside.
+        if (idle) return@awaitEachGesture
+
         // A press that never moved: the click that opens a caret on empty picture, or the
         // second click that reopens a caption already selected.
         scope().textEditAt(gesture, from, wasSelected)?.let { shape ->

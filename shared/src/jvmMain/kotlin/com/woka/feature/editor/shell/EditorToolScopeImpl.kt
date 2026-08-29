@@ -54,7 +54,9 @@ internal class EditorToolScopeImpl(
     override val document: EditDocument,
     override val sourceSize: IntSize,
     override val canvasToSource: Matrix,
-    override val sourceToCanvas: Matrix
+    override val sourceToCanvas: Matrix,
+    /** Mounted because the tool owns a mark, not because it was opened (ME-149). */
+    override val selectOnly: Boolean = false
 ) : EditorToolScope {
 
     override val selectedId: String? get() = selection.id

@@ -36,6 +36,19 @@ interface EditorToolScope {
     /** The inverse: where a stored shape is drawn right now. */
     val sourceToCanvas: Matrix
 
+    /**
+     * "You are mounted because you own something on the picture, not because the user
+     * opened you" (ME-149).
+     *
+     * With no tool open at all the shell still mounts one canvas tool, so that a mark can
+     * be selected, moved, resized and deleted without going back to the panel that covers
+     * the picture it is on. A tool in this mode may only manipulate what is already there:
+     * it creates nothing — no shape, no caret — and has no inspector to restyle through.
+     *
+     * Defaulted false, so the ordinary "the user opened me" mounting says nothing.
+     */
+    val selectOnly: Boolean get() = false
+
     /** The shape the overlay is manipulating, or null. Never reaches the document. */
     val selectedId: String?
 

@@ -111,7 +111,11 @@ internal fun EditorScreen(
             // other tool leaves this empty and the canvas pans as it always did.
             overlay = { geometry ->
                 ActiveToolOverlay(
-                    tool = activeTool,
+                    // With nothing open, the tool that owns a mark is mounted anyway, so
+                    // the mark can still be moved (ME-149) — `idleCanvasTool` holds why
+                    // it is one tool and not all of them.
+                    tool = activeTool ?: idleCanvasTool(tools, document),
+                    selectOnly = activeTool == null,
                     session = session,
                     geometry = geometry,
                     // Of the document the canvas actually drew, not of the whole one.

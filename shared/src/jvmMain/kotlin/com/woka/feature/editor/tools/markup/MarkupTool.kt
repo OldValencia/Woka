@@ -3,6 +3,7 @@ package com.woka.feature.editor.tools.markup
 import androidx.compose.runtime.Composable
 import com.woka.core.ui.icons.Icons
 import com.woka.feature.editor.core.CanvasTool
+import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditorToolScope
 import com.woka.feature.editor.core.ObjectParam
 import com.woka.feature.editor.core.ParamSet
@@ -122,6 +123,10 @@ object MarkupTool : CanvasTool {
 
         return RasterStage.Paint { shapes.forEach { shape -> drawMarkup(shape) } }
     }
+
+    /** Marks to touch with no tool open (ME-149) — none on a picture nobody has drawn on. */
+    override fun selectableIn(document: EditDocument): Boolean =
+        document.markupShapes().isNotEmpty()
 
     /** One shape removed, one undo step — the arithmetic is `deleteSelectedShape`. */
     override fun onDelete(scope: EditorToolScope): Boolean = scope.deleteSelectedShape()

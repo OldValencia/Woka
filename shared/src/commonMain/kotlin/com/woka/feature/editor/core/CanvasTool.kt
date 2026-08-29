@@ -31,6 +31,21 @@ interface CanvasTool : EditorTool {
     val previewsThroughOverlay: Boolean get() = false
 
     /**
+     * "This document holds something of mine that is worth selecting" (ME-149).
+     *
+     * Asked of every canvas tool when **no** tool is open, so the shell can mount one
+     * anyway and let a drawn mark be moved without reopening the panel that covers it.
+     * Defaulted false, which is Crop's answer — a crop rectangle is not an object on the
+     * picture — and every future tool's until it says otherwise.
+     *
+     * **A tool answering true must leave [previewsThroughOverlay] false.** With no tool
+     * open the canvas is drawn from the whole document, so a tool whose own work was
+     * subtracted from it would offer nothing to select. That is the one invariant the
+     * shell cannot check for itself.
+     */
+    fun selectableIn(document: EditDocument): Boolean = false
+
+    /**
      * `Delete` or `Backspace`, while this tool is open (ME-114).
      *
      * Returns whether the press was *used*. Markup removes the selected shape and says

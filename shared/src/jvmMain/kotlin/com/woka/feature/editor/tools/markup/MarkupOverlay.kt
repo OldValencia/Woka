@@ -43,6 +43,23 @@ internal fun MarkupOverlay(scope: EditorToolScope) {
     // picture, or `Backspace` deletes the caption being typed into (`EditorKeys`).
     SideEffect { scope.captureKeys(edit != null) }
 
+    // **Choosing a pen drops the selection** (asked for 2026-08-29). The pen describes the
+    // *next* shape, so picking one means "draw one of these now" — and with something still
+    // selected the first press on empty picture only deselects, which made that take two
+    // gestures instead of one.
+    //
+    // Compared against the pen last seen rather than keyed on a `LaunchedEffect`: an effect
+    // keyed on the pen also runs on the **first** composition, which would forget a shape
+    // selected with no tool open the moment Markup is opened over it (ME-149).
+    val pen = scope.document.markupKind()
+    var chosen by remember { mutableStateOf(pen) }
+    SideEffect {
+        if (pen != chosen) {
+            chosen = pen
+            current.select(null)
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         MarkupCanvas(
             selected = selected,
@@ -53,12 +70,16 @@ internal fun MarkupOverlay(scope: EditorToolScope) {
                 .markupGestures(
                     frame = frame,
                     scope = { current },
+                    selectOnly = { current.selectOnly },
                     editing = { edit },
                     onEdit = { open -> edit = open }
                 )
         )
 
-        edit?.let { open ->
+        // **The field is not composed at all with no tool open** (ME-149). `edit` is only
+        // ever set by the recogniser, which cannot open a caret in that mode, so the branch
+        // is unreachable — asserted by not writing it rather than by trusting it.
+        if (!scope.selectOnly) edit?.let { open ->
             MarkupTextField(
                 edit = scope.liveEdit(open),
                 sourceToCanvas = scope.sourceToCanvas,
