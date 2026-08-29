@@ -76,7 +76,7 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-147](tickets/implemented/ME-147-multi-select-chip-row.md) | A chip row that lights more than one — `ToggleSetParam` | **done** 2026-08-29 — against `FixtureTool`; no tool touched |
 | [ME-151](tickets/implemented/ME-151-markup-text-faces.md) | Markup text — the four faces | **done** 2026-08-29 — confirmed by hand after one fix, the glyphs rendering as dots |
 | [ME-148](tickets/implemented/ME-148-markup-text-frame.md) | Markup text — the frame you can grab | **done** 2026-08-29 |
-| [ME-149](tickets/ME-149-moving-a-mark-with-no-tool-open.md) | Moving a mark with no tool open | planned 2026-08-29 |
+| [ME-149](tickets/ME-149-moving-a-mark-with-no-tool-open.md) | Moving a mark with no tool open | **done** 2026-08-29 |
 | [ME-152](tickets/implemented/ME-152-the-caption-box-is-the-type.md) | The caption's box is the type, not the font's line box | **done** 2026-08-29 — the caret half measured impossible and recorded, not built |
 | [ME-153](tickets/implemented/ME-153-paired-rows-and-a-wide-markup-card.md) | Two controls on one line, and a wide Markup card | **done** 2026-08-29, ~~superseded~~ by ME-155 — buttons beside a slider was refused on screen |
 | [ME-155](tickets/implemented/ME-155-a-compact-control-bar.md) | A compact control bar: every value behind its own button | **done** 2026-08-29 — confirmed by hand after five passes; the two-drawer shape was dropped the same day |
