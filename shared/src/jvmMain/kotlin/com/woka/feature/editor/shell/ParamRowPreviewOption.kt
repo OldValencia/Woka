@@ -57,10 +57,18 @@ internal fun <E : Enum<E>> PreviewChoiceOption(
     content: @Composable (Modifier) -> Unit
 ) {
     val outline = if (isSelected) Theme.colors.accentEditor else Theme.viewer.onScrimBorder
+    // **Not on the default option.** `Neutral` and `Original` are the absence of an
+    // effect, so scaling them scales nothing — the same rule that keeps `Fill` off a
+    // stroked pen's panel.
+    val strength = spec.strength?.takeIf { isSelected && option != spec.default }
     Column(
         modifier = Modifier
             .pointerHoverIcon(PointerIcon.Hand)
             .clickable { writer.edit(spec, option) }
+            // Right-click puts the strength back to full — the bar drawn across this
+            // square is the control being reset, which is why only the square carrying
+            // one answers (asked for 2026-08-29).
+            .resetOnRightClick { strength?.let(writer::resetTo) }
             .testTag("param-${spec.key}-${option.name}"),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -72,10 +80,6 @@ internal fun <E : Enum<E>> PreviewChoiceOption(
                     .background(Theme.viewer.onScrimHover)
                     .border(1.dp, outline, RoundedCornerShape(THUMBNAIL_RADIUS))
             )
-            // **Not on the default option.** `Neutral` and `Original` are the absence
-            // of an effect, so scaling them scales nothing — the same rule that keeps
-            // `Fill` off a stroked pen's panel.
-            val strength = spec.strength?.takeIf { isSelected && option != spec.default }
             if (strength != null) {
                 StrengthSlider(strength, params, writer, Modifier.align(Alignment.BottomCenter))
             }

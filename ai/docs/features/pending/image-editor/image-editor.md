@@ -72,7 +72,7 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-146](tickets/implemented/ME-146-markup-text-box-and-background.md)     | Markup text — a box and a background | **done** 2026-08-27 — confirmed by hand after three fixes |
 | [ME-115](tickets/implemented/ME-115-editor-settings-panel.md)              | Editor settings panel | **done** 2026-08-28 — by hand outstanding |
 | [ME-116](tickets/implemented/ME-116-zoomed-canvas-fidelity.md)             | Zoomed canvas fidelity — the zoom itself shipped with ME-109 | **done** 2026-08-28 — by hand outstanding |
-| [ME-141](tickets/implemented/ME-141-styles-pad-and-palette.md)             | Styles: two carousels, a pad and a palette slider | **done** 2026-08-28 — panel reshaped by hand over three passes; the last one not yet seen on screen. What the pad *means* is [ME-150](tickets/backlog.md) |
+| [ME-141](tickets/implemented/ME-141-styles-pad-and-palette.md)             | Styles: two carousels, a pad and a palette slider | **done** 2026-08-28 — panel reshaped by hand over three passes; the last one not yet seen on screen. What the pad *means* is [ME-150](tickets/implemented/ME-150-the-pad-shapes-the-look.md) |
 | [ME-147](tickets/implemented/ME-147-multi-select-chip-row.md)              | A chip row that lights more than one — `ToggleSetParam` | **done** 2026-08-29 — against `FixtureTool`; no tool touched |
 | [ME-151](tickets/implemented/ME-151-markup-text-faces.md)                  | Markup text — the four faces | **done** 2026-08-29 — confirmed by hand after one fix, the glyphs rendering as dots |
 | [ME-148](tickets/implemented/ME-148-markup-text-frame.md)                  | Markup text — the frame you can grab | **done** 2026-08-29 |
@@ -81,7 +81,8 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-153](tickets/implemented/ME-153-paired-rows-and-a-wide-markup-card.md) | Two controls on one line, and a wide Markup card | **done** 2026-08-29, ~~superseded~~ by ME-155 — buttons beside a slider was refused on screen |
 | [ME-155](tickets/implemented/ME-155-a-compact-control-bar.md)              | A compact control bar: every value behind its own button | **done** 2026-08-29 — confirmed by hand after five passes; the two-drawer shape was dropped the same day |
 | [ME-154](tickets/implemented/ME-154-the-overlay-lives-in-the-picture.md)   | The overlay lives in the picture's space, not the canvas's | **done** 2026-08-29 — the drift reported by hand |
-| [ME-117…ME-150](tickets/backlog.md)                                        | Image editor | backlog |
+| [ME-150](tickets/implemented/ME-150-the-pad-shapes-the-look.md)            | The pad shapes the look, not the photograph | **done** 2026-08-29 — by hand outstanding, which is what judges `BRIGHTNESS`. The pad's `Reset` and two right-clicks were asked for on top of it |
+| [ME-117…ME-1xx](tickets/backlog.md)                                        | Image editor | backlog |
 
 ME-201…ME-204, the video editor's own tickets, moved to
 [`../video-editor/tickets/backlog.md`](../video-editor/tickets/backlog.md) on 2026-08-24 and are

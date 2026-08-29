@@ -12,6 +12,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTouchInput
@@ -89,6 +90,10 @@ class PadRowUiTest {
                 onNodeWithTag(opener).performClick()
                 waitForIdle()
                 onNodeWithTag(pad).assertExists()
+                // Both axes are named on the face, which is how a tool's own words —
+                // Styles' Vividness and Brightness (ME-150) — reach the screen.
+                onNodeWithText(FixtureParams.Pad.yLabel).assertExists()
+                onNodeWithText(FixtureParams.Pad.xLabel).assertExists()
             }
         }
 

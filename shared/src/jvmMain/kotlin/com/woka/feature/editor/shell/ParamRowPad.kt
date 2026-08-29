@@ -64,6 +64,9 @@ internal fun PadParamRow(spec: PadParam, params: ParamSet, writer: ParamWriter) 
                 if (open) writer.settle()
                 slot.toggle()
             }
+            // The square answers the same right-click every other control does, so the
+            // pad can be put back without first being opened (asked for 2026-08-29).
+            .resetOnRightClick { writer.resetTo(spec) }
             .testTag("param-${spec.key}-open"),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -95,51 +98,6 @@ internal fun PadParamRow(spec: PadParam, params: ParamSet, writer: ParamWriter) 
         PadAccessory(spec, params, writer) { slot.toggle() }
     }
 }
-
-/**
- * The pad, beside the card.
- *
- * **It paints no plate of its own** since ME-155: `GooeyPair` draws both cards' plates
- * through one filter so they merge, and a second background here would sit on top of that
- * as a plain rectangle — exactly the seam the filter exists to remove.
- */
-@Composable
-private fun PadAccessory(
-    spec: PadParam,
-    params: ParamSet,
-    writer: ParamWriter,
-    onClose: () -> Unit
-) {
-    ParamAccessory(
-        key = "param-${spec.key}",
-        tag = "param-${spec.key}-panel",
-        width = PANEL_WIDTH
-    ) {
-        PadCanvas(spec, params, writer)
-        BasicText(
-            text = "Close",
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .pointerHoverIcon(PointerIcon.Hand)
-                .clickable {
-                    onClose()
-                    // Settled once on close, so a drag across the pad — however many
-                    // events it took — is one history entry. The same rule
-                    // `ColorPickerPopover` applies to sliding through fifty colours.
-                    writer.settle()
-                }
-                .testTag("param-${spec.key}-close"),
-            style = TextStyle(
-                color = Theme.viewer.onScrimSecondary,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-        )
-    }
-}
-
-/** The pad is a 120 dp square, plus the card's own padding either side of it. */
-private val PANEL_WIDTH = 148.dp
 
 /** Two-thirds of a thumbnail: read at a glance, and never the widest thing in the line. */
 private val INDICATOR = 40.dp

@@ -71,12 +71,16 @@ object FilterTool : EditorTool {
         strength = Intensity
     )
 
-    /** Tone is exposure and Colour is warmth — both matrices already exist in `adjust`. */
+    /**
+     * The two axes shape the **chosen look** — never the photograph — and do nothing at
+     * [PhotoFilter.Original], where there is no look to shape (ME-150). The key stays
+     * `tone`: it is in every document written under ME-141, holding the same point.
+     */
     val Tone = PadParam(
         key = "tone",
-        label = "Tone & Colour",
-        xLabel = "Colour",
-        yLabel = "Tone",
+        label = "Look shape",
+        xLabel = "Vividness",
+        yLabel = "Brightness",
         xRange = -100f..100f,
         yRange = -100f..100f,
         default = ParamPoint(0f, 0f)

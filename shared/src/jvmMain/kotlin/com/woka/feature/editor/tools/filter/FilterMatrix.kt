@@ -1,6 +1,7 @@
 package com.woka.feature.editor.tools.filter
 
 import androidx.compose.ui.graphics.ColorMatrix
+import com.woka.feature.editor.core.ParamPoint
 import com.woka.feature.editor.engine.image.isIdentity
 
 /** Luminance weights, the same ones Compose's own `setToSaturation` uses. */
@@ -10,6 +11,12 @@ private const val LUMA_B = 0.072f
 
 /** Offsets are added in 0..255, the scale the channels are sampled in (ME-111). */
 private const val MID = 127.5f
+
+/** A quarter of that range at either end of the pad's vertical axis (ME-150). */
+private const val BRIGHTNESS = 64f
+
+/** The pad at its origin: a look asked for by name and shaped by nobody. */
+private val UNSHAPED = ParamPoint(0f, 0f)
 
 /**
  * Eight looks, each a colour matrix (ME-112).
@@ -76,16 +83,43 @@ fun filterMatrix(filter: PhotoFilter): ColorMatrix? = when (filter) {
 }
 
 /**
- * [filter] at [intensity] percent, lerped toward the identity — and **null when it would
- * change nothing**, so the fold's `colorFilter` stays null for a picture nobody filtered.
+ * How the pad shapes the **chosen look** — `x` its vividness, `y` its brightness — or
+ * null at the origin, so an untouched pad costs nothing (ME-150).
+ *
+ * These numbers never reach the photograph on their own: they exist only as a factor of
+ * a look's matrix, which is why nothing here is borrowed from `tools.adjust`, where
+ * Exposure and Warmth are sliders over the picture itself.
+ */
+private fun lookShape(tone: ParamPoint): ColorMatrix? {
+    if (tone.x == 0f && tone.y == 0f) return null
+    return ColorMatrix().apply {
+        setToSaturation(1f + tone.x / 100f)
+        timesAssign(channels(1f, 1f, 1f, offset = tone.y / 100f * BRIGHTNESS))
+    }
+}
+
+/**
+ * [filter] shaped by [tone] and lerped toward the identity at [intensity] percent — and
+ * **null when it would change nothing**, so the fold's `colorFilter` stays null for a
+ * picture nobody filtered.
+ *
+ * The shape multiplies the *full* look and the lerp is applied to the product, so a
+ * shaped look fades out exactly as an unshaped one does and `Intensity = 0` still
+ * answers null with the pad anywhere. At [PhotoFilter.Original] there is no look to
+ * shape, and the pad is inert.
  *
  * Lerping the matrix rather than blending two renders is what keeps an intensity slider
  * as cheap as any other: one matrix, rebuilt when the number moves.
  */
-fun filterMatrix(filter: PhotoFilter, intensity: Float): ColorMatrix? {
+fun filterMatrix(
+    filter: PhotoFilter,
+    intensity: Float,
+    tone: ParamPoint = UNSHAPED
+): ColorMatrix? {
     val full = filterMatrix(filter) ?: return null
     val amount = (intensity / 100f).coerceIn(0f, 1f)
     if (amount == 0f) return null
+    lookShape(tone)?.let(full::timesAssign)
 
     val identity = ColorMatrix().values
     val blended = FloatArray(full.values.size) { at ->

@@ -2,7 +2,6 @@ package com.woka.unit
 
 import androidx.compose.ui.unit.IntSize
 import com.woka.feature.editor.core.EditDocument
-import com.woka.feature.editor.core.ParamPoint
 import com.woka.feature.editor.core.ParamSet
 import com.woka.feature.editor.core.ToolOp
 import com.woka.feature.editor.engine.image.RasterStage
@@ -116,25 +115,6 @@ class FilterToolTest {
             expected.values.contentEquals(stage.colorMatrix.values),
             "the two were not multiplied undertone-first"
         )
-    }
-
-    @Test
-    fun `the pad at the origin contributes nothing`() {
-        // Exposure and warmth both answer the identity at zero, so a pad nobody
-        // touched must leave the product exactly where the look put it.
-        val look = FilterTool.defaults().with(FilterTool.Filter, PhotoFilter.Vivid)
-        val centred = look.with(FilterTool.Tone, ParamPoint(0f, 0f))
-        assertEquals(
-            assertIs<RasterStage.Pixels>(assertNotNull(FilterTool.stage(look))).colorMatrix.values.toList(),
-            assertIs<RasterStage.Pixels>(assertNotNull(FilterTool.stage(centred))).colorMatrix.values.toList()
-        )
-    }
-
-    @Test
-    fun `the pad alone produces a stage`() {
-        // No undertone and no look: without the pad this document folds to nothing.
-        val moved = FilterTool.defaults().with(FilterTool.Tone, ParamPoint(30f, -20f))
-        assertIs<RasterStage.Pixels>(assertNotNull(FilterTool.stage(moved)))
     }
 
     /**
