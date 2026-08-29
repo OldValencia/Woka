@@ -73,8 +73,14 @@ data class WokaSettings(
     val defaultUseZoom: Boolean = false,
     val defaultZoomPercent: Int = 100,
     val sizeSchemaVersion: Int = 0,
-    // Last media-viewer volume (0f–1f), restored across files and app restarts.
+    // Last media-viewer volume, restored across files and app restarts. 0f–1f
+    // ordinarily; up to [MAX_MEDIA_VOLUME] while [soundBoost] is on, and pulled
+    // back to 1f the moment it is turned off.
     val mediaVolume: Float = 0.5f,
+    // Lets the volume slider go past 100 % (Sound boost). Off by default: above
+    // unity the samples are scaled and hard-clipped, which is a thing to opt into
+    // rather than something every quiet file gets silently.
+    val soundBoost: Boolean = false,
     // Subtitle appearance (§3), applied to text subtitles. Persisted globally.
     val subtitleSize: SubtitleSize = SubtitleSize.Auto,
     val subtitleFont: SubtitleFont = SubtitleFont.System,

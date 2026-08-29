@@ -28,6 +28,9 @@ object Icons {
         val SpeakerWave1Fill = Res.drawable.speaker_wave_1_fill
         val SpeakerWave2Fill = Res.drawable.speaker_wave_2_fill
         val SpeakerWave3Fill = Res.drawable.speaker_wave_3_fill
+
+        /** Sound boost — `speaker.fill` and `bolt.fill` side by side, at one height. */
+        val SpeakerBoltFill = Res.drawable.speaker_bolt_fill
         val Home = Res.drawable.home
         val Image = Res.drawable.image
         val File = Res.drawable.file_present

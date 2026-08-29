@@ -24,7 +24,21 @@ import com.woka.feature.viewer.video.model.SubtitleSelection
  * Sidecars are scanned **before** [VideoPlayerTracks.apply], because a remembered
  * external subtitle can only be resolved against what is actually on disk.
  */
-internal fun VideoPlayerState.applyTrackPrefs(probed: MediaTracks) {
+/**
+ * The sidecar scan [applyTrackPrefs] needs, taken **off** the UI thread.
+ *
+ * Separate because the apply itself runs on Main (`writeUiState`) and this walks a
+ * directory and stats files — on a network folder that is not something to do on the
+ * event thread.
+ */
+internal fun VideoPlayerState.scanTrackSidecars(): List<ExternalSubtitle> {
+    val perFile = AppDependencies.settingsRepository.settings.value
+        .trackPrefsPerFile[file.absolutePath]
+    return scanExternalSubtitles(file) + restoreAddedSubtitles(perFile)
+}
+
+/** [sidecars] comes from [scanTrackSidecars]; everything here is an assignment. */
+internal fun VideoPlayerState.applyTrackPrefs(probed: MediaTracks, sidecars: List<ExternalSubtitle>) {
     val settings = AppDependencies.settingsRepository.settings.value
     val perFile = settings.trackPrefsPerFile[file.absolutePath]
     // The folder layer is a heuristic — "the last file watched here was Russian, so
@@ -37,8 +51,7 @@ internal fun VideoPlayerState.applyTrackPrefs(probed: MediaTracks) {
         null
     }
     tracks.hiddenExternalSubtitles = perFile?.subtitleExternalHidden.orEmpty().toSet()
-    tracks.externalSubtitles = (scanExternalSubtitles(file) + restoreAddedSubtitles(perFile))
-        .filterNot { it.path in tracks.hiddenExternalSubtitles }
+    tracks.externalSubtitles = sidecars.filterNot { it.path in tracks.hiddenExternalSubtitles }
     tracks.apply(probed, perFile, perFolder)
     subtitleDelayMs = perFile?.subtitleDelayMs ?: 0L
     audioDelayMs = perFile?.audioDelayMs ?: 0L

@@ -33,7 +33,12 @@ Decoders, the player, Skia surfaces, JavaCV/FFmpeg, AWT, threads, native memory.
 - Cross-thread handshakes are a named type with a monotonic generation, not a pair of volatile
   booleans (`PlaybackGeneration`). A seek writes its target **before** it signals, never after.
 - Blocking native calls run on `Dispatchers.IO` or a dedicated single-thread dispatcher, never on
-  `Dispatchers.Main`. Compose-facing state is written back on Main.
+  `Dispatchers.Main`. **Compose-facing state is written back on Main** — from the decode loops that
+  is `writeUiState { }`, which hops to Main and takes assignments only. Assigning `mutableStateOf`
+  straight from a background coroutine loses the write when the recomposer advances the global
+  snapshot; wrapping it in a mutable snapshot instead keeps the write and loses the *repaint*. Both
+  halves are the bug behind "the file opened with no audio track and no seek bar, reopening fixed
+  it" — `state.md` has the full account.
 - Bound the parallelism of anything that decodes (`Dispatchers.IO.limitedParallelism(2)` is the
   precedent for image decode) — unbounded decode turns into unbounded native memory.
 

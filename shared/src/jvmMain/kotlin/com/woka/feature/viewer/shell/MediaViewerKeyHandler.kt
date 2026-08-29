@@ -12,6 +12,7 @@ import androidx.compose.ui.input.key.type
 import com.woka.core.data.MediaItem
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.engine.togglePlayPause
+import com.woka.core.data.volumeCeiling
 import com.woka.feature.viewer.video.engine.toggleMute
 
 fun Modifier.mediaViewerKeyHandler(
@@ -28,12 +29,13 @@ fun Modifier.mediaViewerKeyHandler(
     onInfo: () -> Unit,
     onZoom: (ZoomKey) -> Unit,
     onStepFrame: (Int) -> Unit,
-    onToggleFullscreen: () -> Unit
+    onToggleFullscreen: () -> Unit,
+    soundBoost: Boolean = false
 ): Modifier = this.onKeyEvent { event ->
     handleMediaViewerKeyEvent(
         event, currentId, mediaItems, videoState, mediaVolume,
         onClose, onSkip, onNavigate, onVolumeChange, onPlayPause, onCopy, onInfo, onZoom,
-        onStepFrame, onToggleFullscreen
+        onStepFrame, onToggleFullscreen, soundBoost
     )
 }
 
@@ -58,8 +60,11 @@ fun handleMediaViewerKeyEvent(
     onInfo: () -> Unit,
     onZoom: (ZoomKey) -> Unit,
     onStepFrame: (Int) -> Unit = {},
-    onToggleFullscreen: () -> Unit = {}
+    onToggleFullscreen: () -> Unit = {},
+    /** So ↑/↓ stop where the slider stops, rather than at 100 % regardless. */
+    soundBoost: Boolean = false
 ): Boolean {
+    val ceiling = volumeCeiling(soundBoost)
     return when (event.key) {
         Key.Escape -> {
             if (event.type == KeyEventType.KeyDown) onClose()
@@ -72,13 +77,13 @@ fun handleMediaViewerKeyEvent(
         Key.PageUp, Key.PageDown -> handleFrameKey(event, onStepFrame)
         Key.DirectionUp -> {
             if (event.type == KeyEventType.KeyDown && videoState?.hasAudio != false) {
-                onVolumeChange((mediaVolume + 0.1f).coerceIn(0f, 1f))
+                onVolumeChange((mediaVolume + 0.1f).coerceIn(0f, ceiling))
             }
             true
         }
         Key.DirectionDown -> {
             if (event.type == KeyEventType.KeyDown && videoState?.hasAudio != false) {
-                onVolumeChange((mediaVolume - 0.1f).coerceIn(0f, 1f))
+                onVolumeChange((mediaVolume - 0.1f).coerceIn(0f, ceiling))
             }
             true
         }

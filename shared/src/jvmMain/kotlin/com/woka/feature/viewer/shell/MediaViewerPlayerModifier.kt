@@ -31,7 +31,8 @@ internal fun Modifier.mediaViewerPlayerModifier(
     infoAction: () -> Unit,
     onSizeModeChange: (SizeMode) -> Unit,
     onVolumeChange: (Float) -> Unit,
-    onToggleFullscreen: () -> Unit
+    onToggleFullscreen: () -> Unit,
+    soundBoost: Boolean = false
 ): Modifier = this
     .fillMaxSize()
     .clipToBounds()
@@ -58,7 +59,8 @@ internal fun Modifier.mediaViewerPlayerModifier(
         onStepFrame = { step ->
             state.frameIndex = (state.frameIndex + step).coerceIn(0, state.frameCount - 1)
         },
-        onToggleFullscreen = onToggleFullscreen
+        onToggleFullscreen = onToggleFullscreen,
+        soundBoost = soundBoost
     )
     .pointerInput(Unit) {
         awaitPointerEventScope {

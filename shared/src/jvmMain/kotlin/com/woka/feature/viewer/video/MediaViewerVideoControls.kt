@@ -34,7 +34,9 @@ fun MediaViewerVideoControls(
     onSettingsHoverChange: (Boolean) -> Unit = {},
     onSeekerHoverChange: (Boolean) -> Unit = {},
     isFullscreen: Boolean,
-    onToggleFullscreen: () -> Unit
+    onToggleFullscreen: () -> Unit,
+    /** Passed straight through to the speaker's wheel — see `MediaViewerVolumeControl`. */
+    soundBoost: Boolean = false
 ) {
     Row(
         modifier = Modifier
@@ -111,7 +113,8 @@ fun MediaViewerVideoControls(
                 videoState = videoState,
                 mediaVolume = mediaVolume,
                 onVolumeChange = onVolumeChange,
-                onVolumeHoverChange = onVolumeHoverChange
+                onVolumeHoverChange = onVolumeHoverChange,
+                soundBoost = soundBoost
             )
             PlayerSettingsControl(onHoverChange = onSettingsHoverChange)
             SimpleTooltip(if (isFullscreen) "Exit Fullscreen" else "Fullscreen") {

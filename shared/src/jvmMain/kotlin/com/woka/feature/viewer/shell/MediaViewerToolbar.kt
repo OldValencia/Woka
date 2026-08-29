@@ -34,6 +34,7 @@ fun MediaViewerToolbar(
     thumbnails: ViewerThumbnails,
     mediaVolume: Float,
     onVolumeChange: (Float) -> Unit,
+    soundBoost: Boolean = false,
     onToggleFullscreen: () -> Unit,
     /** Left inset for the Prev arrow: the frame strip stands where it does. */
     navStartInset: Dp = 0.dp
@@ -107,7 +108,8 @@ fun MediaViewerToolbar(
                     onSettingsHoverChange = { hover.setHovered(HoverTarget.Settings, it) },
                     onSeekerHoverChange = { hover.setHovered(HoverTarget.Seeker, it) },
                     isFullscreen = chrome.isFullscreen,
-                    onToggleFullscreen = onToggleFullscreen
+                    onToggleFullscreen = onToggleFullscreen,
+                    soundBoost = soundBoost
                 )
             }
 

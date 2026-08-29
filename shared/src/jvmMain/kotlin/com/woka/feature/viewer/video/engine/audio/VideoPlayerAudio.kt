@@ -29,7 +29,7 @@ internal fun VideoPlayerState.initAudio(
         soundLineInstance = soundLine
         val bufferSize = (audioFormat.sampleRate * audioFormat.frameSize * 0.1f).toInt()
         soundLine.open(audioFormat, bufferSize)
-        setVolumeInternal(soundLine, volume)
+        setVolumeInternal(soundLine, lineLevel(volume))
         soundLine.start()
         
         audioJob = scope.launch(Dispatchers.IO) {
@@ -58,8 +58,12 @@ internal fun VideoPlayerState.initAudio(
                         soundLine.start()
                         soundLineWasPaused = false
                     }
-                    setVolumeInternal(soundLine, volume)
-                    soundLine.write(byteArray, 0, byteArray.size)
+                    setVolumeInternal(soundLine, lineLevel(volume))
+                    // Past 100 % the line is already at unity and the rest is gain
+                    // applied here (`SoundBoost`). Below it this hands the buffer
+                    // straight through, allocating nothing.
+                    val out = boosted(byteArray, boostFactor(volume))
+                    soundLine.write(out, 0, out.size)
                 }
             } catch (e: CancellationException) {
                 throw e

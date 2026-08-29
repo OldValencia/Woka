@@ -44,6 +44,13 @@ interface PlaybackSettings {
     fun setMediaVolume(volume: Float)
 
     /**
+     * Sound boost on or off. Turning it **off also pulls the level back to 100 %**, in
+     * the same write: a stored 240 % with the switch off is a level no control could
+     * then reach or lower.
+     */
+    fun setSoundBoost(enabled: Boolean)
+
+    /**
      * Both layers are written on every manual switch, but each gets its own record:
      * the file's is a merge of what was ever chosen there, the folder's carries only
      * what this action chose (§2.6 / Step 15).

@@ -30,6 +30,9 @@ internal fun MediaViewerPlayerOverlays(
     showInfoDialog: Boolean,
     onShowInfoDialogChange: (Boolean) -> Unit,
     onVolumeChange: (Float) -> Unit,
+    /** Sound boost, as stored — the volume popover both reads it and sets it. */
+    soundBoost: Boolean = false,
+    onSoundBoostChange: (Boolean) -> Unit = {},
     /**
      * Whether the still on screen is running, or **null** when it is not an animation
      * at all. Null is what tells the play/pause flash to stay down: a photograph
@@ -62,6 +65,8 @@ internal fun MediaViewerPlayerOverlays(
         audioTracks = video?.player?.tracks?.mediaTracks?.audio ?: emptyList(),
         selectedAudioIndex = video?.player?.tracks?.selectedAudioIndex,
         onSelectAudio = { index -> video?.player?.selectAudioTrack(index) },
+        soundBoost = soundBoost,
+        onSoundBoostChange = onSoundBoostChange,
         onVolumeChange = onVolumeChange,
         onHover = { state.hover.setHovered(HoverTarget.Volume, it) }
     )

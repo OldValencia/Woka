@@ -15,6 +15,7 @@ import org.bytedeco.ffmpeg.global.avutil.av_log_set_level
 import org.bytedeco.javacv.FFmpegLogCallback
 import kotlin.time.Duration.Companion.milliseconds
 import com.woka.feature.viewer.video.engine.handleEndOfStream
+import com.woka.feature.viewer.video.engine.writeUiState
 import com.woka.feature.viewer.video.engine.track.readStreamHdrInfo
 
 /**
@@ -34,8 +35,15 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
             grabber.start()
 
             var hdrInfo = grabber.readStreamHdrInfo()
-            streamHdrInfo = hdrInfo
-            durationMs = grabber.lengthInTime / 1000L
+            val length = grabber.lengthInTime / 1000L
+            // Snapshot state, written from `Dispatchers.IO` — it goes in a mutable
+            // snapshot or the recomposer's next global advance can drop it. A lost
+            // `durationMs` is a video that plays with no seek bar and no timecodes
+            // (`code-style/state.md`).
+            writeUiState {
+                streamHdrInfo = hdrInfo
+                durationMs = length
+            }
 
             probeTracksAndChapters(grabber)
 
@@ -58,7 +66,8 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
                     pendingVideoReopenIndex = null
                     grabber = reopenVideoGrabber(grabber, reopenIndex, videoChannel)
                     hdrInfo = grabber.readStreamHdrInfo()
-                    streamHdrInfo = hdrInfo
+                    val reopened = hdrInfo
+                    writeUiState { streamHdrInfo = reopened }
                     // The play head did not move, so no generation bump: the frame
                     // reopenVideoGrabber landed stays current and audio — parked on
                     // isReloadingVideo meanwhile — picks up from the same position.

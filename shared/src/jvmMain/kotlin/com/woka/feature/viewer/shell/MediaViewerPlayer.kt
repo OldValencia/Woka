@@ -25,6 +25,9 @@ fun MediaViewerPlayer(
     showInfoDialog: Boolean,
     onShowInfoDialogChange: (Boolean) -> Unit,
     onVolumeChange: (Float) -> Unit,
+    /** Sound boost, as stored — read by the volume popover and the speaker's wheel. */
+    soundBoost: Boolean = false,
+    onSoundBoostChange: (Boolean) -> Unit = {},
     onSizeModeChange: (SizeMode) -> Unit,
     onToggleFullscreen: () -> Unit,
     thumbnails: ViewerThumbnails,
@@ -95,6 +98,7 @@ fun MediaViewerPlayer(
                 thumbnails = thumbnails,
                 mediaVolume = mediaVolume,
                 onVolumeChange = onVolumeChange,
+                soundBoost = soundBoost,
                 onToggleFullscreen = onToggleFullscreen,
                 navStartInset = navStartInset
             )
@@ -129,6 +133,8 @@ fun MediaViewerPlayer(
             showInfoDialog = showInfoDialog,
             onShowInfoDialogChange = onShowInfoDialogChange,
             onVolumeChange = onVolumeChange,
+            soundBoost = soundBoost,
+            onSoundBoostChange = onSoundBoostChange,
             framePlaying = if (strip.isAnimated) state.isFramePlaying else null
         )
     }

@@ -17,6 +17,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import com.woka.core.data.volumeCeiling
 import com.woka.core.ui.icons.Icons
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.viewer.shell.SimpleTooltip
@@ -30,8 +31,11 @@ fun MediaViewerVolumeControl(
     videoState: VideoPlayerState?,
     mediaVolume: Float,
     onVolumeChange: (Float) -> Unit,
-    onVolumeHoverChange: (Boolean) -> Unit
+    onVolumeHoverChange: (Boolean) -> Unit,
+    /** So the wheel over the speaker reaches as far as the slider does. */
+    soundBoost: Boolean = false
 ) {
+    val ceiling = volumeCeiling(soundBoost)
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -42,7 +46,7 @@ fun MediaViewerVolumeControl(
             .onPointerEvent(PointerEventType.Exit) { 
                 if (videoState?.hasAudio != false) onVolumeHoverChange(false) 
             }
-            .pointerInput(mediaVolume) {
+            .pointerInput(mediaVolume, ceiling) {
                 awaitPointerEventScope {
                     while (true) {
                         val event = awaitPointerEvent()
@@ -50,7 +54,7 @@ fun MediaViewerVolumeControl(
                             if (videoState?.hasAudio != false) {
                                 val delta = event.changes.first().scrollDelta.y
                                 val volDelta = if (delta > 0) -0.05f else 0.05f
-                                onVolumeChange((mediaVolume + volDelta).coerceIn(0f, 1f))
+                                onVolumeChange((mediaVolume + volDelta).coerceIn(0f, ceiling))
                                 onVolumeHoverChange(true) // Keeps slider open
                             }
                             event.changes.forEach { it.consume() }

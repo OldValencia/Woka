@@ -1,5 +1,6 @@
 package com.woka.integration
 
+import com.woka.core.data.MAX_MEDIA_VOLUME
 import com.woka.core.data.ResumeMode
 import com.woka.core.data.SIZE_SCHEMA_VERSION
 import com.woka.core.data.SettingsRepositoryImpl
@@ -88,7 +89,7 @@ class SettingsPersistenceTest {
             repository.setMediaVolume(4f)
             awaitSettingsWrite(""""defaultZoomPercent": 1600""")
             assertEquals(240, SettingsRepositoryImpl().settings.value.resumeMinDurationMinutes)
-            assertEquals(1f, SettingsRepositoryImpl().settings.value.mediaVolume)
+            assertEquals(MAX_MEDIA_VOLUME, SettingsRepositoryImpl().settings.value.mediaVolume)
         }
     }
 

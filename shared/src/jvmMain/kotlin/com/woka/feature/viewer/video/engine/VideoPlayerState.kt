@@ -1,5 +1,6 @@
 package com.woka.feature.viewer.video.engine
 
+import com.woka.feature.viewer.video.engine.audio.lineLevel
 import com.woka.feature.viewer.video.engine.decode.FrameRetention
 import com.woka.feature.viewer.video.engine.decode.RenderScale
 import com.woka.feature.viewer.video.engine.decode.setVolumeInternal
@@ -134,7 +135,7 @@ class VideoPlayerState(
     fun updateVolume(newVolume: Float) {
         volume = newVolume
         soundLineInstance?.let { line ->
-            setVolumeInternal(line, newVolume)
+            setVolumeInternal(line, lineLevel(newVolume))
         }
     }
 

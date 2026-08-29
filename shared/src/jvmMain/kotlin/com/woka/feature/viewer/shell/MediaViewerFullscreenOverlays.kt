@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
@@ -38,6 +40,9 @@ fun BoxScope.MediaViewerFullscreenOverlays(
     onExitFullscreen: () -> Unit
 ) {
     val alignment = if (isUiVisible) Alignment.BottomEnd else Alignment.CenterEnd
+    // Read here rather than threaded down: this window already holds the repository,
+    // and the level it shows is the player's own field rather than the screen's.
+    val settings by settingsRepo.settings.collectAsState()
 
     if (videoState != null) {
         VolumeVerticalOverlay(
@@ -48,6 +53,12 @@ fun BoxScope.MediaViewerFullscreenOverlays(
             audioTracks = videoState.tracks.mediaTracks.audio,
             selectedAudioIndex = videoState.tracks.selectedAudioIndex,
             onSelectAudio = { index -> videoState.selectAudioTrack(index) },
+            soundBoost = settings.soundBoost,
+            onSoundBoostChange = soundBoostSetter(
+                settingsRepo,
+                { videoState.volume },
+                videoState::updateVolume
+            ),
             onVolumeChange = { videoState.updateVolume(it); settingsRepo.setMediaVolume(it) },
             onHover = { hover.setHovered(HoverTarget.Volume, it) }
         )
@@ -83,7 +94,8 @@ fun BoxScope.MediaViewerFullscreenOverlays(
                 onSettingsHoverChange = { hover.setHovered(HoverTarget.Settings, it) },
                 onSeekerHoverChange = { hover.setHovered(HoverTarget.Seeker, it) },
                 isFullscreen = true,
-                onToggleFullscreen = onExitFullscreen
+                onToggleFullscreen = onExitFullscreen,
+                soundBoost = settings.soundBoost
             )
         }
     }

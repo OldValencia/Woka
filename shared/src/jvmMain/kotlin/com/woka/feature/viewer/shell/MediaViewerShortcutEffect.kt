@@ -26,8 +26,10 @@ internal fun MediaViewerShortcutEffect(
     onCopy: () -> Unit,
     onInfo: () -> Unit,
     onSizeModeChange: (SizeMode) -> Unit,
-    onToggleFullscreen: () -> Unit
+    onToggleFullscreen: () -> Unit,
+    soundBoost: Boolean = false
 ) {
+    val curBoost by rememberUpdatedState(soundBoost)
     val curVideoState by rememberUpdatedState(videoState)
     val curMediaItems by rememberUpdatedState(mediaItems)
     val curVolume by rememberUpdatedState(mediaVolume)
@@ -62,7 +64,8 @@ internal fun MediaViewerShortcutEffect(
                 onCopy = { curCopy() },
                 onInfo = { curInfo() },
                 onZoom = { key -> state.applyZoomKey(key) { curSizeModeChange(it) } },
-                onToggleFullscreen = { curToggleFullscreen() }
+                onToggleFullscreen = { curToggleFullscreen() },
+                soundBoost = curBoost
             )
         }
         onDispose { globalShortcuts.onPreviewKey = null }

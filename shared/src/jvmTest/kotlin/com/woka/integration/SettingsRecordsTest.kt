@@ -1,5 +1,6 @@
 package com.woka.integration
 
+import com.woka.core.data.MAX_MEDIA_VOLUME
 import com.woka.core.data.PinnedSession
 import com.woka.core.data.TrackPrefs
 import com.woka.core.data.TrackRef
@@ -31,12 +32,14 @@ class SettingsRecordsTest {
     }
 
     @Test
-    fun `volume and box opacity are held inside zero to one`() {
+    fun `volume and box opacity are held inside their ranges`() {
         onSettingsDisk { repository ->
             repository.setMediaVolume(-3f)
             assertEquals(0f, repository.settings.value.mediaVolume)
+            // The top is `MAX_MEDIA_VOLUME` since Sound boost, not 1f — the switch decides
+            // what a control may *reach*, and the record holds whatever it reached.
             repository.setMediaVolume(4f)
-            assertEquals(1f, repository.settings.value.mediaVolume)
+            assertEquals(MAX_MEDIA_VOLUME, repository.settings.value.mediaVolume)
             repository.setSubtitleBoxOpacity(-1f)
             assertEquals(0f, repository.settings.value.subtitleBoxOpacity)
             repository.setSubtitleBoxOpacity(2f)

@@ -25,6 +25,18 @@ import androidx.compose.ui.layout.onSizeChanged
  * Vertical counterpart of [MediaSlider], used only by the volume overlay. Split
  * out of `MediaSlider.kt` (§2 file-size mandate) — the two share nothing but a
  * visual language.
+ *
+ * [ceiling] is the top of the range; the bottom is always 0f. It grows to 300 % when
+ * Sound boost is on, and the geometry below divides by it so a level is drawn at the
+ * same fraction of the track whatever the range currently is.
+ *
+ * [detent] is a value the knob snaps to from within [DETENT_BAND] of the track — 100 %
+ * for the volume slider, so a range that reaches three times as high does not make the
+ * ordinary setting harder to land on.
+ *
+ * [fill] draws the active part, and defaults to the white bar this always had. A slot
+ * because Sound boost colours its own zone green-to-red, and a slider is not the place
+ * that knows what a colour means.
  */
 @Composable
 fun MediaVerticalSlider(
@@ -33,16 +45,29 @@ fun MediaVerticalSlider(
     modifier: Modifier = Modifier,
     activeColor: Color = Color.White,
     inactiveColor: Color = Color.White.copy(alpha = 0.2f),
+    ceiling: Float = 1f,
+    detent: Float? = null,
+    fill: @Composable (Float) -> Unit = { fraction ->
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(fraction)
+                .clip(CircleShape)
+                .background(activeColor)
+        )
+    }
 ) {
     var dragY by remember { mutableStateOf<Float?>(null) }
     var height by remember { mutableStateOf(0f) }
 
     val currentOnValueChange by rememberUpdatedState(onValueChange)
 
-    val safeValue = value.coerceIn(0f, 1f)
-    val displayValue = if (height > 0f) {
-        dragY?.let { (1f - (it / height)).coerceIn(0f, 1f) } ?: safeValue
-    } else safeValue
+    fun at(y: Float): Float = ((1f - (y / height)) * ceiling)
+        .coerceIn(0f, ceiling)
+        .snappedTo(detent, ceiling)
+
+    val safeValue = value.coerceIn(0f, ceiling)
+    val displayValue = (if (height > 0f) dragY?.let { at(it) } ?: safeValue else safeValue) / ceiling
 
     Box(
         modifier = modifier
@@ -51,20 +76,18 @@ fun MediaVerticalSlider(
                 detectDragGestures(
                     onDragStart = { offset ->
                         dragY = offset.y
-                        currentOnValueChange((1f - (offset.y / height)).coerceIn(0f, 1f))
+                        currentOnValueChange(at(offset.y))
                     },
                     onDragEnd = { dragY = null },
                     onDragCancel = { dragY = null }
                 ) { change, dragAmount ->
                     change.consume()
                     dragY = (dragY ?: 0f) + dragAmount.y
-                    currentOnValueChange((1f - (dragY!! / height)).coerceIn(0f, 1f))
+                    currentOnValueChange(at(dragY!!))
                 }
             }
             .pointerInput(Unit) {
-                detectTapGestures { offset ->
-                    currentOnValueChange((1f - (offset.y / height)).coerceIn(0f, 1f))
-                }
+                detectTapGestures { offset -> currentOnValueChange(at(offset.y)) }
             },
         contentAlignment = Alignment.BottomCenter
     ) {
@@ -76,12 +99,21 @@ fun MediaVerticalSlider(
                 .background(inactiveColor)
         )
         // Active Track
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(displayValue)
-                .clip(CircleShape)
-                .background(activeColor)
-        )
+        fill(displayValue)
     }
+}
+
+/** How much of the track counts as "on the detent" — 4 %, about 3 px of an 80 dp bar. */
+private const val DETENT_BAND = 0.04f
+
+/**
+ * [this] pulled onto [detent] when it lands within [DETENT_BAND] of the track's height.
+ *
+ * Measured against the **track**, not against the value: with a 300 % ceiling a band
+ * expressed in level units would be three times wider than it looks.
+ */
+private fun Float.snappedTo(detent: Float?, ceiling: Float): Float {
+    if (detent == null || ceiling <= 0f) return this
+    val distance = (this - detent) / ceiling
+    return if (distance > -DETENT_BAND && distance < DETENT_BAND) detent else this
 }

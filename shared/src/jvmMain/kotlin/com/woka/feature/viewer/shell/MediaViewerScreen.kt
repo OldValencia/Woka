@@ -86,7 +86,8 @@ fun MediaViewerScreen(
         onCopy = { copyAction() },
         onInfo = { infoAction() },
         onSizeModeChange = onSizeModeChange,
-        onToggleFullscreen = toggleFullscreen
+        onToggleFullscreen = toggleFullscreen,
+        soundBoost = settings.soundBoost
     )
 
     val playerModifier = Modifier.mediaViewerPlayerModifier(
@@ -101,7 +102,8 @@ fun MediaViewerScreen(
         infoAction = infoAction,
         onSizeModeChange = onSizeModeChange,
         onVolumeChange = { vol -> mediaVolume = vol; state.volumeEvent.raise() },
-        onToggleFullscreen = toggleFullscreen
+        onToggleFullscreen = toggleFullscreen,
+        soundBoost = settings.soundBoost
     )
 
     // Offered only when the file actually holds more than one picture — the
@@ -123,6 +125,8 @@ fun MediaViewerScreen(
             showInfoDialog = showInfoDialog,
             onShowInfoDialogChange = { showInfoDialog = it },
             onVolumeChange = { mediaVolume = it },
+            soundBoost = settings.soundBoost,
+            onSoundBoostChange = soundBoostSetter(settingsRepo, { mediaVolume }) { mediaVolume = it },
             onSizeModeChange = onSizeModeChange,
             onToggleFullscreen = toggleFullscreen,
             thumbnails = thumbnails,

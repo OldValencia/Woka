@@ -8,7 +8,16 @@ package com.woka.core.data
 internal class PlaybackSettingsImpl(private val mutator: SettingsMutator) : PlaybackSettings {
 
     override fun setMediaVolume(volume: Float) =
-        mutator.update { it.copy(mediaVolume = volume.coerceIn(0f, 1f)) }
+        mutator.update { it.copy(mediaVolume = volume.coerceIn(0f, MAX_MEDIA_VOLUME)) }
+
+    // Off also lowers the level: a stored 240 % with the switch off is a level the
+    // slider can no longer reach, and therefore one nothing could turn down again.
+    override fun setSoundBoost(enabled: Boolean) = mutator.update {
+        it.copy(
+            soundBoost = enabled,
+            mediaVolume = if (enabled) it.mediaVolume else it.mediaVolume.coerceAtMost(1f)
+        )
+    }
 
     override fun setTrackPrefs(
         filePath: String,
