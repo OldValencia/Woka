@@ -46,6 +46,9 @@ fun EditDocument.markupFill(): Long = markupParams()[MarkupTool.Fill]
 /** How round that plate is, per cent of the type's size. */
 fun EditDocument.markupCorner(): Float = markupParams()[MarkupTool.Corner]
 
+/** The faces the next caption is typed in, empty for none — the twin of [markupFill]. */
+fun EditDocument.markupFaces(): Set<TextFace> = markupParams()[MarkupTool.Faces]
+
 /** The size type is placed at, in source pixels — the twin of [markupWidth] (ME-122). */
 fun EditDocument.markupTextSize(): Float = markupParams()[MarkupTool.TextSize]
 

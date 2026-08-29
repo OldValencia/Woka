@@ -4,6 +4,7 @@ import com.woka.core.ui.icons.Icons
 import com.woka.feature.editor.core.ChoiceParam
 import com.woka.feature.editor.core.ColorParam
 import com.woka.feature.editor.core.FloatParam
+import com.woka.feature.editor.core.ToggleSetParam
 
 /**
  * The pen — what the *next* shape is drawn with (ME-114).
@@ -112,3 +113,28 @@ internal val MarkupFillParam = ColorParam(
  */
 internal val MarkupCornerParam =
     FloatParam("corner", "Corner", 0f..100f, default = 25f, unit = "%")
+
+/**
+ * The four faces, as a **multi-select** chip row (ME-151, asked for 2026-08-26).
+ *
+ * The one spec here that is not a `ChoiceParam`, and the reason `ToggleSetParam` exists:
+ * a shape is one of five kinds, but a caption may be bold *and* underlined, so the row
+ * above lights one chip and this one lights any number.
+ *
+ * Labelled `Style` rather than `Faces` — the panel already says `Shape`, `Color`, `Fill`,
+ * `Corner` and `Text size`, and none of those is a term of art either.
+ */
+internal val MarkupFacesParam = ToggleSetParam(
+    key = "faces",
+    label = "Style",
+    options = TextFace.entries.toList(),
+    default = emptySet(),
+    iconOf = { face ->
+        when (face) {
+            TextFace.Bold -> Icons.Static.TextBold
+            TextFace.Italic -> Icons.Static.TextItalic
+            TextFace.Underline -> Icons.Static.TextUnderline
+            TextFace.Strikethrough -> Icons.Static.TextStrikethrough
+        }
+    }
+)

@@ -11,6 +11,7 @@ import com.woka.feature.editor.core.PadParam
 import com.woka.feature.editor.core.ParamPoint
 import com.woka.feature.editor.core.ParamSpec
 import com.woka.feature.editor.core.PreviewChoiceParam
+import com.woka.feature.editor.core.ToggleSetParam
 import kotlinx.serialization.Serializable
 
 /** Three options, so a choice can be moved off its default in both directions. */
@@ -34,7 +35,7 @@ data class FixturePayload(val label: String = "none", val count: Int = 0)
  *
  * Completeness is not maintained by eye: `ParamSpec` is sealed, and
  * `EditorFixtureTest` asserts that [all] covers exactly its subclasses. Adding a
- * ninth spec type to the schema therefore fails that test until the fixture — and
+ * tenth spec type to the schema therefore fails that test until the fixture — and
  * so every row renderer built against it — has one.
  */
 object FixtureParams {
@@ -47,6 +48,14 @@ object FixtureParams {
 
     val Choice =
         ChoiceParam("choice", "Choice", FixtureChoice.entries.toList(), FixtureChoice.First)
+
+    /**
+     * **Empty by default**, which is the case that separates "written" from "absent":
+     * `EditorFixtureTest` asserts `isSet` for every spec, and a default that encoded to
+     * nothing would pass that only by accident.
+     */
+    val Toggles =
+        ToggleSetParam("toggles", "Toggles", FixtureChoice.entries.toList(), emptySet())
 
     val Preview =
         PreviewChoiceParam("preview", FixtureChoice.entries.toList(), FixtureChoice.Second)
@@ -70,5 +79,5 @@ object FixtureParams {
 
     /** In the order an inspector would draw them: scalars, then the rest. */
     val all: List<ParamSpec<*>> =
-        listOf(Amount, Count, Flag, Choice, Preview, Tint, Press, Payload, Pad)
+        listOf(Amount, Count, Flag, Choice, Toggles, Preview, Tint, Press, Payload, Pad)
 }

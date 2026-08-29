@@ -7,6 +7,7 @@ import com.woka.feature.editor.tools.markup.MarkupKind
 import com.woka.feature.editor.tools.markup.MarkupPoint
 import com.woka.feature.editor.tools.markup.MarkupShape
 import com.woka.feature.editor.tools.markup.MarkupTool
+import com.woka.feature.editor.tools.markup.TextFace
 import com.woka.feature.editor.tools.markup.styled
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
@@ -38,7 +39,16 @@ class MarkupShapeTest {
         ),
         // `width` here is the font size, which is the one thing about this variant a
         // reader has to know and the reason it is asserted beside the other four.
-        MarkupShape.Text("e", 0xFFFF3B30L, 72f, MarkupPoint(40f, 90f), "Kondakov")
+        MarkupShape.Text(
+            id = "e",
+            color = 0xFFFF3B30L,
+            width = 72f,
+            at = MarkupPoint(40f, 90f),
+            text = "Kondakov",
+            // Two of the four at once, which is the whole of what a set buys over
+            // a choice and the part of it a round trip can lose (ME-151).
+            faces = setOf(TextFace.Bold, TextFace.Underline)
+        )
     )
 
     @Test
@@ -88,7 +98,7 @@ class MarkupShapeTest {
 
     /**
      * **The ME-146 wire contract.** A caption written by ME-122 or ME-145 carries neither
-     * `wrap` nor `fill`, and must go on meaning what it meant: one unwrapped line, no
+     * `wrap`, `fill` nor `faces`, and must go on meaning what it meant: one unwrapped line, no
      * plate. Asserted against a literal payload rather than a round trip, because a round
      * trip of the *current* class cannot show what an older document does.
      */
@@ -104,6 +114,7 @@ class MarkupShapeTest {
         val caption = assertIs<MarkupShape.Text>(decoded)
         assertEquals(0f, caption.wrap, "an old caption gained a wrap width")
         assertEquals(0L, caption.fill, "an old caption gained a plate")
+        assertEquals(emptySet(), caption.faces, "an old caption gained a face")
     }
 
     /**

@@ -83,36 +83,18 @@ object MarkupTool : CanvasTool {
         interaction = ToolInteraction.Canvas
     )
 
+    /**
+     * Type's four faces, any number of them at once (ME-151) — the one row here that is a
+     * `ToggleSetParam`, because a caption may be bold *and* underlined.
+     */
+    val Faces = MarkupFacesParam
+
     /** The pen first, then the payload the inspector deliberately draws nothing for. */
     override val params: List<ParamSpec<*>> =
-        listOf(Kind, Color, Fill, Corner, Width, TextSize, Shapes)
+        listOf(Kind, Color, Fill, Corner, Width, TextSize, Faces, Shapes)
 
-    /**
-     * **One size row at a time, and the plate only where there is one.** A stroke width
-     * does nothing to a caption, a font size does nothing to an arrow and a background
-     * does nothing to either, and a row that changes nothing when used is worse than a
-     * missing one — it reads as broken (reported by hand 2026-08-26).
-     *
-     * Keyed on the pen rather than on what happens to be selected, because the pen is what
-     * the panel is describing: `Kind` is the chooser directly above these rows, and a row
-     * that moved with the *selection* would appear and vanish under a click on the
-     * picture that the inspector gives no sign of. Restyling a caption therefore wants the
-     * text pen chosen, which is where a caption is drawn from anyway.
-     */
-    override fun rows(params: ParamSet): List<ParamSpec<*>> {
-        val typed = params[Kind] == MarkupKind.Text
-        // **`Corner` needs a plate to round, not merely a caption to sit under.** With no
-        // fill chosen, dragging it changes nothing that can be seen — the same rule the
-        // size rows follow, applied one level down: the row is keyed on the value above it
-        // rather than on the pen.
-        val plated = typed && (params[Fill] ushr 24) != 0L
-        val hidden = when {
-            !typed -> setOf(TextSize, Fill, Corner)
-            !plated -> setOf(Width, Corner)
-            else -> setOf(Width)
-        }
-        return this.params.filterNot { it in hidden }
-    }
+    /** Which of those are worth drawing for the pen currently chosen — `MarkupRows`. */
+    override fun rows(params: ParamSet): List<ParamSpec<*>> = markupRows(params)
 
     /**
      * **One stage for every shape**, drawn in list order.

@@ -79,7 +79,7 @@ class MarkupGestureTest {
     fun `a new shape carries the pen it was drawn with`() {
         val fresh = newMarkupShape(
             MarkupKind.Ellipse, 0xFF00FF00L, 9f, MarkupPoint(5f, 6f),
-            wrap = 0f, fill = 0L, corner = 25f
+            wrap = 0f, fill = 0L, corner = 25f, faces = emptySet()
         )
 
         val oval = assertIs<MarkupShape.Ellipse>(fresh)
@@ -99,7 +99,7 @@ class MarkupGestureTest {
     fun `a freehand stroke accumulates and thins`() {
         val start = newMarkupShape(
             MarkupKind.Freehand, 0L, 4f, MarkupPoint(0f, 0f),
-            wrap = 0f, fill = 0L, corner = 25f
+            wrap = 0f, fill = 0L, corner = 25f, faces = emptySet()
         )
 
         val far = assertIs<MarkupShape.Freehand>(start.extendedTo(MarkupPoint(10f, 0f)))

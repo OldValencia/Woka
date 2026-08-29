@@ -18,6 +18,7 @@ import com.woka.feature.editor.core.PadParam
 import com.woka.feature.editor.core.ParamSet
 import com.woka.feature.editor.core.ParamSpec
 import com.woka.feature.editor.core.PreviewChoiceParam
+import com.woka.feature.editor.core.ToggleSetParam
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntSize
 
@@ -72,7 +73,7 @@ internal fun ParamRows(
 /**
  * One spec, one renderer.
  *
- * The `when` is **exhaustive with no `else`**, so a ninth `ParamSpec` subtype stops
+ * The `when` is **exhaustive with no `else`**, so a tenth `ParamSpec` subtype stops
  * this file compiling until it has a row. That is the same guard `EditorFixtureTest`
  * applies from the other side, and between them a spec type cannot reach a document
  * without a way to edit it.
@@ -92,6 +93,10 @@ internal fun ParamRow(
         is ChoiceParam<*> -> ChoiceParamRow(spec, params, writer)
         is ColorParam -> ColorParamRow(spec, params, writer)
         is ActionParam -> ActionParamRow(spec, writer)
+
+        // The same chips as a choice row above four options, lighting any number of them
+        // (ME-147) — a set is what a choice cannot be, not a wider kind of one.
+        is ToggleSetParam<*> -> ToggleSetParamRow(spec, params, writer)
 
         // Two numbers from one gesture (ME-141) — which is why it is one spec.
         is PadParam -> PadParamRow(spec, params, writer)

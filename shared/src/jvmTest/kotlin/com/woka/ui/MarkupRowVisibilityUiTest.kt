@@ -90,6 +90,26 @@ class MarkupRowVisibilityUiTest {
         }
     }
 
+    /**
+     * The faces row follows the plate row exactly (ME-151): a weight, a slant and a line
+     * are all things only type has, so the four stroked pens must not offer them.
+     */
+    @Test
+    fun `the faces row is drawn for the text pen alone`() {
+        onEditor(listOf(MarkupTool)) { harness ->
+            onUi {
+                openMarkupTool(harness)
+                onNodeWithTag("param-${MarkupTool.Faces.key}").assertDoesNotExist()
+
+                chooseMarkupPen("Text")
+                onNodeWithTag("param-${MarkupTool.Faces.key}").assertExists()
+
+                chooseMarkupPen("Rectangle")
+                onNodeWithTag("param-${MarkupTool.Faces.key}").assertDoesNotExist()
+            }
+        }
+    }
+
     private fun ComposeUiTest.assertOnlyRow(shown: String, hidden: String) {
         onNodeWithTag("param-$shown").assertExists()
         onNodeWithTag("param-$hidden").assertDoesNotExist()

@@ -24,7 +24,6 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.IntOffset
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -83,10 +82,14 @@ internal fun MarkupTextField(
         // line — so the caret walked off to the right while the glyphs went down a line.
         // `Enter` is still consumed below, so this can never insert a newline.
         singleLine = false,
-        textStyle = TextStyle(
-            // Transparent: the canvas underneath is drawing this very string.
-            color = Color.Transparent,
-            fontSize = with(density) { (edit.shape.width * scale).toSp() }
+        // **The caption's own style, at the canvas's scale** (ME-151). Transparent,
+        // because the canvas underneath is drawing this very string — but everything else
+        // has to match it: a bold advance is wider than a regular one, so a field measured
+        // in the default face puts the caret where the glyphs are not.
+        textStyle = markupTextStyle(
+            shape = edit.shape,
+            fontSize = with(density) { (edit.shape.width * scale).toSp() },
+            color = Color.Transparent
         ),
         // The caret takes the caption's own colour, so it is legible for the same reason
         // the text is: the user picked it against this photograph.

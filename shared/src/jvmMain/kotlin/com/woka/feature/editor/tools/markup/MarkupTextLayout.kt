@@ -1,12 +1,17 @@
 package com.woka.feature.editor.tools.markup
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.createFontFamilyResolver
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 
@@ -75,7 +80,45 @@ internal fun textLayoutOf(shape: MarkupShape.Text): TextLayoutResult? {
     }
     return markupTextMeasurer.measure(
         text = shape.text,
-        style = TextStyle(fontSize = shape.width.sp),
+        style = markupTextStyle(shape, shape.width.sp),
         constraints = constraints
     )
+}
+
+/**
+ * How [shape] is styled, at [fontSize] and in [color] (ME-151).
+ *
+ * **One function, two callers, and that is the point.** The fold measures a caption at its
+ * source size to draw it; `MarkupTextField` measures the *same* caption at the canvas
+ * scale to put a caret on it. A bold advance is wider than a regular one, so two spellings
+ * of "what this caption looks like" put the caret somewhere the glyphs are not — the same
+ * class of defect ME-146 fixed when a wrapped line left a single-line field behind.
+ *
+ * [fontSize] is the caller's precisely because those two numbers differ; everything else
+ * comes off the shape.
+ */
+internal fun markupTextStyle(
+    shape: MarkupShape.Text,
+    fontSize: TextUnit,
+    color: Color = Color.Unspecified
+): TextStyle = TextStyle(
+    color = color,
+    fontSize = fontSize,
+    // Null, not `FontWeight.Normal`: the style is measured against the resolver's own
+    // default face, and naming a weight would pick one for a font that may not have it.
+    fontWeight = if (TextFace.Bold in shape.faces) FontWeight.Bold else null,
+    fontStyle = if (TextFace.Italic in shape.faces) FontStyle.Italic else null,
+    textDecoration = decorationOf(shape.faces)
+)
+
+/**
+ * The two line decorations as one value — `combine`, because both may be on at once and
+ * `TextStyle` has one slot for them. Null for neither, which leaves the slot untouched.
+ */
+private fun decorationOf(faces: Set<TextFace>): TextDecoration? {
+    val lines = buildList {
+        if (TextFace.Underline in faces) add(TextDecoration.Underline)
+        if (TextFace.Strikethrough in faces) add(TextDecoration.LineThrough)
+    }
+    return if (lines.isEmpty()) null else TextDecoration.combine(lines)
 }

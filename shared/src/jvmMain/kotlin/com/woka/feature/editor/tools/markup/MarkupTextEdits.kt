@@ -53,7 +53,8 @@ internal fun EditorToolScope.textEditAt(
         // second click would overwrite a wrap a corner drag had scaled.
         wrap = wrapAt(sourceSize.width, at.x),
         fill = document.markupFill(),
-        corner = document.markupCorner()
+        corner = document.markupCorner(),
+        faces = document.markupFaces()
     )
 }
 

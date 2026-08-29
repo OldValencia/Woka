@@ -64,10 +64,12 @@ private fun MarkupShape.handleAt(x: Float, y: Float, grab: Float): Int? = handle
  * **Not created on the press** (see `MarkupOverlay`): it is minted on the first movement,
  * so a stray click on empty picture leaves nothing behind.
  *
- * [wrap] and [fill] mean nothing to the four stroked kinds and are read for all five
- * anyway (ME-146). The alternative — defaulting them here — would let this factory and
- * `textEditAt` mint two different captions, which is precisely the drift `wrapAt` exists
- * to prevent.
+ * [wrap], [fill], [corner] and [faces] mean nothing to the four stroked kinds and are read
+ * for all five anyway (ME-146, ME-151). The alternative — defaulting them here — would let
+ * this factory and `textEditAt` mint two different captions, which is precisely the drift
+ * `wrapAt` exists to prevent. Eight parameters of which four reach one branch is the shape
+ * a `TextPen` value would fix, and the point at which it stops being deferrable is the
+ * next field a caption gains.
  */
 internal fun newMarkupShape(
     kind: MarkupKind,
@@ -76,7 +78,8 @@ internal fun newMarkupShape(
     at: MarkupPoint,
     wrap: Float,
     fill: Long,
-    corner: Float
+    corner: Float,
+    faces: Set<TextFace>
 ): MarkupShape {
     val id = newShapeId()
     return when (kind) {
@@ -86,8 +89,13 @@ internal fun newMarkupShape(
         MarkupKind.Freehand -> Freehand(id, color, width, listOf(at))
         // Empty, and [width] is the type size rather than a stroke: the caller reads the
         // row that means something for the kind it asked for (ME-122).
-        MarkupKind.Text ->
-            Text(id, color, width, at, "", wrap = wrap, fill = fill, corner = corner)
+        MarkupKind.Text -> Text(
+            id, color, width, at, "",
+            wrap = wrap,
+            fill = fill,
+            corner = corner,
+            faces = faces
+        )
     }
 }
 

@@ -41,7 +41,8 @@ internal fun EditorToolScope.draw(drawn: String?, from: MarkupPoint, at: MarkupP
         at = from,
         wrap = wrapAt(sourceSize.width, from.x),
         fill = document.markupFill(),
-        corner = document.markupCorner()
+        corner = document.markupCorner(),
+        faces = document.markupFaces()
     ).extendedTo(at)
     preview(document.markupOpWith(document.markupShapes() + fresh))
     // Selected as it is drawn, so its handles are there the moment it is released.

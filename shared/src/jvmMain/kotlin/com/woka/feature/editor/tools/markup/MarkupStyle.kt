@@ -42,6 +42,35 @@ internal fun MarkupShape.cornered(corner: Float): MarkupShape =
     if (this is MarkupShape.Text) copy(corner = corner) else this
 
 /**
+ * The caption's faces, replaced whole — the third twin of [filled] and [cornered]
+ * (ME-151).
+ *
+ * **Whole rather than one face toggled here**, because the row above it already holds the
+ * answer: `ToggleSetParam`'s value *is* the set the user has lit, so this applies it and
+ * has no opinion about which chip moved. Toggling inside the model would mean the panel
+ * and the shape each keeping their own idea of what is on.
+ */
+internal fun MarkupShape.faced(faces: Set<TextFace>): MarkupShape =
+    if (this is MarkupShape.Text) copy(faces = faces) else this
+
+/**
+ * The four faces type can wear at once (ME-151, asked for 2026-08-26).
+ *
+ * **A set on the shape, not four booleans.** They are independent — a caption may be bold
+ * *and* underlined — which is what rules out `MarkupKind`'s `ChoiceParam` and what
+ * `ToggleSetParam` was built for (ME-147). One field then follows from that: the row's
+ * value is already a `Set<TextFace>`, so four booleans would be converted to and from one
+ * at every boundary — the shape, the pen, the restyle and the factory — and each
+ * conversion is a place the two spellings can disagree. One field is also one default,
+ * one wire key and one `copy`.
+ *
+ * `Underline` and `Strikethrough` are one `TextDecoration` by the time they reach a
+ * `TextStyle` (`markupTextStyle`), but they are two independent chips here, because that
+ * is what they are to the person pressing them.
+ */
+enum class TextFace { Bold, Italic, Underline, Strikethrough }
+
+/**
  * What the pen draws next — the inspector's chooser, **not** a field of a shape.
  *
  * A shape's type is its class, so nothing needs to store this alongside it; the enum

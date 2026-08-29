@@ -75,7 +75,13 @@ object Icons {
         val ShapeEllipse = Res.drawable.circle
         val ShapeFreehand = Res.drawable.scribble
         val ShapeText = Res.drawable.textformat
-        
+
+        // The four faces type can wear at once — the chip row beside `textformat` (ME-151)
+        val TextBold = Res.drawable.bold
+        val TextItalic = Res.drawable.italic
+        val TextUnderline = Res.drawable.underline
+        val TextStrikethrough = Res.drawable.strikethrough
+
         val Undo = Res.drawable.undo
         val Redo = Res.drawable.redo
         

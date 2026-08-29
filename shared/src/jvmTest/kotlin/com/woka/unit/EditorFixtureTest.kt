@@ -11,6 +11,7 @@ import com.woka.feature.editor.core.PadParam
 import com.woka.feature.editor.core.ParamPoint
 import com.woka.feature.editor.core.ParamSpec
 import com.woka.feature.editor.core.PreviewChoiceParam
+import com.woka.feature.editor.core.ToggleSetParam
 import com.woka.feature.editor.core.ToolCardinality
 import com.woka.feature.editor.core.ToolInteraction
 import com.woka.support.FixtureChoice
@@ -23,7 +24,7 @@ import kotlin.test.assertTrue
 
 /**
  * The fixture tool's own contract (ME-011): that it really does declare one of
- * every spec type, that all eight survive a document round trip, and that its six
+ * every spec type, that all ten survive a document round trip, and that its six
  * variants come from constructor parameters rather than from subclasses.
  *
  * What the shell will be *driven* through lives in `EditorHarnessTest`.
@@ -45,6 +46,7 @@ class EditorFixtureTest {
             .with(FixtureParams.Count, 7)
             .with(FixtureParams.Flag, true)
             .with(FixtureParams.Choice, FixtureChoice.Third)
+            .with(FixtureParams.Toggles, setOf(FixtureChoice.Third, FixtureChoice.First))
             .with(FixtureParams.Preview, FixtureChoice.First)
             .with(FixtureParams.Tint, 0xFF123456L)
             .with(FixtureParams.Press, true)
@@ -55,6 +57,11 @@ class EditorFixtureTest {
         assertEquals(7, set[FixtureParams.Count])
         assertTrue(set[FixtureParams.Flag])
         assertEquals(FixtureChoice.Third, set[FixtureParams.Choice])
+        // Two at once, which is the whole of what this spec claims a choice cannot do.
+        assertEquals(
+            setOf(FixtureChoice.First, FixtureChoice.Third),
+            set[FixtureParams.Toggles]
+        )
         assertEquals(FixtureChoice.First, set[FixtureParams.Preview])
         assertEquals(0xFF123456L, set[FixtureParams.Tint])
         assertTrue(set[FixtureParams.Press])
@@ -99,19 +106,23 @@ class EditorFixtureTest {
  *
  * Reflection would read this off the sealed hierarchy, but `kotlin-reflect` is not
  * on the test classpath and adding it to guard one assertion is the wrong trade.
- * The `when` in [kindOf] is exhaustive, so a ninth `ParamSpec` subtype stops this
+ * The `when` in [kindOf] is exhaustive, so a tenth `ParamSpec` subtype stops this
  * file **compiling** — a harder guarantee than a failing test. Adding the branch
  * then forces a name in here, and that is what fails until the fixture declares
  * one, and so until every row renderer built against the fixture has one too.
  */
 private val EVERY_SPEC_KIND =
-    setOf("float", "int", "bool", "choice", "previewChoice", "color", "action", "object", "pad")
+    setOf(
+        "float", "int", "bool", "choice", "toggleSet", "previewChoice", "color", "action",
+        "object", "pad"
+    )
 
 private fun kindOf(spec: ParamSpec<*>): String = when (spec) {
     is FloatParam -> "float"
     is IntParam -> "int"
     is BoolParam -> "bool"
     is ChoiceParam<*> -> "choice"
+    is ToggleSetParam<*> -> "toggleSet"
     is PreviewChoiceParam<*> -> "previewChoice"
     is ColorParam -> "color"
     is ActionParam -> "action"

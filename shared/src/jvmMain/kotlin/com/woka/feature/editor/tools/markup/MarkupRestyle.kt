@@ -19,10 +19,10 @@ import com.woka.feature.editor.core.ParamSpec
  * depending on whether anything happened to be selected.
  *
  * Only the rows that **mean something for the shape selected**: `Width` for the four
- * stroked ones, `Text size` for a caption (ME-122), and `Fill` and `Corner` for a caption
- * alone (ME-146). The first two write the same field — a shape carries one number and a
- * `Text` calls it a font size — so the routing is which spec is allowed to reach it, not
- * which field it lands in.
+ * stroked ones, `Text size` for a caption (ME-122), and `Fill`, `Corner` (ME-146) and
+ * `Style` (ME-151) for a caption alone. The first two write the same field — a shape
+ * carries one number and a `Text` calls it a font size — so the routing is which spec is
+ * allowed to reach it, not which field it lands in.
  *
  * `Kind` is not among them: a drawn rectangle cannot become an arrow, because the two are
  * different classes carrying different geometry, and "convert this shape" is a feature
@@ -51,6 +51,9 @@ internal fun restyleSelected(
             ?: return null
         MarkupCornerParam -> selected.takeIf { it is MarkupShape.Text }
             ?.cornered(params[MarkupCornerParam])
+            ?: return null
+        MarkupFacesParam -> selected.takeIf { it is MarkupShape.Text }
+            ?.faced(params[MarkupFacesParam])
             ?: return null
         else -> return null
     }

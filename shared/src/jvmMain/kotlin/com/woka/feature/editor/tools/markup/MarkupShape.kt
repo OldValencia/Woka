@@ -138,6 +138,12 @@ sealed interface MarkupShape {
          * Its default is the constant the plate shipped with earlier the same day, which
          * is why a caption written between the two looks identical either way.
          */
-        val corner: Float = 25f
+        val corner: Float = 25f,
+        /**
+         * Bold, italic, underline, strikethrough — the ones that are on (ME-151). **Empty
+         * is the wire contract**, as [wrap] and [fill] are zero; one set rather than four
+         * fields, for the reason spelled beside `faced`.
+         */
+        val faces: Set<TextFace> = emptySet()
     ) : MarkupShape
 }

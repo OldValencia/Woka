@@ -43,6 +43,8 @@ class MarkupTextStageTest {
                 MarkupTool.Corner,
                 MarkupTool.Width,
                 MarkupTool.TextSize,
+                // The faces after the size they modify (ME-151).
+                MarkupTool.Faces,
                 MarkupTool.Shapes
             ),
             MarkupTool.params
