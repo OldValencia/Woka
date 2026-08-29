@@ -17,6 +17,7 @@ import com.woka.support.onEditor
 import com.woka.support.onUi
 import com.woka.support.openCaret
 import com.woka.support.openMarkupTool
+import com.woka.support.toggleControl
 import com.woka.support.typeIntoCaret
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -55,8 +56,10 @@ class MarkupFacesUiTest {
                 chooseMarkupPen("Text")
                 // **Nothing is selected here**, so this can only move the pen — which
                 // makes the caption below the factory's work and nothing else's.
+                toggleControl(MarkupTool.Faces.key)
                 onNodeWithTag(chipOf(TextFace.Bold)).performClick()
                 waitForIdle()
+                toggleControl(MarkupTool.Faces.key)
 
                 clickPicture(Offset(60f, 60f))
                 typeIntoCaret("Woka")
@@ -73,10 +76,12 @@ class MarkupFacesUiTest {
             onUi {
                 openCaret(harness)
                 typeIntoCaret("Woka")
+                toggleControl(MarkupTool.Faces.key)
                 onNodeWithTag(chipOf(TextFace.Bold)).performClick()
                 waitForIdle()
                 onNodeWithTag(chipOf(TextFace.Italic)).performClick()
                 waitForIdle()
+                toggleControl(MarkupTool.Faces.key)
                 finishCaret()
             }
 
@@ -91,12 +96,14 @@ class MarkupFacesUiTest {
             onUi {
                 openCaret(harness)
                 typeIntoCaret("Woka")
+                toggleControl(MarkupTool.Faces.key)
                 onNodeWithTag(chipOf(TextFace.Underline)).performClick()
                 waitForIdle()
                 onNodeWithTag(chipOf(TextFace.Strikethrough)).performClick()
                 waitForIdle()
                 onNodeWithTag(chipOf(TextFace.Underline)).performClick()
                 waitForIdle()
+                toggleControl(MarkupTool.Faces.key)
                 finishCaret()
             }
 

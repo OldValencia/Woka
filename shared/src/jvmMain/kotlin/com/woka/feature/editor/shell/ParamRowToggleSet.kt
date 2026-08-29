@@ -27,13 +27,16 @@ internal fun <E : Enum<E>> ToggleSetParamRow(
     writer: ParamWriter
 ) {
     ParamRowFrame(spec.label) {
-        ToggleSetControl(spec, params, writer, Modifier.weight(1f))
+        ToggleSetControl(spec, params, writer, Modifier.weight(1f).testTag("param-${spec.key}"))
     }
 }
 
 /**
- * The chips alone, so a paired line can put them beside another control under the tool's
- * own second label (ME-153).
+ * The chips alone, so the compact `[Aa▾]` button can put them in its drop-up (ME-155).
+ *
+ * **The tag comes from the caller**, and that is not tidiness: the compact button already
+ * carries `param-<key>`, so tagging the chips with it here made two nodes answer to one
+ * name and every test reaching for the button failed on the ambiguity.
  */
 @Composable
 internal fun <E : Enum<E>> ToggleSetControl(
@@ -43,7 +46,7 @@ internal fun <E : Enum<E>> ToggleSetControl(
     modifier: Modifier
 ) {
     val on = params[spec]
-    Box(modifier = modifier.testTag("param-${spec.key}")) {
+    Box(modifier = modifier) {
         ParamChipRow(
             spec.options.map { option ->
                 ParamChip(

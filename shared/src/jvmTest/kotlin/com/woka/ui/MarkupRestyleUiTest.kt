@@ -14,6 +14,7 @@ import com.woka.support.FixtureEngine
 import com.woka.support.MainDispatcherRule
 import com.woka.support.onEditor
 import com.woka.support.onUi
+import com.woka.support.toggleControl
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Rule
@@ -65,6 +66,8 @@ class MarkupRestyleUiTest {
                 waitForIdle()
                 val before = harness.session.document.value.markupShapes().single()
 
+                // The palette is inside the swatch button since ME-155.
+                toggleControl(MarkupTool.Color.key)
                 onNodeWithTag("param-color-swatch-$blueSwatch").performClick()
                 waitForIdle()
 
@@ -119,6 +122,7 @@ class MarkupRestyleUiTest {
                 }
                 waitForIdle()
 
+                toggleControl(MarkupTool.Color.key)
                 onNodeWithTag("param-color-swatch-$blueSwatch").performClick()
                 waitForIdle()
 

@@ -114,3 +114,22 @@ private val NONE_SLASH = arrayOf(
     0.54f to Color.White.copy(alpha = 0.12f),
     1f to Color.White.copy(alpha = 0.12f)
 )
+
+/**
+ * What colour the letter on a plate is drawn in.
+ *
+ * Measured rather than fixed: a black `A` vanishes on the black swatch and a white one on
+ * the yellow. `0L` is the plate that is not there, and its slash is drawn light, so the
+ * letter goes dark over it.
+ */
+internal fun inkOn(argb: Long): Color {
+    if ((argb ushr 24) == 0L) return Color.Black.copy(alpha = 0.55f)
+    val r = ((argb shr 16) and 0xFF) / 255f
+    val g = ((argb shr 8) and 0xFF) / 255f
+    val b = (argb and 0xFF) / 255f
+    val luminance = 0.299f * r + 0.587f * g + 0.114f * b
+    return if (luminance > 0.55f) Color.Black.copy(alpha = 0.8f) else Color.White
+}
+
+/** The one letter that reads at 10 sp and says "type sits on this". */
+internal const val PLATE_SAMPLE = "A"

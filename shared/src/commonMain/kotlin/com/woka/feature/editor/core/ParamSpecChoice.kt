@@ -59,11 +59,22 @@ data class ColorParam(
     override val key: String,
     val label: String,
     val swatches: List<Long>,
-    override val default: Long
+    override val default: Long,
+    /**
+     * What the compact button's swatch is shaped like (ME-155).
+     *
+     * Markup's bar carries two colour buttons side by side — the ink and the plate — and
+     * two identical circles beside each other is a panel that has to be learned rather
+     * than read ("where is fill?", by hand 2026-08-29). An area is drawn as an area.
+     */
+    val swatchShape: ParamSwatchShape = ParamSwatchShape.Dot
 ) : ParamSpec<Long> {
     override fun encode(value: Long) = ColorValue(value)
     override fun decode(value: ParamValue): Long? = (value as? ColorValue)?.argb
 }
+
+/** Ink is a dot; something a shape is filled with is a plate. */
+enum class ParamSwatchShape { Dot, Plate }
 
 /**
  * An icon button — rotate 90°, flip. Always `Instant`: there is nothing to drag,

@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import com.woka.feature.editor.core.ActionParam
 import com.woka.feature.editor.core.BoolParam
+import com.woka.feature.editor.core.CanvasTool
 import com.woka.feature.editor.core.ChoiceParam
 import com.woka.feature.editor.core.ColorParam
 import com.woka.feature.editor.core.EditDocument
@@ -54,20 +55,38 @@ internal fun ParamRows(
      */
     thumbnail: @Composable (EditDocument, Modifier) -> Unit = { _, _ -> }
 ) {
-    val params = paramsOf(document, tool)
+    val stored = paramsOf(document, tool)
+    // **What the panel shows follows the selection; what it writes still starts from the
+    // document** (`CanvasTool.displayed`, reported by hand 2026-08-29). The two are not the
+    // same question: a control reports the shape under the cursor, and every control sends
+    // an absolute value, so reporting the pen instead would make the next click write from
+    // a number nobody was looking at.
+    val params = (tool as? CanvasTool)?.displayed(stored, selectedId()) ?: stored
     val writer = ParamWriter(session, tool, frame, selectedId)
     // What this tool wants shown for the values it currently holds — all of them, for
     // every tool but Markup.
-    val visible = tool.rows(params)
-    // Which of those the tool wants on one line — all of them alone, for every tool but
-    // Markup (ME-153).
-    val declared = tool.lines(visible)
+    val shown = tool.rows(params)
+    // A spec that rides inside another spec's popover gets **no control of its own**
+    // (ME-155). `rows` still names it, and must: it is still written, still folded and
+    // still saved — only the place it is reached from has moved.
+    val ridden = shown.flatMap { tool.folded(it, shown) }.toSet()
+    val visible = shown.filterNot { it in ridden }
+    // Which of those the tool draws as one compact bar — none, for every tool but Markup.
+    val compact = tool.lines(visible)
     Column(
         verticalArrangement = Arrangement.spacedBy(EditorTokens.Inspector.rowGap)
     ) {
-        groupRuns(visible, declared).forEach { run ->
+        groupRuns(visible, compact).forEach { run ->
             key(run.first().key) {
-                ParamRun(run, params, writer, tool.manifest.id, thumbnail, run in declared)
+                ParamRun(
+                    run = run,
+                    params = params,
+                    writer = writer,
+                    toolId = tool.manifest.id,
+                    thumbnail = thumbnail,
+                    compact = run in compact,
+                    folded = { spec -> tool.folded(spec, shown) }
+                )
             }
         }
     }

@@ -63,6 +63,23 @@ interface CanvasTool : EditorTool {
      */
     fun restyled(spec: ParamSpec<*>, params: ParamSet, selectedId: String?): ParamSet? = null
 
+    /**
+     * What the inspector should **show** while something is selected — the read-side twin
+     * of [restyled] (reported by hand 2026-08-29).
+     *
+     * [restyled] made a control write to the selection and nothing made it *read* from it,
+     * so the panel went on reporting the pen: a yellow arrow selected after the pen had
+     * been set to blue showed blue, and a bold caption reselected after `Bold` was cleared
+     * showed the chip unlit. Every control passes an absolute value, so a stale reading is
+     * also a stale write waiting to happen — clicking the lit chip of a shape whose real
+     * face is off would have turned it *on*.
+     *
+     * **Display only.** The document is untouched and no history entry exists: selecting a
+     * shape records nothing (§3.1), and this is what keeps that true while still letting
+     * the panel describe what is under the cursor.
+     */
+    fun displayed(params: ParamSet, selectedId: String?): ParamSet = params
+
     @Composable
     fun Overlay(scope: EditorToolScope)
 }

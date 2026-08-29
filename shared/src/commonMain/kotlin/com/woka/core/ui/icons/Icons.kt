@@ -74,9 +74,12 @@ object Icons {
         val ShapeRectangle = Res.drawable.rectangle
         val ShapeEllipse = Res.drawable.circle
         val ShapeFreehand = Res.drawable.scribble
-        val ShapeText = Res.drawable.textformat
+        // The pen that draws a caption is a **box with a letter in it**, not the `Aa` it
+        // used to be (ME-155): `Aa` is now the button that sets the caption's faces, and
+        // two adjacent controls drawing the same glyph read as one control.
+        val ShapeText = Res.drawable.character_textbox
 
-        // The four faces type can wear at once — the chip row beside `textformat` (ME-151)
+        // The four faces type can wear at once — the chip row beside `character_textbox`
         val TextBold = Res.drawable.bold
         val TextItalic = Res.drawable.italic
         val TextUnderline = Res.drawable.underline

@@ -52,6 +52,16 @@ internal fun EditorInspector(
      * space — so a card sizes to its content and only stops here.
      */
     maxWidth: Dp = EditorTokens.Inspector.maxWidth,
+    /**
+     * How much of its own plate this card paints (ME-155).
+     *
+     * 1 when it stands alone. While a control has a panel open beside it, `GooeyPair`
+     * draws **both** plates through one filter so the two merge, and this fades to 0 over
+     * the same spring — the same colour and the same corner, so the only thing the
+     * crossfade shows is the border going, which is what "these are one object now" looks
+     * like.
+     */
+    plateAlpha: Float = 1f,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
@@ -59,10 +69,10 @@ internal fun EditorInspector(
         modifier = modifier
             .widthIn(min = EditorTokens.Inspector.minWidth, max = maxWidth)
             .clip(RoundedCornerShape(Theme.viewer.cornerRadius))
-            .background(Theme.viewer.popoverScrim)
+            .background(Theme.viewer.popoverScrim.copy(alpha = Theme.viewer.popoverScrim.alpha * plateAlpha))
             .border(
                 1.dp,
-                Theme.viewer.onScrimBorder,
+                Theme.viewer.onScrimBorder.copy(alpha = Theme.viewer.onScrimBorder.alpha * plateAlpha),
                 RoundedCornerShape(Theme.viewer.cornerRadius)
             )
             .padding(EditorTokens.Inspector.padding)
@@ -100,7 +110,13 @@ private fun InspectorFootnote(text: String) {
 @Composable
 private fun InspectorHeader(title: String) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+        // **Not `fillMaxWidth`** (measured 2026-08-29). Inside a `widthIn` column that
+        // fills the *ceiling*, so every card in the editor measured 420 dp whatever was
+        // in it — which is why "the card sizes to its content and only stops at the
+        // maximum" was true of the code and false on screen. With the controls collapsed
+        // to buttons (ME-155) a 420 dp card around 210 dp of content is most of the
+        // panel, and it was the first thing reported.
+        modifier = Modifier.padding(bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {

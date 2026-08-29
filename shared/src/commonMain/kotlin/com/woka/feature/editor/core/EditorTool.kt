@@ -56,20 +56,30 @@ interface EditorTool {
     val wideInspector: Boolean get() = false
 
     /**
-     * Which of the visible [rows] this tool wants drawn on **one line** — each inner list
-     * a line, defaulted to one spec per line (ME-153).
+     * Which of the visible [rows] this tool draws as a **compact line** — labelless
+     * controls side by side, each collapsed into a button that opens its own popover
+     * (ME-155). Empty for every tool but Markup, and whatever is not claimed here falls
+     * to the shell's own grouping untouched.
      *
-     * A tool declares this rather than the shell inferring it, for the reason
-     * `groupRuns` gives about the rules it already has: "a colour row and a slider share
-     * a line" is true of Markup's plate and its corner and false everywhere else, and a
-     * shell guessing per type would pair rows no tool asked to pair.
+     * Re-pointed from ME-153's "two controls share a line", which was refused on screen:
+     * buttons beside a slider do not work, so the answer is to shorten the controls
+     * rather than to merge the rows.
      *
-     * **A function of the rows, not a static list.** Markup's rows already come and go
-     * with the pen, so a fixed pairing would leave a widowed slider on a line whose left
-     * half is hidden. Whatever it returns must be exactly the specs it was handed —
-     * dropping one would hide a control the tool has just said it wants.
+     * **A function of the rows, not a static list.** Markup's rows come and go with the
+     * pen, so a fixed line would name a control that is not being shown.
      */
-    fun lines(rows: List<ParamSpec<*>>): List<List<ParamSpec<*>>> = rows.map(::listOf)
+    fun lines(rows: List<ParamSpec<*>>): List<List<ParamSpec<*>>> = emptyList()
+
+    /**
+     * Specs that ride inside [spec]'s own popover instead of taking a control of their
+     * own — `Corner` inside `Fill`, and nothing else today (ME-155).
+     *
+     * The plate's roundness has no meaning without the plate, so it belongs where the
+     * plate is set. The shell drops whatever is named here from the line it was going to
+     * draw, which is why this is asked of the tool rather than inferred: only the tool
+     * knows that two of its specs are one idea.
+     */
+    fun folded(spec: ParamSpec<*>, rows: List<ParamSpec<*>>): List<ParamSpec<*>> = emptyList()
 
     /**
      * A chance to rewrite this tool's own parameters when one of them is set, knowing

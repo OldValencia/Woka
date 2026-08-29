@@ -91,9 +91,33 @@ fun ComposeUiTest.finishCaret(at: Offset = Offset(400f, 300f)) {
     clickPicture(at)
 }
 
-/** A tap on the middle of a parameter's track, which is how a slider is moved by hand. */
+/**
+ * Opens — or closes — a compact control's popover: one press on the button that reports
+ * its value (ME-155). Colours and face sets are reached this way.
+ */
+@OptIn(ExperimentalTestApi::class)
+fun ComposeUiTest.toggleControl(key: String) {
+    onNodeWithTag("param-$key").performClick()
+    waitForIdle()
+}
+
+/**
+ * The same, for a level: its button is the number in the middle of `− │ 64px │ +`, and
+ * the slider is inside what that opens.
+ */
+@OptIn(ExperimentalTestApi::class)
+fun ComposeUiTest.openValue(key: String) {
+    onNodeWithTag("param-$key-value").performClick()
+    waitForIdle()
+}
+
+/**
+ * A tap on the middle of a parameter's track, which is how a slider is moved by hand —
+ * **inside the popover its frame opens** since ME-155, rather than on the panel itself.
+ */
 @OptIn(ExperimentalTestApi::class)
 fun ComposeUiTest.tapSizeRow(spec: String) {
-    onNodeWithTag("param-$spec").performClick()
+    openValue(spec)
+    onNodeWithTag("param-$spec-slider").performClick()
     waitForIdle()
 }

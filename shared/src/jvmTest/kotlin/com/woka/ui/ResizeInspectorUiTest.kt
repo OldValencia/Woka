@@ -86,7 +86,12 @@ class ResizeInspectorUiTest {
 
                 // By the readout's own tag: the `25%` preset chip carries the same text,
                 // and what is being asserted is the *value*, not that the word appears.
-                onNodeWithTag("param-scale-readout").assertTextEquals("25%")
+                //
+                // **Unmerged** since ME-155: the number sits inside the button that opens
+                // the value's popover, and a clickable node merges its descendants — so
+                // the tag exists only in the tree that has not been merged.
+                onNodeWithTag("param-scale-readout", useUnmergedTree = true)
+                    .assertTextEquals("25%")
             }
         }
     }

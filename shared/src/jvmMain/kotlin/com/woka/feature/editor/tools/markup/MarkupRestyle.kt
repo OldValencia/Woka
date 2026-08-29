@@ -65,6 +65,39 @@ internal fun restyleSelected(
     )
 }
 
+/**
+ * The pen, overridden by whatever is selected — what the panel reports (reported by hand
+ * 2026-08-29).
+ *
+ * **Exactly the specs [restyleSelected] can write, and no others.** A control that shows
+ * one value and writes another is worse than one that shows the pen: `Faces` sends the
+ * whole set it believes is lit, so a caption whose `Bold` had been cleared elsewhere would
+ * have had it turned back *on* by a click meant to clear it.
+ *
+ * `Kind` is deliberately not among them. It is the chooser the rows are keyed on
+ * (`markupRows`), so following the selection would make the panel change shape under a
+ * click on the picture — the thing that rule exists to prevent.
+ *
+ * Nothing is written. An id naming a shape the document no longer holds — an id outlives
+ * the undo that took its shape away — falls back to the pen, like no selection at all.
+ */
+internal fun displaySelected(params: ParamSet, selectedId: String?): ParamSet {
+    if (selectedId == null) return params
+    val selected = params[MarkupTool.Shapes].firstOrNull { it.id == selectedId } ?: return params
+
+    val pen = params
+        .with(MarkupColorParam, selected.color)
+        .with(sizeParamFor(selected), selected.width)
+    return if (selected !is MarkupShape.Text) {
+        pen
+    } else {
+        pen
+            .with(MarkupFillParam, selected.fill)
+            .with(MarkupCornerParam, selected.corner)
+            .with(MarkupFacesParam, selected.faces)
+    }
+}
+
 /** Which of the two size rows this shape's `width` is spelled by. */
 private fun sizeParamFor(shape: MarkupShape): FloatParam =
     if (shape is MarkupShape.Text) MarkupTextSizeParam else MarkupWidthParam

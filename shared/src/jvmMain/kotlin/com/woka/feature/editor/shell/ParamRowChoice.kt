@@ -31,32 +31,46 @@ internal fun <E : Enum<E>> ChoiceParamRow(
     params: ParamSet,
     writer: ParamWriter
 ) {
-    val selected = params[spec]
     ParamRowFrame(spec.label) {
-        Box(modifier = Modifier.weight(1f).testTag("param-${spec.key}")) {
-            if (spec.options.size <= SEGMENTED_LIMIT) {
-                SegmentedControl(
-                    options = spec.options.map(spec.labelOf),
-                    selected = spec.labelOf(selected),
-                    onSelect = { label ->
-                        spec.options.firstOrNull { spec.labelOf(it) == label }
-                            ?.let { writer.edit(spec, it) }
-                    },
-                    colors = SegmentedControlDefaults.onScrim
-                )
-            } else {
-                ParamChipRow(
-                    spec.options.map { option ->
-                        ParamChip(
-                            tag = "param-${spec.key}-${option.name}",
-                            label = spec.labelOf(option),
-                            icon = spec.iconOf(option),
-                            selected = option == selected,
-                            onClick = { writer.edit(spec, option) }
-                        )
-                    }
-                )
-            }
+        ChoiceControl(spec, params, writer, Modifier.weight(1f))
+    }
+}
+
+/**
+ * The control alone, so a compact line can draw the chips with no label column at all
+ * (ME-155) — Markup's five shapes are the whole of its first line.
+ */
+@Composable
+internal fun <E : Enum<E>> ChoiceControl(
+    spec: ChoiceParam<E>,
+    params: ParamSet,
+    writer: ParamWriter,
+    modifier: Modifier
+) {
+    val selected = params[spec]
+    Box(modifier = modifier.testTag("param-${spec.key}")) {
+        if (spec.options.size <= SEGMENTED_LIMIT) {
+            SegmentedControl(
+                options = spec.options.map(spec.labelOf),
+                selected = spec.labelOf(selected),
+                onSelect = { label ->
+                    spec.options.firstOrNull { spec.labelOf(it) == label }
+                        ?.let { writer.edit(spec, it) }
+                },
+                colors = SegmentedControlDefaults.onScrim
+            )
+        } else {
+            ParamChipRow(
+                spec.options.map { option ->
+                    ParamChip(
+                        tag = "param-${spec.key}-${option.name}",
+                        label = spec.labelOf(option),
+                        icon = spec.iconOf(option),
+                        selected = option == selected,
+                        onClick = { writer.edit(spec, option) }
+                    )
+                }
+            )
         }
     }
 }

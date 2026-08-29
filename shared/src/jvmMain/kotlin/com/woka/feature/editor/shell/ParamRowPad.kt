@@ -48,7 +48,10 @@ import com.woka.feature.editor.core.ParamSet
  */
 @Composable
 internal fun PadParamRow(spec: PadParam, params: ParamSet, writer: ParamWriter) {
-    var open by remember { mutableStateOf(false) }
+    // The one slot, taken by name — so the pad and a compact control can never both
+    // believe they are open (`InspectorAccessory.owner`).
+    val slot = rememberAccessorySlot("param-${spec.key}")
+    val open = slot.open
     val point = params[spec]
     val crosshair = Theme.viewer.onScrimBorder
     val outline = if (point == spec.default) crosshair else Theme.colors.accentEditor
@@ -59,7 +62,7 @@ internal fun PadParamRow(spec: PadParam, params: ParamSet, writer: ParamWriter) 
             .pointerHoverIcon(PointerIcon.Hand)
             .clickable {
                 if (open) writer.settle()
-                open = !open
+                slot.toggle()
             }
             .testTag("param-${spec.key}-open"),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -88,22 +91,18 @@ internal fun PadParamRow(spec: PadParam, params: ParamSet, writer: ParamWriter) 
 
     // **Registered into the slot, not drawn here.** Drawn here it would be inside the
     // card, and the card is what has to make room for it (`InspectorAccessory`).
-    //
-    // Keyed on the value rather than on the writer: a `ParamWriter` is rebuilt every
-    // composition, so keying on it would re-register on every frame. What the pad
-    // reads that can change is the point, and that is `params`.
-    val accessory = LocalInspectorAccessory.current
     if (open) {
-        LaunchedEffect(spec, point) {
-            accessory.content = { PadAccessory(spec, params, writer) { open = false } }
-        }
-        DisposableEffect(Unit) {
-            onDispose { accessory.content = null }
-        }
+        PadAccessory(spec, params, writer) { slot.toggle() }
     }
 }
 
-/** The pad as its own card, matching the inspector's frame so the pair reads as one. */
+/**
+ * The pad, beside the card.
+ *
+ * **It paints no plate of its own** since ME-155: `GooeyPair` draws both cards' plates
+ * through one filter so they merge, and a second background here would sit on top of that
+ * as a plain rectangle — exactly the seam the filter exists to remove.
+ */
 @Composable
 private fun PadAccessory(
     spec: PadParam,
@@ -111,20 +110,16 @@ private fun PadAccessory(
     writer: ParamWriter,
     onClose: () -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .clip(RoundedCornerShape(Theme.viewer.cornerRadius))
-            .background(Theme.viewer.popoverScrim)
-            .border(1.dp, Theme.viewer.onScrimBorder, RoundedCornerShape(Theme.viewer.cornerRadius))
-            .padding(EditorTokens.Inspector.padding)
-            .testTag("param-${spec.key}-panel"),
-        horizontalAlignment = Alignment.CenterHorizontally
+    ParamAccessory(
+        key = "param-${spec.key}",
+        tag = "param-${spec.key}-panel",
+        width = PANEL_WIDTH
     ) {
         PadCanvas(spec, params, writer)
         BasicText(
             text = "Close",
             modifier = Modifier
-                .padding(top = 8.dp)
+                .align(Alignment.CenterHorizontally)
                 .pointerHoverIcon(PointerIcon.Hand)
                 .clickable {
                     onClose()
@@ -142,6 +137,9 @@ private fun PadAccessory(
         )
     }
 }
+
+/** The pad is a 120 dp square, plus the card's own padding either side of it. */
+private val PANEL_WIDTH = 148.dp
 
 /** Two-thirds of a thumbnail: read at a glance, and never the widest thing in the line. */
 private val INDICATOR = 40.dp

@@ -74,7 +74,8 @@ object EditorTokens {
          * buttons floating in 420 dp of empty space, with `Reset` three buttons' worth
          * of nothing away from anything.
          */
-        val minWidth = 240.dp
+        /** 200, not 240: at 240 a card of collapsed buttons had an empty right column. */
+        val minWidth = 200.dp
         val maxWidth = 420.dp
 
         val rowHeight = 36.dp
@@ -93,6 +94,12 @@ object EditorTokens {
 
         /** Gap to the rail below. */
         val bottomInset = 12.dp
+
+        /** Between the rows of a panel opened beside the card. */
+        val accessoryGap = 10.dp
+
+        /** Above and below a compact line: [rowGap] is for rows that carry their own height. */
+        val barGap = 5.dp
 
         /** Preview strip: a filter picker shows the picture, not the name. */
         val previewSize = 64.dp

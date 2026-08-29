@@ -7,6 +7,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -69,6 +73,27 @@ internal fun HueStrip(hsv: Hsv, onPick: (Float) -> Unit) {
         drawRect(Brush.horizontalGradient(HUE_STOPS))
         drawMarker(Offset(size.width * (hsv.hue / 360f), size.height / 2f))
     }
+}
+
+/**
+ * The pad and the strip together, with the three numbers they are arranged in held here
+ * (ME-155) — what a compact colour button unfolds into when its rainbow is pressed.
+ *
+ * A colour cannot carry a hue: black, white and every grey have none, so deriving the
+ * arrangement from the stored value each frame threw it away in the dark corner and
+ * snapped the panel back to red. `ColorPickerPopover` records that bug at length; this is
+ * the same fix, kept in one place so the popover and the compact button cannot diverge.
+ */
+@Composable
+internal fun HandPicker(argb: Long, onPick: (Long) -> Unit) {
+    val opened = remember { argb }
+    var hsv by remember(opened) { mutableStateOf(hsvOf(opened)) }
+    val write = { next: Hsv ->
+        hsv = next
+        onPick(packHsv(next.hue, next.saturation, next.value))
+    }
+    SaturationValuePad(hsv) { s, v -> write(hsv.copy(saturation = s, value = v)) }
+    HueStrip(hsv) { hue -> write(hsv.copy(hue = hue)) }
 }
 
 /**

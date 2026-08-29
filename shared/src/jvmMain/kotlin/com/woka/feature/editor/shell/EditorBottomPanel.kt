@@ -3,9 +3,9 @@ package com.woka.feature.editor.shell
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -92,18 +92,23 @@ internal fun BoxScope.EditorBottomPanel(
             // dock — one tool in it — Markup's card was squeezed to 212 dp and its
             // swatches laid out at zero width, so every click on one went nowhere.
             val room = maxOf(railWidth, EditorTokens.Inspector.maxWidth)
-            val ceiling = (if (wide) room else EditorTokens.Inspector.maxWidth)
-                .minus(if (accessory.content != null) ACCESSORY_ALLOWANCE else 0.dp)
-                .coerceAtLeast(EditorTokens.Inspector.minWidth)
+            val ceiling = if (wide) room else EditorTokens.Inspector.maxWidth
+            val extra = accessory.content
+            // Springy rather than eased, which is what makes the panel read as pulled out
+            // of the card rather than faded in beside it. It overshoots a little and
+            // settles — the motion the `gooey examples` were sent for.
+            val progress by animateFloatAsState(
+                targetValue = if (extra == null) 0f else 1f,
+                animationSpec = spring(dampingRatio = 0.82f, stiffness = 300f)
+            )
 
             CompositionLocalProvider(LocalInspectorAccessory provides accessory) {
-                Row(
-                    // Bottom, not top: both cards float above the dock and are read off
-                    // that edge. Top-aligned, the taller one hangs below the other and
-                    // the pair stops looking like one panel.
-                    verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.spacedBy(EditorTokens.Inspector.bottomInset)
-                ) {
+                GooeyPair(
+                    progress = progress,
+                    // Kept composed until the spring has finished retracting, so closing
+                    // is a movement rather than a disappearance.
+                    extra = if (extra != null || progress > 0.01f) extra else null
+                ) { plateAlpha ->
                     EditorInspector(
                         title = activeTool.manifest.title,
                         footnote = activeTool.footnote(paramsOf(document, activeTool), frame),
@@ -112,6 +117,7 @@ internal fun BoxScope.EditorBottomPanel(
                         // Transform's four buttons stay compact — the reason this was a
                         // range and never a number.
                         maxWidth = ceiling,
+                        plateAlpha = plateAlpha,
                         content = {
                             ParamRows(
                                 tool = activeTool,
@@ -124,7 +130,6 @@ internal fun BoxScope.EditorBottomPanel(
                             }
                         }
                     )
-                    accessory.content?.invoke()
                 }
             }
         }
@@ -139,10 +144,3 @@ internal fun BoxScope.EditorBottomPanel(
         )
     }
 }
-
-/**
- * What an open accessory takes off the card's ceiling, so the pair still ends level
- * with the dock: the pad is 120 dp inside a card of the inspector's own padding, plus
- * the gap between them.
- */
-private val ACCESSORY_ALLOWANCE = 160.dp

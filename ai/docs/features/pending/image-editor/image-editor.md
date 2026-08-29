@@ -78,8 +78,8 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-148](tickets/implemented/ME-148-markup-text-frame.md) | Markup text — the frame you can grab | **done** 2026-08-29 |
 | [ME-149](tickets/ME-149-moving-a-mark-with-no-tool-open.md) | Moving a mark with no tool open | planned 2026-08-29 |
 | [ME-152](tickets/implemented/ME-152-the-caption-box-is-the-type.md) | The caption's box is the type, not the font's line box | **done** 2026-08-29 — the caret half measured impossible and recorded, not built |
-| [ME-153](tickets/implemented/ME-153-paired-rows-and-a-wide-markup-card.md) | Two controls on one line, and a wide Markup card | **done** 2026-08-29 — one pair, not two; `Fill` does not fit beside `Corner` |
-| [ME-155](tickets/ME-155-markup-style-drawers.md) | Two style drawers instead of four swatch rows | planned 2026-08-29 — **next** |
+| [ME-153](tickets/implemented/ME-153-paired-rows-and-a-wide-markup-card.md) | Two controls on one line, and a wide Markup card | **done** 2026-08-29, ~~superseded~~ by ME-155 — buttons beside a slider was refused on screen |
+| [ME-155](tickets/implemented/ME-155-a-compact-control-bar.md) | A compact control bar: every value behind its own button | **done** 2026-08-29 — confirmed by hand after five passes; the two-drawer shape was dropped the same day |
 | [ME-154](tickets/implemented/ME-154-the-overlay-lives-in-the-picture.md) | The overlay lives in the picture's space, not the canvas's | **done** 2026-08-29 — the drift reported by hand |
 | [ME-117…ME-150](tickets/backlog.md) | Image editor | backlog |
 

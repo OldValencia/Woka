@@ -10,6 +10,7 @@ import com.woka.support.chooseMarkupPen
 import com.woka.support.onEditor
 import com.woka.support.onUi
 import com.woka.support.openMarkupTool
+import com.woka.support.toggleControl
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Rule
@@ -81,6 +82,9 @@ class MarkupRowVisibilityUiTest {
                 chooseMarkupPen("Text")
                 onNodeWithTag("param-${MarkupTool.Corner.key}").assertDoesNotExist()
 
+                // Both the palette and `Corner` are inside the plate's own button since
+                // ME-155 — which is the same rule, one level further in.
+                toggleControl(MarkupTool.Fill.key)
                 // The second swatch: the first is the "none" the row opens on.
                 onNodeWithTag("param-${MarkupTool.Fill.key}-swatch-1").performClick()
                 waitForIdle()

@@ -4,7 +4,7 @@ import com.woka.core.ui.icons.Icons
 import com.woka.feature.editor.core.ChoiceParam
 import com.woka.feature.editor.core.ColorParam
 import com.woka.feature.editor.core.FloatParam
-import com.woka.feature.editor.core.ToggleSetParam
+import com.woka.feature.editor.core.ParamSwatchShape
 
 /**
  * The pen — what the *next* shape is drawn with (ME-114).
@@ -73,18 +73,6 @@ internal val MarkupWidthParam =
     FloatParam("width", "Width", 1f..64f, default = 6f, unit = "px")
 
 /**
- * The size of type, in **source** pixels — a separate control from the stroke width and
- * deliberately not a wider version of it (ME-122).
- *
- * A stroke reads at 6 px and 64 is already heavy; type at 64 px on a 6000 px photograph
- * is a caption nobody can read. One slider spanning both would leave the stroke four
- * pixels of travel between "thin" and "thick", so there are two, and each is a no-op
- * against the shapes the other one styles ([restyleSelected]).
- */
-internal val MarkupTextSizeParam =
-    FloatParam("textSize", "Text size", 12f..512f, default = 64f, unit = "px")
-
-/**
  * The plate behind a caption, and **`0L` — fully transparent — as its first swatch and its
  * default** (ME-146).
  *
@@ -98,8 +86,15 @@ internal val MarkupTextSizeParam =
 internal val MarkupFillParam = ColorParam(
     key = "fill",
     label = "Fill",
-    swatches = listOf(0L) + MARKUP_SWATCHES,
-    default = 0L
+    // **The pen's colours less white** (asked for 2026-08-29). The plate's row is the one
+    // that also carries "none", so it was nine circles where the ink's is eight — and the
+    // panel lays them out four to a line. White is still a plate; it is reached through
+    // the picker rather than through a swatch.
+    swatches = listOf(0L) + MARKUP_SWATCHES.filterNot { it == 0xFFFFFFFFL },
+    default = 0L,
+    // A plate, so the bar's two colour buttons are told apart at a glance rather than by
+    // trying one of them (ME-155).
+    swatchShape = ParamSwatchShape.Plate
 )
 
 /**
@@ -113,28 +108,3 @@ internal val MarkupFillParam = ColorParam(
  */
 internal val MarkupCornerParam =
     FloatParam("corner", "Corner", 0f..100f, default = 25f, unit = "%")
-
-/**
- * The four faces, as a **multi-select** chip row (ME-151, asked for 2026-08-26).
- *
- * The one spec here that is not a `ChoiceParam`, and the reason `ToggleSetParam` exists:
- * a shape is one of five kinds, but a caption may be bold *and* underlined, so the row
- * above lights one chip and this one lights any number.
- *
- * Labelled `Style` rather than `Faces` — the panel already says `Shape`, `Color`, `Fill`,
- * `Corner` and `Text size`, and none of those is a term of art either.
- */
-internal val MarkupFacesParam = ToggleSetParam(
-    key = "faces",
-    label = "Style",
-    options = TextFace.entries.toList(),
-    default = emptySet(),
-    iconOf = { face ->
-        when (face) {
-            TextFace.Bold -> Icons.Static.TextBold
-            TextFace.Italic -> Icons.Static.TextItalic
-            TextFace.Underline -> Icons.Static.TextUnderline
-            TextFace.Strikethrough -> Icons.Static.TextStrikethrough
-        }
-    }
-)

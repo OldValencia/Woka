@@ -30,19 +30,20 @@ internal fun ParamRun(
     writer: ParamWriter,
     toolId: String,
     thumbnail: @Composable (EditDocument, Modifier) -> Unit,
-    /** Whether this run is a line the tool declared, rather than one `groupRuns` found. */
-    pairs: Boolean = false
+    /** Whether this run is a compact line the tool declared (ME-155). */
+    compact: Boolean = false,
+    folded: (ParamSpec<*>) -> List<ParamSpec<*>> = { emptyList() }
 ) {
     when {
+        // A bar of collapsed controls, no labels — asked for first, because a compact
+        // line of *one* spec is legitimate (Markup's five shapes are exactly that) and
+        // would otherwise fall through to the rules below and grow a label column.
+        compact -> CompactRow(run, params, writer, folded)
+
         // One scrolling line for however many preview specs sit together — one for
         // every tool but Styles, which has an undertone and a look (ME-141).
         run.first() is PreviewChoiceParam<*> ->
             PreviewChoiceStrip(run, params, writer, toolId, thumbnail)
-
-        // A pair the tool asked for: two named controls on one line, buttons then
-        // slider (ME-153). Two and no more — a third would need a third label column
-        // and the card it is meant to shorten would grow one.
-        run.size == 2 && pairs -> PairedRow(run, params, writer)
 
         // Consecutive actions become one wrapping group rather than one row each.
         // Four buttons stacked vertically, each with an empty label column beside it,
@@ -71,28 +72,35 @@ internal fun ParamRun(
  * of squares and two of them read as one line; a slider is a labelled row and rows
  * stack.
  *
- * **The tool is asked first** (ME-153). A line it declared is taken whole and this
- * function's own rules are not applied inside it — those rules are about shapes that
- * happen to be alike, and a declared pair is about two controls that mean one thing.
+ * **The tool is asked first** (ME-155). A [compact] line it declared is emitted whole at
+ * the position of its first spec, and the adjacency rules below are not applied inside it
+ * — those rules are about shapes that happen to be alike, and a compact line is about
+ * controls the tool has said belong to one bar.
  */
 internal fun groupRuns(
     specs: List<ParamSpec<*>>,
-    declared: List<List<ParamSpec<*>>> = specs.map(::listOf)
+    compact: List<List<ParamSpec<*>>> = emptyList()
 ): List<List<ParamSpec<*>>> {
+    val leads = compact.associateBy { it.first() }
+    val claimed = compact.flatten().toSet()
     val out = mutableListOf<List<ParamSpec<*>>>()
-    // Consecutive lines the tool left alone are handed to the adjacency rules *together*,
-    // or a run of actions would be split into one button per line by the walk itself.
+    // Specs the tool left alone are handed to the adjacency rules *together*, or a run of
+    // actions would be split into one button per line by the walk itself.
     val loose = mutableListOf<ParamSpec<*>>()
     fun flush() {
         if (loose.isNotEmpty()) out += adjacentRuns(loose.toList())
         loose.clear()
     }
-    declared.forEach { line ->
-        if (line.size > 1) {
-            flush()
-            out += line
-        } else {
-            loose += line
+    specs.forEach { spec ->
+        val line = leads[spec]
+        when {
+            line != null -> {
+                flush()
+                out += line
+            }
+            // Already emitted as part of the line its first spec led.
+            spec in claimed -> Unit
+            else -> loose += spec
         }
     }
     flush()

@@ -26,7 +26,14 @@ data class ToggleSetParam<E : Enum<E>>(
     val options: List<E>,
     override val default: Set<E> = emptySet(),
     val labelOf: (E) -> String = { it.name },
-    val iconOf: (E) -> DrawableResource? = { null }
+    val iconOf: (E) -> DrawableResource? = { null },
+    /**
+     * A word the compact button draws in whatever is lit — `"Aa"` (ME-155). Null for a
+     * set with nothing to show, and the button then reports the count instead.
+     */
+    val sample: String? = null,
+    /** How one option changes [sample]. Null for an option that changes nothing about it. */
+    val faceOf: (E) -> ParamFace? = { null }
 ) : ParamSpec<Set<E>> {
 
     /**
@@ -62,6 +69,19 @@ data class ToggleSetParam<E : Enum<E>>(
             .toSet()
     }
 }
+
+/**
+ * The four ways a sample can be drawn differently, named without Compose (ME-155).
+ *
+ * **A schema enum rather than a `TextStyle`.** A spec is data a tool declares, and
+ * `FontWeight`/`TextDecoration` would put the renderer's vocabulary into it — the shell
+ * maps these four to that vocabulary in one place, which is the same split `iconOf`
+ * already keeps by naming a resource rather than a painter.
+ *
+ * Deliberately not merged with markup's own `TextFace`: that one is a document value with
+ * a wire format, this one is a hint about a button, and the two are free to diverge.
+ */
+enum class ParamFace { Bold, Italic, Underline, Strikethrough }
 
 /** Not a character an enum constant can contain, so no name needs escaping. */
 private const val SEPARATOR = ","
