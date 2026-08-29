@@ -87,7 +87,12 @@ internal fun BoxScope.EditorBottomPanel(
             // window's edge — which is what made half the inspector's UI tests report
             // their rows as "not displayed". The narrowing is arithmetic instead.
             val wide = activeTool.wideInspector && railWidth > 0.dp
-            val ceiling = (if (wide) railWidth else EditorTokens.Inspector.maxWidth)
+            // **`wideInspector` raises the ceiling, it never lowers it** (measured
+            // 2026-08-29). It was `railWidth` outright, which is a cap: with a narrow
+            // dock — one tool in it — Markup's card was squeezed to 212 dp and its
+            // swatches laid out at zero width, so every click on one went nowhere.
+            val room = maxOf(railWidth, EditorTokens.Inspector.maxWidth)
+            val ceiling = (if (wide) room else EditorTokens.Inspector.maxWidth)
                 .minus(if (accessory.content != null) ACCESSORY_ALLOWANCE else 0.dp)
                 .coerceAtLeast(EditorTokens.Inspector.minWidth)
 

@@ -75,11 +75,12 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-141](tickets/implemented/ME-141-styles-pad-and-palette.md) | Styles: two carousels, a pad and a palette slider | **done** 2026-08-28 — panel reshaped by hand over three passes; the last one not yet seen on screen. What the pad *means* is [ME-150](tickets/backlog.md) |
 | [ME-147](tickets/implemented/ME-147-multi-select-chip-row.md) | A chip row that lights more than one — `ToggleSetParam` | **done** 2026-08-29 — against `FixtureTool`; no tool touched |
 | [ME-151](tickets/implemented/ME-151-markup-text-faces.md) | Markup text — the four faces | **done** 2026-08-29 — confirmed by hand after one fix, the glyphs rendering as dots |
-| [ME-148](tickets/ME-148-markup-text-frame.md) | Markup text — the frame you can grab | planned 2026-08-29 |
+| [ME-148](tickets/implemented/ME-148-markup-text-frame.md) | Markup text — the frame you can grab | **done** 2026-08-29 |
 | [ME-149](tickets/ME-149-moving-a-mark-with-no-tool-open.md) | Moving a mark with no tool open | planned 2026-08-29 |
-| [ME-152](tickets/ME-152-the-caption-box-is-the-type.md) | The caption's box is the type, not the font's line box | **done** 2026-08-29 — the caret half measured impossible and recorded, not built |
-| [ME-153](tickets/ME-153-paired-rows-and-a-wide-markup-card.md) | Two controls on one line, and a wide Markup card | planned 2026-08-29 |
-| [ME-154](tickets/ME-154-the-overlay-lives-in-the-picture.md) | The overlay lives in the picture's space, not the canvas's | **done** 2026-08-29 — the drift reported by hand |
+| [ME-152](tickets/implemented/ME-152-the-caption-box-is-the-type.md) | The caption's box is the type, not the font's line box | **done** 2026-08-29 — the caret half measured impossible and recorded, not built |
+| [ME-153](tickets/implemented/ME-153-paired-rows-and-a-wide-markup-card.md) | Two controls on one line, and a wide Markup card | **done** 2026-08-29 — one pair, not two; `Fill` does not fit beside `Corner` |
+| [ME-155](tickets/ME-155-markup-style-drawers.md) | Two style drawers instead of four swatch rows | planned 2026-08-29 — **next** |
+| [ME-154](tickets/implemented/ME-154-the-overlay-lives-in-the-picture.md) | The overlay lives in the picture's space, not the canvas's | **done** 2026-08-29 — the drift reported by hand |
 | [ME-117…ME-150](tickets/backlog.md) | Image editor | backlog |
 
 ME-201…ME-204, the video editor's own tickets, moved to

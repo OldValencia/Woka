@@ -46,34 +46,48 @@ import com.woka.feature.editor.core.ParamSet
  */
 @Composable
 internal fun ColorParamRow(spec: ColorParam, params: ParamSet, writer: ParamWriter) {
+    ParamRowFrame(spec.label) {
+        ColorControl(spec, params, writer, Modifier.weight(1f))
+    }
+}
+
+/**
+ * The swatches alone, so a paired line can put them beside another control under the
+ * tool's own second label (ME-153).
+ */
+@Composable
+internal fun ColorControl(
+    spec: ColorParam,
+    params: ParamSet,
+    writer: ParamWriter,
+    modifier: Modifier
+) {
     val selected = params[spec]
     var picking by remember { mutableStateOf(false) }
 
-    ParamRowFrame(spec.label) {
-        Row(
-            modifier = Modifier.weight(1f).testTag("param-${spec.key}"),
-            horizontalArrangement = Arrangement.spacedBy(EditorTokens.Inspector.swatchGap),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            spec.swatches.forEachIndexed { index, argb ->
-                ColorSwatch(
-                    // `swatchFill`, not `solidFill`: a swatch with no alpha is an offered
-                    // "none" and draws as a slash rather than as nothing (ME-146).
-                    fill = swatchFill(argb),
-                    ringed = argb == selected,
-                    onClick = { writer.edit(spec, argb) },
-                    // Indexed rather than named by value: a test says "the fifth swatch",
-                    // and the palette is free to change without rewriting the test.
-                    tag = "param-${spec.key}-swatch-$index"
-                )
-            }
+    Row(
+        modifier = modifier.testTag("param-${spec.key}"),
+        horizontalArrangement = Arrangement.spacedBy(EditorTokens.Inspector.swatchGap),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        spec.swatches.forEachIndexed { index, argb ->
             ColorSwatch(
-                fill = Brush.sweepGradient(HUE_WHEEL),
-                ringed = !selected.isSwatch(spec.swatches),
-                onClick = { picking = true },
-                tag = "param-${spec.key}-custom"
+                // `swatchFill`, not `solidFill`: a swatch with no alpha is an offered
+                // "none" and draws as a slash rather than as nothing (ME-146).
+                fill = swatchFill(argb),
+                ringed = argb == selected,
+                onClick = { writer.edit(spec, argb) },
+                // Indexed rather than named by value: a test says "the fifth swatch",
+                // and the palette is free to change without rewriting the test.
+                tag = "param-${spec.key}-swatch-$index"
             )
         }
+        ColorSwatch(
+            fill = Brush.sweepGradient(HUE_WHEEL),
+            ringed = !selected.isSwatch(spec.swatches),
+            onClick = { picking = true },
+            tag = "param-${spec.key}-custom"
+        )
     }
 
     if (picking) {

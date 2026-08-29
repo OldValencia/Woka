@@ -96,6 +96,17 @@ object MarkupTool : CanvasTool {
     /** Which of those are worth drawing for the pen currently chosen — `MarkupRows`. */
     override fun rows(params: ParamSet): List<ParamSpec<*>> = markupRows(params)
 
+    /** And which of them share a line, so six rows read as four (ME-153). */
+    override fun lines(rows: List<ParamSpec<*>>): List<List<ParamSpec<*>>> = markupLines(rows)
+
+    /**
+     * **The card may reach the dock's width** (asked for 2026-08-29). `wideInspector` was
+     * refused here when the panel was swatches over sliders, which floated in the space it
+     * bought; paired lines are the content that earns it — two named controls beside each
+     * other want the room, and the alternative is the wall this ticket removed.
+     */
+    override val wideInspector = true
+
     /**
      * **One stage for every shape**, drawn in list order.
      *

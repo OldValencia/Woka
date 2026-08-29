@@ -29,13 +29,20 @@ internal fun ParamRun(
     params: ParamSet,
     writer: ParamWriter,
     toolId: String,
-    thumbnail: @Composable (EditDocument, Modifier) -> Unit
+    thumbnail: @Composable (EditDocument, Modifier) -> Unit,
+    /** Whether this run is a line the tool declared, rather than one `groupRuns` found. */
+    pairs: Boolean = false
 ) {
     when {
         // One scrolling line for however many preview specs sit together — one for
         // every tool but Styles, which has an undertone and a look (ME-141).
         run.first() is PreviewChoiceParam<*> ->
             PreviewChoiceStrip(run, params, writer, toolId, thumbnail)
+
+        // A pair the tool asked for: two named controls on one line, buttons then
+        // slider (ME-153). Two and no more — a third would need a third label column
+        // and the card it is meant to shorten would grow one.
+        run.size == 2 && pairs -> PairedRow(run, params, writer)
 
         // Consecutive actions become one wrapping group rather than one row each.
         // Four buttons stacked vertically, each with an empty label column beside it,
@@ -63,8 +70,37 @@ internal fun ParamRun(
  * An action is a button and buttons sit beside each other; a preview strip is a line
  * of squares and two of them read as one line; a slider is a labelled row and rows
  * stack.
+ *
+ * **The tool is asked first** (ME-153). A line it declared is taken whole and this
+ * function's own rules are not applied inside it — those rules are about shapes that
+ * happen to be alike, and a declared pair is about two controls that mean one thing.
  */
-internal fun groupRuns(specs: List<ParamSpec<*>>): List<List<ParamSpec<*>>> {
+internal fun groupRuns(
+    specs: List<ParamSpec<*>>,
+    declared: List<List<ParamSpec<*>>> = specs.map(::listOf)
+): List<List<ParamSpec<*>>> {
+    val out = mutableListOf<List<ParamSpec<*>>>()
+    // Consecutive lines the tool left alone are handed to the adjacency rules *together*,
+    // or a run of actions would be split into one button per line by the walk itself.
+    val loose = mutableListOf<ParamSpec<*>>()
+    fun flush() {
+        if (loose.isNotEmpty()) out += adjacentRuns(loose.toList())
+        loose.clear()
+    }
+    declared.forEach { line ->
+        if (line.size > 1) {
+            flush()
+            out += line
+        } else {
+            loose += line
+        }
+    }
+    flush()
+    return out
+}
+
+/** Consecutive specs of the same shape, folded into one run each. */
+private fun adjacentRuns(specs: List<ParamSpec<*>>): List<List<ParamSpec<*>>> {
     val runs = mutableListOf<MutableList<ParamSpec<*>>>()
     specs.forEach { spec ->
         val last = runs.lastOrNull()

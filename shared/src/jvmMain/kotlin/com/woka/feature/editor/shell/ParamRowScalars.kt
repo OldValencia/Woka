@@ -35,37 +35,51 @@ import kotlin.math.roundToInt
  */
 @Composable
 internal fun FloatParamRow(spec: FloatParam, params: ParamSet, writer: ParamWriter) {
+    ParamRowFrame(spec.label) {
+        FloatControl(spec, params, writer, Modifier.weight(1f))
+    }
+}
+
+/**
+ * The slider and its readout, without a row of their own — so a paired line can put them
+ * beside another control under the tool's own second label (ME-153).
+ */
+@Composable
+internal fun RowScope.FloatControl(
+    spec: FloatParam,
+    params: ParamSet,
+    writer: ParamWriter,
+    modifier: Modifier
+) {
     val value = params[spec]
     val span = spec.range.endInclusive - spec.range.start
     fun toValue(fraction: Float) = spec.range.start + fraction * span
     fun toFraction(v: Float) = if (span == 0f) 0f else (v - spec.range.start) / span
 
-    ParamRowFrame(spec.label) {
-        Box(modifier = Modifier.weight(1f)) {
-            DetentSlider(
-                fraction = toFraction(value),
-                colors = DetentSliderColors(
-                    track = Theme.viewer.onScrimHover,
-                    detent = Theme.viewer.onScrimBorder,
-                    knob = Theme.viewer.onScrim,
-                    fill = Theme.viewer.onScrim
-                ),
-                detents = listOf(toFraction(spec.detent)),
-                // **Keyed on the spec, not only on the track's width.** A tool may swap one
-                // row for another in the same position — Markup trades `Width` for
-                // `Text size` with the pen — and the gesture must go with it. Without this
-                // the node is reused, its `pointerInput` keys are unchanged, and the
-                // coroutine still running closes over the spec it was built with: the row
-                // reads "Text size" and writes `width` (found by hand 2026-08-26).
-                gestureKey = spec.key,
-                onTap = { writer.edit(spec, toValue(it), settled = true) },
-                onDrag = { writer.edit(spec, toValue(it), settled = false) },
-                onDragEnd = writer::settle,
-                modifier = Modifier.testTag("param-${spec.key}")
-            )
-        }
-        Readout(text = formatFloat(value, spec), tag = "param-${spec.key}-readout")
+    Box(modifier = modifier) {
+        DetentSlider(
+            fraction = toFraction(value),
+            colors = DetentSliderColors(
+                track = Theme.viewer.onScrimHover,
+                detent = Theme.viewer.onScrimBorder,
+                knob = Theme.viewer.onScrim,
+                fill = Theme.viewer.onScrim
+            ),
+            detents = listOf(toFraction(spec.detent)),
+            // **Keyed on the spec, not only on the track's width.** A tool may swap one
+            // row for another in the same position — Markup trades `Width` for
+            // `Text size` with the pen — and the gesture must go with it. Without this
+            // the node is reused, its `pointerInput` keys are unchanged, and the
+            // coroutine still running closes over the spec it was built with: the row
+            // reads "Text size" and writes `width` (found by hand 2026-08-26).
+            gestureKey = spec.key,
+            onTap = { writer.edit(spec, toValue(it), settled = true) },
+            onDrag = { writer.edit(spec, toValue(it), settled = false) },
+            onDragEnd = writer::settle,
+            modifier = Modifier.testTag("param-${spec.key}")
+        )
     }
+    Readout(text = formatFloat(value, spec), tag = "param-${spec.key}-readout")
 }
 
 /**

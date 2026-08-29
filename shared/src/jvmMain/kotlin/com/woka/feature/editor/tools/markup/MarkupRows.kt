@@ -35,3 +35,34 @@ internal fun markupRows(params: ParamSet): List<ParamSpec<*>> {
     }
     return MarkupTool.params.filterNot { it in hidden }
 }
+
+/**
+ * Which of those rows share a line (ME-153, asked for 2026-08-29).
+ *
+ * One pair, buttons then slider: the four faces beside the size they are drawn at.
+ *
+ * **`Fill` and `Corner` are deliberately not a pair**, though they were tried (measured
+ * 2026-08-29). The dock is about 576 dp, so a line has ~548 to spend; the plate's row
+ * already costs 104 for its label and 288 for its nine swatches, leaving 156 — of which
+ * the readout takes 48. A `Corner` slider would get about 55 dp, and what actually
+ * happened on screen is that the swatches gave way instead and four of them disappeared.
+ * The faces cost 122, so that line has 200 left for its slider and fits with room.
+ *
+ * **Expressed against the rows already decided**, never against `params` again: a spec
+ * that is not showing never joins a pair, so nothing is left on a half-line alone.
+ */
+internal fun markupLines(rows: List<ParamSpec<*>>): List<List<ParamSpec<*>>> {
+    val pairs = listOf(
+        MarkupTool.Faces to MarkupTool.TextSize
+    ).filter { (left, right) -> left in rows && right in rows }
+
+    val joined = pairs.flatMap { (left, right) -> listOf(left, right) }
+    return rows.mapNotNull { spec ->
+        when {
+            spec !in joined -> listOf(spec)
+            // The pair is emitted at its left half's position, so the tool's declared
+            // order still decides where the line lands.
+            else -> pairs.firstOrNull { it.first == spec }?.let { listOf(it.first, it.second) }
+        }
+    }
+}

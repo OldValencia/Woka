@@ -56,6 +56,22 @@ interface EditorTool {
     val wideInspector: Boolean get() = false
 
     /**
+     * Which of the visible [rows] this tool wants drawn on **one line** — each inner list
+     * a line, defaulted to one spec per line (ME-153).
+     *
+     * A tool declares this rather than the shell inferring it, for the reason
+     * `groupRuns` gives about the rules it already has: "a colour row and a slider share
+     * a line" is true of Markup's plate and its corner and false everywhere else, and a
+     * shell guessing per type would pair rows no tool asked to pair.
+     *
+     * **A function of the rows, not a static list.** Markup's rows already come and go
+     * with the pen, so a fixed pairing would leave a widowed slider on a line whose left
+     * half is hidden. Whatever it returns must be exactly the specs it was handed —
+     * dropping one would hide a control the tool has just said it wants.
+     */
+    fun lines(rows: List<ParamSpec<*>>): List<List<ParamSpec<*>>> = rows.map(::listOf)
+
+    /**
      * A chance to rewrite this tool's own parameters when one of them is set, knowing
      * the frame — the escape hatch [stage] deliberately does not have (ME-110).
      *

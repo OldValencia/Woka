@@ -83,6 +83,9 @@ object EditorTokens {
         /** Labels share a column so sliders line up across rows. */
         val labelWidth = 104.dp
 
+        /** Between the two halves of a paired line, and before the second one's name. */
+        val pairGap = 8.dp
+
         /** The signed readout — right-aligned, monospaced digits. */
         val readoutWidth = 48.dp
 

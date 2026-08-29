@@ -26,22 +26,36 @@ internal fun <E : Enum<E>> ToggleSetParamRow(
     params: ParamSet,
     writer: ParamWriter
 ) {
-    val on = params[spec]
     ParamRowFrame(spec.label) {
-        Box(modifier = Modifier.weight(1f).testTag("param-${spec.key}")) {
-            ParamChipRow(
-                spec.options.map { option ->
-                    ParamChip(
-                        tag = "param-${spec.key}-${option.name}",
-                        label = spec.labelOf(option),
-                        icon = spec.iconOf(option),
-                        selected = option in on,
-                        // Written back through the spec, so the set reaches the document
-                        // in `options` order however this one was built.
-                        onClick = { writer.edit(spec, if (option in on) on - option else on + option) }
-                    )
-                }
-            )
-        }
+        ToggleSetControl(spec, params, writer, Modifier.weight(1f))
+    }
+}
+
+/**
+ * The chips alone, so a paired line can put them beside another control under the tool's
+ * own second label (ME-153).
+ */
+@Composable
+internal fun <E : Enum<E>> ToggleSetControl(
+    spec: ToggleSetParam<E>,
+    params: ParamSet,
+    writer: ParamWriter,
+    modifier: Modifier
+) {
+    val on = params[spec]
+    Box(modifier = modifier.testTag("param-${spec.key}")) {
+        ParamChipRow(
+            spec.options.map { option ->
+                ParamChip(
+                    tag = "param-${spec.key}-${option.name}",
+                    label = spec.labelOf(option),
+                    icon = spec.iconOf(option),
+                    selected = option in on,
+                    // Written back through the spec, so the set reaches the document in
+                    // `options` order however this one was built.
+                    onClick = { writer.edit(spec, if (option in on) on - option else on + option) }
+                )
+            }
+        )
     }
 }

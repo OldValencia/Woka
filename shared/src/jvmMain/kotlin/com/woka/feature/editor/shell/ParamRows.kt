@@ -59,12 +59,15 @@ internal fun ParamRows(
     // What this tool wants shown for the values it currently holds — all of them, for
     // every tool but Markup.
     val visible = tool.rows(params)
+    // Which of those the tool wants on one line — all of them alone, for every tool but
+    // Markup (ME-153).
+    val declared = tool.lines(visible)
     Column(
         verticalArrangement = Arrangement.spacedBy(EditorTokens.Inspector.rowGap)
     ) {
-        groupRuns(visible).forEach { run ->
+        groupRuns(visible, declared).forEach { run ->
             key(run.first().key) {
-                ParamRun(run, params, writer, tool.manifest.id, thumbnail)
+                ParamRun(run, params, writer, tool.manifest.id, thumbnail, run in declared)
             }
         }
     }

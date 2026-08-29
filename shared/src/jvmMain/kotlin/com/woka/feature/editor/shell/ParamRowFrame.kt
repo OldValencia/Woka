@@ -1,5 +1,6 @@
 package com.woka.feature.editor.shell
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.heightIn
@@ -45,14 +46,51 @@ internal fun ParamRowFrame(label: String, content: @Composable RowScope.() -> Un
         modifier = Modifier.heightIn(min = EditorTokens.Inspector.rowHeight),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        BasicText(
-            text = label,
-            modifier = Modifier.width(EditorTokens.Inspector.labelWidth),
-            style = TextStyle(
-                color = Theme.viewer.onScrimSecondary,
-                fontSize = EditorTokens.TopBar.subtitleStyle
-            )
-        )
+        RowLabel(label, Modifier.width(EditorTokens.Inspector.labelWidth))
         content()
     }
+}
+
+/**
+ * Two controls on one line, each with its own name (ME-153).
+ *
+ * **The left label keeps the shared column** so a paired line still lines up with every
+ * plain row above and below it; the right one is inline and only as wide as its word,
+ * because a second full column would push the pair off the card it was meant to shorten.
+ *
+ * [left] takes the room that is going spare and [right] sizes to its content — which is
+ * what puts the buttons first and the slider after them, the order the pair was asked for
+ * (2026-08-29): chips measure what they measure, and a slider is the thing that can use
+ * whatever is left.
+ */
+@Composable
+internal fun PairedRowFrame(
+    leftLabel: String,
+    rightLabel: String,
+    left: @Composable RowScope.() -> Unit,
+    right: @Composable RowScope.() -> Unit
+) {
+    Row(
+        modifier = Modifier.heightIn(min = EditorTokens.Inspector.rowHeight),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(EditorTokens.Inspector.pairGap)
+    ) {
+        RowLabel(leftLabel, Modifier.width(EditorTokens.Inspector.labelWidth))
+        left()
+        RowLabel(rightLabel, Modifier)
+        right()
+    }
+}
+
+/** The label's own typography, shared by both frames so a pair cannot drift from a row. */
+@Composable
+private fun RowLabel(text: String, modifier: Modifier) {
+    BasicText(
+        text = text,
+        modifier = modifier,
+        style = TextStyle(
+            color = Theme.viewer.onScrimSecondary,
+            fontSize = EditorTokens.TopBar.subtitleStyle
+        )
+    )
 }
