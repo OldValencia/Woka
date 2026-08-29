@@ -60,9 +60,6 @@ internal fun MarkupOverlay(scope: EditorToolScope) {
 
         edit?.let { open ->
             MarkupTextField(
-                // The caption as the document has it, so the caret follows a size or a
-                // colour chosen while it is open — `open` stays the shape the edit began
-                // with, because the commit compares against it.
                 edit = scope.liveEdit(open),
                 sourceToCanvas = scope.sourceToCanvas,
                 onChange = { typedText ->

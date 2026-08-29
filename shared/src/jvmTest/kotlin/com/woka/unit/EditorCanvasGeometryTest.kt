@@ -3,6 +3,7 @@ package com.woka.unit
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.IntSize
 import com.woka.feature.editor.shell.EditorCanvasGeometry
+import com.woka.feature.editor.shell.panForZoomAbout
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals

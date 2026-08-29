@@ -14,18 +14,15 @@ private const val MAX_SCALE = 10f
 /**
  * Where the picture sits inside the canvas, and the two matrices that follow from it.
  *
- * **[canvasToSource] is the inverse of [sourceToCanvas], computed rather than
- * written.** Two independently derived matrices are two things that can disagree, and
- * the symptom — markup landing a few pixels from the cursor, worse the further from
- * centre — is the kind that gets blamed on the gesture code for a week.
+ * **Every inverse is computed, never written.** Two independently derived matrices are
+ * two things that can disagree, and the symptom — markup landing a few pixels from the
+ * cursor, worse the further from centre — gets blamed on the gesture code for a week.
+ * They are fields rather than getters because a getter would mint a `Matrix` per read,
+ * and these are read from a draw path.
  *
- * Both are fields rather than getters: a getter would mint a new `Matrix` on every
- * read, and these are read from a draw path.
- *
- * `PanBounds` and `ScaleMath` in the viewer are **not** reused. They are written
- * against `SizeMode` — a viewer concept with `Fit`, `Fill` and `Actual` — while the
- * editor has one mode and a magnifier on top of it. Sharing would mean widening their
- * model to carry a case the viewer does not have.
+ * `PanBounds` and `ScaleMath` in the viewer are **not** reused: they are written against
+ * `SizeMode` — `Fit`, `Fill`, `Actual` — while the editor has one mode and a magnifier on
+ * top of it, so sharing would widen their model to carry a case the viewer lacks.
  *
  * **`zoomBounds` is the exception, and it is reused on purpose.** It takes two sizes
  * and answers a range of percentages; it names no `SizeMode` and knows nothing about
@@ -114,6 +111,11 @@ internal class EditorCanvasGeometry(
         y = (canvasSize.height - sourceSize.height * scale) / 2f + clampedPan.y
     )
 
+    /**
+     * Source pixels to **canvas** ones — where the picture sits inside the whole frame.
+     * Read by `panForZoomAbout` and the gesture modifier on the canvas box, both of which
+     * are handed pointer positions in that space.
+     */
     val sourceToCanvas: Matrix = Matrix().apply {
         translate(offset.x, offset.y)
         scale(scale, scale)
@@ -125,20 +127,24 @@ internal class EditorCanvasGeometry(
     }
 
     /**
-     * The pan that keeps the source point under [focus] under it after zooming.
+     * Source pixels to the **drawn picture's own** — the scale, and no translation at all.
      *
-     * Without this the picture magnifies about its centre, so the detail the user
-     * pointed at slides away from the cursor — which reads as the zoom being drunk
-     * rather than as it being centred somewhere else.
+     * **This is the pair a `CanvasTool`'s overlay takes** (2026-08-29, reported by hand as
+     * "drag the picture and the outline drifts"). `EditorCanvasHost` composes the overlay
+     * *inside* the box it has already centred and panned, so the overlay's origin is the
+     * picture's top-left and [offset] is applied to it by the layout. Handing it
+     * [sourceToCanvas] applies that offset a second time, and the overlay lands [offset]
+     * away from the picture it is drawing on.
+     *
+     * It went unseen because the error **cancels** for anything both read and written
+     * through the same pair: a shape is stored short by `offset / scale` and drawn back
+     * at exactly the cursor. What does not cancel is a thing drawn by the *fold* — a
+     * caption's plate — beside one drawn by the overlay.
      */
-    fun panForZoomAbout(focus: Offset, nextZoom: Float): Offset {
-        val source = canvasToSource.map(focus)
-        val nextScale = fitScale * nextZoom.coerceIn(minZoom, maxZoom)
-        val centredX = (canvasSize.width - sourceSize.width * nextScale) / 2f
-        val centredY = (canvasSize.height - sourceSize.height * nextScale) / 2f
-        return Offset(
-            x = focus.x - centredX - source.x * nextScale,
-            y = focus.y - centredY - source.y * nextScale
-        )
+    val sourceToPicture: Matrix = Matrix().apply { scale(scale, scale) }
+
+    val pictureToSource: Matrix = Matrix().apply {
+        setFrom(sourceToPicture)
+        invert()
     }
 }

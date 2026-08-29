@@ -46,11 +46,13 @@ internal fun MarkupCanvas(
         if (selected == null) return@Canvas
 
         val handles = selected.handles().map { sourceToCanvas.map(Offset(it.x, it.y)) }
-        if (handles.isEmpty()) {
-            // A freehand stroke has no handle to pull on, and a selection nothing marks
-            // is one the `Delete` key appears to ignore.
+        // **The box, and for a caption the dots as well** (ME-148). A freehand stroke has
+        // no handle to pull on, and a selection nothing marks is one the `Delete` key
+        // appears to ignore; a caption has four corners *and* wants the frame that says
+        // what they will do to it. An arrow and a drawn box keep their dots alone — their
+        // outline is already the thing being resized.
+        if (selected.framed) {
             drawSelectionBox(selected.points(sourceToCanvas))
-            return@Canvas
         }
         handles.forEach { at -> drawHandle(at) }
     }
@@ -89,6 +91,16 @@ private fun DrawScope.drawSelectionBox(points: List<Offset>) {
         )
     )
 }
+
+/**
+ * Whether this shape is marked by a dashed frame as well as by its handles.
+ *
+ * A freehand stroke because it has no handles at all, and a caption because its handles
+ * scale it rather than reshape it — the frame is what says the corners belong to the block
+ * as a whole (ME-148). The three whose own outline is what a corner moves get dots alone.
+ */
+private val MarkupShape.framed: Boolean
+    get() = this is MarkupShape.Freehand || this is MarkupShape.Text
 
 /** Every point of the shape, where the canvas is drawing it right now. */
 private fun MarkupShape.points(sourceToCanvas: Matrix): List<Offset> {

@@ -73,9 +73,11 @@ class MarkupGeometryTest {
         )
         assertEquals(4, oval.handles().size)
         assertEquals(emptyList(), scribble.handles())
-        // Type resizes through its size row, not through a corner (ME-122), so it draws
-        // the same dashed selection box a freehand stroke gets.
-        assertEquals(emptyList(), caption.handles())
+        // A caption gained four of its own at ME-148 — the corners of its measured box,
+        // which is why they are counted rather than written out. One nobody has typed
+        // into still has none: an empty box is a target in the picture's corner.
+        assertEquals(4, caption.handles().size)
+        assertEquals(emptyList(), caption.copy(text = "").handles())
     }
 
     @Test
@@ -109,6 +111,7 @@ class MarkupGeometryTest {
         assertEquals(arrow, arrow.withHandle(2, 5f, 5f))
         assertEquals(box, box.withHandle(9, 5f, 5f))
         assertEquals(scribble, scribble.withHandle(0, 5f, 5f))
-        assertEquals(caption, caption.withHandle(0, 5f, 5f))
+        // A caption has four since ME-148, so the index that proves the rule is past them.
+        assertEquals(caption, caption.withHandle(9, 5f, 5f))
     }
 }

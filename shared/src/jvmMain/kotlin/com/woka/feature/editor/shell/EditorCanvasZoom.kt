@@ -6,6 +6,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.geometry.Offset
 import com.woka.app.shell.CanvasZoom
 import com.woka.app.shell.LocalCanvasOverride
 import kotlin.math.roundToInt
@@ -56,3 +57,21 @@ internal fun PublishCanvasZoom(
 }
 
 private fun percentOf(scale: Float): Int = (scale * 100f).roundToInt().coerceAtLeast(1)
+
+/**
+ * The pan that keeps the source point under [focus] under it after zooming.
+ *
+ * Without this the picture magnifies about its centre, so the detail the user
+ * pointed at slides away from the cursor — which reads as the zoom being drunk
+ * rather than as it being centred somewhere else.
+ */
+internal fun EditorCanvasGeometry.panForZoomAbout(focus: Offset, nextZoom: Float): Offset {
+    val source = canvasToSource.map(focus)
+    val nextScale = fitScale * nextZoom.coerceIn(minZoom, maxZoom)
+    val centredX = (canvasSize.width - sourceSize.width * nextScale) / 2f
+    val centredY = (canvasSize.height - sourceSize.height * nextScale) / 2f
+    return Offset(
+        x = focus.x - centredX - source.x * nextScale,
+        y = focus.y - centredY - source.y * nextScale
+    )
+}

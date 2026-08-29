@@ -1,5 +1,6 @@
 package com.woka.feature.editor.tools.markup
 
+import androidx.compose.ui.geometry.Offset
 import com.woka.feature.editor.core.FloatParam
 import com.woka.feature.editor.core.ParamSet
 import com.woka.feature.editor.core.ParamSpec
@@ -45,7 +46,7 @@ internal fun restyleSelected(
     val sizeParam = sizeParamFor(selected)
     val restyled = when (spec) {
         MarkupColorParam -> selected.styled(color = params[MarkupColorParam])
-        sizeParam -> selected.styled(width = params[sizeParam])
+        sizeParam -> selected.resized(params[sizeParam])
         MarkupFillParam -> selected.takeIf { it is MarkupShape.Text }
             ?.filled(params[MarkupFillParam])
             ?: return null
@@ -67,3 +68,23 @@ internal fun restyleSelected(
 /** Which of the two size rows this shape's `width` is spelled by. */
 private fun sizeParamFor(shape: MarkupShape): FloatParam =
     if (shape is MarkupShape.Text) MarkupTextSizeParam else MarkupWidthParam
+
+/**
+ * The shape at [size] — and for a caption that is a **scale**, not a written field
+ * (ME-148).
+ *
+ * The row and a corner drag are then one operation reached two ways. They were not before:
+ * the slider wrote `width` and left `wrap` where it was, so moving it reflowed a caption
+ * that a corner drag would have kept intact — two controls over one thing, disagreeing
+ * about what a caption's proportions are.
+ *
+ * The anchor is the caption's own `at`, because a slider has no corner to name: it grows
+ * down and to the right from where the caption sits. `scaled` is what clamps the result,
+ * so the row cannot drive `wrap` past a size the type has stopped reaching.
+ *
+ * A stroke has no box to keep in proportion, so the four keep writing the field directly.
+ */
+private fun MarkupShape.resized(size: Float): MarkupShape = when (this) {
+    is MarkupShape.Text -> scaled(size / width, Offset(at.x, at.y))
+    else -> styled(width = size)
+}

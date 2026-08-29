@@ -39,22 +39,23 @@ fun MarkupShape.hitTest(x: Float, y: Float, tolerance: Float): Boolean = when (t
 }
 
 /**
- * The points a drag can grab to reshape this — two for an arrow, four for a box or an
- * ellipse, **none** for a freehand stroke, which has no box to pull on.
+ * The points a drag can grab to reshape this — two for an arrow, four for a box, an
+ * ellipse or a caption, **none** for a freehand stroke, which has no box to pull on.
  *
- * The order is the order [withHandle] indexes, and these are the stored corners rather
- * than normalised ones: index 0 is always the `from` corner, whichever side of `to` it
- * has ended up on, so dragging a corner past its opposite goes on working instead of
- * changing which handle is under the pointer.
+ * The order is the order [withHandle] indexes, and for the two stored as a pair these are
+ * the stored corners rather than normalised ones: index 0 is always the `from` corner,
+ * whichever side of `to` it has ended up on, so dragging a corner past its opposite goes
+ * on working instead of changing which handle is under the pointer. A caption has no such
+ * pair — its box is measured — so its four are walked from its top-left.
  */
 fun MarkupShape.handles(): List<MarkupPoint> = when (this) {
     is Arrow -> listOf(from, to)
     is Rectangle -> corners(from, to)
     is Ellipse -> corners(from, to)
     is Freehand -> emptyList()
-    // Resizing type is changing its size, which is a row in the inspector rather than a
-    // corner on the canvas.
-    is Text -> emptyList()
+    // The four corners of the caption's box, plate included — and dragging one **scales
+    // the type** rather than reshaping a rectangle (ME-148, `MarkupTextFrame`).
+    is Text -> frameHandles()
 }
 
 /** Every point translated, and nothing else — the whole of dragging a shape. */
@@ -87,7 +88,9 @@ fun MarkupShape.withHandle(index: Int, x: Float, y: Float): MarkupShape = when (
         ?.let { (a, b) -> copy(from = a, to = b) }
         ?: this
     is Freehand -> this
-    is Text -> this
+    // A ratio, not a corner: the type, the box and the line breaks move together
+    // (ME-148). The opposite corner is what stays still, as it does for a box above.
+    is Text -> withFrameHandle(index, x, y)
 }
 
 private fun MarkupPoint.shifted(dx: Float, dy: Float) = MarkupPoint(x + dx, y + dy)

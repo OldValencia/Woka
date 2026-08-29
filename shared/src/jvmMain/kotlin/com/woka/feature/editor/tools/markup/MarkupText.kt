@@ -31,15 +31,20 @@ private const val PLATE_PAD = 0.2f
  */
 internal fun textBounds(shape: MarkupShape.Text): Rect {
     val layout = textLayoutOf(shape) ?: return Rect.Zero
+    val band = captionBand(shape) ?: return Rect.Zero
 
     // **The longest line, never `layout.size.width`** — measured 2026-08-27, that one
     // reports the *constraint*: a block wrapped at 300 px whose longest line is 266 px
     // still measures 300, so the plate ran 34 px past the type and every one of them
     // landed on the right. A caption looked pushed into the left of its own background.
     val longest = (0 until layout.lineCount).maxOf { line -> layout.getLineRight(line) }
+    // **And the band vertically, never `layout.size.height`** — measured 2026-08-29, that
+    // one is the font's line box: 85 px of it for 48 px of glyphs at size 64, with 21 px
+    // of air above and 16 below. The plate was more than twice the height of the words and
+    // the type sat below the middle of its own background (`captionBand`).
     val box = Rect(
-        offset = Offset(shape.at.x, shape.at.y),
-        size = Size(longest, layout.size.height.toFloat())
+        offset = Offset(shape.at.x, shape.at.y + band.start),
+        size = Size(longest, band.endInclusive - band.start)
     )
     return if (shape.hasPlate()) box.inflate(shape.width * PLATE_PAD) else box
 }

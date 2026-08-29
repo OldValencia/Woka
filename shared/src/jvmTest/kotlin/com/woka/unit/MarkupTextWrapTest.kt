@@ -86,7 +86,14 @@ class MarkupTextWrapTest {
         val plated = textBounds(text(fill = 0xFF000000L))
 
         assertTrue(plated.width > bare.width, "an opaque plate did not outset the bounds")
-        assertEquals(bare.left - plated.left, bare.top - plated.top, "the outset is not square")
+        // A tolerance because the two are the same product reached along different sums:
+        // the left is `at.x` minus the pad, the top `at.y` plus the band minus it.
+        assertEquals(
+            bare.left - plated.left,
+            bare.top - plated.top,
+            absoluteTolerance = 0.001f,
+            message = "the outset is not square"
+        )
     }
 
     /**

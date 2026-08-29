@@ -77,6 +77,9 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-151](tickets/implemented/ME-151-markup-text-faces.md) | Markup text — the four faces | **done** 2026-08-29 — confirmed by hand after one fix, the glyphs rendering as dots |
 | [ME-148](tickets/ME-148-markup-text-frame.md) | Markup text — the frame you can grab | planned 2026-08-29 |
 | [ME-149](tickets/ME-149-moving-a-mark-with-no-tool-open.md) | Moving a mark with no tool open | planned 2026-08-29 |
+| [ME-152](tickets/ME-152-the-caption-box-is-the-type.md) | The caption's box is the type, not the font's line box | **done** 2026-08-29 — the caret half measured impossible and recorded, not built |
+| [ME-153](tickets/ME-153-paired-rows-and-a-wide-markup-card.md) | Two controls on one line, and a wide Markup card | planned 2026-08-29 |
+| [ME-154](tickets/ME-154-the-overlay-lives-in-the-picture.md) | The overlay lives in the picture's space, not the canvas's | **done** 2026-08-29 — the drift reported by hand |
 | [ME-117…ME-150](tickets/backlog.md) | Image editor | backlog |
 
 ME-201…ME-204, the video editor's own tickets, moved to

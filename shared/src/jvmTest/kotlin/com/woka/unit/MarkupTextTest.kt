@@ -29,12 +29,19 @@ class MarkupTextTest {
         at: MarkupPoint = MarkupPoint(120f, 80f)
     ) = MarkupShape.Text("t", 0xFFFF9F0AL, size, at, string)
 
+    /**
+     * **`at` is the left edge and the layout's origin, not the box's top-left** since
+     * ME-152. The visual box starts at the ascender rather than at the top of the font's
+     * line, so its top sits a fraction of an em below `at.y` — the leading the plate used
+     * to carry as air.
+     */
     @Test
-    fun `the bounds start at the point the shape was placed`() {
-        val bounds = textBounds(text(at = MarkupPoint(120f, 80f)))
+    fun `the bounds start at the point the shape was placed, less the font's leading`() {
+        val bounds = textBounds(text(at = MarkupPoint(120f, 80f), size = 64f))
 
         assertEquals(120f, bounds.left)
-        assertEquals(80f, bounds.top)
+        assertTrue(bounds.top > 80f, "the box still starts at the line's top")
+        assertTrue(bounds.top - 80f < 64f * 0.4f, "the box starts ${bounds.top - 80f} down")
     }
 
     @Test
@@ -73,6 +80,29 @@ class MarkupTextTest {
      * A shape nobody has typed into measures nothing and is nothing — the rule that keeps
      * an accidental placement from leaving an invisible mark in the document.
      */
+    /**
+     * **The box is the type, not the font's line box** (ME-152). Measured 2026-08-29: the
+     * layout reports `1.33 em` of height for `0.75 em` of ascender and `0.235 em` of
+     * descender, so 37 px of an 85 px box at size 64 was air — and the plate, the frame,
+     * the handles and the caret all came off that box.
+     */
+    @Test
+    fun `the measured box is about the type's own height, not the line box`() {
+        val height = textBounds(text(size = 64f)).height
+
+        assertTrue(height < 64f * 1.05f, "the box measured $height for 64 px of type")
+        assertTrue(height > 64f * 0.9f, "the box measured $height and has clipped the type")
+    }
+
+    /**
+     * And it does **not** depend on which letters were typed — a plate that shrank for a
+     * word with no descender would jump the moment a `g` was added to it.
+     */
+    @Test
+    fun `a string with descenders and one without measure the same height`() {
+        assertEquals(textBounds(text("Woka")).height, textBounds(text("gjpqy")).height)
+    }
+
     @Test
     fun `a blank string has no layout and no bounds`() {
         assertNull(textLayoutOf(text("")))

@@ -87,11 +87,17 @@ internal fun rememberToolScope(
     val values = previewMatrix.values.toList()
 
     return remember(session, cardinality, selection, canvasKeys, document, geometry, values) {
-        // Source → what the engine drew → where the canvas put it. Composed rather
+        // Source → what the engine drew → where the **picture** put it. Composed rather
         // than assumed identity: with a flip in the document the two disagree by the
         // width of the picture, and an overlay drawn without this lands on the far
         // side of it (2026-08-22).
-        val sourceToCanvas = previewMatrix.thenApplying(geometry.sourceToCanvas)
+        //
+        // **`sourceToPicture`, never `sourceToCanvas`** (2026-08-29). `EditorCanvasHost`
+        // composes this overlay inside the box it has already centred and panned, so the
+        // layout applies that offset and a matrix carrying it too applies it twice — which
+        // is a selection frame drifting off its own caption the moment the picture is
+        // dragged. See `EditorCanvasGeometry.sourceToPicture` for why it hid for so long.
+        val sourceToCanvas = previewMatrix.thenApplying(geometry.sourceToPicture)
         EditorToolScopeImpl(
             session = session,
             cardinality = cardinality,
