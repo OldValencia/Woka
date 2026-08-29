@@ -61,7 +61,7 @@ data class IntParam(
     override fun decode(value: ParamValue): Int? = (value as? IntValue)?.value?.coerceIn(range)
 }
 
-/** A label and an `IosSwitch`. */
+/** A label and an `SliderSwitch`. */
 data class BoolParam(
     override val key: String,
     val label: String,

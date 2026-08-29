@@ -32,7 +32,7 @@ import kotlin.test.assertTrue
  * cannot be composed over a throwaway repository. The `actual` above it is four
  * lines of wiring and nothing this file could fail on.
  *
- * The switches have no `toggleable` semantics — `IosSwitch` is a `clickable` box —
+ * The switches have no `toggleable` semantics — `SliderSwitch` is a `clickable` box —
  * so "the switch is off" is asserted the only way that can actually fail: the row
  * is seeded from the setting and the click is shown to move it in the direction
  * only a row reading that setting would move it.

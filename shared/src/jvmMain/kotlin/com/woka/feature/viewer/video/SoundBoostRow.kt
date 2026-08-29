@@ -19,7 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import com.woka.core.ui.components.IosSwitch
+import com.woka.core.ui.components.SliderSwitch
 import com.woka.core.ui.components.SwitchDefaults
 import com.woka.core.ui.icons.Icons
 import com.woka.feature.viewer.shell.SimpleTooltip
@@ -80,7 +80,7 @@ internal fun SoundBoostRow(enabled: Boolean, onChange: (Boolean) -> Unit) {
                     )
                 )
             }
-            IosSwitch(
+            SliderSwitch(
                 checked = enabled,
                 onCheckedChange = onChange,
                 modifier = Modifier.testTag(SOUND_BOOST_SWITCH_TAG),

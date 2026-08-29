@@ -15,7 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.woka.core.ui.theme.Theme
-import com.woka.core.ui.components.IosSwitch
+import com.woka.core.ui.components.SliderSwitch
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
@@ -68,6 +68,6 @@ fun SettingsToggleRow(
             )
         }
         Spacer(Modifier.width(16.dp))
-        IosSwitch(checked = checked, onCheckedChange = onCheckedChange)
+        SliderSwitch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }

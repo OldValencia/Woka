@@ -255,14 +255,6 @@ a global status object read by one composable in the shell, which is what lets t
 editor that started it. Three states: saving, saved, and failed with "nothing was written".
 *Depends on ME-132.*
 
-### ME-129 — Rename `IosSwitch`
-The components are Woka's own, inspired by that design language rather than branded with it
-(2026-08-18). `IosSwitch` is the only file carrying a vendor name; the type added in ME-102 is
-`SwitchColors` with no prefix, so this is the composable and its call sites in Settings and elsewhere.
-Deliberately not folded into ME-102 — a rename touching every call site is not the same change as
-making one control readable on a scrim.
-*Depends on nothing.*
-
 ---
 
 ## 900 — Follow-ons, explicitly not planned

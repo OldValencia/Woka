@@ -23,7 +23,7 @@ import kotlin.test.assertTrue
  * through a real `SettingsRepositoryImpl` on a throwaway root.
  *
  * **No `testTag` is used, and none was added to production.** `SettingsToggleRow`
- * renders its title and subtitle as text, and `IosSwitch` carries a click action —
+ * renders its title and subtitle as text, and `SliderSwitch` carries a click action —
  * between them that is a textual and a semantic anchor, which is exactly the case
  * the plan says does *not* warrant a tag. The row is composed on its own, so
  * `hasClickAction()` is unambiguous.

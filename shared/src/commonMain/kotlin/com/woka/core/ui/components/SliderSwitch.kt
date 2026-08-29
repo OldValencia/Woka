@@ -65,7 +65,7 @@ object SwitchDefaults {
 private val SWITCH_ON = Color(0xFF34C759)
 
 @Composable
-fun IosSwitch(
+fun SliderSwitch(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,

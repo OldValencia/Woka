@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import com.woka.core.ui.components.IosSwitch
+import com.woka.core.ui.components.SliderSwitch
 import com.woka.core.ui.components.SwitchDefaults
 import com.woka.feature.editor.core.BoolParam
 import com.woka.feature.editor.core.FloatParam
@@ -114,7 +114,7 @@ internal fun IntParamRow(spec: IntParam, params: ParamSet, writer: ParamWriter) 
 internal fun BoolParamRow(spec: BoolParam, params: ParamSet, writer: ParamWriter) {
     ParamRowFrame(spec.label) {
         Box(modifier = Modifier.weight(1f)) {
-            IosSwitch(
+            SliderSwitch(
                 checked = params[spec],
                 onCheckedChange = { writer.edit(spec, it) },
                 colors = SwitchDefaults.onScrim,
