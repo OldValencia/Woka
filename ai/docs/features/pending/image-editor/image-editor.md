@@ -81,7 +81,7 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-153](tickets/implemented/ME-153-paired-rows-and-a-wide-markup-card.md) | Two controls on one line, and a wide Markup card | **done** 2026-08-29, ~~superseded~~ by ME-155 — buttons beside a slider was refused on screen |
 | [ME-155](tickets/implemented/ME-155-a-compact-control-bar.md)              | A compact control bar: every value behind its own button | **done** 2026-08-29 — confirmed by hand after five passes; the two-drawer shape was dropped the same day |
 | [ME-154](tickets/implemented/ME-154-the-overlay-lives-in-the-picture.md)   | The overlay lives in the picture's space, not the canvas's | **done** 2026-08-29 — the drift reported by hand |
-| [ME-150](tickets/implemented/ME-150-the-pad-shapes-the-look.md)            | The pad shapes the look, not the photograph | **done** 2026-08-29 — by hand outstanding, which is what judges `BRIGHTNESS`. The pad's `Reset` and two right-clicks were asked for on top of it |
+| [ME-150](tickets/implemented/ME-150-the-pad-shapes-the-look.md)            | The pad shapes the look, not the photograph | **done** 2026-08-29 — confirmed by hand, constants included. The pad's `Reset` and two right-clicks were asked for on top of it |
 | [ME-117…ME-1xx](tickets/backlog.md)                                        | Image editor | backlog |
 
 ME-201…ME-204, the video editor's own tickets, moved to
