@@ -28,60 +28,60 @@ UX model: the iOS Photos editor. Visual truth: `ai/mockups/design/FINAL_design_m
 
 Build order is top to bottom. This table is the only place a ticket's state is recorded.
 
-| Ticket | Title | State |
-|---|---|---|
-| [ME-001](tickets/implemented/ME-001-toolchain-refresh.md) | Toolchain and dependency refresh | **done** 2026-08-16 |
-| [ME-013](tickets/implemented/ME-013-ffmpeg-8-1-2.md) | JavaCV 1.5.14 / FFmpeg 8.1.2 | **done** 2026-08-16 |
-| [ME-002](tickets/implemented/ME-002-package-skeleton.md) | Editor package skeleton and DI seam | **done** 2026-08-16 |
-| [ME-003](tickets/implemented/ME-003-param-schema.md) | Parameter schema | **done** 2026-08-16 |
-| [ME-004](tickets/implemented/ME-004-document-history-session.md) | Document, history, session | **done** 2026-08-16 |
-| [ME-005](tickets/implemented/ME-005-tool-contract.md) | Tool contract | **done** 2026-08-16 |
-| [ME-006](tickets/implemented/ME-006-tool-registry.md) | Tool registry, enablement, settings | **done** 2026-08-16 |
-| [ME-007](tickets/implemented/ME-007-raster-fold.md) | Raster stage and the fold | **done** 2026-08-16 |
-| [ME-008](tickets/implemented/ME-008-engine-seam.md) | Editor engine seam | **done** 2026-08-16 |
-| [ME-009](tickets/implemented/ME-009-save-targets.md) | Save targets and the atomic write | **done** 2026-08-17 |
-| [ME-010](tickets/implemented/ME-010-probes.md) | Capability probes | **done** 2026-08-18 |
-| [ME-011](tickets/implemented/ME-011-test-harness.md) | Test harness and the fixture tool | **done** 2026-08-18 |
-| [ME-012](tickets/implemented/ME-012-mockup-tokens.md) | Editor mockup and tokens | **done** 2026-08-18 |
-| [ME-014](tickets/implemented/ME-014-remove-material3.md) | Remove `material3` — before ME-101 | **done** 2026-08-18 |
-| [ME-101](tickets/implemented/ME-101-editor-shell.md) | Editor shell | **done** 2026-08-18 |
-| [ME-102](tickets/implemented/ME-102-param-row-renderers.md) | Parameter row renderers | **done** 2026-08-18 |
-| [ME-103](tickets/implemented/ME-103-image-surface.md) | Image surface | **done** 2026-08-18 |
-| [ME-104](tickets/implemented/ME-104-save-pipeline.md) | Save pipeline | **done** 2026-08-18, ~~superseded~~ by ME-132 |
-| [ME-105](tickets/implemented/ME-105-transform-tool.md) | Transform tool | **done** 2026-08-18 |
-| [ME-106](tickets/implemented/ME-106-entry-points.md) | Entry points | **done** 2026-08-18 |
-| [ME-131](tickets/implemented/ME-131-recipe-carrier.md) | Recipe carrier — JPEG and PNG | **done** 2026-08-19 |
-| [ME-132](tickets/implemented/ME-132-done-writes-the-recipe.md) | `Done` writes it; Export removed | **done** 2026-08-19 |
-| [ME-133](tickets/implemented/ME-133-readers-apply-the-recipe.md) | Every reader applies the recipe | **done** 2026-08-19 |
-| [ME-134](tickets/implemented/ME-134-reopening-an-edited-file.md) | Reopening an edited file | **done** 2026-08-19 |
-| [ME-135](tickets/implemented/ME-135-readers-notice-a-save.md) | Readers notice a save | **done** 2026-08-19 |
-| [ME-107](tickets/implemented/ME-107-revert-to-original.md) | Revert to Original — **un-dropped** | **done** 2026-08-19 |
-| [ME-108](tickets/implemented/ME-108-isobmff-carrier.md) | ISOBMFF carrier — HEIC, HEIF, AVIF | **done** 2026-08-19 — by hand outstanding |
-| [ME-137](tickets/implemented/ME-137-webp-carrier.md) | RIFF carrier — WebP, and bucket B empties | **done** 2026-08-19 — by hand outstanding |
-| [ME-138](tickets/implemented/ME-138-gif-carrier.md) | GIF carrier — Application Extension, one recipe for every frame | **done** 2026-08-21 — confirmed by hand |
-| [ME-139](tickets/implemented/ME-139-tiff-carrier.md) | TIFF carrier — private IFD tag | **done** 2026-08-20 — by hand outstanding |
-| [ME-140](tickets/implemented/ME-140-the-canvas-plays.md) | The editing canvas plays what the viewer plays | **done** 2026-08-21 — confirmed by hand |
-| [ME-109](tickets/implemented/ME-109-crop-tool.md) | Crop tool, and the fold at preview scale | **done** 2026-08-22 — confirmed by hand; the shape every later tool takes |
-| [ME-110](tickets/implemented/ME-110-resize-tool.md) | Resize tool | **done** 2026-08-22 — by hand outstanding |
-| [ME-111](tickets/implemented/ME-111-adjustments-tool.md) | Adjustments — six sliders, one colour matrix | **done** 2026-08-22 — confirmed by hand |
-| [ME-112](tickets/implemented/ME-112-filter-presets.md) | Filter presets, and the preview-choice row | **done** 2026-08-22 — by hand outstanding |
-| [ME-113](tickets/implemented/ME-113-markup-engine.md) | Markup engine — four shapes, one draw routine | **done** 2026-08-24 |
-| [ME-114](tickets/implemented/ME-114-markup-interaction.md) | Markup interaction — the overlay and `Delete` | **done** 2026-08-24 — by hand outstanding |
-| [ME-122](tickets/implemented/ME-122-markup-text.md) | Markup text — the fifth shape | **done** 2026-08-26 — confirmed by hand with ME-145 |
-| [ME-145](tickets/implemented/ME-145-markup-text-editing.md) | Markup text — editing on the canvas | **done** 2026-08-27 — confirmed by hand after four fixes |
-| [ME-146](tickets/implemented/ME-146-markup-text-box-and-background.md) | Markup text — a box and a background | **done** 2026-08-27 — confirmed by hand after three fixes |
-| [ME-115](tickets/implemented/ME-115-editor-settings-panel.md) | Editor settings panel | **done** 2026-08-28 — by hand outstanding |
-| [ME-116](tickets/implemented/ME-116-zoomed-canvas-fidelity.md) | Zoomed canvas fidelity — the zoom itself shipped with ME-109 | **done** 2026-08-28 — by hand outstanding |
-| [ME-141](tickets/implemented/ME-141-styles-pad-and-palette.md) | Styles: two carousels, a pad and a palette slider | **done** 2026-08-28 — panel reshaped by hand over three passes; the last one not yet seen on screen. What the pad *means* is [ME-150](tickets/backlog.md) |
-| [ME-147](tickets/implemented/ME-147-multi-select-chip-row.md) | A chip row that lights more than one — `ToggleSetParam` | **done** 2026-08-29 — against `FixtureTool`; no tool touched |
-| [ME-151](tickets/implemented/ME-151-markup-text-faces.md) | Markup text — the four faces | **done** 2026-08-29 — confirmed by hand after one fix, the glyphs rendering as dots |
-| [ME-148](tickets/implemented/ME-148-markup-text-frame.md) | Markup text — the frame you can grab | **done** 2026-08-29 |
-| [ME-149](tickets/ME-149-moving-a-mark-with-no-tool-open.md) | Moving a mark with no tool open | **done** 2026-08-29 |
-| [ME-152](tickets/implemented/ME-152-the-caption-box-is-the-type.md) | The caption's box is the type, not the font's line box | **done** 2026-08-29 — the caret half measured impossible and recorded, not built |
+| Ticket                                                                     | Title | State |
+|----------------------------------------------------------------------------|---|---|
+| [ME-001](tickets/implemented/ME-001-toolchain-refresh.md)                  | Toolchain and dependency refresh | **done** 2026-08-16 |
+| [ME-013](tickets/implemented/ME-013-ffmpeg-8-1-2.md)                       | JavaCV 1.5.14 / FFmpeg 8.1.2 | **done** 2026-08-16 |
+| [ME-002](tickets/implemented/ME-002-package-skeleton.md)                   | Editor package skeleton and DI seam | **done** 2026-08-16 |
+| [ME-003](tickets/implemented/ME-003-param-schema.md)                       | Parameter schema | **done** 2026-08-16 |
+| [ME-004](tickets/implemented/ME-004-document-history-session.md)           | Document, history, session | **done** 2026-08-16 |
+| [ME-005](tickets/implemented/ME-005-tool-contract.md)                      | Tool contract | **done** 2026-08-16 |
+| [ME-006](tickets/implemented/ME-006-tool-registry.md)                      | Tool registry, enablement, settings | **done** 2026-08-16 |
+| [ME-007](tickets/implemented/ME-007-raster-fold.md)                        | Raster stage and the fold | **done** 2026-08-16 |
+| [ME-008](tickets/implemented/ME-008-engine-seam.md)                        | Editor engine seam | **done** 2026-08-16 |
+| [ME-009](tickets/implemented/ME-009-save-targets.md)                       | Save targets and the atomic write | **done** 2026-08-17 |
+| [ME-010](tickets/implemented/ME-010-probes.md)                             | Capability probes | **done** 2026-08-18 |
+| [ME-011](tickets/implemented/ME-011-test-harness.md)                       | Test harness and the fixture tool | **done** 2026-08-18 |
+| [ME-012](tickets/implemented/ME-012-mockup-tokens.md)                      | Editor mockup and tokens | **done** 2026-08-18 |
+| [ME-014](tickets/implemented/ME-014-remove-material3.md)                   | Remove `material3` — before ME-101 | **done** 2026-08-18 |
+| [ME-101](tickets/implemented/ME-101-editor-shell.md)                       | Editor shell | **done** 2026-08-18 |
+| [ME-102](tickets/implemented/ME-102-param-row-renderers.md)                | Parameter row renderers | **done** 2026-08-18 |
+| [ME-103](tickets/implemented/ME-103-image-surface.md)                      | Image surface | **done** 2026-08-18 |
+| [ME-104](tickets/implemented/ME-104-save-pipeline.md)                      | Save pipeline | **done** 2026-08-18, ~~superseded~~ by ME-132 |
+| [ME-105](tickets/implemented/ME-105-transform-tool.md)                     | Transform tool | **done** 2026-08-18 |
+| [ME-106](tickets/implemented/ME-106-entry-points.md)                       | Entry points | **done** 2026-08-18 |
+| [ME-131](tickets/implemented/ME-131-recipe-carrier.md)                     | Recipe carrier — JPEG and PNG | **done** 2026-08-19 |
+| [ME-132](tickets/implemented/ME-132-done-writes-the-recipe.md)             | `Done` writes it; Export removed | **done** 2026-08-19 |
+| [ME-133](tickets/implemented/ME-133-readers-apply-the-recipe.md)           | Every reader applies the recipe | **done** 2026-08-19 |
+| [ME-134](tickets/implemented/ME-134-reopening-an-edited-file.md)           | Reopening an edited file | **done** 2026-08-19 |
+| [ME-135](tickets/implemented/ME-135-readers-notice-a-save.md)              | Readers notice a save | **done** 2026-08-19 |
+| [ME-107](tickets/implemented/ME-107-revert-to-original.md)                 | Revert to Original — **un-dropped** | **done** 2026-08-19 |
+| [ME-108](tickets/implemented/ME-108-isobmff-carrier.md)                    | ISOBMFF carrier — HEIC, HEIF, AVIF | **done** 2026-08-19 — by hand outstanding |
+| [ME-137](tickets/implemented/ME-137-webp-carrier.md)                       | RIFF carrier — WebP, and bucket B empties | **done** 2026-08-19 — by hand outstanding |
+| [ME-138](tickets/implemented/ME-138-gif-carrier.md)                        | GIF carrier — Application Extension, one recipe for every frame | **done** 2026-08-21 — confirmed by hand |
+| [ME-139](tickets/implemented/ME-139-tiff-carrier.md)                       | TIFF carrier — private IFD tag | **done** 2026-08-20 — by hand outstanding |
+| [ME-140](tickets/implemented/ME-140-the-canvas-plays.md)                   | The editing canvas plays what the viewer plays | **done** 2026-08-21 — confirmed by hand |
+| [ME-109](tickets/implemented/ME-109-crop-tool.md)                          | Crop tool, and the fold at preview scale | **done** 2026-08-22 — confirmed by hand; the shape every later tool takes |
+| [ME-110](tickets/implemented/ME-110-resize-tool.md)                        | Resize tool | **done** 2026-08-22 — by hand outstanding |
+| [ME-111](tickets/implemented/ME-111-adjustments-tool.md)                   | Adjustments — six sliders, one colour matrix | **done** 2026-08-22 — confirmed by hand |
+| [ME-112](tickets/implemented/ME-112-filter-presets.md)                     | Filter presets, and the preview-choice row | **done** 2026-08-22 — by hand outstanding |
+| [ME-113](tickets/implemented/ME-113-markup-engine.md)                      | Markup engine — four shapes, one draw routine | **done** 2026-08-24 |
+| [ME-114](tickets/implemented/ME-114-markup-interaction.md)                 | Markup interaction — the overlay and `Delete` | **done** 2026-08-24 — by hand outstanding |
+| [ME-122](tickets/implemented/ME-122-markup-text.md)                        | Markup text — the fifth shape | **done** 2026-08-26 — confirmed by hand with ME-145 |
+| [ME-145](tickets/implemented/ME-145-markup-text-editing.md)                | Markup text — editing on the canvas | **done** 2026-08-27 — confirmed by hand after four fixes |
+| [ME-146](tickets/implemented/ME-146-markup-text-box-and-background.md)     | Markup text — a box and a background | **done** 2026-08-27 — confirmed by hand after three fixes |
+| [ME-115](tickets/implemented/ME-115-editor-settings-panel.md)              | Editor settings panel | **done** 2026-08-28 — by hand outstanding |
+| [ME-116](tickets/implemented/ME-116-zoomed-canvas-fidelity.md)             | Zoomed canvas fidelity — the zoom itself shipped with ME-109 | **done** 2026-08-28 — by hand outstanding |
+| [ME-141](tickets/implemented/ME-141-styles-pad-and-palette.md)             | Styles: two carousels, a pad and a palette slider | **done** 2026-08-28 — panel reshaped by hand over three passes; the last one not yet seen on screen. What the pad *means* is [ME-150](tickets/backlog.md) |
+| [ME-147](tickets/implemented/ME-147-multi-select-chip-row.md)              | A chip row that lights more than one — `ToggleSetParam` | **done** 2026-08-29 — against `FixtureTool`; no tool touched |
+| [ME-151](tickets/implemented/ME-151-markup-text-faces.md)                  | Markup text — the four faces | **done** 2026-08-29 — confirmed by hand after one fix, the glyphs rendering as dots |
+| [ME-148](tickets/implemented/ME-148-markup-text-frame.md)                  | Markup text — the frame you can grab | **done** 2026-08-29 |
+| [ME-149](tickets/implemented/ME-149-moving-a-mark-with-no-tool-open.md)    | Moving a mark with no tool open | **done** 2026-08-29 |
+| [ME-152](tickets/implemented/ME-152-the-caption-box-is-the-type.md)        | The caption's box is the type, not the font's line box | **done** 2026-08-29 — the caret half measured impossible and recorded, not built |
 | [ME-153](tickets/implemented/ME-153-paired-rows-and-a-wide-markup-card.md) | Two controls on one line, and a wide Markup card | **done** 2026-08-29, ~~superseded~~ by ME-155 — buttons beside a slider was refused on screen |
-| [ME-155](tickets/implemented/ME-155-a-compact-control-bar.md) | A compact control bar: every value behind its own button | **done** 2026-08-29 — confirmed by hand after five passes; the two-drawer shape was dropped the same day |
-| [ME-154](tickets/implemented/ME-154-the-overlay-lives-in-the-picture.md) | The overlay lives in the picture's space, not the canvas's | **done** 2026-08-29 — the drift reported by hand |
-| [ME-117…ME-150](tickets/backlog.md) | Image editor | backlog |
+| [ME-155](tickets/implemented/ME-155-a-compact-control-bar.md)              | A compact control bar: every value behind its own button | **done** 2026-08-29 — confirmed by hand after five passes; the two-drawer shape was dropped the same day |
+| [ME-154](tickets/implemented/ME-154-the-overlay-lives-in-the-picture.md)   | The overlay lives in the picture's space, not the canvas's | **done** 2026-08-29 — the drift reported by hand |
+| [ME-117…ME-150](tickets/backlog.md)                                        | Image editor | backlog |
 
 ME-201…ME-204, the video editor's own tickets, moved to
 [`../video-editor/tickets/backlog.md`](../video-editor/tickets/backlog.md) on 2026-08-24 and are
