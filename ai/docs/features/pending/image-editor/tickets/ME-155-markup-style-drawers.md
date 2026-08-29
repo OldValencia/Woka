@@ -6,6 +6,14 @@
 | **Depends on** | ME-153 (`EditorTool.lines`, `PairedRowFrame`), ME-141 (`InspectorAccessory`) |
 | **Feature** | [Image Editor](../image-editor.md) |
 
+> **Think it through twice before building this** (author, 2026-08-29). The shape below is
+> what was asked for at the end of a long sitting, not something that has been sat with —
+> and the day already showed twice that a panel change reads differently on screen than it
+> does in a plan. Before the first line: draw the three rows and both drawers out, decide
+> what a drawer looks like *closed* when its group carries more than a colour, and settle
+> whether hiding a slider behind a press is worth the row it saves. If the answer is no for
+> one of the two groups, this ticket is smaller than it looks — and that is a fine outcome.
+
 **Goal.** Collapse Markup's colour rows into **one swatch each**, and put everything that styles them
 into a narrow popover that slides out beside the card.
 
