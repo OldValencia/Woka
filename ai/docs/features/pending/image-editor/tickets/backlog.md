@@ -150,39 +150,17 @@ wants the author's eyes rather than a green build: the files to convert are the 
 `Theme.viewer`" and "reads `Theme.colors`". Deliberately kept out of ME-012, whose job was the editor.
 *Depends on nothing. Blocks nothing — the editor is already correct.*
 
-### ME-123 — Keep a huge source out of the shared cache
-The guard rail §10 measured and did not build. A 100 MP source is **384 MB** of native pixels against a
-**256 MB** `ImageBitmapCache` budget, so one such picture evicts everything else and still does not fit.
+### ME-1xx — Opening a large photograph must not freeze the window
+Split out of ME-123 on 2026-08-30, when the cache half of that block was promoted and this half was
+found to be a different question. `EditorAnimatedProxy.kt` builds the canvas proxy inside
+`remember(file, frameIndex) { EditorProxy.load(...) }`, which runs **synchronously while composing** —
+667 ms for a 100 MP source, ~150 ms for a 24 MP one, measured in ME-010. Opening the editor on a large
+photograph freezes the UI for exactly that long.
 
-Most of this falls out of ME-103's decision to build the proxy in the editor's own scope and decode
-native only at save (§9) — what is left is the part that decision does not cover: the **viewer**
-route already put the native bitmap in the cache before the editor opened, and ME-104's save decode
-must not put a second one there. So: a decode path that returns a bitmap without caching it, and a
-measured assertion that editing a 100 MP file leaves the cache no larger than it started.
-**Also carries the decode off the composition thread.** ME-103 builds the proxy inside
-`remember { EditorProxy.load(...) }`, which runs synchronously while composing — 667 ms for a 100 MP
-source, ~150 ms for a 24 MP one, measured in ME-010. Opening the editor on a large photograph freezes
-the UI for exactly that long. The fix needs a placeholder, an ordering against the frozen viewer
-underneath, and an answer for `Cancel` pressed mid-decode, which is why it was not improvised in ME-103.
-
-**Wider since 2026-08-19.** ME-133 makes every *read* of an edited file a decode plus a fold, so the
-native decode is no longer something only a save does. The viewer's route is the one to watch: a
-100 MP edited photograph is now 384 MB decoded, folded, and the fold's output cached on top of it.
-*Depends on ME-133.*
-
-### ME-125 — Save cancellation and job lifetime
-What happens to an in-flight save when the app closes. No file is ever half-written — the atomic move
-is the last step — so this is about the **job and the banner**, not corruption: whether closing the
-window waits for the save, and what the banner says if the process goes away mid-write.
-
-**Half answered by ME-130** (2026-08-30): the save runs in a scope owned by `EditorSaveStatus`, built
-like `PipManager.pipScope`, so it survives the editor that started it and reports through the banner.
-What that does *not* answer is the process going away — a `SupervisorJob` in an object is not a
-shutdown hook, and nothing waits for it.
-
-Smaller since 2026-08-19 but not gone: a recipe write is a few hundred bytes rather than a re-encode of
-100 MP, so the window is short — for bucket B (§5.1) it is still a full render and encode.
-*Depends on ME-130.*
+The fix needs three things the cache ticket did not: a placeholder for the frame the proxy is not there
+yet, an ordering against the frozen viewer still composed underneath (§4.1), and an answer for `Cancel`
+pressed mid-decode. That is why it was not improvised inside ME-103 and not folded into ME-123.
+*Depends on ME-123.*
 
 ### ME-1xx — An unsaved edit per frame
 Raised by ME-158 (2026-08-30), which chose the discard dialog instead. Walking from frame 1 to frame 3
@@ -194,35 +172,6 @@ a history** per frame, so undo does not walk out of the frame being looked at in
 That is a redesign of a 145-line state holder already at the size mandate, plus a rule for what `Undo`
 means when the answer is in another frame — which is why it was not improvised inside ME-158.
 *Depends on ME-158.*
-
-### ME-128 — Concurrent editor sessions, and the dock list that reaches them
-Requested 2026-08-18. Three things that belong together:
-
-- **The dock hides while an editor is open**, the way it already hides for the viewer
-  (`FolderScreen` sets `dockAccessories.isVisible = viewerMediaId == null`).
-- **The `Editor` dock item lists the open, unsaved editors** on hover — the same popup-on-hover shape
-  `Library` already uses for `pinnedSessions`, and driven the same way. Picking one **returns to it with
-  its document and history intact**, which is the whole point: an edit in progress is not lost by
-  opening something else.
-- **A badge dot when that list is non-empty**, using `DockItem`'s existing `hasBadge`. Explicitly *only*
-  the dot — the item is **not** tinted the way `Library` tints itself when active. One is "you are here",
-  the other is "something is waiting".
-
-**The architectural consequence, which is the reason this is not a small ticket.** ME-004 made
-`EditorSession` a Koin `factory` whose constructing composable **owns it and must `close()` it**. More
-than one live session means a composable can no longer be that owner: something above the screen has to
-hold them, key them by path plus frame index, and decide when a session is finally disposed — closing
-the editor is no longer the same event as ending the session. That store is what this ticket really
-adds; the dock list is its UI. **ME-106 must not create-and-dispose per open** once this lands, so
-whichever ships second adjusts the other.
-
-`EditorScreen` needs no change: ME-101 already takes the session as a parameter rather than resolving it.
-
-Also settled while looking: **`Icons.Static.Editor` already exists** (`square_and_pencil`) and is the
-right glyph. `FloatingDock` currently draws the Editor item with `Icons.Static.Settings` under a stale
-`// Replace with Editor icon if available` comment, so it is the same icon as the Settings button beside
-it. One-line fix, folded in here.
-*Depends on ME-106.*
 
 ---
 

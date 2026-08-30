@@ -76,16 +76,6 @@ class ImageCacheEvictionTest {
     }
 
     @Test
-    fun `a bitmap larger than the whole budget is still admitted`() =
-        withImageCacheBudget(3 * MEGABYTE) {
-            put("small")
-            put("huge", megabytes = 8)
-            assertNotNull(ImageBitmapCache["huge"], "an image too big to cache became undrawable")
-            assertNull(ImageBitmapCache["small"], "the cache kept something besides the newest")
-            assertEquals(8 * MEGABYTE, ImageBitmapCache.retainedBytes)
-        }
-
-    @Test
     fun `paging through more images than fit never grows without bound`() =
         withImageCacheBudget(4 * MEGABYTE) {
             repeat(40) { index ->
@@ -117,6 +107,10 @@ class ImageCacheEvictionTest {
             put(ImageBitmapCache.previewKey(path, 0))
             put(ImageBitmapCache.previewKey(path, 3))
             put(ImageBitmapCache.key("D:/Photos/burst.heic.backup", 0))
+            // A delta, not a total. This case does not fill past its budget, so what
+            // other tests left in the singleton is still in it — and until ME-123 an
+            // 8 MB entry admitted by the case above happened to clear the cache first.
+            val before = ImageBitmapCache.retainedBytes
 
             ImageBitmapCache.removeAllFor(path)
 
@@ -126,6 +120,6 @@ class ImageCacheEvictionTest {
             assertNull(ImageBitmapCache[ImageBitmapCache.previewKey(path, 3)])
             // A path this one is a prefix of is a different file, and stays.
             assertNotNull(ImageBitmapCache[ImageBitmapCache.key("D:/Photos/burst.heic.backup", 0)])
-            assertEquals(MEGABYTE, ImageBitmapCache.retainedBytes)
+            assertEquals(before - 4 * MEGABYTE, ImageBitmapCache.retainedBytes)
         }
 }

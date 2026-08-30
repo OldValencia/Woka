@@ -1,7 +1,6 @@
 package com.woka.core.ui.image
 
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.ImageBitmapConfig
 import kotlinx.coroutines.Dispatchers
 
 /** Overridable for tests, the same way `woka.storageRoot` is (see `WokaStorage`). */
@@ -73,8 +72,17 @@ object ImageBitmapCache {
 
     operator fun get(key: String): ImageBitmap? = synchronized(lock) { entries[key] }
 
+    /**
+     * Admits [bitmap] unless it is too large to hold — see [cacheAdmits].
+     *
+     * **Whatever was under [key] is dropped either way**, refusal included, or a
+     * declined write would leave the entry it was meant to replace serving pre-edit
+     * pixels for as long as the cache held it.
+     */
     operator fun set(key: String, bitmap: ImageBitmap) = synchronized(lock) {
-        entries.put(key, bitmap)?.let { retainedBytes -= it.byteSize }
+        entries.remove(key)?.let { retainedBytes -= it.byteSize }
+        if (!cacheAdmits(bitmap.byteSize, budgetBytes)) return@synchronized
+        entries[key] = bitmap
         retainedBytes += bitmap.byteSize
         evictDownToBudget(except = key)
     }
@@ -116,9 +124,11 @@ object ImageBitmapCache {
     }
 
     /**
-     * Drops the oldest entries until the budget is met. [except] is the entry just
-     * admitted: a single photo larger than the whole budget still has to be
-     * drawable, so it is kept and the cache simply holds nothing else.
+     * Drops the oldest entries until the budget is met.
+     *
+     * [except] is the entry just admitted. Since ME-123 nothing over half the budget
+     * gets this far, so it is no longer what keeps a huge picture drawable — it is kept
+     * because `budgetBytes` is a system property a test may shrink after an admission.
      */
     private fun evictDownToBudget(except: String) {
         val oldestFirst = entries.entries.iterator()
@@ -130,20 +140,3 @@ object ImageBitmapCache {
         }
     }
 }
-
-/**
- * What one entry costs. Everything reaching this cache is `N32Premul` — both
- * `Image.makeFromEncoded` and the poster's surface snapshot produce it — but the
- * config is read rather than assumed, so an accounting that silently halves is not
- * one toolchain change away.
- */
-private val ImageBitmap.byteSize: Long
-    get() {
-        val bytesPerPixel = when (config) {
-            ImageBitmapConfig.Alpha8 -> 1
-            ImageBitmapConfig.Rgb565 -> 2
-            ImageBitmapConfig.F16 -> 8
-            else -> 4
-        }
-        return width.toLong() * height * bytesPerPixel
-    }
