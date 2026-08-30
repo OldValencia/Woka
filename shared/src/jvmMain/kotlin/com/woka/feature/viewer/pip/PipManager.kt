@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.IntSize
 import com.woka.app.AppDependencies
+import com.woka.app.shell.EditorPresence
 import com.woka.core.data.MediaItem
 import com.woka.core.data.ScalePreset
 import com.woka.app.navigation.Screen
@@ -72,6 +73,14 @@ object PipManager {
 
     fun closePip(returnToMain: Boolean = false) {
         if (returnToMain && activeItem != null) {
+            // An open editor is saved and closed **before** the route changes (ME-124).
+            // The hazard is invisible from here: `replaceTop` with a fresh nonce is a
+            // different `AnimatedContent` target, so `FolderScreen` is rebuilt — and
+            // `editorTarget` lives inside it. Without this line a keypress in this
+            // window destroys an edit in the other one, with no dialog and no banner.
+            // The editor decides whether leaving means writing; the write itself
+            // outlives the composition, in `EditorSaveStatus.scope` (ME-130).
+            EditorPresence.saveAndClose?.invoke()
             isTransitioningToMain = true
             AppDependencies.router.replaceTop(
                 Screen.Folder(

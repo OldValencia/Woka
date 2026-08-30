@@ -40,6 +40,11 @@ internal fun MediaViewerShortcutEffect(
     val curToggleFullscreen by rememberUpdatedState(onToggleFullscreen)
 
     DisposableEffect(globalShortcuts) {
+        // Give back what was found rather than clearing the slot (ME-124), symmetric
+        // with `EditorKeyEffect`. Identical today — the viewer is the first claimant, so
+        // this is null — and the asymmetry is what made "whoever disposes last wins"
+        // possible: a viewer torn down under an editor would wipe the editor's handler.
+        val previous = globalShortcuts.onPreviewKey
         globalShortcuts.onPreviewKey = { event ->
             handleMediaViewerKeyEvent(
                 event = event,
@@ -68,6 +73,6 @@ internal fun MediaViewerShortcutEffect(
                 soundBoost = curBoost
             )
         }
-        onDispose { globalShortcuts.onPreviewKey = null }
+        onDispose { globalShortcuts.onPreviewKey = previous }
     }
 }
