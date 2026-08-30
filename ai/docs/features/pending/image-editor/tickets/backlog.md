@@ -162,58 +162,30 @@ native decode is no longer something only a save does. The viewer's route is the
 100 MP edited photograph is now 384 MB decoded, folded, and the fold's output cached on top of it.
 *Depends on ME-133.*
 
-### ME-124 — Editor and picture-in-picture
-Undefined today, and the reason it matters is concrete: `GlobalShortcutState.onPreviewKey` is a
-**single mutable slot**, so whoever registers last wins the keyboard. With a PiP window open and the
-editor mounted, that is decided by composition order rather than by intent.
-
-Decide and enforce one rule — most likely "the editor takes the keyboard and PiP keeps playing without
-shortcuts", the alternative being to refuse opening the editor while PiP is up — and make the handler
-hand-off explicit rather than incidental. ME-106 saves and restores the viewer's handler; this ticket
-is what happens when there are three claimants, not two.
-*Depends on ME-106.*
-
 ### ME-125 — Save cancellation and job lifetime
 What happens to an in-flight save when the app closes. No file is ever half-written — the atomic move
-is the last step — so this is about the **job and the banner**, not corruption: which scope the save
-runs in, whether closing the window waits for it, and what the banner says if the process goes away
-mid-write. Today the answer is "whatever the coroutine scope happens to do", which is not an answer.
+is the last step — so this is about the **job and the banner**, not corruption: whether closing the
+window waits for the save, and what the banner says if the process goes away mid-write.
+
+**Half answered by ME-130** (2026-08-30): the save runs in a scope owned by `EditorSaveStatus`, built
+like `PipManager.pipScope`, so it survives the editor that started it and reports through the banner.
+What that does *not* answer is the process going away — a `SupervisorJob` in an object is not a
+shutdown hook, and nothing waits for it.
 
 Smaller since 2026-08-19 but not gone: a recipe write is a few hundred bytes rather than a re-encode of
 100 MP, so the window is short — for bucket B (§5.1) it is still a full render and encode.
-*Depends on ME-132.*
+*Depends on ME-130.*
 
-### ME-126 — Editing one frame of a frame set
-**Answered for the MVP, wanted properly.** A recipe is written once per file and a frame set is
-several pictures in one file, so today an edit applies to **all of them** — turn one frame of a burst
-and the whole burst turns. Confirmed acceptable by hand on 2026-08-19, once ME-108 made HEIC editable
-at all, and it is the honest default: the file carries one document and every reader folds it.
+### ME-1xx — An unsaved edit per frame
+Raised by ME-158 (2026-08-30), which chose the discard dialog instead. Walking from frame 1 to frame 3
+inside the editor rebuilds the engine, the stored document and the session, so work on frame 1 is
+either lost or confirmed away. What is wanted is to carry it: `EditorSession` holding a document **and
+a history** per frame, so undo does not walk out of the frame being looked at into one that is not, and
+`Done` writing every frame it touched in one merge.
 
-What is wanted is per-frame: turn frame 3 and leave the other four alone. The shape that fits the
-model is a **keyed document** in the same segment — the payload becomes frames-to-documents rather
-than one document, with the un-keyed form still read as "every frame", so a file written before this
-keeps meaning what it meant. Readers are already shaped for it: `StillEdits.apply` takes a frame
-index and ignores it.
-
-What that then has to answer, and nothing does yet:
-
-- **`Done`** writes into one slot rather than replacing the payload, so editing frame 3 must not drop
-  frame 1's edit — the same failure ME-134 fixed one level up.
-- **Revert** grows a question it does not have today: this frame, or the file. The grid entry can only
-  mean the file; the editor's control could mean either.
-- **The strip and the carousel** need to say which frames carry an edit, or a burst becomes a place
-  where edits hide.
-- **Which frame the editor opens on** is already carried (`EditorTarget.frameIndex`) and already
-  correct; nothing else in the shell changes.
-
-*Depends on ME-108.*
-
-### ME-127 — Configurable output quality
-JPEG quality is fixed at **q95** in MVP (§9, 2026-08-18). This is the field that makes it adjustable:
-a `WokaSettings` entry, a row in Settings → Editor, and the save pipeline reading it instead of the
-constant. Parked deliberately — one more field and one more row against a §5 that is already dense,
-for a number most users never touch.
-*Depends on ME-115.*
+That is a redesign of a 145-line state holder already at the size mandate, plus a rule for what `Undo`
+means when the answer is in another frame — which is why it was not improvised inside ME-158.
+*Depends on ME-158.*
 
 ### ME-128 — Concurrent editor sessions, and the dock list that reaches them
 Requested 2026-08-18. Three things that belong together:
@@ -243,17 +215,6 @@ right glyph. `FloatingDock` currently draws the Editor item with `Icons.Static.S
 `// Replace with Editor icon if available` comment, so it is the same icon as the Settings button beside
 it. One-line fix, folded in here.
 *Depends on ME-106.*
-
-### ME-130 — The save banner
-**Mostly dissolved 2026-08-19.** This block was the *choice* around saving — a `Done` menu offering
-Save a Copy and Overwrite…, a destructive confirmation, a session-scoped "don't ask again". §5 removed
-all of it: there is one save, one destination, nothing to choose and nothing to confirm.
-
-What is left is the **reporting**, and it is worth keeping. `Done` closes the editor immediately and
-the save runs behind it, so a banner is the only report there can be. It follows `FrameExportBanner` —
-a global status object read by one composable in the shell, which is what lets the banner outlive the
-editor that started it. Three states: saving, saved, and failed with "nothing was written".
-*Depends on ME-132.*
 
 ---
 
