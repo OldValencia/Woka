@@ -8,16 +8,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import com.woka.app.shell.EditorPresence
 import com.woka.app.shell.LocalGlobalShortcuts
 import com.woka.core.data.MediaItem
 import com.woka.feature.editor.EditorTarget
-import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditorEngine
 import com.woka.feature.editor.core.EditorEngineFactory
 import com.woka.feature.editor.core.EditorSession
 import com.woka.feature.editor.core.EditorToolRegistry
-import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.io.File
@@ -62,7 +62,20 @@ internal fun EditorHost(
     // continuing it. A few kilobytes off the file's head, once per open.
     val stored = remember(target) { engine.storedDocument() }
     val session = remember(target) { EditorSession(MediaItem.Image(file), stored) }
-    DisposableEffect(session) { onDispose { session.close() } }
+
+    // What the video window invokes on its way back to the main one (ME-124). Held
+    // through `rememberUpdatedState` so the published lambda always runs the current
+    // `onClose`/`onSaved`, and reads the document when called rather than now.
+    val leaveForVideo by rememberUpdatedState(
+        leaveForVideoAction(engine, session, file.name, onClose, onSaved)
+    )
+    DisposableEffect(session) {
+        EditorPresence.opened { leaveForVideo() }
+        onDispose {
+            EditorPresence.closed()
+            session.close()
+        }
+    }
 
     // Whether the *file* still carries something to remove — read once, and moved by
     // the only thing in this session that can change it (ME-107).
@@ -78,29 +91,14 @@ internal fun EditorHost(
     val leave = { if (isDirty) askingToDiscard = true else onClose() }
 
     // `Done` writes into the file that was opened and closes. **There is nothing to
-    // choose** (§4.5): no target, no name, no confirmation — which is why this is four
-    // lines and why `copyNameFor` no longer exists. The banner is ME-130.
-    val done = {
-        scope.launch {
-            val result = engine.save(session.document.value)
-            if (result is EditSaveResult.Saved) onSaved(result.path)
-            onClose()
-        }
-        Unit
-    }
+    // choose** (§4.5): no target, no name, no confirmation — which is why this is one
+    // line and why `copyNameFor` no longer exists. The order it closes in, and the
+    // scope the write outlives this composable in, are `saveAction`'s (ME-130).
+    val done = saveAction(engine, session, file.name, onClose, onSaved)
 
-    // Revert removes the recipe and then tells the session, in that order: the engine
-    // owns the file and the session only mirrors it (ME-107). A failed write leaves
-    // both alone, so the editor never claims a revert the disk refused.
-    val revert = {
-        scope.launch {
-            if (engine.revert() !is EditSaveResult.Failed) {
-                carriesEdit = false
-                session.revertedToOriginal()
-            }
-            askingToRevert = false
-        }
-        Unit
+    val revert = revertAction(engine, session, scope) { reverted ->
+        if (reverted) carriesEdit = false
+        askingToRevert = false
     }
 
     // Built here so its lifetime is the editor's: the key handler installed just below

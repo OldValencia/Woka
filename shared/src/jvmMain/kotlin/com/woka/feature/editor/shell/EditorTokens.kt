@@ -140,9 +140,6 @@ object EditorTokens {
         /** Panel and popover fades; the editor entering and leaving. */
         const val PANEL_MS = 200
 
-        /** How long the save banner sits before it dismisses itself. */
-        const val BANNER_MS = 2600
-
         /** The shell's easing, from the app mockup's `cubic-bezier`. */
         val easing: Easing = CubicBezierEasing(0.2f, 0.8f, 0.2f, 1f)
     }

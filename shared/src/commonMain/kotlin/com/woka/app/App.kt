@@ -16,7 +16,7 @@ import com.woka.app.navigation.Screen
 import com.woka.app.navigation.ScreenHost
 import com.woka.app.shell.DockTab
 import com.woka.app.shell.MainShell
-import com.woka.core.ui.components.FrameExportBanner
+import com.woka.app.shell.StatusBanners
 import com.woka.feature.search.SearchOverlay
 import com.woka.feature.settings.SettingsOverlay
 import com.woka.core.ui.theme.Theme
@@ -96,9 +96,10 @@ fun App(
             )
             }
 
-            // Above every screen, because an export started in the grid keeps
-            // running once the viewer opens on top of it.
-            FrameExportBanner()
+            // Above every screen, because the work being reported outlives the screen
+            // it started on: an export keeps running once the viewer opens over the
+            // grid, and a save keeps running once the editor has closed (ME-130).
+            StatusBanners()
 
             // Settings Overlay
             SettingsOverlay(

@@ -15,6 +15,7 @@ import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditorEngine
+import kotlinx.coroutines.CompletableDeferred
 
 /**
  * An [EditorEngine] that draws a rectangle, so the shell can be driven with no real
@@ -42,7 +43,12 @@ class FixtureEngine(
      */
     private val drawnSizeOf: ((EditDocument) -> IntSize)? = null,
     /** How the source lands on what was drawn — identity unless a test says otherwise. */
-    private val previewMatrixOf: ((EditDocument) -> Matrix)? = null
+    private val previewMatrixOf: ((EditDocument) -> Matrix)? = null,
+    /**
+     * Held before [save] answers, so a test can drive the case ME-130 exists for: a
+     * write still running after the editor that started it has left the tree.
+     */
+    private val savingGate: CompletableDeferred<Unit>? = null
 ) : EditorEngine {
 
     override fun drawnSize(document: EditDocument): IntSize =
@@ -102,6 +108,7 @@ class FixtureEngine(
 
     override suspend fun save(document: EditDocument): EditSaveResult {
         saveRequests += document
+        savingGate?.await()
         return result
     }
 
