@@ -31,7 +31,7 @@ internal fun MediaViewerActiveItemEffects(
 ) {
     LaunchedEffect(activeItem) {
         val path = activeItem?.file?.absolutePath
-        if (PipManager.isPipActive && path != null && path != PipManager.activeItem?.file?.absolutePath) {
+        if (pipConflicts(activeItem, PipManager.isPipActive, PipManager.activeItem?.file?.absolutePath)) {
             onConflictChange(true)
             return@LaunchedEffect
         }
