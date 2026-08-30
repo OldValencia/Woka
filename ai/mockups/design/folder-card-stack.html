@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<title>Woka — a folder card should read as a folder</title>
+<style>
+/* ============================================================================
+   Spec mockup for `pending/a-folder-card-should-read-as-a-folder.md`, candidate 1:
+   the stack edge is the right idea, drawn too faintly. Nothing here is new
+   geometry — the insets, the protrusion and the radius come straight from
+   home-proposal.html (.stack, lines 129-134). What is being settled is the one
+   thing that file never said: what colour the two sheets are, in BOTH themes.
+
+   Four variants, side by side, because "reads as a folder" is decided by looking.
+   ========================================================================= */
+
+/* ---------- theme tokens: the real ones from core/ui/theme/Theme.kt -------- */
+[data-theme="dark"]{
+  --bg:#0E1015;            /* background        */
+  --card:#161920;          /* surfaceElevated   */
+  --border:rgba(255,255,255,.04);
+  --border-glow:rgba(255,255,255,.08);
+  --text:#F4F4F6;          /* textPrimary       */
+  --text-2:#838893;        /* textTertiary      */
+  --text-3:#515764;        /* textSecondary     */
+  --panel:#161920;
+  --shadow:rgba(0,0,0,.28);
+  --shadow-hi:rgba(0,0,0,.4);
+}
+[data-theme="light"]{
+  --bg:#F2F2F7;
+  --card:#FFFFFF;
+  --border:rgba(0,0,0,.08);
+  --border-glow:rgba(0,0,0,.15);
+  --text:#1C1C1E;
+  --text-2:#6E6E76;
+  --text-3:#9A9AA1;
+  --panel:#FFFFFF;
+  --shadow:rgba(0,0,0,.10);
+  --shadow-hi:rgba(0,0,0,.16);
+}
+:root{--accent-folders:#FF9F0A}
+
+/* ---------- the four variants -------------------------------------------- */
+/* A — as shipped. FolderCardBody.kt:87-88 fills both sheets with the card's
+   OWN colour (surfaceElevated) and gives them no outline, so in light theme
+   they are white on #F2F2F7 and in dark they are the tile colour again. */
+[data-theme="dark"]  .v-a{--near:#161920;--far:rgba(22,25,32,.55);--edge:transparent;--edge-far:transparent}
+[data-theme="light"] .v-a{--near:#FFFFFF;--far:rgba(255,255,255,.55);--edge:transparent;--edge-far:transparent}
+
+/* B — fill only. The sheets stop borrowing the tile's colour: near is a shade
+   off the card, far is a shade further toward the canvas without reaching it. */
+[data-theme="dark"]  .v-b{--near:#1A1E27;--far:#141821;--edge:transparent;--edge-far:transparent}
+[data-theme="light"] .v-b{--near:#E9E9EF;--far:#DEDEE6;--edge:transparent;--edge-far:transparent}
+
+/* C — fill plus the hairline home-proposal.html asked for (border-top:0, so the
+   sheet meets the tile without a seam). Costs a stroked path in Compose. */
+[data-theme="dark"]  .v-c{--near:#1A1E27;--far:#141821;--edge:rgba(255,255,255,.07);--edge-far:rgba(255,255,255,.05)}
+[data-theme="light"] .v-c{--near:#E9E9EF;--far:#DEDEE6;--edge:rgba(0,0,0,.09);--edge-far:rgba(0,0,0,.06)}
+
+/* D — the same sheets tinted accentFolders, the colour the dock's Library item
+   and the selected card already use. Unmistakable; also orange under every
+   tile on a Home screen where every tile is a folder. */
+[data-theme="dark"]  .v-d{--near:rgba(255,159,10,.22);--far:rgba(255,159,10,.12);--edge:transparent;--edge-far:transparent}
+[data-theme="light"] .v-d{--near:rgba(255,159,10,.30);--far:rgba(255,159,10,.17);--edge:transparent;--edge-far:transparent}
+
+*{box-sizing:border-box;margin:0;padding:0;
+  font-family:-apple-system,'Segoe UI Variable Text','Segoe UI',system-ui,sans-serif}
+body{background:var(--bg);color:var(--text);padding:40px 40px 90px;line-height:1.55;
+  transition:background .2s ease,color .2s ease}
+.wrap{max-width:1180px;margin:0 auto}
+
+h1{font-size:25px;font-weight:800;letter-spacing:-.5px}
+h2{font-size:17px;font-weight:700;margin:42px 0 4px;letter-spacing:-.2px}
+.lede{color:var(--text-2);font-size:14px;max-width:80ch;margin-top:8px}
+.note{color:var(--text-3);font-size:12.5px;margin-top:6px;max-width:88ch}
+code{background:var(--border);padding:1px 5px;border-radius:4px;font-size:12px;
+  font-family:ui-monospace,Consolas,Menlo,monospace}
+hr{border:0;border-top:1px solid var(--border);margin:32px 0}
+
+/* ---------- the theme switch --------------------------------------------- */
+.bar{display:flex;align-items:center;gap:10px;margin:20px 0 4px;flex-wrap:wrap}
+.sw{display:flex;background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:2px}
+.sw span{padding:5px 13px;border-radius:7px;font-size:12.5px;font-weight:600;color:var(--text-3);
+  cursor:pointer;user-select:none;transition:.15s}
+.sw span.on{background:var(--border-glow);color:var(--text)}
+
+/* ---------- the card ------------------------------------------------------ */
+/* `isolation` is load-bearing, not tidiness: the sheets below sit at z-index -1,
+   and without a stacking context on the card they escape to the root one and are
+   painted underneath the opaque background of any framed container — which is
+   exactly why the grid further down showed no stack edge at all. */
+.card{position:relative;isolation:isolate;cursor:pointer;display:flex;flex-direction:column;width:250px;
+  transition:transform .2s cubic-bezier(.2,.8,.2,1)}
+.card:hover{transform:translateY(-2px)}
+
+/* The stacked-paper edge. Geometry verbatim from home-proposal.html:131-133 —
+   8/15 px inset, 4/8 px of protrusion, bottom radius 11, drawn BEHIND the tile
+   so its top edge never shows. Only the paint is in question here. */
+.stack{position:relative}
+.stack::before,.stack::after{content:'';position:absolute;left:8px;right:8px;bottom:-4px;height:14px;
+  border-radius:0 0 11px 11px;background:var(--near);
+  border:1px solid var(--edge);border-top:0;z-index:-1;
+  transition:background .2s,border-color .2s,
+             left .2s cubic-bezier(.2,.8,.2,1),right .2s cubic-bezier(.2,.8,.2,1),
+             bottom .2s cubic-bezier(.2,.8,.2,1)}
+.stack::after{left:15px;right:15px;bottom:-8px;background:var(--far);border-color:var(--edge-far);z-index:-2}
+
+/* ---- three additions on top of C, each independent ----------------------- */
+
+/* INSET COVER — candidate 5 of the ticket. The borrowed picture is laid ON the
+   folder's own surface instead of being it: 6 px of mount all round, the inner
+   radius concentric with the tile's 11. Folders only; a picture card has no
+   .stack and is therefore never selected here. */
+.opt-inset .stack .cover{inset:6px;border-radius:5px}
+.opt-inset .stack .scrim{left:6px;right:6px;bottom:6px;height:calc(52% - 6px);border-radius:0 0 5px 5px}
+.opt-inset .stack .label{left:18px;right:18px;bottom:15px}
+
+/* FAN ON HOVER — the sheets slide out and draw in while the card lifts. Nothing
+   changes at rest, which is the point: no cost to a screen full of folders.
+
+   Free here and *not* free in Compose. These are absolutely positioned pseudo-
+   elements: growing them costs no space in the flow, so nothing below moves. Two
+   sheets laid out as real boxes, each sized to its own protrusion, make the card
+   taller on hover and push every row under it down — pointing at one folder shifts
+   the whole grid. The Kotlin therefore reserves the fanned height at all times and
+   animates only what is painted (`FolderCardStack.kt`). */
+.opt-fan .card:hover .stack::before{left:6px;right:6px;bottom:-6px}
+.opt-fan .card:hover .stack::after{left:12px;right:12px;bottom:-12px}
+
+/* WARM HAIRLINE — C's outline in accentFolders instead of a neutral. Only C has
+   an outline to tint, so it is scoped to it. */
+[data-theme="dark"]  .v-c.opt-warm .stack::before{border-color:rgba(255,159,10,.34)}
+[data-theme="dark"]  .v-c.opt-warm .stack::after{border-color:rgba(255,159,10,.20)}
+[data-theme="light"] .v-c.opt-warm .stack::before{border-color:rgba(255,159,10,.50)}
+[data-theme="light"] .v-c.opt-warm .stack::after{border-color:rgba(255,159,10,.32)}
+
+.thumb{position:relative;width:100%;aspect-ratio:16/10;border-radius:11px;overflow:hidden;
+  background:var(--card);border:1px solid var(--border);box-shadow:0 6px 18px var(--shadow);
+  transition:border-color .2s,box-shadow .2s,background .2s}
+.card:hover .thumb{border-color:var(--border-glow);box-shadow:0 18px 34px var(--shadow-hi)}
+
+.cover{position:absolute;inset:0;filter:saturate(.62) brightness(.78);
+  transition:filter .25s ease,transform .35s ease}
+.card:hover .cover{filter:saturate(1) brightness(1);transform:scale(1.02)}
+.cover.empty{display:grid;place-items:center;font-size:40px;color:var(--text);opacity:.5;
+  background:var(--card);filter:none}
+
+.scrim{position:absolute;left:0;right:0;bottom:0;height:52%;pointer-events:none;
+  background:linear-gradient(to top,rgba(0,0,0,.86) 0%,rgba(0,0,0,.62) 28%,rgba(0,0,0,.22) 66%,rgba(0,0,0,0) 100%)}
+.label{position:absolute;left:12px;right:12px;bottom:9px;z-index:2}
+.label .t{font-size:13.5px;font-weight:650;color:#fff;letter-spacing:-.1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.label .m{font-size:11.5px;font-weight:550;color:rgba(255,255,255,.62);margin-top:1px;
+  text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.card:hover .label .m{color:rgba(255,255,255,.82)}
+
+.badge{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:48px;height:48px;
+  border-radius:50%;background:rgba(0,0,0,.5);display:grid;place-items:center;color:#fff;font-size:19px}
+
+/* the cover stand-ins, same eight as home-proposal.html:214-221 */
+.p1{background:linear-gradient(135deg,#5B4B8A,#2B2140)}
+.p2{background:linear-gradient(135deg,#1B4D3E,#0E2A22)}
+.p3{background:linear-gradient(135deg,#8A5B2B,#3A2413)}
+.p4{background:linear-gradient(135deg,#1F4068,#12233A)}
+.p5{background:linear-gradient(135deg,#7A2E4E,#33121F)}
+.p6{background:linear-gradient(160deg,#2C3440,#171B22)}
+.p7{background:linear-gradient(135deg,#2E6E8A,#12333F)}
+.p8{background:linear-gradient(135deg,#6E7A2E,#2B300F)}
+
+/* ---------- the comparison rows ------------------------------------------ */
+.rows{display:flex;flex-direction:column;gap:26px;margin-top:22px}
+.row{display:grid;grid-template-columns:190px 1fr;gap:26px;align-items:start;
+  padding:22px 0 34px;border-top:1px solid var(--border)}
+.row .k{font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--accent-folders)}
+.row h3{font-size:14.5px;font-weight:700;margin:5px 0 6px}
+.row p{font-size:12.5px;color:var(--text-2)}
+.pair{display:flex;gap:26px;flex-wrap:wrap}
+.cap{font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--text-3);margin-bottom:9px}
+
+/* ---------- the grid ------------------------------------------------------ */
+.picker{display:flex;gap:6px;margin:16px 0 14px;flex-wrap:wrap}
+.picker b{padding:6px 14px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;
+  user-select:none;background:var(--panel);border:1px solid var(--border);color:var(--text-3);transition:.15s}
+.picker b.on{border-color:var(--accent-folders);color:var(--text)}
+.picker b em{font-style:normal;font-weight:500;opacity:.55}
+.opts{margin-top:-4px}
+.opts b{border-style:dashed}
+h3.screen{font-size:14px;font-weight:700;margin:30px 0 2px;letter-spacing:-.1px}
+.app{border-radius:14px;border:1px solid var(--border-glow);background:var(--bg);padding:28px 30px 34px;
+  box-shadow:0 24px 60px var(--shadow-hi)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:30px 24px}
+.grid .card{width:auto}
+
+/* ---------- the numbers table -------------------------------------------- */
+table{border-collapse:collapse;margin-top:16px;font-size:12.5px;width:100%}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+th{color:var(--text-3);font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+td.sw-cell{white-space:nowrap}
+i.chip{display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid var(--border-glow);
+  vertical-align:-2px;margin-right:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>A folder card should read as a folder</h1>
+  <p class="lede">
+    Since the borrowed cover landed, a folder and a photograph both draw a photograph. Candidate 1 of
+    the ticket says the answer is already on the card and merely under-drawn: <b>the stack edge</b>.
+    <code>home-proposal.html:131-133</code> specified two sheets darker than the tile, each with a
+    hairline; <code>FolderCardBody.kt:87-88</code> ships them filled with <code>surfaceElevated</code>
+    — the tile's own colour — and no outline. This file settles the paint, in both themes, before any
+    Kotlin moves. The geometry is not reopened: 8&nbsp;/&nbsp;15&nbsp;px inset, 4&nbsp;/&nbsp;8&nbsp;px
+    of protrusion, 11&nbsp;px bottom radius, drawn behind the tile.
+  </p>
+  <p class="lede" style="margin-top:12px">
+    <b>Settled by hand: variant C.</b> The two screens further down carry three optional additions on
+    top of it — an inset cover, a fan on hover, a warm outline — because telling a folder from a
+    photograph and making Home <i>pleasant</i> are two different questions, and only the second one is
+    answered by looking at a screen where every tile is a folder.
+  </p>
+
+  <div class="bar">
+    <div class="sw" id="theme">
+      <span data-t="dark" class="on">Dark</span>
+      <span data-t="light">Light</span>
+    </div>
+    <span class="note" style="margin:0">Hover any card — the rest state is the one that was reported.</span>
+  </div>
+
+  <h2>Four ways to paint the two sheets</h2>
+  <p class="note">Folder on the left, an ordinary picture on the right. The picture card must come out
+    of this untouched; only the folder gains anything.</p>
+
+  <div class="rows">
+
+    <div class="row v-a">
+      <div>
+        <div class="k">A</div>
+        <h3>As shipped</h3>
+        <p>Both sheets filled with the card's own <code>surfaceElevated</code>, the far one at 55&nbsp;%
+          alpha, no outline. In light theme that is white on <code>#F2F2F7</code>; in dark it is the
+          tile colour repeated. This is the state being complained about.</p>
+      </div>
+      <div>
+        <div class="pair">
+          <div><div class="cap">FOLDER</div>
+            <div class="card"><div class="stack"><div class="thumb">
+              <div class="cover p4"></div><div class="scrim"></div>
+              <div class="label"><div class="t">Pictures</div><div class="m">Folder · 6 items</div></div>
+            </div></div></div>
+          </div>
+          <div><div class="cap">PICTURE</div>
+            <div class="card"><div class="thumb">
+              <div class="cover p3"></div><div class="scrim"></div>
+              <div class="label"><div class="t">DSC_4417</div><div class="m">Image · 213 KB</div></div>
+            </div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row v-b">
+      <div>
+        <div class="k">B</div>
+        <h3>Fill only</h3>
+        <p>The sheets stop borrowing the tile's colour. Near is one shade off the card, far is one
+          shade further toward the canvas without arriving at it. Two colour tokens, nothing else —
+          <code>StackEdge</code> stays a two-line composable.</p>
+      </div>
+      <div>
+        <div class="pair">
+          <div><div class="cap">FOLDER</div>
+            <div class="card"><div class="stack"><div class="thumb">
+              <div class="cover p4"></div><div class="scrim"></div>
+              <div class="label"><div class="t">Pictures</div><div class="m">Folder · 6 items</div></div>
+            </div></div></div>
+          </div>
+          <div><div class="cap">PICTURE</div>
+            <div class="card"><div class="thumb">
+              <div class="cover p3"></div><div class="scrim"></div>
+              <div class="label"><div class="t">DSC_4417</div><div class="m">Image · 213 KB</div></div>
+            </div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row v-c">
+      <div>
+        <div class="k">C</div>
+        <h3>Fill + hairline</h3>
+        <p>B with the 1&nbsp;px outline the original CSS carried, top side omitted so the sheet meets
+          the tile without a seam. Reads at any contrast, including a white sheet on a light canvas.
+          In Compose the missing top side means a stroked <code>Path</code>, not <code>border()</code>.</p>
+      </div>
+      <div>
+        <div class="pair">
+          <div><div class="cap">FOLDER</div>
+            <div class="card"><div class="stack"><div class="thumb">
+              <div class="cover p4"></div><div class="scrim"></div>
+              <div class="label"><div class="t">Pictures</div><div class="m">Folder · 6 items</div></div>
+            </div></div></div>
+          </div>
+          <div><div class="cap">PICTURE</div>
+            <div class="card"><div class="thumb">
+              <div class="cover p3"></div><div class="scrim"></div>
+              <div class="label"><div class="t">DSC_4417</div><div class="m">Image · 213 KB</div></div>
+            </div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row v-d">
+      <div>
+        <div class="k">D</div>
+        <h3>Tinted <code>accentFolders</code></h3>
+        <p>The same sheets in the orange the dock's Library item and a selected folder already use.
+          Impossible to miss — and on Home, where every tile is a folder, it is twelve orange stripes
+          saying the same thing at once.</p>
+      </div>
+      <div>
+        <div class="pair">
+          <div><div class="cap">FOLDER</div>
+            <div class="card"><div class="stack"><div class="thumb">
+              <div class="cover p4"></div><div class="scrim"></div>
+              <div class="label"><div class="t">Pictures</div><div class="m">Folder · 6 items</div></div>
+            </div></div></div>
+          </div>
+          <div><div class="cap">PICTURE</div>
+            <div class="card"><div class="thumb">
+              <div class="cover p3"></div><div class="scrim"></div>
+              <div class="label"><div class="t">DSC_4417</div><div class="m">Image · 213 KB</div></div>
+            </div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <h2>On two real screens</h2>
+  <p class="note">C is the chosen paint. The three switches below are <b>additions</b> to it, each
+    independent, none of them a badge or a corner tab. Hover a card — one of them only exists on hover.
+    The pairs above stay pure C; only these two screens react.</p>
+
+  <div class="picker" id="picker">
+    <b data-v="v-a">A · as shipped</b>
+    <b data-v="v-b">B · fill only</b>
+    <b data-v="v-c" class="on">C · fill + hairline</b>
+    <b data-v="v-d">D · tinted</b>
+  </div>
+  <div class="picker opts" id="opts">
+    <b data-o="opt-inset">+ inset cover</b>
+    <b data-o="opt-fan">+ fan on hover</b>
+    <b data-o="opt-warm">+ warm hairline <em>(C only)</em></b>
+  </div>
+
+  <div id="stage" class="v-c">
+
+    <h3 class="screen">Inside a Linked Folder — folders, pictures and a video together</h3>
+    <p class="note">Where "told apart at a glance" is actually decided.</p>
+    <div class="app">
+      <div class="grid">
+        <div class="card"><div class="stack"><div class="thumb">
+          <div class="cover p1"></div><div class="scrim"></div>
+          <div class="label"><div class="t">Screenshots</div><div class="m">Folder · 549 items</div></div>
+        </div></div></div>
+        <div class="card"><div class="thumb">
+          <div class="cover p3"></div><div class="scrim"></div>
+          <div class="label"><div class="t">DSC_4417</div><div class="m">Image · 213 KB</div></div>
+        </div></div>
+        <div class="card"><div class="stack"><div class="thumb">
+          <div class="cover p2"></div><div class="scrim"></div>
+          <div class="label"><div class="t">hdr-probe</div><div class="m">Folder · 6 items</div></div>
+        </div></div></div>
+        <div class="card"><div class="thumb">
+          <div class="cover p7"></div><div class="scrim"></div><div class="badge">▶</div>
+          <div class="label"><div class="t">boat-4k</div><div class="m">Video · 4:21 · 88 MB</div></div>
+        </div></div>
+        <div class="card"><div class="stack"><div class="thumb">
+          <div class="cover empty">🗀</div><div class="scrim"></div>
+          <div class="label"><div class="t">Inbox</div><div class="m">Folder · empty</div></div>
+        </div></div></div>
+        <div class="card"><div class="thumb">
+          <div class="cover p5"></div><div class="scrim"></div>
+          <div class="label"><div class="t">sunset-crop</div><div class="m">Image · 1.4 MB</div></div>
+        </div></div>
+        <div class="card"><div class="stack"><div class="thumb">
+          <div class="cover p8"></div><div class="scrim"></div>
+          <div class="label"><div class="t">References</div><div class="m">Folder · 128 items</div></div>
+        </div></div></div>
+        <div class="card"><div class="thumb">
+          <div class="cover p6"></div><div class="scrim"></div>
+          <div class="label"><div class="t">IMG_0091</div><div class="m">Image · 3.2 MB</div></div>
+        </div></div>
+      </div>
+    </div>
+
+    <h3 class="screen">Home — every single tile is a folder</h3>
+    <p class="note">The screen the question is really about. Nothing here needs telling apart from a
+      photograph; what it needs is to look like an app rather than a wall of pictures. A mark that
+      earns its place on the screen above can still be twelve of the same thing here.</p>
+    <div class="app">
+      <div class="grid">
+        <div class="card"><div class="stack"><div class="thumb">
+          <div class="cover p4"></div><div class="scrim"></div>
+          <div class="label"><div class="t">Pictures</div><div class="m">Folder · 6 items</div></div>
+        </div></div></div>
+        <div class="card"><div class="stack"><div class="thumb">
+          <div class="cover p1"></div><div class="scrim"></div>
+          <div class="label"><div class="t">f0fb96fb…19e18f</div><div class="m">Folder · 51 items</div></div>
+        </div></div></div>
+        <div class="card"><div class="stack"><div class="thumb">
+          <div class="cover p2"></div><div class="scrim"></div>
+          <div class="label"><div class="t">hdr-probe</div><div class="m">Folder · 6 items</div></div>
+        </div></div></div>
+        <div class="card"><div class="stack"><div class="thumb">
+          <div class="cover p7"></div><div class="scrim"></div>
+          <div class="label"><div class="t">Movies</div><div class="m">Folder · 5 items</div></div>
+        </div></div></div>
+        <div class="card"><div class="stack"><div class="thumb">
+          <div class="cover p3"></div><div class="scrim"></div>
+          <div class="label"><div class="t">Screenshots</div><div class="m">Folder · 549 items</div></div>
+        </div></div></div>
+        <div class="card"><div class="stack"><div class="thumb">
+          <div class="cover p8"></div><div class="scrim"></div>
+          <div class="label"><div class="t">References</div><div class="m">Folder · 128 items</div></div>
+        </div></div></div>
+        <div class="card"><div class="stack"><div class="thumb">
+          <div class="cover empty">🗀</div><div class="scrim"></div>
+          <div class="label"><div class="t">Inbox</div><div class="m">Folder · empty</div></div>
+        </div></div></div>
+        <div class="card"><div class="stack"><div class="thumb">
+          <div class="cover p5"></div><div class="scrim"></div>
+          <div class="label"><div class="t">Heic</div><div class="m">Folder · 4 items</div></div>
+        </div></div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <h2>The numbers</h2>
+  <p class="note">
+    <b>C is what ships.</b> Two new <code>Colors</code> fields per theme for the fills, and an outline
+    that Compose cannot draw with <code>border()</code> — that modifier strokes all four sides, and the
+    top one is not optional here: on a sheet 4&nbsp;dp tall, a hairline top and bottom leaves 2&nbsp;dp
+    of fill and the sheet becomes a contour. So the outline is a three-sided <code>Path</code> with the
+    bottom corners rounded, stroked at 1&nbsp;dp. Roughly twenty lines inside <code>StackEdge</code>;
+    <code>FolderCardBody.kt</code> goes from 102 lines to about 127, inside the mandate.
+  </p>
+
+  <table>
+    <tr><th>Variant C — what ships</th><th>Dark</th><th>Light</th><th>Sits between</th></tr>
+    <tr>
+      <td><code>stackEdge</code> — near sheet, inset 8</td>
+      <td class="sw-cell"><i class="chip" style="background:#1A1E27"></i><code>#1A1E27</code></td>
+      <td class="sw-cell"><i class="chip" style="background:#E9E9EF"></i><code>#E9E9EF</code></td>
+      <td>card and canvas, on the card's side</td>
+    </tr>
+    <tr>
+      <td><code>stackEdgeFar</code> — far sheet, inset 15</td>
+      <td class="sw-cell"><i class="chip" style="background:#141821"></i><code>#141821</code></td>
+      <td class="sw-cell"><i class="chip" style="background:#DEDEE6"></i><code>#DEDEE6</code></td>
+      <td>one step further out, still short of the canvas</td>
+    </tr>
+    <tr>
+      <td>outline, near / far</td>
+      <td class="sw-cell"><code>rgba(255,255,255,.07)</code> / <code>.05</code></td>
+      <td class="sw-cell"><code>rgba(0,0,0,.09)</code> / <code>.06</code></td>
+      <td>left, bottom and right only — never the top</td>
+    </tr>
+    <tr>
+      <td>geometry (unchanged)</td>
+      <td colspan="2"><code>inset 8dp / 15dp · 4dp visible each · bottom radius 9dp · behind the tile</code></td>
+      <td>as already shipped</td>
+    </tr>
+  </table>
+
+  <p class="note" style="margin-top:18px">And what each switch above costs on top of C:</p>
+
+  <table>
+    <tr><th>Addition</th><th>Numbers</th><th>Cost in Kotlin</th></tr>
+    <tr>
+      <td><b>Inset cover</b></td>
+      <td>6&nbsp;dp mount, inner radius 5&nbsp;dp, scrim and caption inset with it</td>
+      <td><code>FolderCardPreview.kt</code> + <code>FolderCardCaption.kt</code>: a padding and a second
+        shape. No new colour — the mount is the tile's own <code>surfaceElevated</code>.</td>
+    </tr>
+    <tr>
+      <td><b>Fan on hover</b></td>
+      <td>inset 8→6 and 15→12, protrusion 4→6 and 8→12, 200&nbsp;ms, the card's own easing</td>
+      <td>two <code>animateDpAsState</code> on the <code>isHovered</code>
+        <code>FolderCardBody</code> already receives. Nothing at rest changes.</td>
+    </tr>
+    <tr>
+      <td><b>Warm hairline</b></td>
+      <td>outline becomes <code>accentFolders</code> @ 34&nbsp;/&nbsp;20&nbsp;% dark,
+        50&nbsp;/&nbsp;32&nbsp;% light</td>
+      <td>free — it replaces the outline colour C already computes. Drops the two neutral outline
+        alphas instead of adding anything.</td>
+    </tr>
+  </table>
+
+  <hr>
+  <p class="note">
+    Rejected by hand and not built here: the corner tab (candidate 2 of the ticket) and the folder badge
+    over the cover (3). The mosaic and the "Folder" label were closed before this ticket opened.
+  </p>
+
+</div>
+
+<script>
+  const html = document.documentElement;
+  document.getElementById('theme').addEventListener('click', e => {
+    const t = e.target.dataset.t;
+    if (!t) return;
+    html.setAttribute('data-theme', t);
+    document.querySelectorAll('#theme span').forEach(s => s.classList.toggle('on', s.dataset.t === t));
+  });
+
+  // One element carries both the variant and the options; the two grids inside it
+  // inherit the custom properties and match the descendant selectors.
+  const stage = document.getElementById('stage');
+  let variant = 'v-c';
+  const options = new Set();
+
+  const paint = () => {
+    stage.className = [variant, ...options].join(' ');
+    document.querySelectorAll('#picker b').forEach(b => b.classList.toggle('on', b.dataset.v === variant));
+    document.querySelectorAll('#opts b').forEach(b => b.classList.toggle('on', options.has(b.dataset.o)));
+  };
+
+  document.getElementById('picker').addEventListener('click', e => {
+    const b = e.target.closest('b');
+    if (!b) return;
+    variant = b.dataset.v;
+    paint();
+  });
+
+  document.getElementById('opts').addEventListener('click', e => {
+    const b = e.target.closest('b');
+    if (!b) return;
+    options.has(b.dataset.o) ? options.delete(b.dataset.o) : options.add(b.dataset.o);
+    paint();
+  });
+
+  paint();
+</script>
+</body>
+</html>

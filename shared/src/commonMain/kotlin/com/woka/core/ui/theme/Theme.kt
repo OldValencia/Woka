@@ -22,6 +22,15 @@ data class Colors(
     val textTertiary: Color,
     val border: Color,
     val borderGlow: Color,
+    /**
+     * The two sheets of paper under a folder card, near and far, plus the hairline
+     * that outlines them. Deliberately close to [surfaceElevated] rather than to
+     * [background]: a sheet that reaches the canvas colour stops reading as a sheet
+     * and becomes a hole. The far outline is this one at 70 % of its alpha.
+     */
+    val stackEdge: Color,
+    val stackEdgeFar: Color,
+    val stackEdgeLine: Color,
     val accent: Color,
     val accentSoft: Color,
     val onAccent: Color,
@@ -45,6 +54,9 @@ val LightColors = Colors(
     textTertiary = Color(0xFF9A9AA1),
     border = Color(0x14000000),
     borderGlow = Color(0x26000000),
+    stackEdge = Color(0xFFE9E9EF),
+    stackEdgeFar = Color(0xFFDEDEE6),
+    stackEdgeLine = Color(0x17000000),
     accent = Color(0xFF4C6FE0),
     accentSoft = Color(0x1F4C6FE0),
     onAccent = Color(0xFFFFFFFF),
@@ -68,6 +80,9 @@ val DarkColors = Colors(
     textTertiary = Color(0xFF838893), // dock item text
     border = Color(0x0AFFFFFF), // rgba(255, 255, 255, 0.04)
     borderGlow = Color(0x14FFFFFF), // rgba(255, 255, 255, 0.08)
+    stackEdge = Color(0xFF1A1E27),
+    stackEdgeFar = Color(0xFF141821),
+    stackEdgeLine = Color(0x12FFFFFF),
     accent = Color(0xFF7B93FF),
     accentSoft = Color(0x2B7B93FF),
     onAccent = Color(0xFFFFFFFF),

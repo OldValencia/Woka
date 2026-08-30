@@ -7,16 +7,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.woka.core.data.WatchRecord
 import com.woka.core.ui.theme.Theme
@@ -81,22 +77,10 @@ internal fun FolderCardBody(
         }
 
         // What the mosaic used to say, said by the shape of the card instead: two
-        // sheets of paper under the top one. Folders only — a photograph has
-        // nothing behind it.
+        // sheets of paper under the top one, and how they behave under the cursor.
+        // Folders only — a photograph has nothing behind it.
         if (data.isDir) {
-            StackEdge(inset = 8.dp, color = Theme.colors.surfaceElevated)
-            StackEdge(inset = 15.dp, color = Theme.colors.surfaceElevated.copy(alpha = 0.55f))
+            FolderCardStack(isHovered = isHovered)
         }
     }
-}
-
-@Composable
-private fun StackEdge(inset: Dp, color: Color) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = inset)
-            .height(4.dp)
-            .background(color, RoundedCornerShape(bottomStart = 9.dp, bottomEnd = 9.dp))
-    )
 }
