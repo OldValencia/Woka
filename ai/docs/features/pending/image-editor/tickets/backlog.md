@@ -25,11 +25,18 @@ the pixels. It needs a hook that does not exist, and inventing one before someth
 the kind of engine change that should follow a want rather than precede it.
 *Depends on ME-111.*
 
-### ME-117 — Housekeeping
-`roadmap.md` Phase 5 updated to "image half shipped, video half pending"; the editor exercised by
-hand once and the result dated in this ticket; the `-edited` naming checked against a folder
-that already holds a dozen of them.
-*Depends on ME-108, ME-115.*
+### ME-117 — Housekeeping: make `roadmap.md` describe the editor that exists
+Phase 5 still reads as it did on 2026-08-18 — *"No UI yet by design… **ME-101** is the first ticket
+that puts pixels on screen"* — while what ships has a shell, eight tools, a recipe carrier per
+container family, a save banner and thirty-odd closed tickets behind it. The same paragraph lists
+"save targets and the atomic write" among the foundation, and `SaveTarget` was deleted by ME-132.
+
+So: Phase 5 rewritten to "image half shipped, video half pending", pointing at the feature doc's status
+table rather than restating it, and the foundation sentence corrected where ME-132 removed something.
+
+**The `-edited` half of this block died 2026-08-30** — there is no copy to name. `copyNameFor` went
+with ME-132 and the tree holds no `-edited` anywhere; checked before deleting the sentence.
+*Depends on nothing.*
 
 ### ME-142 — The rest of the adjustments
 Adjust ships six — Exposure, Brightness, Contrast, Saturation, Warmth, Tint. Photos offers around
@@ -98,7 +105,7 @@ tone mapping and does not recover clipped highlights, so it is not MVP.
 **Blocked on ME-120, not just on ME-104.** `To SDR` bakes the tone curve into pixels permanently, and
 that curve is currently normalised by the literal `W = 11.2` — on real HDR content SDR white lands at
 148/255. Shipping `To SDR` first would write the defect into the user's files.
-*Depends on ME-013, ME-104, ME-120.*
+*Depends on ME-013, ME-132, ME-120.*
 
 ### ME-119 — HDR view mode
 A tri-state — `Auto` / `Force HDR` / `Force SDR` — that changes how a still is *displayed* and no
@@ -133,9 +140,10 @@ output from ME-118's `To SDR`.*
 `ViewerChrome` gained the foreground half of its on-media pair in ME-012 (`onScrim`,
 `onScrimSecondary`, `onScrimDisabled`, `onScrimBorder`, `onScrimHover`, `onScrimSelected`), light in
 both themes for the same reason its scrims are dark in both. The editor reads them from its first
-commit; **the viewer does not yet**. About 27 files under `feature/viewer/` still take `Theme.colors`
-for text and icons drawn on a scrim, which in the light theme measures between 1.05 : 1 and 6.68 : 1
-depending on the photograph behind it — see the decision log.
+commit; **the viewer does not yet**. Counted 2026-08-30: **28** files under `feature/viewer/` take
+`Theme.colors` and exactly **two** take an `onScrim` token. Text and icons drawn on a scrim measure
+between 1.05 : 1 and 6.68 : 1 in the light theme depending on the photograph behind them — see the
+decision log.
 
 The change is mechanical but wide, and it is a *visible* change to a surface that already ships, so it
 wants the author's eyes rather than a green build: the files to convert are the intersection of "reads
@@ -221,9 +229,11 @@ it. One-line fix, folded in here.
 ## 900 — Follow-ons, explicitly not planned
 
 - Straighten / arbitrary-angle rotation.
-- Re-opening a saved edit to adjust a previous crop — the document is already serialisable; this is
-  where it starts being written to disk, as a sidecar beside the copy.
-- A user-configurable copy-name pattern (`-edited` is hardcoded until someone wants otherwise).
+- ~~Re-opening a saved edit to adjust a previous crop, as a sidecar beside the copy~~ — **shipped
+  2026-08-19 (ME-134)**, and not that way: the recipe is in the file, so reopening replays it into a
+  history Undo can walk back. No sidecar, and no copy to sit beside.
+- ~~A user-configurable copy-name pattern~~ — **moot since ME-132**: nothing is copied and nothing is
+  named. `copyNameFor` is gone and `-edited` appears nowhere in the tree.
 - **Saving a flattened copy to a file.** The clipboard answers "get this picture out of Woka" without
   minting anything (`Copy`, 2026-08-19), and an export step is precisely what §5 removed. ME-136 was
   raised for this on 2026-08-19 and closed the same day by making `Copy` the picture; the number is

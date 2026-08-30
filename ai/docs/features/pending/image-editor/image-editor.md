@@ -393,8 +393,24 @@ no viewer or app shortcut fires underneath.
 
 ### 4.5 Save UX
 
-`Done` closes the editor immediately and runs the save in the background, with the same banner pattern
-as `FrameExportBanner`: "Saving…" → "Saved" / "Save failed — nothing was written".
+`Done` closes the editor immediately and runs the save behind it, in a scope that outlives the
+composition (ME-130). It is reported by a pill at the bottom of the window — `StatusPill`, the shape
+lifted out of `FrameExportBanner` so an export and a save can be up at once without covering each
+other, stacked by `app/shell/StatusBanners`.
+
+Four things it can say, and the fourth is why the wording is not one template:
+
+- **"Saving photo.jpg…"** while the write runs, named because the editor is already gone by then;
+- **"Saved photo.jpg"** after a `Done`;
+- **"Saved photo.jpg before returning to the video"** when the save was made on the way out of an
+  editor the video window asked to leave (ME-124) — read in the film's folder, where a bare "Saved"
+  has no visible cause;
+- **the failure's own sentence, verbatim** — "The original is untouched.", "Nothing was written." —
+  because `ImageEditWrites` and `ImageSaveJob` already write for the user, and a second vocabulary
+  here would be two names for one failure.
+
+Nothing at all is shown for `NothingToDo`: an empty document over a file that carries nothing is not
+an event.
 
 **Nothing is chosen.** No target, no name, no confirmation — the recipe goes into the file that was
 opened (§5). The folder listing needs no refresh for a new item, because there is no new item; what
@@ -411,7 +427,8 @@ a modal, because a warning that costs a click has been turned into a step.
 **Rewritten 2026-08-19**, reversing the model below it. The first hands-on use asked for one file
 carrying its own history — edit repeatedly without breeding copies, return to the original whenever —
 and every `Done` was minting `photo-edited.jpg`, then `-2`, then `-3`. The working through is in
-[`review-2026-08-18.md`](review-2026-08-18.md).
+[`archive/review-2026-08-18.md`](archive/review-2026-08-18.md), moved there 2026-08-30 once every item
+in it had shipped or been answered here.
 
 **The `EditDocument` is written into the file's own private metadata slot. Pixels on disk are never
 rewritten.** Every reader in the app decodes the original and folds the recipe over it. Revert is
