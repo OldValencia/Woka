@@ -15,6 +15,13 @@ import java.io.File
  * [formatFor] returning null is therefore a **refusal**, and ME-108 is what turns a
  * refusal into a sheet offering a target the user agrees to. That is the whole reason
  * the Edit button can be honest about eight of eleven formats without ever being dead.
+ *
+ * **All three write at 100, and there is no setting** (§9, 2026-08-30). Editing is a
+ * second compression laid over the source's first, the file is the user's own
+ * photograph, and the ceiling is the only value that never has to be defended — a
+ * number left where somebody once put it is paid for in a generation of a picture that
+ * cannot be got back. WebP's 100 is *lossy at maximum*, not lossless: Skia's
+ * `encodeToData` offers no lossless-WebP road at all.
  */
 internal enum class SaveFormat(
     val extension: String,
@@ -24,14 +31,9 @@ internal enum class SaveFormat(
     /** Lossless — ME-010 measured a zero-delta round trip. */
     PNG("png", EncodedImageFormat.PNG, 100),
 
-    /**
-     * 95, not 90 (§9). Editing is a second compression laid over the source's first,
-     * and at 90 the artefacts of the two stack visibly. The file is about a third
-     * larger, which is the trade this project chose.
-     */
-    JPEG("jpg", EncodedImageFormat.JPEG, 95),
+    JPEG("jpg", EncodedImageFormat.JPEG, 100),
 
-    WEBP("webp", EncodedImageFormat.WEBP, 90);
+    WEBP("webp", EncodedImageFormat.WEBP, 100);
 
     /** Whether the source's metadata can survive a re-encode at all (ME-010). */
     val carriesExif: Boolean get() = this == JPEG
