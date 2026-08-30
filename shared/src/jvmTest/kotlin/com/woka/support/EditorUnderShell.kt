@@ -8,6 +8,8 @@ import com.woka.app.shell.CanvasOverrideState
 import com.woka.app.shell.LocalCanvasOverride
 import com.woka.app.shell.LocalTopBarAccessories
 import com.woka.app.shell.TopBarAccessoriesState
+import com.woka.feature.editor.core.EditorEngine
+import com.woka.feature.editor.shell.EditorFrameControls
 import com.woka.feature.editor.shell.EditorScreen
 
 /**
@@ -21,14 +23,18 @@ import com.woka.feature.editor.shell.EditorScreen
  * itself not being the shell.
  */
 @Composable
-fun EditorUnderShell(
+internal fun EditorUnderShell(
     harness: EditorHarness,
     accessories: TopBarAccessoriesState,
     override: CanvasOverrideState = CanvasOverrideState(),
     onCancel: () -> Unit = {},
     onDone: () -> Unit = {},
     canRevert: Boolean = false,
-    onRevert: () -> Unit = {}
+    onRevert: () -> Unit = {},
+    /** Overridden by a test that needs the engine to answer for a particular file. */
+    engine: EditorEngine = FixtureEngine(),
+    /** Null is a file holding one picture, which is what most tests are (ME-156). */
+    frameControls: EditorFrameControls? = null
 ) {
     CompositionLocalProvider(
         LocalTopBarAccessories provides accessories,
@@ -44,12 +50,13 @@ fun EditorUnderShell(
             }
             EditorScreen(
                 session = harness.session,
-                engine = FixtureEngine(),
+                engine = engine,
                 registry = harness.registry,
                 onCancel = onCancel,
                 onDone = onDone,
                 canRevert = canRevert,
-                onRevert = onRevert
+                onRevert = onRevert,
+                frameControls = frameControls
             )
         }
     }

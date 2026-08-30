@@ -57,7 +57,7 @@ class GifRecipeFramesTest {
     fun `a document round-trips through an animated gif`() = onCopy(ANIM_GIF) { file ->
         assertTrue(EditRecipe.write(file, document("transform")).isSuccess)
 
-        assertEquals(document("transform"), EditRecipe.read(file))
+        assertEquals(document("transform"), EditRecipe.documentIn(file, 0))
         assertTrue(EditRecipe.carries(file))
     }
 
@@ -101,6 +101,6 @@ class GifRecipeFramesTest {
         assertTrue(EditRecipe.clear(file).isSuccess)
 
         assertContentEquals(original, file.readBytes())
-        assertNull(EditRecipe.read(file))
+        assertNull(EditRecipe.documentIn(file, 0))
     }
 }

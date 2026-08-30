@@ -9,7 +9,7 @@ import com.woka.core.data.CarouselVisibility
 import com.woka.core.data.MediaItem
 import com.woka.core.ui.components.WokaSpinner
 import com.woka.core.ui.theme.Theme
-import com.woka.feature.viewer.shell.frames.FRAME_STRIP_WIDTH
+import com.woka.core.ui.components.frames.FRAME_STRIP_WIDTH
 import com.woka.feature.viewer.shell.frames.FrameStripModel
 
 @Composable

@@ -56,14 +56,14 @@ class EditRecipeTest {
     @Test
     fun `a document round-trips through a jpeg`() = onCopy(STILL_JPG) { file ->
         assertTrue(EditRecipe.write(file, document("transform")).isSuccess)
-        assertEquals(document("transform"), EditRecipe.read(file))
+        assertEquals(document("transform"), EditRecipe.documentIn(file, 0))
         assertTrue(EditRecipe.carries(file))
     }
 
     @Test
     fun `a document round-trips through a png`() = onCopy(STILL_PNG) { file ->
         assertTrue(EditRecipe.write(file, document("transform")).isSuccess)
-        assertEquals(document("transform"), EditRecipe.read(file))
+        assertEquals(document("transform"), EditRecipe.documentIn(file, 0))
     }
 
     /** The claim §5 rests on: writing a recipe is not an edit to the picture. */
@@ -87,7 +87,7 @@ class EditRecipeTest {
         val once = file.length()
         EditRecipe.write(file, document("gamma"))
 
-        assertEquals(document("gamma"), EditRecipe.read(file))
+        assertEquals(document("gamma"), EditRecipe.documentIn(file, 0))
         // One segment, not two: the same payload size, so the same file size.
         assertEquals(once, file.length())
     }
@@ -99,7 +99,7 @@ class EditRecipeTest {
         assertTrue(EditRecipe.clear(file).isSuccess)
 
         assertContentEquals(original, file.readBytes())
-        assertNull(EditRecipe.read(file))
+        assertNull(EditRecipe.documentIn(file, 0))
         assertFalse(EditRecipe.carries(file))
     }
 
@@ -112,7 +112,7 @@ class EditRecipeTest {
 
     @Test
     fun `an untouched picture carries nothing`() = onCopy(STILL_JPG) { file ->
-        assertNull(EditRecipe.read(file))
+        assertNull(EditRecipe.documentIn(file, 0))
         assertFalse(EditRecipe.carries(file))
     }
 
@@ -123,7 +123,7 @@ class EditRecipeTest {
      */
     @Test
     fun `a format with no carrier answers nothing rather than failing`() = onCopy(STILL_BMP) { file ->
-        assertNull(EditRecipe.read(file))
+        assertNull(EditRecipe.documentIn(file, 0))
         assertTrue(EditRecipe.write(file, document("transform")).isFailure)
         // Clearing is a success because there is nothing there to clear.
         assertTrue(EditRecipe.clear(file).isSuccess)

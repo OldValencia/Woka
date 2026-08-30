@@ -4,7 +4,7 @@
 |---|---|
 | **Order** | 65 — after ME-156, which is what first creates an edit that can hide |
 | **Depends on** | ME-126 (the keyed payload), ME-156 (the control that writes a key), ME-133 (the `StillEdits` seam), ME-135 (the save signal the mark re-reads on) |
-| **Feature** | [Image Editor](../image-editor.md) |
+| **Feature** | [Image Editor](../../image-editor.md) |
 
 **Goal.** Move `FrameStrip` into `core/ui/components` and give it a **mark on any frame that carries an
 edit of its own**, driven through the existing `StillEdits` seam.

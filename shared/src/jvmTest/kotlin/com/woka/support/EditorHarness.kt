@@ -82,10 +82,12 @@ class EditorHarness(
 fun onEditor(
     tools: List<EditorTool>,
     initial: EditDocument = EditDocument(),
+    /** Named only by a test whose subject reads the file — the editor's frame strip. */
+    file: File = File("photo.jpg"),
     block: (EditorHarness) -> Unit
 ) = withTempStorageRoot {
     val settings = SettingsRepositoryImpl()
-    val session = EditorSession(MediaItem.Image(File("photo.jpg")), initial)
+    val session = EditorSession(MediaItem.Image(file), initial)
     try {
         block(EditorHarness(session, EditorToolRegistry(tools, settings), settings))
     } finally {

@@ -11,7 +11,8 @@ import androidx.compose.ui.unit.dp
 import com.woka.core.data.MediaItem
 import com.woka.feature.viewer.shell.frames.FramePauseRequestEffect
 import com.woka.feature.viewer.shell.frames.FramePlaybackEffect
-import com.woka.feature.viewer.shell.frames.FrameStrip
+import com.woka.core.ui.components.frames.FrameStrip
+import com.woka.core.ui.components.frames.rememberEditedFrames
 import com.woka.feature.viewer.shell.frames.FrameStripModel
 
 /**
@@ -57,6 +58,10 @@ internal fun BoxScope.MediaViewerPlayerFrames(
             state.isFramePlaying = false
             state.frameIndex = it
         },
+        // Which frames carry an edit of their own (ME-157). A burst is a place where
+        // an edit can hide: five thumbnails, one of them following a rule of its own,
+        // and nothing on screen saying which.
+        editedFrames = rememberEditedFrames(activeItem.file.absolutePath),
         modifier = Modifier
             .align(Alignment.CenterStart)
             .padding(start = 12.dp, top = 72.dp, bottom = bottomPadding)

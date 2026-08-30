@@ -4,7 +4,7 @@
 |---|---|
 | **Order** | 64 — after ME-126, which is the only thing that can store its answer |
 | **Depends on** | ME-126 (the keyed payload and `EditScope`), ME-130 (`EditorHost.done`, which this also edits) |
-| **Feature** | [Image Editor](../image-editor.md) |
+| **Feature** | [Image Editor](../../image-editor.md) |
 
 **Goal.** Give a multi-frame still a **segmented control under the top bar** — `All Frames` /
 `This Frame` — that decides which slot `Done` writes into, seeded from what the file already carries.

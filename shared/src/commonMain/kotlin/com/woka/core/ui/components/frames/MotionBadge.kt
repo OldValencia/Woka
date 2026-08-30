@@ -1,4 +1,4 @@
-package com.woka.feature.viewer.shell.frames
+package com.woka.core.ui.components.frames
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background

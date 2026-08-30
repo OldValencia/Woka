@@ -1,7 +1,5 @@
 package com.woka.feature.editor.core
 
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.MediaKind
@@ -21,8 +19,12 @@ import com.woka.core.data.MediaKind
  * **The recipe type stays inside the implementation.** There is no `recipe()` here
  * on purpose: the moment the shell can name `RasterRecipe`, every file that
  * touches it becomes a video ticket later.
+ *
+ * What it *draws* is [EditorEngineSurface], extended rather than declared here since
+ * ME-156 — the same interface, in two files, because this one reached the size
+ * mandate.
  */
-interface EditorEngine {
+interface EditorEngine : EditorEngineSurface {
 
     val kind: MediaKind
 
@@ -81,33 +83,14 @@ interface EditorEngine {
      */
     fun previewMatrix(document: EditDocument): Matrix = Matrix()
 
-    /** The live canvas for this medium, drawing [document] as it stands. */
-    @Composable
-    fun Surface(document: EditDocument, modifier: Modifier)
-
     /**
-     * The same picture, small — one option of a preview-choice row (ME-112).
+     * What is inside this file, as far as editing is concerned (ME-156).
      *
-     * **A thumbnail is a picture, and the shell may not name one** (§3.3). The row asks
-     * for one per option, each with a document holding only that option's operation, and
-     * never learns what comes back. Defaulted to drawing nothing, so a medium with
-     * nothing to preview is unaffected.
-     *
-     * Implementations must reuse whatever [Surface] already holds: a decode per
-     * thumbnail per recomposition is eight decodes a frame.
+     * Defaulted to one picture, which is both the overwhelmingly common still and
+     * the truth for a video timeline as far as a frame scope is concerned — so the
+     * video engine and every test fake compile untouched.
      */
-    @Composable
-    fun Thumbnail(document: EditDocument, modifier: Modifier) = Unit
-
-    /**
-     * "Start or stop whatever is moving on the canvas", raised by a click on it.
-     *
-     * Media-agnostic on purpose: an animated still runs a frame clock and the video
-     * editor (5b) will run a player, and the shell asks the same question of both
-     * without learning what either is. Defaulted to nothing, which is the honest
-     * answer for a photograph — the click still happens and nothing moves.
-     */
-    fun togglePlayback() = Unit
+    val frames: EditorFrames get() = EditorFrames()
 
     /**
      * Writes [document] into the file that was opened — the only save there is
@@ -116,8 +99,17 @@ interface EditorEngine {
      * Runs off the UI thread and reports through [EditSaveResult] rather than
      * throwing: §4.5's banner needs an outcome, and the picture must survive every
      * failure path.
+     *
+     * [scope] says whether the file's every frame draws this or only the one being
+     * edited (ME-126). **Defaulted to [EditScope.AllFrames]**, which is both today's
+     * behaviour and the honest word for a medium with one picture in it: a video
+     * timeline has no frame to key on, so its engine ignores the parameter and
+     * compiles unchanged.
      */
-    suspend fun save(document: EditDocument): EditSaveResult
+    suspend fun save(
+        document: EditDocument,
+        scope: EditScope = EditScope.AllFrames
+    ): EditSaveResult
 
     /**
      * Puts the file back exactly as it was shot, removing everything Woka wrote into

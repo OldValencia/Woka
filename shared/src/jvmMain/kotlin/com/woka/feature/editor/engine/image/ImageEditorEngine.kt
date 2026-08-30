@@ -9,12 +9,12 @@ import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditorEngine
+import com.woka.feature.editor.core.EditorFrames
 import com.woka.feature.editor.core.EditorToolRegistry
-import com.woka.feature.editor.recipe.EditRecipe
+import com.woka.feature.editor.core.EditScope
 import com.woka.feature.editor.save.ImageSaveJob
 import com.woka.feature.editor.save.SourceStamp
 import com.woka.feature.editor.save.evictCachesFor
-import com.woka.feature.viewer.image.stillDecoderFor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -37,26 +37,17 @@ internal class ImageEditorEngine(
 
     override val kind = MediaKind.Image
 
-    /**
-     * Read lazily, and from the **decoder** rather than from any bitmap: the
-     * viewer may hold a picture capped below native while every zoom percentage
-     * is defined against native 1:1 pixels, and `StillDecoder.nativeSize` answers
-     * without decoding. Lazy because the factory decides editability from the
-     * format alone and must not touch the disk to grey out a menu item.
-     */
-    override val sourceSize: IntSize by lazy {
-        stillDecoderFor(file).nativeSize(file, frameIndex)
-    }
+    /** Read lazily, and from the decoder — see [nativeFrameSize]. */
+    override val sourceSize: IntSize by lazy { nativeFrameSize(file, frameIndex) }
 
     /**
-     * What the file carries, so a second sitting continues the first (ME-134).
-     *
-     * The canvas is corrected by seeding the session and **not** by folding this into
-     * the proxy: `EditorProxy` reads raw pixels by design (ME-133) and the session
-     * folds the document over them, so applying it here as well would draw two
-     * rotations for one.
+     * Lazy for the same reason [sourceSize] is: a menu item is greyed out from the
+     * format alone, and neither the frame count nor the stored payload may be read
+     * to decide it.
      */
-    override fun storedDocument(): EditDocument = EditRecipe.read(file) ?: EditDocument()
+    override val frames: EditorFrames by lazy { editorFramesOf(file, frameIndex) }
+
+    override fun storedDocument(): EditDocument = storedDocumentIn(file, frameIndex)
 
     internal fun recipe(document: EditDocument): RasterRecipe =
         fold(document, registry, sourceSize)
@@ -100,21 +91,14 @@ internal class ImageEditorEngine(
     private var stamp = SourceStamp.of(file)
 
     /**
-     * §5.1's three buckets, and nothing else decides.
-     *
-     * [EditCapability.Unavailable] is unreachable through the UI — the factory builds
-     * no engine for it — and is answered honestly rather than by an `error()`, because
-     * a save that throws is the one failure mode §4.5's banner cannot describe.
+     * The write, then the two things that follow every successful one. Which write
+     * it is, is [writeFor]'s — §5.1's buckets are a branch over a value this class
+     * only carries.
      */
-    override suspend fun save(document: EditDocument): EditSaveResult =
+    override suspend fun save(document: EditDocument, scope: EditScope): EditSaveResult =
         withContext(Dispatchers.IO) {
-            val result = when (capability) {
-                EditCapability.Recorded -> recordRecipe(file, document, stamp)
-                EditCapability.Destructive -> reEncode(document)
-                EditCapability.Unavailable -> EditSaveResult.Failed(
-                    "${file.extension.uppercase()} files cannot be edited."
-                )
-            }
+            val result =
+                writeFor(capability, file, document, scope, frameIndex, stamp, ::reEncode)
             if (result is EditSaveResult.Saved) {
                 stamp = SourceStamp.of(file)
                 evictCachesFor(file)
@@ -136,7 +120,14 @@ internal class ImageEditorEngine(
         result
     }
 
-    /** Bucket B: no slot to record in, so the picture itself is re-encoded in place. */
+    /**
+     * Bucket B: no slot to record in, so the picture itself is re-encoded in place.
+     *
+     * **It takes no [EditScope] and could not use one** (ME-126): there is no payload
+     * to key, the pixels themselves are rewritten, and what a frame set would mean
+     * under a re-encode is a question nothing has asked — bucket B is empty today
+     * (§5.1).
+     */
     private fun reEncode(document: EditDocument): EditSaveResult =
         ImageSaveJob(
             file = file,

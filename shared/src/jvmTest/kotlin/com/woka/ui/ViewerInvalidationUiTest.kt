@@ -1,19 +1,27 @@
 package com.woka.ui
 
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.MediaItem
 import com.woka.core.data.StillColorInfo
 import com.woka.core.data.WokaSettings
+import com.woka.core.ui.image.AppliedStillEdits
 import com.woka.core.ui.image.MediaInvalidation
+import com.woka.core.ui.image.StillEdits
 import com.woka.feature.viewer.shell.MediaViewerActiveItemEffects
 import com.woka.feature.viewer.shell.MediaViewerState
 import com.woka.feature.viewer.shell.ViewerThumbnails
-import com.woka.feature.viewer.shell.frames.FrameStrip
+import com.woka.core.ui.components.frames.EDITED_DOT_TAG
+import com.woka.core.ui.components.frames.FrameStrip
+import com.woka.core.ui.components.frames.rememberEditedFrames
 import com.woka.core.data.FrameKind
 import com.woka.core.data.ImageFrame
 import com.woka.support.onViewer
 import com.woka.support.poster
+import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -27,6 +35,14 @@ private class CountingThumbnails : ViewerThumbnails {
     override suspend fun sourceSize(item: MediaItem) = IntSize.Zero
     override suspend fun stillColor(item: MediaItem) = StillColorInfo.Sdr
     override fun cachedFull(item: MediaItem, frameIndex: Int) = null
+}
+
+/** A seam whose answer the test moves, so what is under test is the *signal*. */
+private class MovingMarks : StillEdits {
+    var frames: Set<Int> = emptySet()
+    override suspend fun carries(file: File) = frames.isNotEmpty()
+    override fun apply(file: File, frameIndex: Int, decoded: ImageBitmap) = decoded
+    override suspend fun editedFrames(file: File) = frames
 }
 
 /**
@@ -69,10 +85,9 @@ class ViewerInvalidationUiTest {
         }
 
     /**
-     * The strip down the left edge, which had the same defect one layer over
-     * (2026-08-19, by hand on a burst HEIC): its thumbnails are keyed on the path and
-     * the frame, and a save moves neither. One recipe covers every frame in the file,
-     * so **all** of them re-read.
+     * The strip had the same defect one layer over (2026-08-19, by hand on a burst
+     * HEIC): its thumbnails are keyed on the path and the frame, and a save moves
+     * neither, so **all** of them re-read.
      */
     @Test
     fun `every frame thumbnail re-reads when the file is invalidated`() = onViewer(1) { items ->
@@ -94,4 +109,39 @@ class ViewerInvalidationUiTest {
 
         assertEquals(4, loads.size, "a frame kept the picture from before the edit")
     }
+
+    /** And the mark rides the same signal (ME-157), without a remount. */
+    @Test
+    fun `a keyed write makes the mark appear without remounting the strip`() =
+        onViewer(1) { items ->
+            val marks = MovingMarks()
+            AppliedStillEdits.install(marks)
+            try {
+                setContent {
+                    FrameStrip(
+                        item = items[0],
+                        frames = listOf(
+                            ImageFrame(0, FrameKind.Primary),
+                            ImageFrame(1, FrameKind.Sequence)
+                        ),
+                        selectedIndex = 0,
+                        loadPreview = { _, _ -> poster(8, 8) },
+                        onSelectFrame = {},
+                        editedFrames = rememberEditedFrames(items[0].file.absolutePath)
+                    )
+                }
+                waitForIdle()
+                onAllNodesWithTag(EDITED_DOT_TAG).assertCountEquals(0)
+
+                marks.frames = setOf(1)
+                MediaInvalidation.invalidate(items[0].file.absolutePath)
+                waitForIdle()
+
+                onAllNodesWithTag(EDITED_DOT_TAG).assertCountEquals(1)
+            } finally {
+                // The holder is process-wide; an inert one is what the rest of the
+                // suite expects to find.
+                AppliedStillEdits.install(MovingMarks())
+            }
+        }
 }

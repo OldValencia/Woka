@@ -16,6 +16,7 @@ import com.woka.core.ui.components.STATUS_SETTLE_MS
 import com.woka.feature.editor.EditorSaveBanner
 import com.woka.feature.editor.EditorSaveStatus
 import com.woka.feature.editor.core.EditSaveResult
+import com.woka.feature.editor.core.EditScope
 import com.woka.feature.editor.core.EditorEngine
 import com.woka.feature.editor.shell.saveAction
 import com.woka.support.EditorHarness
@@ -67,7 +68,14 @@ class EditorSaveBannerUiTest {
                 EditorUnderShell(
                     harness = harness,
                     accessories = TopBarAccessoriesState(),
-                    onDone = saveAction(engine, harness.session, NAME, { open = false }, onSaved)
+                    onDone = saveAction(
+                        engine,
+                        harness.session,
+                        NAME,
+                        EditScope.AllFrames,
+                        { open = false },
+                        onSaved
+                    )
                 )
             }
             EditorSaveBanner()

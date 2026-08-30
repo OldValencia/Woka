@@ -56,7 +56,7 @@ class WebpCarrierTest {
 
             assertTrue(EditRecipe.write(file, document("transform")).isSuccess)
 
-            assertEquals(document("transform"), EditRecipe.read(file))
+            assertEquals(document("transform"), EditRecipe.documentIn(file, 0))
             assertContentEquals(before, file.pixels())
         }
 
@@ -67,7 +67,7 @@ class WebpCarrierTest {
 
         assertTrue(EditRecipe.write(file, document("transform")).isSuccess)
 
-        assertEquals(document("transform"), EditRecipe.read(file))
+        assertEquals(document("transform"), EditRecipe.documentIn(file, 0))
         assertContentEquals(before, file.pixels())
         assertTrue(EditRecipe.clear(file).isSuccess)
         assertContentEquals(before, file.pixels())

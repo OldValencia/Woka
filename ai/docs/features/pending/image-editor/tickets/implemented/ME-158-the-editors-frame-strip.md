@@ -4,7 +4,7 @@
 |---|---|
 | **Order** | 66 — after ME-157, whose component and mark it mounts |
 | **Depends on** | ME-157 (the shared strip and the edited mark), ME-156 (the scope switch and `EditorFrames`) |
-| **Feature** | [Image Editor](../image-editor.md) |
+| **Feature** | [Image Editor](../../image-editor.md) |
 
 **Goal.** Put the frame strip down the editor's left edge so a frame set can be walked **without
 leaving the editor**, and settle what happens to unsaved work when the frame changes.

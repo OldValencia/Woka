@@ -2,6 +2,7 @@ package com.woka.feature.editor.shell
 
 import com.woka.feature.editor.EditorSaveStatus
 import com.woka.feature.editor.core.EditSaveResult
+import com.woka.feature.editor.core.EditScope
 import com.woka.feature.editor.core.EditorEngine
 import com.woka.feature.editor.core.EditorSession
 import kotlinx.coroutines.CoroutineScope
@@ -29,6 +30,13 @@ internal fun saveAction(
     engine: EditorEngine,
     session: EditorSession,
     name: String,
+    /**
+     * Which slot the write lands in (ME-126) — a parameter rather than something read
+     * from the shell, so the ordering above stays the whole of what this file decides.
+     * `EditorHost` rebuilds this action whenever the choice moves, and the key handler
+     * reads the current one through `rememberUpdatedState`.
+     */
+    scope: EditScope,
     onClose: () -> Unit,
     onSaved: (String) -> Unit,
     /**
@@ -42,7 +50,7 @@ internal fun saveAction(
     onClose()
     EditorSaveStatus.saving(name)
     EditorSaveStatus.scope.launch {
-        when (val result = engine.save(document)) {
+        when (val result = engine.save(document, scope)) {
             is EditSaveResult.Saved -> {
                 if (leavingForVideo) EditorSaveStatus.savedLeaving(name)
                 else EditorSaveStatus.saved(name)
@@ -71,10 +79,12 @@ internal fun leaveForVideoAction(
     engine: EditorEngine,
     session: EditorSession,
     name: String,
+    scope: EditScope,
     onClose: () -> Unit,
     onSaved: (String) -> Unit
 ): () -> Unit {
-    val save = saveAction(engine, session, name, onClose, onSaved, leavingForVideo = true)
+    val save =
+        saveAction(engine, session, name, scope, onClose, onSaved, leavingForVideo = true)
     return { if (session.isDirty.value) save() else onClose() }
 }
 

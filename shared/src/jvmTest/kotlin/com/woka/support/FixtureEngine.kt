@@ -14,7 +14,9 @@ import com.woka.core.data.MediaKind
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditSaveResult
+import com.woka.feature.editor.core.EditScope
 import com.woka.feature.editor.core.EditorEngine
+import com.woka.feature.editor.core.EditorFrames
 import kotlinx.coroutines.CompletableDeferred
 
 /**
@@ -30,6 +32,8 @@ class FixtureEngine(
     override val sourceSize: IntSize = IntSize(640, 480),
     override val kind: MediaKind = MediaKind.Image,
     override val capability: EditCapability = EditCapability.Recorded,
+    /** What is inside the file, for the scope switch and the editor's strip (ME-156). */
+    override val frames: EditorFrames = EditorFrames(),
     private val result: EditSaveResult = EditSaveResult.NothingToDo,
     private val colour: Color = Color(0xFF3A5AA0),
     /**
@@ -70,6 +74,9 @@ class FixtureEngine(
     /** Every document `Done` handed over. There is no target to record any more (§5). */
     val saveRequests = mutableListOf<EditDocument>()
 
+    /** And which slot each was written into — the switch's whole observable effect. */
+    val saveScopes = mutableListOf<EditScope>()
+
     @Composable
     override fun Surface(document: EditDocument, modifier: Modifier) {
         // `SideEffect`, not a bare `drawn +=`: composition can run, be thrown away and
@@ -106,8 +113,9 @@ class FixtureEngine(
         Box(modifier = modifier.background(colour).testTag(THUMBNAIL_TAG))
     }
 
-    override suspend fun save(document: EditDocument): EditSaveResult {
+    override suspend fun save(document: EditDocument, scope: EditScope): EditSaveResult {
         saveRequests += document
+        saveScopes += scope
         savingGate?.await()
         return result
     }

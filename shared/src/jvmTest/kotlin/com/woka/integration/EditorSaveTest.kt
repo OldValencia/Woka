@@ -83,7 +83,7 @@ class EditorSaveTest {
             assertTrue(second is EditSaveResult.Saved, "second save: $second")
             assertEquals(filesBefore, file.parentFile.list()!!.toList(), "a file was minted")
             assertEquals(afterOne, file.length(), "a second recipe was appended")
-            assertEquals(tinted(), EditRecipe.read(file))
+            assertEquals(tinted(), EditRecipe.documentIn(file, 0))
             assertContentEquals(pixelsBefore, file.pixels(), "the pixels were rewritten")
         }
     }
@@ -98,7 +98,7 @@ class EditorSaveTest {
             val result = runBlocking { engine.save(EditDocument()) }
 
             assertTrue(result is EditSaveResult.Saved, "got $result")
-            assertNull(EditRecipe.read(file))
+            assertNull(EditRecipe.documentIn(file, 0))
             assertFalse(EditRecipe.carries(file))
             assertContentEquals(original, file.readBytes(), "the file is not as it was shot")
         }

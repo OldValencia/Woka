@@ -40,6 +40,23 @@ interface StillEdits {
      * a surface allocation to find that out.
      */
     fun apply(file: File, frameIndex: Int, decoded: ImageBitmap): ImageBitmap
+
+    /**
+     * Which frames of [file] carry an edit **of their own** (ME-157).
+     *
+     * The third question of the same kind, so the seam grows a member rather than the
+     * frame strip growing a dependency on the editor.
+     *
+     * It answers frames with a key in the payload, not frames that draw an edit: a
+     * file-wide recipe applies to every frame, and marking all five would say nothing
+     * that "photo.heic · Edited" does not already say better. A per-frame override is
+     * the thing that can be invisible, so it is the thing that gets a mark.
+     *
+     * `suspend` for the reason [carries] is, and defaulted to nothing for the reason
+     * [carries] is not: a medium with no notion of a keyed recipe has an honest empty
+     * answer, while "does this carry an edit" has no default that is not a lie.
+     */
+    suspend fun editedFrames(file: File): Set<Int> = emptySet()
 }
 
 /** No editor in the graph: every file is unedited and every bitmap passes through. */
@@ -73,4 +90,6 @@ object AppliedStillEdits : StillEdits {
 
     override fun apply(file: File, frameIndex: Int, decoded: ImageBitmap): ImageBitmap =
         installed.apply(file, frameIndex, decoded)
+
+    override suspend fun editedFrames(file: File): Set<Int> = installed.editedFrames(file)
 }

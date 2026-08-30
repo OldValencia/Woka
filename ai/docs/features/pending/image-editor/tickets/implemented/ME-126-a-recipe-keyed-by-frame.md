@@ -4,7 +4,7 @@
 |---|---|
 | **Order** | 63 — the model, before the two tickets that show it |
 | **Depends on** | ME-108 (the ISOBMFF carrier that made a burst editable), ME-133 (readers apply the recipe), ME-134 (a save merges rather than replaces) |
-| **Feature** | [Image Editor](../image-editor.md) |
+| **Feature** | [Image Editor](../../image-editor.md) |
 
 **Goal.** Make the recipe a **payload keyed by frame** — an un-keyed form that still means "every frame"
 plus optional per-frame overrides — and teach the readers and the save to use it. **No UI.**

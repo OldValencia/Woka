@@ -85,10 +85,10 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-127](tickets/implemented/ME-127-output-quality-is-q100.md)             | Output quality is q100, and there is nothing to configure | **done** 2026-08-30 — a policy written into the constant that would decide it; bucket B is empty, so nothing on screen moved |
 | [ME-130](tickets/implemented/ME-130-the-save-banner.md)                    | The save banner, and the save that outlives the editor | **done** 2026-08-30 — confirmed by hand |
 | [ME-124](tickets/implemented/ME-124-editor-and-picture-in-picture.md)      | Returning from the video may not destroy an open editor | **done** 2026-08-30 — rewritten the same day it was specified: the keyboard rule was dropped for a save on the way out. Confirmed by hand, along with a PiP bug it uncovered — a photograph opened over a playing video was refused with "Video Already Playing" |
-| [ME-126](tickets/ME-126-a-recipe-keyed-by-frame.md)                        | A recipe keyed by frame | **specified** 2026-08-30 |
-| [ME-156](tickets/ME-156-all-frames-or-this-one.md)                         | All Frames or This Frame: the switch that says who the edit is for | **specified** 2026-08-30 |
-| [ME-157](tickets/ME-157-frames-that-carry-their-own-edit.md)               | The frame strip becomes shared, and says which frames carry their own edit | **specified** 2026-08-30 |
-| [ME-158](tickets/ME-158-the-editors-frame-strip.md)                        | The editor's frame strip | **specified** 2026-08-30 |
+| [ME-126](tickets/implemented/ME-126-a-recipe-keyed-by-frame.md)            | A recipe keyed by frame | **done** 2026-08-30 — no observable change by design; the tests are the deliverable. `EditRecipe.read` now answers an `EditPayload`, so eleven assertions moved to `documentIn(file, 0)` — by hand outstanding |
+| [ME-156](tickets/implemented/ME-156-all-frames-or-this-one.md)             | All Frames or This Frame: the switch that says who the edit is for | **done** 2026-08-30 — by hand outstanding |
+| [ME-157](tickets/implemented/ME-157-frames-that-carry-their-own-edit.md)   | The frame strip becomes shared, and says which frames carry their own edit | **done** 2026-08-30 — by hand outstanding |
+| [ME-158](tickets/implemented/ME-158-the-editors-frame-strip.md)            | The editor's frame strip | **done** 2026-08-30 — by hand outstanding |
 | [ME-117…ME-1xx](tickets/backlog.md)                                        | Image editor | backlog |
 
 ME-201…ME-204, the video editor's own tickets, moved to
@@ -330,18 +330,27 @@ and the dock accessories are hidden while editing — the editor is a mode, not 
 ┌───────────────────────────────────────────────────────────────┐
 │  Cancel        photo.jpg · Edited    HDR ▾   ↶  ↷     [Done ▾]│  top bar (accessory)
 ├───────────────────────────────────────────────────────────────┤
-│                     ┌───────────────────┐                     │
-│                     │  media + overlay  │                     │  canvas: engine.Surface
-│                     └───────────────────┘                     │  through the recipe
-│            ╭─────────────────────────────────────╮            │
-│            │  Brightness  ──────●────────   +12   │            │  inspector — rendered from
-│            │  Contrast    ─────●─────────    -4   │            │  the param schema
-│            ╰─────────────────────────────────────╯            │
+│              ╭──────────────┬──────────────╮                  │  frame scope (ME-156) —
+│              │  All Frames  │  This Frame  │                  │  multi-frame stills only
+│              ╰──────────────┴──────────────╯                  │
+│   ▤       Replaces the separate edits on 2 frames             │
+│   ▤ ●               ┌───────────────────┐                     │
+│   ▤                 │  media + overlay  │                     │  canvas: engine.Surface
+│   ▤                 └───────────────────┘                     │  through the recipe
+│   ▤        ╭─────────────────────────────────────╮            │  frame strip (ME-158) —
+│   ▤        │  Brightness  ──────●────────   +12   │            │  same rule as the switch;
+│            │  Contrast    ─────●─────────    -4   │            │  ● marks a frame carrying
+│            ╰─────────────────────────────────────╯            │  its own edit (ME-157)
 │         ╭───────────────────────────────────────╮             │
 │         │ ⤢ Transform │ ⇲ Crop │ ◐ Adjust │ ✎ … │             │  rail — icon **and** name,
 │         ╰───────────────────────────────────────╯             │  one row, groups from ToolDomain
 └───────────────────────────────────────────────────────────────┘
 ```
+
+**The switch and the strip appear together and never apart**, for a file that holds more than one
+picture and is not an animation (`EditorFrames.allowsPerFrame`). A photograph — the overwhelmingly
+common case — draws neither and is laid out exactly as it was before ME-156. The canvas is *inset* by
+the strip's width rather than drawn under it, the same measurement `MediaViewerPlayer` makes.
 
 **Every tool from here on takes the shape Crop settled on** (ME-109, confirmed by hand 2026-08-22).
 That shape, in one line: **a rail entry of icon plus name, all tools in a single row, no submenus;
@@ -598,9 +607,9 @@ had to become one of them before they could be edited at all. A carrier needs no
 that reason is gone: the road to editing a HEIC is its `uuid` box, not a converted copy of it beside
 the original. Conversion mints a file, and the model no longer mints files.
 
-What survives is a **multi-frame** question, which is a different one. Editing frame N of a burst has
-to say what happens to the other frames, and a recipe cannot answer it — that is ME-126's, not this
-section's.
+What survived was a **multi-frame** question, which is a different one — and it was **answered
+2026-08-30 by ME-126** rather than by a conversion: editing frame N of a burst says what happens to
+the other frames through a payload keyed by frame, in the same slot, with no file minted.
 
 Should a format ever want a target anyway, the old terms hold: a sheet states the name, that the source
 stays exactly where it is, and which single frame survives; photographic sources default to JPEG
@@ -731,6 +740,9 @@ sheet instead of a dead Edit button.
 | ~~2026-08-20~~ | Does GIF get a carrier now? | ~~**No — deferred until an animation plays**~~ **Superseded 2026-08-21, one day later** | Measured before writing it: nothing in Woka animated a GIF. The viewer shows a frame set — `SkiaFrameDecoder` collapses animation to one frame by design — and the grid draws frame 0 through a Coil with no animated decoder on its classpath. An edit would apply to every frame the app draws, and the app draws one, so the result is invisible where the format is normally *watched*. Animated **WebP** keeps the carrier ME-137 gave it: a WebP is overwhelmingly a still photograph, and the carrier earns its place on that case |
 | 2026-08-19 | What happens to a **simple** WebP that has to carry a recipe? | **It is promoted to the extended `VP8X` container on the way in** (ME-137) | The simple form allows nothing beside its one bitstream chunk, so there is no slot to write into — the choice is promote it or keep re-encoding the picture. Promotion copies the canvas out of the bitstream and touches no pixel, which the fixture tests assert. **Bucket B is now empty**: `Destructive`, the re-encode path and its notice are unreachable, kept as the fallback for a format that ever gains an encoder before a carrier. One cost, stated: a clear leaves the `VP8X` in place, so for WebP alone Revert restores the picture exactly rather than the file exactly |
 | 2026-08-19 | What does an edit mean for a **frame set**? | **Every frame of it** — one recipe per file, and that is the MVP answer, not a placeholder (ME-126) | Confirmed by hand the day HEIC became editable: turning one frame of a burst turns the burst, and that reads as the file being edited rather than as a bug. Per-frame is a keyed payload in the same segment and is wanted, not needed. The **consequence that was a bug**: a save evicted only the edited frame's cache entries, so the other frames' thumbnails kept the pre-edit picture until something remounted the strip — `ImageBitmapCache.removeAllFor` now forgets the whole file, and the strip subscribes to the save signal like every other reader |
+| 2026-08-30 | …and what does it mean now that per-frame exists? | **The payload is keyed by frame; the un-keyed form still means every frame; Revert stays whole-file** (ME-126) | `EditPayload` is `ops` plus an optional `frames: Map<Int, EditDocument>`, a **sibling field rather than a wrapper**, which is what makes compatibility free in both directions: `{"ops":[…]}` decodes with no keys and therefore means all-frames, and an older build decoding a keyed payload as an `EditDocument` drops the unknown key (`ignoreUnknownKeys`, ME-003) and draws the picture unedited rather than refusing the file. No carrier changed — six formats carry an opaque string and none of them was touched. `pending` is deliberately absent from the payload: an operation in flight is a drag, not a record. **Revert stays the whole file** — it is the one action that removes everything Woka wrote into this photograph (ME-107), it is red and confirmed, and a red confirmed action meaning two different things depending on a segmented control is a worse control than a second menu item would be |
+| 2026-08-30 | Where does the frame scope live, and for which files? | **Its own strip under the top bar; multi-frame stills only, never an animation** (ME-156) | An animation is *watched*: the clock advances `frameIndex` and every frame goes through the same fold (ME-138, ME-140), so an edit applied to one frame of eight is a flicker rather than an edit — `allowsPerFrame` is `count > 1 && !playsAsAnimation`, and what is left is a burst, a Live Photo's still and a TIFF page chain, every one of which is a *set of pictures*. Two placements were rejected: **in the top bar**, which already carries Cancel, the title, Revert, HDR, undo, redo and Done and where a two-segment control would be the seventh thing in a row of six; and **at the head of a frame strip**, which reads well but did not exist until ME-158 and would have made the switch depend on it. The strip carries a secondary line stating the consequence *before* the click, because `All Frames` clears every override by construction and that is work the user may have done frames ago |
+| 2026-08-30 | What happens to unsaved work when the edited frame changes? | **The discard dialog, reworded to name the frame** (ME-158) | `EditorHost` keys the engine, the stored document and the session on the frame, so changing it rebuilds all three and would discard the previous frame's work **silently** — the same loss ME-124 closed for the router, arrived at from inside the editor. Two better answers were written down rather than half-built. **Save on switch** is elegant on paper — `Done` merges into the payload (ME-126), so each frame's work would accumulate — but an autosave triggered by a click is a surprise and there is no undo across it. **Holding an unsaved edit per frame** is the real shape: `EditorSession` with a document *and a history* per frame, so undo does not walk out of the frame being looked at into one that is not. That is a redesign of a 145-line state holder already at the size mandate, so it went to `backlog.md` as its own ticket. A clean document switches with no dialog at all, which is the ordinary case |
 | 2026-08-19 | Where in an ISOBMFF file does the recipe go? | **A `uuid` box appended after the last box**, and readers read the **tail** (ME-108) | HEIF stores item positions in `iloc` as absolute file offsets, so inserting anywhere earlier silently rewrites every one of them and the picture stops decoding. Appending disturbs nothing — an unrecognised top-level box is skipped by its size. The cost is that the head window `carries` was built around cannot see it, so `RecipeCarrier` now says which end it lives at and `EditRecipe` reads 64 KB from there. A payload that would not fit that window is **refused at write time**, which is what makes "not in the tail" a real answer rather than a reason to read 4 MB per grid tile |
 | 2026-08-19 | Where does a grid Revert get its dialog? | **The dialog chrome moved to `commonMain`** — `core/ui/dialogs/Dialogs.kt`, whole and unchanged (ME-107) | The folder feature is `commonMain` to the bottom and the chrome sat in `jvmMain`, so the confirmation could not see it. Nothing in that file is JVM-specific — the AWT `FileDialog` pickers are in `ui/components/dialogs/`, a different file — and the alternative was a second dialog chrome for one dialog. Every caller is in the same package and none changed |
 | 2026-08-19 | Does `Reset` stay in the inspector? | **No — removed** (ME-107) | It cleared the *whole* working document from a header naming one tool, next to an Undo that takes work back a step at a time, and what people reached for it to do was "put this photograph back as it was". That is Revert, and one control now says so. `EditorSession.reset()` survives with no caller: undo covers it, and the next tool that wants a per-panel reset should re-earn the button |
@@ -783,8 +795,11 @@ it becomes the next question, per `ai/docs/conventions/feature-docs.md`.
   `closePip(returnToMain = true)`, whose `replaceTop` with a fresh nonce rebuilds `FolderScreen` and
   took `editorTarget` with it, unsaved work included. The return now saves and closes the editor on the
   way through and says so in the pill. The **fullscreen** window shares that path, so it is covered too.
-- **Frame sets.** ~~Editing frame N of a burst is covered by conversion~~ — **answered 2026-08-19**:
-  one recipe per file, so an edit applies to every frame in it. Per-frame editing is ME-126 and is a
-  want rather than a gap.
+- **Frame sets.** ~~Editing frame N of a burst is covered by conversion~~ — ~~**answered 2026-08-19**:
+  one recipe per file, so an edit applies to every frame in it~~ — **closed 2026-08-30** (ME-126,
+  ME-156, ME-157, ME-158): the payload is keyed by frame, a switch under the top bar chooses which
+  slot `Done` writes into, the strip marks the frames that carry their own edit, and the editor walks
+  between them. The un-keyed form still means every frame, so nothing written before it changed.
+  What is left is holding an *unsaved* edit per frame, which is a `backlog.md` block.
 - **Localisation.** Every string in this feature is English, like the rest of the app. If that ever
   changes, the manifests are where the strings live.

@@ -56,7 +56,7 @@ class TiffCarrierTest {
     fun `a document round-trips through a multi-page tiff`() = onCopy { file ->
         assertTrue(EditRecipe.write(file, document()).isSuccess)
 
-        assertEquals(document(), EditRecipe.read(file))
+        assertEquals(document(), EditRecipe.documentIn(file, 0))
         assertTrue(EditRecipe.carries(file))
     }
 
@@ -81,7 +81,7 @@ class TiffCarrierTest {
         assertTrue(EditRecipe.clear(file).isSuccess)
 
         assertContentEquals(original, file.readBytes())
-        assertNull(EditRecipe.read(file))
+        assertNull(EditRecipe.documentIn(file, 0))
         assertFalse(EditRecipe.carries(file))
     }
 

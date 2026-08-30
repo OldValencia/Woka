@@ -1,15 +1,12 @@
-package com.woka.feature.viewer.shell.frames
+package com.woka.core.ui.components.frames
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -37,57 +34,23 @@ import com.woka.core.ui.image.rememberReloadKey
 private val SELECTED_SIZE = 56.dp
 private val UNSELECTED_SIZE = 48.dp
 
-/** What the strip occupies on the left edge, so the Prev arrow can step aside. */
-val FRAME_STRIP_WIDTH = 80.dp
-
 /**
- * The frames inside one file, as a vertical strip down the left edge.
+ * One frame of a file, as a tile in the strip beside it.
  *
- * **The axis carries the meaning.** The carousel runs horizontally along the
- * bottom and moves *between* files; this runs vertically and moves *within*
- * one. Stacked as two horizontal rows — which is how it was first built — they
- * were the same shape in the same axis, one above the other, and nothing but a
- * label could have said which was which. macOS Preview reaches the same answer
- * from the same problem.
+ * Split from [FrameStrip] when ME-157 gave it a second mark to draw. The seam is the
+ * one already there: the strip lays out and the tile draws, and everything the tile
+ * needs arrives as a parameter.
  *
- * Left rather than right because the right edge is already spoken for: the
- * Next button and all three vertical popovers are anchored there. The
- * treatment still matches the carousel — 8 dp radius, unselected dimmed rather
- * than shrunk away — so the two read as one family.
+ * **`internal`, not `private`.** It is the strip's own tile and has no other caller;
+ * the visibility is what the split cost, and it is why nothing else in `components/`
+ * may name it.
  */
 @Composable
-internal fun FrameStrip(
-    item: MediaItem,
-    frames: List<ImageFrame>,
-    selectedIndex: Int,
-    loadPreview: suspend (MediaItem, Int) -> ImageBitmap?,
-    onSelectFrame: (Int) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    LazyColumn(
-        modifier = modifier,
-        contentPadding = PaddingValues(vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        items(frames.size, key = { frames[it].index }) { position ->
-            val frame = frames[position]
-            FrameThumbnail(
-                item = item,
-                frame = frame,
-                isSelected = frame.index == selectedIndex,
-                loadPreview = loadPreview,
-                onClick = { onSelectFrame(frame.index) }
-            )
-        }
-    }
-}
-
-@Composable
-private fun FrameThumbnail(
+internal fun FrameThumbnail(
     item: MediaItem,
     frame: ImageFrame,
     isSelected: Boolean,
+    isEdited: Boolean,
     loadPreview: suspend (MediaItem, Int) -> ImageBitmap?,
     onClick: () -> Unit
 ) {
@@ -131,6 +94,7 @@ private fun FrameThumbnail(
             Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)))
         }
         if (frame.kind == FrameKind.Motion) MotionBadge()
+        if (isEdited) EditedDot(Modifier.align(Alignment.TopEnd))
     }
 }
 

@@ -48,7 +48,9 @@ internal fun EditorScreen(
     onRevert: () -> Unit = {},
     unavailable: Map<String, String> = emptyMap(),
     /** The open canvas tool's keyboard slot — built above, because the handler is (ME-114). */
-    canvasKeys: CanvasKeys? = null
+    canvasKeys: CanvasKeys? = null,
+    /** Null for a file holding one picture, which pays one comparison for it (ME-156). */
+    frameControls: EditorFrameControls? = null
 ) {
     val document by session.document.collectAsState()
     val canUndo by session.canUndo.collectAsState()
@@ -92,6 +94,9 @@ internal fun EditorScreen(
     val canvasDocument = canvasDocumentFor(activeTool, document)
     val skipped = skippedOps(document, registry, engine.kind)
 
+    // One `if`, and a photograph pays exactly this much for the frame band existing.
+    val perFrame = frameControls?.takeIf { it.frames.allowsPerFrame }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -103,28 +108,27 @@ internal fun EditorScreen(
         EditorCanvasHost(
             engine = engine,
             document = canvasDocument,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().padding(start = canvasInsetFor(perFrame)),
             // Back to Fit whenever the tool changes: a crop opened at 100 % on a
             // corner of the picture is a crop nobody can frame (§4.3).
             resetKey = activeToolId,
             // A `CanvasTool` draws over the medium and takes the pointer first; every
             // other tool leaves this empty and the canvas pans as it always did.
             overlay = { geometry ->
-                ActiveToolOverlay(
-                    // With nothing open, the tool that owns a mark is mounted anyway, so
-                    // the mark can still be moved (ME-149) — `idleCanvasTool` holds why
-                    // it is one tool and not all of them.
-                    tool = activeTool ?: idleCanvasTool(tools, document),
-                    selectOnly = activeTool == null,
+                EditorCanvasOverlay(
+                    tools = tools,
+                    activeTool = activeTool,
                     session = session,
+                    engine = engine,
+                    document = canvasDocument,
                     geometry = geometry,
-                    // Of the document the canvas actually drew, not of the whole one.
-                    previewMatrix = engine.previewMatrix(canvasDocument),
                     canvasKeys = canvasKeys,
                     selection = selection
                 )
             }
         )
+
+        if (perFrame != null) EditorFrameBand(perFrame, session.media.file)
 
         EditorBottomPanel(
             session = session,

@@ -16,7 +16,7 @@ import java.io.File
  * The editor's half of ME-133's seam: a file's recipe, folded over what a reader
  * decoded.
  *
- * **No second render path.** `EditRecipe.read` → [fold] → [renderAtNativeScale], all
+ * **No second render path.** `EditRecipe.documentIn` → [fold] → [renderAtNativeScale], all
  * three exactly as the save and the canvas use them. That is what keeps "what you saw
  * is what the file shows" a property of the design rather than two implementations
  * somebody has to keep in step.
@@ -36,6 +36,18 @@ internal class RecipeStillEdits(
         }
 
     /**
+     * The payload's keys, and nothing derived from them (ME-157).
+     *
+     * **Never throws**, exactly as [carries] does not: a truncated or malformed
+     * payload must not stop a frame strip from drawing.
+     */
+    override suspend fun editedFrames(file: File): Set<Int> =
+        withContext(ImageBitmapCache.ioDispatcher) {
+            runCatching { EditRecipe.read(file)?.frames?.keys.orEmpty() }
+                .getOrDefault(emptySet())
+        }
+
+    /**
      * **Folded against the file's native size, then scaled to the bitmap** (ME-109).
      *
      * It used to fold against whatever bitmap arrived, and that was right for exactly
@@ -52,9 +64,14 @@ internal class RecipeStillEdits(
      * anything. When it cannot answer, the bitmap's own size stands in: that is the
      * old behaviour, still correct for the scale-free tools and no worse than
      * refusing to draw.
+     *
+     * **[frameIndex] is finally read** (ME-126). It has been a parameter since
+     * ME-133 and thrown away ever since, because one recipe covered every frame of a
+     * file; the payload is keyed now, so this is where a burst's frame 3 gets its
+     * own edit and frames 0, 1, 2 and 4 get the file's.
      */
     override fun apply(file: File, frameIndex: Int, decoded: ImageBitmap): ImageBitmap {
-        val document = EditRecipe.read(file) ?: return decoded
+        val document = EditRecipe.documentIn(file, frameIndex) ?: return decoded
         if (document.isEmpty) return decoded
 
         return runCatching {

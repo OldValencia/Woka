@@ -14,6 +14,7 @@ import com.woka.app.shell.TopBarAccessoriesState
 import com.woka.feature.editor.EditorSaveBanner
 import com.woka.feature.editor.EditorSaveStatus
 import com.woka.feature.editor.core.EditSaveResult
+import com.woka.feature.editor.core.EditScope
 import com.woka.feature.editor.core.ToolCardinality
 import com.woka.feature.editor.core.ToolOp
 import com.woka.feature.editor.shell.leaveForVideoAction
@@ -62,7 +63,14 @@ class EditorLeavesForVideoUiTest {
     @Composable
     private fun Scene(harness: EditorHarness, engine: FixtureEngine, leave: (() -> Unit) -> Unit) {
         var open by remember { mutableStateOf(true) }
-        val action = leaveForVideoAction(engine, harness.session, NAME, { open = false }, {})
+        val action = leaveForVideoAction(
+            engine,
+            harness.session,
+            NAME,
+            EditScope.AllFrames,
+            { open = false },
+            {}
+        )
         leave(action)
         Box {
             if (open) EditorUnderShell(harness, TopBarAccessoriesState())

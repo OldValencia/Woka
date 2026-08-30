@@ -79,7 +79,7 @@ class HeicRecipeTest {
     fun `a document round-trips through a heic`() = onCopy(LIVE_PHOTO_STILL) { file ->
         assertTrue(EditRecipe.write(file, quarterTurn()).isSuccess)
 
-        assertEquals(quarterTurn(), EditRecipe.read(file))
+        assertEquals(quarterTurn(), EditRecipe.documentIn(file, 0))
         assertTrue(EditRecipe.carries(file))
     }
 
@@ -87,7 +87,7 @@ class HeicRecipeTest {
     fun `a document round-trips through an avif`() = onCopy(STILL_AVIF) { file ->
         assertTrue(EditRecipe.write(file, quarterTurn()).isSuccess)
 
-        assertEquals(quarterTurn(), EditRecipe.read(file))
+        assertEquals(quarterTurn(), EditRecipe.documentIn(file, 0))
     }
 
     /**
@@ -107,7 +107,7 @@ class HeicRecipeTest {
             assertTrue(EditRecipe.write(file, quarterTurn()).isSuccess)
 
             assertTrue(EditRecipe.carries(file), "the box was written where nothing looks")
-            assertEquals(quarterTurn(), EditRecipe.read(file))
+            assertEquals(quarterTurn(), EditRecipe.documentIn(file, 0))
         }
 
     /** The claim §5 rests on: writing a recipe is not an edit to the picture. */
@@ -128,7 +128,7 @@ class HeicRecipeTest {
         assertTrue(EditRecipe.clear(file).isSuccess)
 
         assertContentEquals(original, file.readBytes())
-        assertNull(EditRecipe.read(file))
+        assertNull(EditRecipe.documentIn(file, 0))
         assertFalse(EditRecipe.carries(file))
     }
 
