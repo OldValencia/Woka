@@ -4,7 +4,7 @@
 |---|---|
 | **Requested** | 2026-08-30, by hand, from a screenshot |
 | **Area** | `core/ui/components/FolderCard*` — Home, the folder grid, Search |
-| **Depends on** | the borrowed cover (`pending/folder-of-folders-has-no-cover.md`), which is what made this visible |
+| **Depends on** | the borrowed cover (`../implemented/folder-of-folders-has-no-cover.md`), which is what made this visible |
 
 **Goal.** Make a card that stands for a **folder** distinguishable at a glance from a card that stands
 for a **picture**, now that both of them draw a photograph.

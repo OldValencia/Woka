@@ -41,7 +41,15 @@ instrument rather than as a regression guard, and it answers headlessly with no 
 `assertIsDisplayed` passes. So the fallback branch is innocent, and three of the four hypotheses above
 — `isDir` false, a different composable, an unread `previews` — are dead.
 
-**Measured fourth, from the screenshot: a card that *has* a cover and shows nothing.**
+**Measured third — the glyph was also drawn *under* the rest-state dimming.** Every
+other piece of card chrome is drawn after it, and `FolderCardPreview` says why in a comment of its
+own — *"the glyph and the progress bar are chrome, and a card the cursor is not on still has to be
+readable"* — but that comment sat above `PlayBadge` and `FolderCardProgress` only. The folder glyph
+was inside the cover branch, so an unhovered card drew it at **0.5 alpha beneath a further 18 % of
+black** (`REST_DIM`) on `surfaceElevated`. In the dark theme that is a barely-there outline on a dark
+tile, which is exactly "a black tile with nothing on it". Not a missing glyph — an unreadable one.
+
+**Measured fourth: a card that *has* a cover and shows nothing.**
 `StillCoverImage` has three branches that draw **nothing at all** — a Woka-road file (`heic`, `heif`,
 `avif`, `tif`) whose `loadStillCover` answered null, one whose road is still being decided, and a
 decode still running — and `FolderCardPreview` only reached the glyph when `cover == null`. So a card
@@ -57,16 +65,8 @@ transparent PNG decodes perfectly and paints nothing, so:
 - the tile drew the card's own surface and read as a broken thumbnail;
 - and the glyph stayed away, because the card had a cover.
 
-None of the four findings above touch that: the cover was neither missing nor undecodable. **The
+None of the findings above touch that: the cover was neither missing nor undecodable. **The
 picture had nothing in it, and nothing asked.**
-
-**Measured third — the glyph was also drawn *under* the rest-state dimming.** Every
-other piece of card chrome is drawn after it, and `FolderCardPreview` says why in a comment of its
-own — *"the glyph and the progress bar are chrome, and a card the cursor is not on still has to be
-readable"* — but that comment sat above `PlayBadge` and `FolderCardProgress` only. The folder glyph
-was inside the cover branch, so an unhovered card drew it at **0.5 alpha beneath a further 18 % of
-black** (`REST_DIM`) on `surfaceElevated`. In the dark theme that is a barely-there outline on a dark
-tile, which is exactly "a black tile with nothing on it". Not a missing glyph — an unreadable one.
 
 ## What was done
 
