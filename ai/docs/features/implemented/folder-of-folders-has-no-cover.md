@@ -136,5 +136,5 @@ data, and the alternative is stat-ing every subfolder on every card.
 - an ordinary folder of pictures draws exactly the card it drew before — **done**, first test;
 - `./gradlew.bat :shared:build` green — **done**.
 
-**Not verified by hand.** Both findings are headless; that the tile now reads correctly in the dark
-theme at rest is the one claim only a run can settle.
+**Confirmed by hand 2026-08-30**, which is what settles the one claim the headless tests cannot make:
+that the tile reads correctly in the dark theme at rest.
