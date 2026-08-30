@@ -1,6 +1,7 @@
 package com.woka.core.ui.components
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -9,6 +10,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
@@ -39,7 +41,25 @@ import java.io.File
  * without opening anything.
  */
 @Composable
-fun StillCoverImage(file: File, modifier: Modifier = Modifier, colorFilter: ColorFilter? = null) {
+fun StillCoverImage(
+    file: File,
+    modifier: Modifier = Modifier,
+    colorFilter: ColorFilter? = null,
+    /**
+     * What to draw when this cannot draw a picture (2026-08-30, found on a screenshot).
+     *
+     * **Three branches below draw nothing at all**: a Woka-road file whose decode
+     * answered null, a Woka-road file whose road has not been decided yet, and a
+     * decode still running. Each leaves the caller's surface bare, which on a folder
+     * card is a black tile — and the folder glyph beside it is *not* drawn in that
+     * case, because the card has a cover and simply cannot paint it.
+     *
+     * Defaulted to nothing, so every existing caller draws exactly what it drew: a
+     * bare tile is right for a photograph in a grid of photographs, and wrong for the
+     * one card that has something else to say.
+     */
+    placeholder: (@Composable () -> Unit)? = null
+) {
     var bitmap by remember(file.absolutePath) { mutableStateOf<ImageBitmap?>(null) }
     // Null while the answer is unknown. **Coil draws in the meantime rather than the
     // tile staying blank**: the check is a few kilobytes off the file's head and
@@ -64,19 +84,24 @@ fun StillCoverImage(file: File, modifier: Modifier = Modifier, colorFilter: Colo
 
     val drawn = bitmap
     if (edited == true) {
-        drawn?.let {
-            Image(
-                bitmap = it,
-                contentDescription = null,
-                modifier = modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-                colorFilter = colorFilter
-            )
+        if (drawn == null) {
+            // The decode is running, or it answered null and there is no picture to
+            // be had. Either way this tile has nothing of the file to show.
+            CoverPlaceholder(placeholder)
+            return
         }
+        Image(
+            bitmap = drawn,
+            contentDescription = null,
+            modifier = modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
+            colorFilter = colorFilter
+        )
         return
     }
     if (edited == null && file.needsWokaCover) {
         // A format Coil cannot read at all: nothing is better than a broken tile.
+        CoverPlaceholder(placeholder)
         return
     }
     // `key`, because `model = file` compares equal across a write: Coil holds the
@@ -91,4 +116,17 @@ fun StillCoverImage(file: File, modifier: Modifier = Modifier, colorFilter: Colo
             colorFilter = colorFilter
         )
     }
+}
+
+/**
+ * A stand-in laid out where the picture would have been: filling the tile, centred.
+ *
+ * Centred here rather than at the call site, because the picture it replaces filled
+ * the tile and a glyph left at a parent `Box`'s default alignment lands in a corner
+ * and reads as a mistake.
+ */
+@Composable
+private fun CoverPlaceholder(content: (@Composable () -> Unit)?) {
+    if (content == null) return
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { content() }
 }

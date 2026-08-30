@@ -82,16 +82,7 @@ suspend fun fetchFolderStateData(file: File): FolderStateData {
         }
         val allFiles = file.listFiles() ?: emptyArray()
         val count = allFiles.count { f -> f.isDirectory || f.isMedia }
-        val previews = allFiles.mapNotNull { f ->
-            if (!f.isFile) return@mapNotNull null
-            when (f.mediaKind()) {
-                // Every image is eligible now: the ones Coil cannot read are
-                // drawn by `StillCoverImage` through Woka's own decoders.
-                MediaKind.Image -> f
-                MediaKind.Video -> WokaStorage.thumbnailFile(f).takeIf { it.exists() }
-                null -> null
-            }
-        }.take(1)
+        val previews = chooseFolderCover(allFiles)
         FolderStateData(count, previews).also { folderStateCache[key] = stamp to it }
     }
 }

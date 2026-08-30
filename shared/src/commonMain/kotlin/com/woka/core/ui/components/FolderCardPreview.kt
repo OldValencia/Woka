@@ -5,7 +5,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -16,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.woka.core.data.MediaKind
 import com.woka.core.data.WatchRecord
@@ -28,6 +28,9 @@ import java.io.File
 /** Saturation and darkening a cover sits at until the cursor is on it. */
 private const val REST_SATURATION = 0.62f
 private const val REST_DIM = 0.18f
+
+/** The stand-in a folder draws when it has no cover — see [FolderCardPreview]. */
+const val FOLDER_GLYPH_TAG = "folder-glyph"
 
 /**
  * What a card shows under its caption: **one** cover, calm until hovered.
@@ -65,9 +68,18 @@ fun FolderCardPreview(
     val calm = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(saturation) })
     val isVideo = remember(file) { !isDir && file.mediaKind() == MediaKind.Video }
 
+    val cover = previews.firstOrNull()
+
     Box(modifier = modifier.fillMaxSize().background(Theme.colors.surfaceElevated)) {
         when {
-            isDir -> FolderCover(previews.firstOrNull(), calm)
+            // The glyph is this cover's placeholder as well as its absence: a borrowed
+            // picture that will not decode used to leave the tile black, because a card
+            // *with* a cover never reached the branch below (found on a screenshot,
+            // 2026-08-30). Drawn under the dimming here and again above it there —
+            // whichever fires, exactly one of them does.
+            isDir -> cover?.let {
+                StillCoverImage(it, colorFilter = calm, placeholder = { FolderGlyph() })
+            }
             isVideo -> VideoCover(file, dim = dimWatched && watch?.isStarted == true, calm = calm)
             else -> StillCoverImage(file, colorFilter = calm)
         }
@@ -78,6 +90,12 @@ fun FolderCardPreview(
 
         // Above the rest-state dimming on purpose: the glyph and the progress bar
         // are chrome, and a card the cursor is not on still has to be readable.
+        //
+        // **The folder glyph belongs here too**, and used to be drawn with the cover
+        // instead — so an empty folder's only mark sat at 0.5 alpha *under* another
+        // 18 % of black, on a dark elevated surface. Reported by hand 2026-08-30 as
+        // a linked folder drawing "a black tile with nothing on it" (§ folder cover).
+        if (isDir && cover == null) FolderGlyph(modifier = Modifier.align(Alignment.Center))
         if (isVideo) {
             PlayBadge(modifier = Modifier.align(Alignment.Center))
             FolderCardProgress(watch)
@@ -85,18 +103,14 @@ fun FolderCardPreview(
     }
 }
 
-/** The folder's single cover, or its glyph when there is nothing to show. */
+/** What a folder shows when it has no picture to show — its own outline. */
 @Composable
-private fun BoxScope.FolderCover(preview: File?, calm: ColorFilter) {
-    if (preview != null) {
-        StillCoverImage(preview, colorFilter = calm)
-    } else {
-        Image(
-            painter = painterResource(Icons.Static.Folder),
-            contentDescription = null,
-            modifier = Modifier.size(64.dp).align(Alignment.Center),
-            alpha = 0.5f,
-            colorFilter = ColorFilter.tint(Theme.colors.textPrimary)
-        )
-    }
+private fun FolderGlyph(modifier: Modifier = Modifier) {
+    Image(
+        painter = painterResource(Icons.Static.Folder),
+        contentDescription = null,
+        modifier = modifier.size(64.dp).testTag(FOLDER_GLYPH_TAG),
+        alpha = 0.5f,
+        colorFilter = ColorFilter.tint(Theme.colors.textPrimary)
+    )
 }
