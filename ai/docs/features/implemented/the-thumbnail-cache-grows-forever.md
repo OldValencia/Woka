@@ -293,6 +293,7 @@ cancellation in Kotlin is cooperative.
 `Exception`, so **cancellation is swallowed, printed as a stack trace, and turned into `null`** —
 structured concurrency does not work through that, and a fast scroll makes it noisy. Left alone
 deliberately: it is a coroutine defect in the thumbnail facade, not a question about the cache's size.
+Filed 2026-08-31 as `pending/the-thumbnail-facade-swallows-cancellation.md`.
 
 ## Verification
 
