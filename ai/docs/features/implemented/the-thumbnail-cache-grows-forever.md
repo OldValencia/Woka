@@ -293,7 +293,11 @@ cancellation in Kotlin is cooperative.
 `Exception`, so **cancellation is swallowed, printed as a stack trace, and turned into `null`** —
 structured concurrency does not work through that, and a fast scroll makes it noisy. Left alone
 deliberately: it is a coroutine defect in the thumbnail facade, not a question about the cache's size.
-Filed 2026-08-31 as `pending/the-thumbnail-facade-swallows-cancellation.md`.
+Filed and closed 2026-08-31 as `implemented/the-thumbnail-facade-catches-too-much.md` — **and the
+claim above did not survive it.** Nothing inside those guards suspends, so a `CancellationException`
+never reaches them; what was really there was `runCatching` catching `Throwable` and turning a
+decoder's `OutOfMemoryError` into a plausible default. The finding as written here was wrong, and
+that ticket says so at length.
 
 ## Verification
 

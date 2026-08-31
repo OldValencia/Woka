@@ -12,6 +12,7 @@ import com.woka.feature.viewer.image.readStillColor
 import com.woka.feature.viewer.image.stillDecoderFor
 import com.woka.feature.viewer.video.engine.VideoThumbnailExtractor
 import com.woka.feature.viewer.video.engine.quietFfmpegLogs
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withContext
 
 /**
@@ -31,15 +32,12 @@ object MediaThumbnails {
     suspend fun loadThumbnail(item: MediaItem, frameIndex: Int = 0): ImageBitmap? {
         ImageBitmapCache[ImageBitmapCache.key(item.file.absolutePath, frameIndex)]?.let { return it }
         return withContext(ImageBitmapCache.ioDispatcher) {
-            try {
+            decoded(fallback = null, report = true) {
                 if (item is MediaItem.Video) {
                     VideoThumbnailExtractor.load(item)
                 } else {
                     ImageLoader.load(item.file, frameIndex)
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                null
             }
         }
     }
@@ -56,15 +54,12 @@ object MediaThumbnails {
      */
     suspend fun loadPreview(item: MediaItem, frameIndex: Int = 0): ImageBitmap? =
         withContext(ImageBitmapCache.ioDispatcher) {
-            try {
+            decoded(fallback = null, report = true) {
                 if (item is MediaItem.Video) {
                     VideoThumbnailExtractor.load(item)
                 } else {
                     StillPreview.load(item.file, frameIndex)
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                null
             }
         }
 
@@ -74,8 +69,11 @@ object MediaThumbnails {
             if (item is MediaItem.Video) {
                 IntSize.Zero
             } else {
-                runCatching { stillDecoderFor(item.file).nativeSize(item.file, 0) }
-                    .getOrDefault(IntSize.Zero)
+                // Quiet: a file this fails on is one the loader is about to fail on
+                // too, and print about. One report per broken file is enough.
+                decoded(fallback = IntSize.Zero, report = false) {
+                    stillDecoderFor(item.file).nativeSize(item.file, 0)
+                }
             }
         }
 
@@ -107,8 +105,41 @@ object MediaThumbnails {
             if (item is MediaItem.Video) {
                 ImageFrameSet.Single
             } else {
-                runCatching { stillDecoderFor(item.file).frameSet(item.file) }
-                    .getOrDefault(ImageFrameSet.Single)
+                decoded(fallback = ImageFrameSet.Single, report = false) {
+                    stillDecoderFor(item.file).frameSet(item.file)
+                }
             }
         }
 }
+
+/**
+ * [body]'s answer, or [fallback] when it fails — the one place this facade decides what a
+ * failed decode looks like.
+ *
+ * **Two things it does that the code it replaced did not.**
+ *
+ * `runCatching`, which `sourceSize` and `frameSet` used, catches `Throwable`. That is
+ * *wider* than `Exception`, not narrower, so an `OutOfMemoryError` out of a decoder handed
+ * back a plausible `IntSize.Zero` the caller could not tell from a real answer. An `Error`
+ * now travels.
+ *
+ * And cancellation is rethrown before anything else is caught, which is the idiom the video
+ * engine already uses (`VideoPlayerDecoder`). **Today this cannot fire**: nothing inside any
+ * of these blocks suspends — `ImageLoader.load`, `StillPreview.load`,
+ * `VideoThumbnailExtractor.load` and the `StillDecoder` surface are all plain blocking
+ * functions — so `withContext` only ever throws `CancellationException` at its own boundary,
+ * outside these bodies. It is here because the day one of those decoders gains a `suspend`,
+ * a swallowed cancellation would appear silently, and a caller would read "you gave up" as
+ * "this file has no picture".
+ *
+ * [report] is false where a failure is an ordinary answer rather than news.
+ */
+private inline fun <T> decoded(fallback: T, report: Boolean, body: () -> T): T =
+    try {
+        body()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        if (report) e.printStackTrace()
+        fallback
+    }
