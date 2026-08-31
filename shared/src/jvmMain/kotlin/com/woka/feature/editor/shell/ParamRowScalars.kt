@@ -67,13 +67,17 @@ internal fun FloatControl(spec: FloatParam, params: ParamSet, writer: ParamWrite
 /**
  * What one press of an end is worth.
  *
- * One unit on the spans the editor actually uses — `-100..100`, a stroke's `1..64` — and
- * five on the one that is an order of magnitude wider, because 64 px to 128 px is
- * sixty-four presses at one. Anything further from the current value than a few nudges
- * is what the slider and the field are for.
+ * One unit on the spans the editor actually uses — `-100..100` — and five on the one that
+ * is an order of magnitude wider, because 64 px to 128 px is sixty-four presses at one.
+ * Anything further from the current value than a few nudges is what the slider and the
+ * field are for.
+ *
+ * **A spec may name its own instead**, and markup's two sizes do: their range is one wide
+ * constant while their default follows the picture (ME-159), so the span stopped being a
+ * usable proxy for what a nudge should be worth.
  */
 private fun stepOf(spec: FloatParam): Float =
-    if (spec.range.endInclusive - spec.range.start > 200f) 5f else 1f
+    spec.step ?: if (spec.range.endInclusive - spec.range.start > 200f) 5f else 1f
 
 /**
  * Signed only when the range crosses zero.

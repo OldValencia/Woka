@@ -62,21 +62,23 @@ class MarkupSelectionReadbackUiTest {
                 openMarkupTool(harness)
                 drawStroke()
 
-                // Deselect, walk the pen up, then select the stroke drawn at 6 again.
+                // Deselect, walk the pen up, then select the stroke drawn at 3 again.
+                // Three, not six: the fixture is 640 x 480 and a stroke starts at 0.6 %
+                // of the shorter edge (ME-159).
                 clickPicture(Offset(400f, 300f))
                 repeat(4) {
                     onNodeWithTag("param-${MarkupTool.Width.key}-plus").performClick()
                     waitForIdle()
                 }
-                readout(MarkupTool.Width.key).assertTextEquals("10px")
+                readout(MarkupTool.Width.key).assertTextEquals("7px")
 
                 clickPicture(Offset(90f, 80f))
 
-                readout(MarkupTool.Width.key).assertTextEquals("6px")
+                readout(MarkupTool.Width.key).assertTextEquals("3px")
                 assertEquals(
-                    6f,
+                    3f,
                     harness.session.document.value.markupShapes().single().width,
-                    "the reselected stroke was not the one drawn at 6"
+                    "the reselected stroke was not the one drawn at 3"
                 )
             }
         }

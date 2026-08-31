@@ -37,11 +37,18 @@ interface EditorTool {
      * ask the tool, which is the one place that knows a stroke width means nothing to a
      * caption and a font size means nothing to an arrow.
      *
-     * It returns a subset of [params] and never a different spec — the values are still
-     * written, still folded and still saved; only the rows are fewer. A tool that hid a
-     * parameter *and* stopped honouring it would be lying to the document.
+     * It returns a subset of [params] — the values are still written, still folded and
+     * still saved; only the rows are fewer. A tool that hid a parameter *and* stopped
+     * honouring it would be lying to the document.
+     *
+     * A spec may be returned **re-defaulted for this picture** — same key, same range,
+     * same `encode` — which is how markup starts a caption at a size that suits the file
+     * instead of at a constant (ME-159). [sourceSize] is the source's own dimensions, not
+     * `drawnSize`: a default derived from the folded result would move when a crop landed.
+     * What it must never return is a spec with a *different* key or range, which would
+     * write a value the document cannot read back.
      */
-    fun rows(params: ParamSet): List<ParamSpec<*>> = this.params
+    fun rows(params: ParamSet, sourceSize: IntSize): List<ParamSpec<*>> = this.params
 
     /**
      * Whether this tool's inspector may grow to the **dock's** width rather than
@@ -106,13 +113,29 @@ interface EditorTool {
     fun footnote(params: ParamSet, frame: IntSize): String? = null
 
     /**
-     * Every parameter at its declared default.
+     * Every spec this tool has, re-defaulted for the picture that is open.
      *
-     * Derived from [params] so a tool never writes its defaults twice — the
-     * second copy is the one that drifts, and it drifts silently because both
-     * spellings compile.
+     * The identity for every tool but Markup, which starts a caption at a size the file
+     * suggests rather than at a constant (ME-159). A returned spec keeps its key, its
+     * range and its encoding — only [ParamSpec.default] moves — because everything
+     * downstream finds a value by key.
+     *
+     * **This, and not [rows], is what [defaults] is built from.** `rows` answers "what is
+     * worth drawing", which is a subset; seeding a document from it would drop the
+     * parameters the panel happens not to be showing.
      */
-    fun defaults(): ParamSet = ParamSet(params.associate { it.defaultEntry() })
+    fun specs(sourceSize: IntSize): List<ParamSpec<*>> = params
+
+    /**
+     * Every parameter at its starting value — **materialised**, so every key is present.
+     *
+     * That is exactly why it takes [sourceSize]. A derived default that only applied when
+     * a key was *missing* would never apply at all: this seeds them all, and the seed is
+     * what the panel reads and what the first operation carries. ME-159 shipped inert
+     * once for precisely that reason.
+     */
+    fun defaults(sourceSize: IntSize = IntSize.Zero): ParamSet =
+        ParamSet(specs(sourceSize).associate { it.defaultEntry() })
 }
 
 /**

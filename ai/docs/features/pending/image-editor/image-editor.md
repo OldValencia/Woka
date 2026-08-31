@@ -92,7 +92,7 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-123](tickets/implemented/ME-123-a-huge-source-never-enters-the-cache.md) | A huge source never enters the shared cache | **done** 2026-08-30 — it reverses a 2026-08-17 decision and the test that asserted it; `byteSize` and the gate split into `CacheAdmission.kt`. Confirmed by hand |
 | [ME-125](tickets/ME-125-closing-the-window-waits-for-the-save.md)          | Closing the window waits for the save | **specified** 2026-08-30 |
 | [ME-128](tickets/ME-128-more-than-one-editor-at-once.md)                   | More than one editor at once, and the dock list that reaches them | **specified** 2026-08-30 |
-| [ME-159](tickets/ME-159-markup-is-sized-in-absolute-pixels.md)             | Markup is sized in absolute pixels, so it does not fit the picture | **specified** 2026-08-30 — reported by hand |
+| [ME-159](tickets/implemented/ME-159-markup-is-sized-in-absolute-pixels.md) | Markup defaults do not adapt to the picture that was opened | **done** 2026-08-31 |
 | [ME-117…ME-1xx](tickets/backlog.md)                                        | Image editor | backlog |
 
 ME-201…ME-204, the video editor's own tickets, moved to

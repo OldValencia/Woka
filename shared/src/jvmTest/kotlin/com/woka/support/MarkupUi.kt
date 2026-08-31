@@ -7,6 +7,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.unit.IntSize
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.shell.EditorScreen
 import com.woka.feature.editor.tools.markup.MARKUP_OVERLAY_TAG
@@ -21,10 +22,14 @@ import com.woka.feature.editor.tools.markup.MARKUP_TEXT_FIELD_TAG
  * those files had already crossed.
  */
 @OptIn(ExperimentalTestApi::class)
-fun ComposeUiTest.openMarkupTool(harness: EditorHarness) {
+fun ComposeUiTest.openMarkupTool(
+    harness: EditorHarness,
+    /** Named only by a test whose subject is derived from the picture's size (ME-159). */
+    sourceSize: IntSize = IntSize(640, 480)
+) {
     setContent {
         EditorScreen(
-            session = harness.session, engine = FixtureEngine(),
+            session = harness.session, engine = FixtureEngine(sourceSize = sourceSize),
             registry = harness.registry, onCancel = {}, onDone = {}
         )
     }

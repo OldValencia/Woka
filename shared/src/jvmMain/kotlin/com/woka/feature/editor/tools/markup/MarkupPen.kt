@@ -66,11 +66,16 @@ internal val MarkupColorParam = ColorParam(
 
 /**
  * Stroke width in **source** pixels, so a mark keeps its size relative to the picture
- * rather than to the window it was drawn in. 6 px reads on a photograph and is thin enough
- * to point at something on a screenshot.
+ * rather than to the window it was drawn in.
+ *
+ * 6 px reads on a photograph and is thin enough to point at something on a screenshot —
+ * on a picture about a thousand pixels across. On anything else it is the wrong number to
+ * start from, which is why the `default` here is only the fallback and [widthSpecFor]
+ * derives the real one from the source (ME-159). The range is shared and constant; the
+ * old 1–64 could not reach a stroke that shows on a 30 000 px picture.
  */
 internal val MarkupWidthParam =
-    FloatParam("width", "Width", 1f..64f, default = 6f, unit = "px")
+    FloatParam("width", "Width", MARKUP_SIZE_RANGE, default = 6f, unit = "px")
 
 /**
  * The plate behind a caption, and **`0L` — fully transparent — as its first swatch and its

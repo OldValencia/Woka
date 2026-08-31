@@ -40,7 +40,16 @@ data class FloatParam(
     val range: ClosedFloatingPointRange<Float>,
     override val default: Float,
     val detent: Float = default,
-    val unit: String? = null
+    val unit: String? = null,
+    /**
+     * What one press of a stepper's end is worth, when the range alone does not say.
+     *
+     * Null for every spec whose range *is* the answer — see `stepOf`. Markup sets it
+     * because its defaults are derived from the picture (ME-159), so one span now covers
+     * a 1.8 px stroke and a 180 px one, and a step read off that span is either useless
+     * at the bottom or glacial at the top.
+     */
+    val step: Float? = null
 ) : ParamSpec<Float> {
     // Clamped on the way in and on the way out: a document written when the range
     // was wider must not hand a slider a value off its own track. A type mismatch

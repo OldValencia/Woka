@@ -1,5 +1,6 @@
 package com.woka.feature.editor.tools.markup
 
+import androidx.compose.ui.unit.IntSize
 import com.woka.feature.editor.core.ParamSet
 import com.woka.feature.editor.core.ParamSpec
 
@@ -22,7 +23,7 @@ import com.woka.feature.editor.core.ParamSpec
  * inspector gives no sign of. Restyling a caption therefore wants the text pen chosen,
  * which is where a caption is drawn from anyway.
  */
-internal fun markupRows(params: ParamSet): List<ParamSpec<*>> {
+internal fun markupRows(params: ParamSet, sourceSize: IntSize): List<ParamSpec<*>> {
     val typed = params[MarkupTool.Kind] == MarkupKind.Text
     // **`Corner` needs a plate to round, not merely a caption to sit under.** With no
     // fill chosen, dragging it changes nothing that can be seen — the same rule the size
@@ -33,7 +34,24 @@ internal fun markupRows(params: ParamSet): List<ParamSpec<*>> {
         typed -> if (plated) setOf(MarkupTool.Width) else setOf(MarkupTool.Width, MarkupTool.Corner)
         else -> setOf(MarkupTool.TextSize, MarkupTool.Fill, MarkupTool.Corner, MarkupTool.Faces)
     }
-    return MarkupTool.params.filterNot { it in hidden }
+    return MarkupTool.specs(sourceSize).filterNot { it.key in hidden.map { spec -> spec.key } }
+}
+
+/**
+ * The two size rows, re-defaulted for this picture (ME-159); everything else untouched.
+ *
+ * Substituted here rather than in `MarkupTool.params` because the declared list is what
+ * `hidden` above is expressed against, and because every other consumer of a spec — the
+ * writer, the fold, the saved document — reaches it by **key**, which a copy keeps.
+ *
+ * **A derived copy is not `==` the declared spec**, and `markupLines` and `markupFolded`
+ * both run on what this returns. They compare by key for that reason; comparing by
+ * identity silently dropped both size controls off the compact bar.
+ */
+internal fun ParamSpec<*>.sizedFor(sourceSize: IntSize): ParamSpec<*> = when (this) {
+    MarkupTool.TextSize -> textSizeSpecFor(sourceSize)
+    MarkupTool.Width -> widthSpecFor(sourceSize)
+    else -> this
 }
 
 /**
@@ -60,16 +78,19 @@ internal fun markupRows(params: ParamSet): List<ParamSpec<*>> {
  * has just said does not apply.
  */
 internal fun markupLines(rows: List<ParamSpec<*>>): List<List<ParamSpec<*>>> {
-    val style = listOf(
+    val order = listOf(
         MarkupTool.Color,
         MarkupTool.Width,
         MarkupTool.TextSize,
         MarkupTool.Faces,
         MarkupTool.Fill
-    ).filter { it in rows }
+    ).map { it.key }
+    // By key, and the rows themselves rather than the declared specs: a size row arrives
+    // here re-defaulted for the picture (ME-159) and is a different object.
+    val style = order.mapNotNull { key -> rows.firstOrNull { it.key == key } }
 
     return listOfNotNull(
-        listOf(MarkupTool.Kind).takeIf { MarkupTool.Kind in rows },
+        rows.filter { it.key == MarkupTool.Kind.key }.takeIf { it.isNotEmpty() },
         style.takeIf { it.isNotEmpty() }
     )
 }
@@ -82,6 +103,9 @@ internal fun markupLines(rows: List<ParamSpec<*>>): List<List<ParamSpec<*>>> {
  * whether `Corner` is showing at all. Folding it in is also what lets it stay a *slider*:
  * the popover has the room a bar of buttons does not.
  */
-internal fun markupFolded(spec: ParamSpec<*>, rows: List<ParamSpec<*>>): List<ParamSpec<*>> =
-    if (spec == MarkupTool.Fill && MarkupTool.Corner in rows) listOf(MarkupTool.Corner)
-    else emptyList()
+internal fun markupFolded(spec: ParamSpec<*>, rows: List<ParamSpec<*>>): List<ParamSpec<*>> {
+    if (spec.key != MarkupTool.Fill.key) return emptyList()
+    // The row as it arrived, not the declared spec — see `sizedFor`. Neither of these two
+    // is re-defaulted today, and matching by key is what keeps that from mattering.
+    return rows.filter { it.key == MarkupTool.Corner.key }
+}

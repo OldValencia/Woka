@@ -6,6 +6,7 @@ import com.woka.feature.editor.core.CanvasTool
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditorToolScope
 import com.woka.feature.editor.core.ObjectParam
+import androidx.compose.ui.unit.IntSize
 import com.woka.feature.editor.core.ParamSet
 import com.woka.feature.editor.core.ParamSpec
 import com.woka.feature.editor.core.ToolCardinality
@@ -95,7 +96,12 @@ object MarkupTool : CanvasTool {
         listOf(Kind, Color, Fill, Corner, Width, TextSize, Faces, Shapes)
 
     /** Which of those are worth drawing for the pen currently chosen — `MarkupRows`. */
-    override fun rows(params: ParamSet): List<ParamSpec<*>> = markupRows(params)
+    /** The two size specs re-defaulted for this picture (ME-159); everything else as declared. */
+    override fun specs(sourceSize: IntSize): List<ParamSpec<*>> =
+        params.map { it.sizedFor(sourceSize) }
+
+    override fun rows(params: ParamSet, sourceSize: IntSize): List<ParamSpec<*>> =
+        markupRows(params, sourceSize)
 
     /** The pen on one line and its style on the next, both compact (ME-155). */
     override fun lines(rows: List<ParamSpec<*>>): List<List<ParamSpec<*>>> = markupLines(rows)

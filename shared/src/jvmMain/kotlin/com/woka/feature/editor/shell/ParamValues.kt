@@ -1,5 +1,6 @@
 package com.woka.feature.editor.shell
 
+import androidx.compose.ui.unit.IntSize
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditorTool
 import com.woka.feature.editor.core.ParamSet
@@ -22,9 +23,16 @@ import com.woka.feature.editor.core.ParamSet
  */
 internal fun paramsOf(
     document: EditDocument,
-    tool: EditorTool
+    tool: EditorTool,
+    /**
+     * The source's own dimensions, for the fallback below only. A tool may start a
+     * parameter at a value derived from the picture (ME-159), and `defaults` is where
+     * that lands — it materialises every key, so a derived default that waited for a
+     * missing one would never be reached.
+     */
+    sourceSize: IntSize = IntSize.Zero
 ): ParamSet {
     val id = tool.manifest.id
     document.pending?.takeIf { it.toolId == id }?.let { return it.params }
-    return document.opsOf(id).lastOrNull()?.params ?: tool.defaults()
+    return document.opsOf(id).lastOrNull()?.params ?: tool.defaults(sourceSize)
 }

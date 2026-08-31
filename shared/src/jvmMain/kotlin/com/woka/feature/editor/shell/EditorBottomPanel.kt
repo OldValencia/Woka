@@ -111,7 +111,7 @@ internal fun BoxScope.EditorBottomPanel(
                 ) { plateAlpha ->
                     EditorInspector(
                         title = activeTool.manifest.title,
-                        footnote = activeTool.footnote(paramsOf(document, activeTool), frame),
+                        footnote = activeTool.footnote(paramsOf(document, activeTool, engine.sourceSize), frame),
                         // The dock is the ceiling: a card sizes to its content and stops
                         // there, so Styles' fourteen squares reach the rail's width while
                         // Transform's four buttons stay compact — the reason this was a
@@ -124,6 +124,7 @@ internal fun BoxScope.EditorBottomPanel(
                                 session = session,
                                 document = document,
                                 frame = frame,
+                                sourceSize = engine.sourceSize,
                                 selectedId = selectedId
                             ) { preview, modifier ->
                                 engine.Thumbnail(preview, modifier)

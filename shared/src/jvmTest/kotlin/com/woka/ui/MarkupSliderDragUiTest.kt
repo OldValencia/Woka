@@ -1,5 +1,6 @@
 package com.woka.ui
 
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -34,6 +35,9 @@ import kotlin.test.assertTrue
  */
 @OptIn(ExperimentalCoroutinesApi::class, ExperimentalTestApi::class)
 class MarkupSliderDragUiTest {
+
+    /** What `openMarkupTool` mounts its `FixtureEngine` at. */
+    private val FIXTURE_SOURCE = IntSize(640, 480)
 
     @get:Rule
     val mainDispatcher = MainDispatcherRule(UnconfinedTestDispatcher())
@@ -111,8 +115,14 @@ class MarkupSliderDragUiTest {
         }
     }
 
+    /**
+     * **With the picture**, because the pen's starting size is derived from it (ME-159).
+     * Asking without one answers from the declared constant, which is not the number the
+     * screen under test is showing — and this read is compared against one taken after
+     * the document has been seeded, so the two have to be the same question.
+     */
     private fun penValue(harness: EditorHarness, spec: FloatParam) =
-        paramsOf(harness.session.document.value, MarkupTool)[spec]
+        paramsOf(harness.session.document.value, MarkupTool, FIXTURE_SOURCE)[spec]
 
     /**
      * Press at the left of the track and pull to the right, past the drag slop.

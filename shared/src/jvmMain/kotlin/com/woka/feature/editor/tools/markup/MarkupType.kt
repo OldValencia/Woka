@@ -21,9 +21,15 @@ import com.woka.feature.editor.core.ToggleSetParam
  * is a caption nobody can read. One slider spanning both would leave the stroke four
  * pixels of travel between "thin" and "thick", so there are two, and each is a no-op
  * against the shapes the other one styles ([restyleSelected]).
+ *
+ * **The `default` here is a fallback, not what a caption arrives at** (ME-159): the panel
+ * and the mint sites both read [textSizeSpecFor], which derives the default from the
+ * picture. This value is what a source of no known size falls back to, which keeps it the
+ * number every existing document was written against. The range is shared and constant —
+ * see [MARKUP_SIZE_RANGE].
  */
 internal val MarkupTextSizeParam =
-    FloatParam("textSize", "Text size", 12f..512f, default = 64f, unit = "px")
+    FloatParam("textSize", "Text size", MARKUP_SIZE_RANGE, default = 64f, unit = "px")
 
 /**
  * The four faces, as a **multi-select** chip row (ME-151, asked for 2026-08-26).

@@ -37,14 +37,14 @@ internal fun EditorToolScope.draw(drawn: String?, from: MarkupPoint, at: MarkupP
     val fresh = newMarkupShape(
         kind = document.markupKind(),
         color = document.markupColor(),
-        width = document.markupWidth(),
+        width = document.markupWidth(sourceSize),
         at = from,
         wrap = wrapAt(sourceSize.width, from.x),
         fill = document.markupFill(),
         corner = document.markupCorner(),
         faces = document.markupFaces()
     ).extendedTo(at)
-    preview(document.markupOpWith(document.markupShapes() + fresh))
+    preview(document.markupOpWith(document.markupShapes() + fresh, sourceSize))
     // Selected as it is drawn, so its handles are there the moment it is released.
     select(fresh.id)
     return fresh.id
@@ -57,7 +57,7 @@ internal fun EditorToolScope.draw(drawn: String?, from: MarkupPoint, at: MarkupP
 private fun EditorToolScope.updateShape(id: String, transform: (MarkupShape) -> MarkupShape) {
     val shapes = document.markupShapes()
     if (shapes.none { it.id == id }) return
-    preview(document.markupOpWith(shapes.map { if (it.id == id) transform(it) else it }))
+    preview(document.markupOpWith(shapes.map { if (it.id == id) transform(it) else it }, sourceSize))
 }
 
 internal fun Matrix.sourcePoint(position: Offset): MarkupPoint {

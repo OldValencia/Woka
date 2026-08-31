@@ -1,5 +1,6 @@
 package com.woka.feature.editor.tools.markup
 
+import androidx.compose.ui.unit.IntSize
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditorToolScope
 import com.woka.feature.editor.core.ParamSet
@@ -25,7 +26,8 @@ fun EditDocument.markupOp(): ToolOp? =
  * The parameters the tool's controls currently describe — `paramsOf` in this file's
  * terms, which the overlay cannot call: that one lives in the shell and takes a tool.
  */
-private fun EditDocument.markupParams(): ParamSet = markupOp()?.params ?: MarkupTool.defaults()
+private fun EditDocument.markupParams(sourceSize: IntSize = IntSize.Zero): ParamSet =
+    markupOp()?.params ?: MarkupTool.defaults(sourceSize)
 
 fun EditDocument.markupShapes(): List<MarkupShape> = markupParams()[MarkupTool.Shapes]
 
@@ -38,7 +40,13 @@ fun EditDocument.markupKind(): MarkupKind = markupParams()[MarkupTool.Kind]
 
 fun EditDocument.markupColor(): Long = markupParams()[MarkupTool.Color]
 
-fun EditDocument.markupWidth(): Float = markupParams()[MarkupTool.Width]
+/**
+ * The width the next stroke is drawn at. **Takes the source size** because an untouched
+ * pen answers with a default derived from the picture (ME-159); once the row has been
+ * used, the stored number wins and [sourceSize] changes nothing.
+ */
+fun EditDocument.markupWidth(sourceSize: IntSize): Float =
+    markupParams(sourceSize)[widthSpecFor(sourceSize)]
 
 /** The plate the next caption is placed on, `0L` for none — the twin of [markupColor]. */
 fun EditDocument.markupFill(): Long = markupParams()[MarkupTool.Fill]
@@ -50,7 +58,8 @@ fun EditDocument.markupCorner(): Float = markupParams()[MarkupTool.Corner]
 fun EditDocument.markupFaces(): Set<TextFace> = markupParams()[MarkupTool.Faces]
 
 /** The size type is placed at, in source pixels — the twin of [markupWidth] (ME-122). */
-fun EditDocument.markupTextSize(): Float = markupParams()[MarkupTool.TextSize]
+fun EditDocument.markupTextSize(sourceSize: IntSize): Float =
+    markupParams(sourceSize)[textSizeSpecFor(sourceSize)]
 
 /**
  * The operation that records [shapes], carrying every other parameter the document
@@ -60,9 +69,9 @@ fun EditDocument.markupTextSize(): Float = markupParams()[MarkupTool.TextSize]
  * `ParamSet` is one the inspector completes on the next composition, and that write is
  * an undo step nobody asked for (`CropState`).
  */
-fun EditDocument.markupOpWith(shapes: List<MarkupShape>): ToolOp = ToolOp(
+fun EditDocument.markupOpWith(shapes: List<MarkupShape>, sourceSize: IntSize): ToolOp = ToolOp(
     toolId = MarkupTool.manifest.id,
-    params = markupParams().with(MarkupTool.Shapes, shapes)
+    params = markupParams(sourceSize).with(MarkupTool.Shapes, shapes)
 )
 
 /**
@@ -78,7 +87,7 @@ fun EditorToolScope.deleteSelectedShape(): Boolean {
     val shapes = document.markupShapes()
     if (shapes.none { it.id == id }) return false
 
-    preview(document.markupOpWith(shapes.filterNot { it.id == id }))
+    preview(document.markupOpWith(shapes.filterNot { it.id == id }, sourceSize))
     commit()
     select(null)
     return true

@@ -1,5 +1,6 @@
 package com.woka.unit
 
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.runtime.Composable
 import com.woka.core.ui.icons.Icons
 import com.woka.feature.editor.core.CanvasTool
@@ -42,7 +43,10 @@ class IdleToolOverlayTest {
                         from = MarkupPoint(0f, 0f),
                         to = MarkupPoint(50f, 50f)
                     )
-                )
+                ),
+                // Any picture: this fixture is about a document *holding* a shape, not
+                // about the size that shape was placed at.
+                IntSize.Zero
             )
         )
     )

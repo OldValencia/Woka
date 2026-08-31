@@ -45,7 +45,7 @@ internal fun EditorToolScope.textEditAt(
     return MarkupShape.Text(
         id = newShapeId(),
         color = document.markupColor(),
-        width = document.markupTextSize(),
+        width = document.markupTextSize(sourceSize),
         at = at,
         text = "",
         // Inherited from the picture, never typed (ME-146) — and only here, on a caption
@@ -78,7 +78,7 @@ internal fun EditorToolScope.previewTextEdit(shape: MarkupShape.Text, text: Stri
     } else {
         shapes + shape.copy(text = text)
     }
-    preview(document.markupOpWith(next))
+    preview(document.markupOpWith(next, sourceSize))
 }
 
 /**
@@ -99,7 +99,7 @@ internal fun EditorToolScope.commitTextEdit(edit: MarkupTextEdit) {
     }
     if (blank) {
         val kept = document.markupShapes().filterNot { it.id == edit.shape.id }
-        preview(document.markupOpWith(kept))
+        preview(document.markupOpWith(kept, sourceSize))
     }
     commit()
     select(edit.shape.id.takeIf { !blank })

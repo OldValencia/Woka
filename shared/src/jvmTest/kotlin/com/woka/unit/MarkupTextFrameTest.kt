@@ -81,13 +81,13 @@ class MarkupTextFrameTest {
     fun `a drag past the size ceiling stops the box at the same factor as the type`() {
         val before = caption(size = 256f, wrap = 400f)
         val box = textBounds(before)
-        // Four times the diagonal — 1024 px of type, twice the 512 px ceiling.
+        // Four times the diagonal — 1024 px of type, just past the 1000 px ceiling.
         val target = box.topLeft + (box.bottomRight - box.topLeft) * 4f
 
         val after = assertIs<MarkupShape.Text>(before.withHandle(bottomRight, target.x, target.y))
 
-        assertEquals(512f, after.width)
-        assertEquals(800f, after.wrap, 0.01f, "the box grew past the type it wraps")
+        assertEquals(1000f, after.width)
+        assertEquals(1562.5f, after.wrap, 0.01f, "the box grew past the type it wraps")
     }
 
     /**

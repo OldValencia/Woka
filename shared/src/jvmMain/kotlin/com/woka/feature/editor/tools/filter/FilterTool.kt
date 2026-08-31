@@ -5,6 +5,7 @@ import com.woka.feature.editor.core.EditorTool
 import com.woka.feature.editor.core.FloatParam
 import com.woka.feature.editor.core.PadParam
 import com.woka.feature.editor.core.ParamPoint
+import androidx.compose.ui.unit.IntSize
 import com.woka.feature.editor.core.ParamSet
 import com.woka.feature.editor.core.ParamSpec
 import com.woka.feature.editor.core.PreviewChoiceParam
@@ -122,7 +123,8 @@ object FilterTool : EditorTool {
      * change the moment a look was picked — a control that appears is a control nobody
      * knew was there.
      */
-    override fun rows(params: ParamSet): List<ParamSpec<*>> = listOf(Undertone, Filter, Tone)
+    override fun rows(params: ParamSet, sourceSize: IntSize): List<ParamSpec<*>> =
+        listOf(Undertone, Filter, Tone)
 
     /**
      * Nothing when none of the four parts does anything — the rule every tool follows,

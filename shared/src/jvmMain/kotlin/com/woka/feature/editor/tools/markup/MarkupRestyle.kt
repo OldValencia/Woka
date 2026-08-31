@@ -44,16 +44,21 @@ internal fun restyleSelected(
     val shapes = params[MarkupTool.Shapes]
     val selected = shapes.firstOrNull { it.id == selectedId } ?: return null
     val sizeParam = sizeParamFor(selected)
-    val restyled = when (spec) {
-        MarkupColorParam -> selected.styled(color = params[MarkupColorParam])
-        sizeParam -> selected.resized(params[sizeParam])
-        MarkupFillParam -> selected.takeIf { it is MarkupShape.Text }
+    // **By key, never by identity.** A size row arrives here re-defaulted for the picture
+    // (ME-159) and is therefore a *copy* of the declared spec, equal to it in key, range
+    // and encoding and equal to nothing by `==`. Matching on the object sent every size
+    // write down the `else` branch, so the row moved the pen and left the selected shape
+    // where it was — which is the exact bug `MarkupSizeRowUiTest` was written for.
+    val restyled = when (spec.key) {
+        MarkupColorParam.key -> selected.styled(color = params[MarkupColorParam])
+        sizeParam.key -> selected.resized(params[sizeParam])
+        MarkupFillParam.key -> selected.takeIf { it is MarkupShape.Text }
             ?.filled(params[MarkupFillParam])
             ?: return null
-        MarkupCornerParam -> selected.takeIf { it is MarkupShape.Text }
+        MarkupCornerParam.key -> selected.takeIf { it is MarkupShape.Text }
             ?.cornered(params[MarkupCornerParam])
             ?: return null
-        MarkupFacesParam -> selected.takeIf { it is MarkupShape.Text }
+        MarkupFacesParam.key -> selected.takeIf { it is MarkupShape.Text }
             ?.faced(params[MarkupFacesParam])
             ?: return null
         else -> return null

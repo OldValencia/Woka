@@ -40,7 +40,9 @@ internal class ParamWriter(
      * reason, and by symmetry with it rather than in answer to a measured failure
      * (2026-08-26).
      */
-    private val selectedId: () -> String? = { null }
+    private val selectedId: () -> String? = { null },
+    /** The source's own dimensions, for the seed a write starts from — see `paramsOf`. */
+    private val sourceSize: IntSize = IntSize.Zero
 ) {
 
     /**
@@ -62,7 +64,7 @@ internal class ParamWriter(
         // set up — and every drag rebuilt its parameters from a stale base, wiping the
         // slider moved before it (2026-08-22).
         val live = session.document.value
-        val base = if (spec is ActionParam) tool.defaults() else paramsOf(live, tool)
+        val base = if (spec is ActionParam) tool.defaults(sourceSize) else paramsOf(live, tool, sourceSize)
         val written = base.with(spec, value)
         // A tool may rewrite its own parameters now that the frame is known — a preset
         // that means "this many pixels on the long edge" resolves to a scale here, so
