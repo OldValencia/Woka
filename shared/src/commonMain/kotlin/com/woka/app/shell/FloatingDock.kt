@@ -17,7 +17,18 @@ import kotlin.time.Duration.Companion.milliseconds
 import com.woka.core.ui.components.floatingPanel
 import com.woka.feature.library.LibraryPopup
 
-enum class DockTab { Home, Navigation, Editor }
+/**
+ * The dock's destinations, and there are two.
+ *
+ * `Editor` was a third until 2026-09-01 and never worked: `App` maps `Screen` to this
+ * enum and there is no `Screen.Editor`, so the item could not light, and `onTabSelected`
+ * only ever acted on [Home], so it could not be clicked either. It could not be given a
+ * job, because the editor is a **mode over a folder** (§4.2) and `FolderScreen` hides
+ * this whole dock while one is open — a destination that hides the dock is not a
+ * destination. The list of open editors that would have justified it was ME-128, dropped
+ * the same day.
+ */
+enum class DockTab { Home, Navigation }
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -92,13 +103,6 @@ fun FloatingDock(
                     )
                 }
             }
-            DockItem(
-                text = "Editor",
-                iconRes = Icons.Static.Settings, // Replace with Editor icon if available
-                isActive = activeTab == DockTab.Editor,
-                activeColor = Theme.colors.accentEditor,
-                onClick = { onTabSelected(DockTab.Editor) }
-            )
 
             DockSeparator()
 

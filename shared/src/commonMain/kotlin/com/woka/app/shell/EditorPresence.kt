@@ -20,7 +20,12 @@ import androidx.compose.runtime.setValue
  * and not in either feature, which may not name the other. An object rather than a
  * `CompositionLocal` because `closePip` is a plain function and cannot read one.
  *
- * **A count, not a flag**, so ME-128's several live sessions need not re-open this file.
+ * **A count, not a flag.** It was written for ME-128's several live sessions; that ticket
+ * was dropped 2026-09-01 and one editor is now the shape, so what the count earns today
+ * is narrower and still worth having: an unbalanced [closed] cannot drive it negative and
+ * swallow the next [opened], which `EditorPresenceTest` asserts. `ExitWhenQuiet` reads
+ * [isOpen] to decide whether anyone has to be asked before the application goes (ME-160),
+ * and a presence stuck below zero there would quit over an unsaved edit.
  */
 @Stable
 object EditorPresence {

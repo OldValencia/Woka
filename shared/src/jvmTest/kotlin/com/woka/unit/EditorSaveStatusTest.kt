@@ -64,7 +64,10 @@ class EditorSaveStatusTest {
         assertNull(EditorSaveStatus.message)
     }
 
-    /** One message, one save: a second overwrites the first and nothing worse (ME-128). */
+    /**
+     * A save outlives its editor, so two `Done`s in quick succession overlap even with
+     * one editor open. The message is the part that does not survive it, deliberately.
+     */
     @Test
     fun `a second save replaces the first message`() {
         EditorSaveStatus.saving("first.jpg")
@@ -82,7 +85,8 @@ class EditorSaveStatusTest {
 
     /**
      * The count exists for this case: under a boolean the first save to answer would
-     * open the exit gate over the second, which is ME-128's shape (ME-125).
+     * open the exit gate over the second (ME-125). Reachable with one editor, because
+     * a write outlives the editor that started it.
      */
     @Test
     fun `two overlapping saves clear only when both have finished`() {

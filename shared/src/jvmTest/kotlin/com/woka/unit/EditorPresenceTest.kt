@@ -12,10 +12,11 @@ import kotlin.test.assertTrue
 /**
  * The fact the video window asks about before it changes the route (ME-124).
  *
- * A count rather than a flag, because ME-128 makes several editors live at once and the
- * last one to close is the one that ends the presence — which is also why the object is
- * drained between tests: it is a singleton, and a leaked `opened` would make the next
- * test's video window believe an editor is up.
+ * A count rather than a flag: it was written for ME-128's several live editors, and when
+ * that was dropped (2026-09-01) what the count still earns is that no sequence of calls
+ * can wedge it — asserted below in both directions. The object is drained between tests
+ * because it is a singleton, and a leaked `opened` would make the next test's video
+ * window believe an editor is up, and `ExitWhenQuiet` wait for an answer nobody gives.
  */
 class EditorPresenceTest {
 
@@ -46,7 +47,11 @@ class EditorPresenceTest {
         assertEquals(1, left)
     }
 
-    /** ME-128's case: the second does not end when the first does. */
+    /**
+     * The count's other half: two opens need two closes. Not reachable through the UI
+     * with one editor, and kept as the assertion that says the arithmetic is arithmetic
+     * rather than a boolean wearing an `Int`.
+     */
     @Test
     fun `two editors need two closes`() {
         EditorPresence.opened {}

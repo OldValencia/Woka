@@ -1,3 +1,25 @@
+> **DROPPED 2026-09-01 — not a source of truth, and not work waiting to be picked up.**
+> The id is retained and never reused (`conventions/tickets.md` §2). Kept because the survey in
+> "What is already true" is accurate and the two defects found while dropping it are worth reading.
+>
+> **Why.** Its "Why now" — "an edit in progress is lost by opening something else" — stopped being
+> true. Every door out of the editor now asks or saves: `Cancel`/`Esc` and a frame change confirm,
+> the return from the video window saves (ME-124), and the window's close button asks (ME-160). This
+> was never a data-loss ticket after 2026-08-31; it was convenience, at the price of moving session
+> ownership out of the composition, ~20 MB of proxy bitmap resident per open editor, and reopening
+> ME-124 and ME-160 — both of which speak about *the* editor, singular.
+>
+> **Two defects found in it, recorded so a later reading does not have to find them again.**
+> It contradicts itself on `Cancel`: line 46 says a session ends on it, line 111 says closing "sets
+> it to null without disposing". And with `Cancel` ending the session and the dock hidden while
+> editing, **no door suspends an editor** — the store could never hold more than one entry. Making
+> it work needs a new "minimise" control beside `Cancel`, which is against §4.2: the editor is a
+> mode, not a panel.
+>
+> The cheap alternative, if the itch returns: one suspended slot keyed by `EditorTarget`, restored
+> when the same file is reopened in the same run. No dock list, no "minimise", one visible editor,
+> and ME-124 and ME-160 untouched.
+
 # ME-128 — More than one editor at once, and the dock list that reaches them
 
 | | |

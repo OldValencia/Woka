@@ -30,9 +30,11 @@ internal const val SAVING_PREFIX = "Saving"
  * anyway once the grace period is up. The gate itself is `app/shell/AppExit.kt`,
  * because the thing being closed is the application and not an editor.
  *
- * **One message, one save.** Two editors open at once is ME-128 and a list is what
- * that ticket brings; until then a second save replaces the first's message and
- * nothing worse, because these messages are the only shared state there is.
+ * **One message, two saves are possible.** Only one editor is ever open — ME-128 was
+ * dropped 2026-09-01 — but a save outlives the editor that started it, so `Done` on one
+ * photograph and `Done` on the next a moment later really do overlap. The second
+ * replaces the first's message and nothing worse: these messages are the only shared
+ * state there is, and [inFlight] is what actually has to count.
  */
 @Stable
 object EditorSaveStatus {
@@ -43,9 +45,12 @@ object EditorSaveStatus {
      * How many saves are running, and therefore whether the application may go
      * (ME-125). `ExitWhenQuiet` reads it through a `snapshotFlow`.
      *
-     * **A count rather than a flag**, for the reason `EditorPresence` keeps one:
-     * ME-128 makes two saves at once reachable, and a boolean would clear on the
-     * first of them to finish and let the window close over the second.
+     * **A count rather than a flag**, and it is not defensive: a save outlives the
+     * editor that started it, so `Done` on one photograph followed by `Done` on the
+     * next overlaps two writes with one editor ever open. A boolean would clear on
+     * the first of them to finish and let the window close over the second. Written
+     * for ME-128 and kept when that was dropped, because the case is reachable
+     * without it.
      */
     var inFlight by mutableStateOf(0)
         private set
