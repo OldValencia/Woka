@@ -35,7 +35,6 @@ internal fun rememberCopyAction(activeItem: MediaItem?, frameIndex: Int): () -> 
             null -> Unit
             is MediaItem.Image -> {
                 scope.launch { copyImageToClipboard(activeItem.file.absolutePath, frameIndex) }
-                Unit
             }
 
             else -> copyFilesToClipboard(listOf(activeItem.file.absolutePath))

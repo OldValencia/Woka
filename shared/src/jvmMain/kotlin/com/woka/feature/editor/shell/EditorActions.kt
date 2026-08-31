@@ -70,7 +70,6 @@ internal fun saveAction(
             EditorSaveStatus.finished()
         }
     }
-    Unit
 }
 
 /**
@@ -121,5 +120,4 @@ internal fun revertAction(
         if (reverted) session.revertedToOriginal()
         onFinished(reverted)
     }
-    Unit
 }
