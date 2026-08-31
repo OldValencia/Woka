@@ -38,117 +38,42 @@ table rather than restating it, and the foundation sentence corrected where ME-1
 with ME-132 and the tree holds no `-edited` anywhere; checked before deleting the sentence.
 *Depends on nothing.*
 
-### ME-142 — The rest of the adjustments
-Adjust ships six — Exposure, Brightness, Contrast, Saturation, Warmth, Tint. Photos offers around
-fifteen. The missing ones are wanted, and they do **not** all cost the same.
+### ME-162 — Adjustments a colour matrix cannot express
+Split from ME-142 when the matrix half was promoted (2026-09-01). Highlights, Shadows, Sharpness,
+Definition, Noise Reduction, Vignette — **and Brilliance, and the real Vibrance**, both moved here by
+ME-142 when its arithmetic was checked. A `ColorMatrix` is a 4×5 **affine** map: Brilliance is
+region-specific by definition, and Vibrance raises saturation more for pixels that are already less
+saturated, which makes the multiplier a function of the input and the map quadratic. ME-142 ships a
+*weighted linear* saturation under the name Vibrance and says so in its own KDoc; the per-pixel one is
+here.
 
-**The ones that are still one matrix**, and therefore cost a slider each and nothing more: Vibrance
-(saturation weighted away from skin tones), Black Point, and a second look at Brilliance.
+The rest are each either per-luminance (a tone curve) or per-neighbourhood (a convolution): a curve is
+not a linear map of the channels, and a blur reads the pixels around the one being written.
 
-**The ones that a `ColorMatrix` cannot express at all** — Highlights, Shadows, Sharpness, Definition,
-Noise Reduction, Vignette. Every one of them is either per-luminance (a tone curve) or per-neighbourhood
-(a convolution), and `RasterStage.Pixels` carries a `ColorMatrix`. A curve is not a linear map of the
-channels; a blur reads the pixels around the one being written.
+So this needs a **fourth thing a stage can be** — a Skia `RuntimeEffect` carried through the fold and
+run identically in three places: the live canvas, the native-scale replay on save, and the reader path
+where every grid tile folds the recipe. §3.2's "three shapes and no more" is the sentence it argues
+with, and that argument belongs in §9 before any code is written.
 
-So this block is really two: the matrix ones, which are ME-111 again with more constants, and the rest,
-which need a **fourth thing a stage can be** — a Skia `RuntimeEffect` shader carried through the fold and
-run identically on the canvas, in `renderAtNativeScale` and in `RecipeStillEdits`. That is an engine
-change, and §3.2's "three shapes and no more" is the sentence it argues with. Splitting the promotion
-along that line is the whole point of writing this down now.
+**The panel stopped being the blocker** — ME-161 answers it — but the count is the thing ME-161 has to
+have been measured against: seven more on top of ME-142's eight is fifteen.
+*Depends on ME-142, ME-161.*
 
-**Also a panel problem.** Fifteen sliders in one inspector is a wall. Photos groups them and scrolls;
-the editor's inspector has never had to scroll.
-*Depends on ME-111.*
 
-### ME-143 — Crop that can pull one edge
-Requested 2026-08-22; **the exact behaviour is the author's to describe when it is promoted**, and the
-two readings are far apart, so this block deliberately records both rather than choosing.
+### ME-163 — The rest of the viewer's on-media chrome
+The slices after ME-121, which converted the viewer shell's own chrome and settled which `onScrim`
+token replaces which `Theme.colors` one. What is left is two clusters, one sitting each: **the zoom
+menu** — `SizeIndicatorButton`, `ZoomMenuInput`, `ZoomMenuPopover`, `ZoomMenuPresetRow`,
+`ZoomMenuSlider` — and **the video controls**, the larger half, from `MediaViewerVideoControls` and
+its sliders through the player-settings and subtitle rows.
 
-- **Non-uniform stretch** — drag the bottom edge down and the picture gets taller, the pixels stretched
-  rather than the frame recut. Free in the current model: `RasterStage.Geometry` carries a `Matrix`, a
-  scale is a matrix, and the reader path already scales the recipe.
-- **Perspective / keystone** — pull the top edge wider than the bottom to straighten a building. Also a
-  matrix, but a projective one: Compose's `Matrix` is 4×4 and Skia honours the perspective row, so it
-  fits `Geometry` too — what does *not* fit is `CropRect`, which is four integers and cannot describe a
-  quadrilateral, and `CropHandle`, whose handles resize a rectangle.
+Mechanical once ME-121 has set the mapping, and *visible* on a shipped surface either way, so each
+wants the author's eyes rather than a green build.
 
-Either way it is a **Geometry** stage in source pixels and needs no new stage kind. Whether it belongs
-to Crop or becomes its own tool depends on which of the two it is.
-*Depends on ME-109.*
-
-### ME-144 — Icons where the panels currently use words
-Requested 2026-08-22. Several controls say in text what a glyph says faster, and the rail already
-proved the point from the other side — it carried icons *alone* until two undrawn glyphs became two
-identical squares, and gained labels (ME-109, 2026-08-21). This is the same judgement applied per row
-rather than per tool.
-
-The candidates as the tree stands: Crop's `Portrait` switch (an orientation, drawn in a heartbeat),
-Crop's aspect chips where a ratio has a shape, Resize's presets, and any adjustment whose name is
-longer than its effect.
-
-**The work is mostly SVGs, not Kotlin.** `composeResources/drawable` holds around ninety and none of
-them is an orientation, a rectangle outline or an arrow; `Icons.Static` is a flat list of one-line
-aliases. A row renderer that can show a glyph instead of a label is a small change to
-`ParamRowChoice`/`ParamRowScalars`; drawing the glyphs is the ticket.
-
-**Not everywhere.** A number stays a number, and a slider keeps its name — an inspector of unlabelled
-pictograms is the submenu problem in a different costume.
-*Depends on nothing.*
-
-### ME-118 — HDR tool
-`Output` domain, `Single`, one `ChoiceParam` — **`Keep` and `To SDR` only in v1** (§9, 2026-08-18).
-`To SDR` bakes the existing tone map into the pixels and writes an SDR file; `Keep` carries the
-source's transfer through, which needs the ffmpeg encode path since Skia cannot write PQ. **`To HDR` is
-deferred** — no measurement blocks it (PQ AVIF via libaom writes correctly, ME-010) but it is inverse
-tone mapping and does not recover clipped highlights, so it is not MVP.
-
-**Blocked on ME-120, not just on ME-104.** `To SDR` bakes the tone curve into pixels permanently, and
-that curve is currently normalised by the literal `W = 11.2` — on real HDR content SDR white lands at
-148/255. Shipping `To SDR` first would write the defect into the user's files.
-*Depends on ME-013, ME-132, ME-120.*
-
-### ME-119 — HDR view mode
-A tri-state — `Auto` / `Force HDR` / `Force SDR` — that changes how a still is *displayed* and no
-pixels at all: a `WokaSettings` field, a control in the viewer, and the same toggle mirrored in the
-editor's top bar so the user can see what the HDR tool is about to write. Belongs to the viewer as
-much as to the editor; it is listed here because §6.1 is where the two halves are defined together.
-*Depends on ME-106.*
-
-### ME-120 — The tone curve's white point must come from the content
-`HdrShader` normalises Hable by the literal `W = 11.2`, which asserts every HDR source peaks at 1120
-nits. Measured in ME-010: a real HDR frame peaks at **174**, so the curve compresses a picture that
-barely exceeds SDR as though it had eleven times the range, and SDR reference white lands at
-**148/255** instead of 255. That is the "brightness at −50 %" the author reported — the second of two
-defects found on 2026-08-18, the first (gamut matrix before the curve, wrecking every saturated
-colour) being fixed in ME-010.
-
-The shape: the white point becomes a uniform beside `transfer` and `wideGamut`. A still is decoded in
-full, so its peak can simply be measured; video should prefer the stream's mastering-display or
-MaxCLL metadata and fall back to a constant when a file carries neither.
-
-**Blocked on a fixture, not on the analysis.** The corpus has no genuine HDR still — `hdr_pq.avif`
-and friends are SDR pixels wearing a PQ tag (see the corpus README), and tuning a tone curve against
-them would tune it against nothing. A real PQ BT.2020 still has to land in the corpus first, ideally
-two or three with different peaks.
-
-Belongs to the viewer, not to the editor; listed here because ME-010 is where it was measured and
-because the HDR tool's `To SDR` bakes this very curve into pixels.
-*Depends on a real HDR fixture reaching the corpus. Blocks nothing in the 100 track except honest
-output from ME-118's `To SDR`.*
-
-### ME-121 — Migrate the viewer's on-media chrome to the onScrim tokens
-`ViewerChrome` gained the foreground half of its on-media pair in ME-012 (`onScrim`,
-`onScrimSecondary`, `onScrimDisabled`, `onScrimBorder`, `onScrimHover`, `onScrimSelected`), light in
-both themes for the same reason its scrims are dark in both. The editor reads them from its first
-commit; **the viewer does not yet**. Counted 2026-08-30: **28** files under `feature/viewer/` take
-`Theme.colors` and exactly **two** take an `onScrim` token. Text and icons drawn on a scrim measure
-between 1.05 : 1 and 6.68 : 1 in the light theme depending on the photograph behind them — see the
-decision log.
-
-The change is mechanical but wide, and it is a *visible* change to a surface that already ships, so it
-wants the author's eyes rather than a green build: the files to convert are the intersection of "reads
-`Theme.viewer`" and "reads `Theme.colors`". Deliberately kept out of ME-012, whose job was the editor.
-*Depends on nothing. Blocks nothing — the editor is already correct.*
+**Not everything on `Theme.colors` is a mistake.** A dialog is an app surface that happens to appear
+above a photograph, and stays on the app palette — the rule `DiscardChangesDialog`'s KDoc already
+states. Which of the twenty-eight are dialogs is ME-121's to write down.
+*Depends on ME-121.*
 
 ### ME-1xx — Opening a large photograph must not freeze the window
 Split out of ME-123 on 2026-08-30, when the cache half of that block was promoted and this half was
@@ -175,9 +100,68 @@ means when the answer is in another frame — which is why it was not improvised
 
 ---
 
+## 500 — HDR
+
+Gathered here on 2026-09-01 because the three read as one subject and were previously scattered
+through the 100 track. **All three are blocked by the same missing thing**: the corpus holds no
+genuine HDR still. `hdr_pq.avif`, `hdr_hlg.avif` and `hdr_pq.png` are SDR pixels wearing HDR tags —
+the first two are pixel-identical, `psnr` reports `inf` — so they test that a transfer tag is *read*
+and nothing else (`jvmTest/resources/media/README.md`). Nothing in this section can be tuned, measured
+or confirmed until one or two real PQ BT.2020 stills land in the corpus, and ME-120 must land before
+ME-118 or the defect gets written into the user's files.
+
+### ME-120 — The tone curve's white point must come from the content
+`HdrShader` normalises Hable by the literal `W = 11.2`, which asserts every HDR source peaks at 1120
+nits. Measured in ME-010: a real HDR frame peaks at **174**, so the curve compresses a picture that
+barely exceeds SDR as though it had eleven times the range, and SDR reference white lands at
+**148/255** instead of 255. That is the "brightness at −50 %" the author reported — the second of two
+defects found on 2026-08-18, the first (gamut matrix before the curve, wrecking every saturated
+colour) being fixed in ME-010.
+
+The shape: the white point becomes a uniform beside `transfer` and `wideGamut`. A still is decoded in
+full, so its peak can simply be measured; video should prefer the stream's mastering-display or
+MaxCLL metadata and fall back to a constant when a file carries neither.
+
+**Blocked on a fixture, not on the analysis** — see the section note above. Confirmed still open
+2026-09-01: `HdrShader.kt:76` is unchanged, and the corpus README still says in as many words that no
+genuine HDR source is in it.
+
+Belongs to the viewer, not to the editor; listed with the feature because ME-010 is where it was
+measured and because the HDR tool's `To SDR` bakes this very curve into pixels.
+*Depends on a real HDR fixture reaching the corpus.*
+
+### ME-118 — HDR tool
+`Output` domain, `Single`, one `ChoiceParam` — **`Keep` and `To SDR` only in v1** (§9, 2026-08-18).
+`To SDR` bakes the existing tone map into the pixels and writes an SDR file; `Keep` carries the
+source's transfer through, which needs the ffmpeg encode path since Skia cannot write PQ. **`To HDR` is
+deferred** — no measurement blocks it (PQ AVIF via libaom writes correctly, ME-010) but it is inverse
+tone mapping and does not recover clipped highlights, so it is not MVP.
+
+**Blocked on ME-120, not just on ME-104.** `To SDR` bakes the tone curve into pixels permanently, and
+that curve is currently normalised by the literal `W = 11.2` — on real HDR content SDR white lands at
+148/255. Shipping `To SDR` first would write the defect into the user's files.
+*Depends on ME-013, ME-132, ME-120.*
+
+### ME-119 — HDR view mode
+A tri-state — `Auto` / `Force HDR` / `Force SDR` — that changes how a still is *displayed* and no
+pixels at all: a `WokaSettings` field, a control in the viewer, and the same toggle mirrored in the
+editor's top bar so the user can see what the HDR tool is about to write. Belongs to the viewer as
+much as to the editor; it is listed here because §6.1 is where the two halves are defined together.
+*Depends on ME-106.*
+
+---
+
 ## 900 — Follow-ons, explicitly not planned
 
 - Straighten / arbitrary-angle rotation.
+- ~~ME-143 — Crop that can pull one edge~~ — **dropped 2026-09-01**, the id retained and never reused.
+  It held two readings and never chose between them. The **stretch** one — drag an edge and the pixels
+  get taller — is a destructive operation Photos does not offer, and "change the dimensions" is already
+  Resize. The **keystone** one is the valuable half and is a closer relative of straighten, directly
+  above it in this list, than of Crop: `CropRect` is four integers and cannot describe a quadrilateral,
+  `CropHandle` resizes a rectangle, so it would be its own tool doing an operation §2 has already put
+  out of scope. Nothing had shipped toward either — checked 2026-09-01, Crop carries `Rect`, `Aspect`,
+  `Portrait` and Resize is uniform-only.
 - ~~Re-opening a saved edit to adjust a previous crop, as a sidecar beside the copy~~ — **shipped
   2026-08-19 (ME-134)**, and not that way: the recipe is in the file, so reopening replays it into a
   history Undo can walk back. No sidecar, and no copy to sit beside.

@@ -94,6 +94,11 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-160](tickets/implemented/ME-160-the-close-button-asks-about-unsaved-work.md) | The close button asks about unsaved work | **done** 2026-08-31 — found by hand the same day ME-125 shipped; by hand outstanding |
 | [ME-128](archive/ME-128-more-than-one-editor-at-once.md)                   | ~~More than one editor at once, and the dock list that reaches them~~ | **dropped** 2026-09-01 — its own "Why now" had stopped being true; the id is retained and never reused |
 | [ME-159](tickets/implemented/ME-159-markup-is-sized-in-absolute-pixels.md) | Markup defaults do not adapt to the picture that was opened | **done** 2026-08-31 |
+| [ME-121](tickets/ME-121-the-viewer-chrome-reads-the-onscrim-tokens.md)     | The viewer's chrome reads the onScrim tokens | **specified** 2026-09-01 |
+| [ME-144](tickets/ME-144-glyphs-where-a-row-says-a-word.md)                 | Glyphs where a row says a word | **specified** 2026-09-01 |
+| [ME-161](tickets/ME-161-an-adjustments-panel-that-holds-fifteen.md)        | An adjustments panel that holds fifteen | **specified** 2026-09-01 |
+| [ME-142](tickets/ME-142-two-more-adjustments-the-matrix-can-express.md)    | Two more adjustments the matrix can express | **specified** 2026-09-01 |
+| ME-143                                                                     | ~~Crop that can pull one edge~~ | **dropped** 2026-09-01 — see `tickets/backlog.md` §900; the id is retained and never reused |
 | [ME-117…ME-1xx](tickets/backlog.md)                                        | Image editor | backlog |
 
 ME-201…ME-204, the video editor's own tickets, moved to
