@@ -1,11 +1,13 @@
 package com.woka.unit
 
 import androidx.compose.ui.graphics.ColorMatrix
+import com.woka.feature.editor.tools.adjust.blackPointMatrix
 import com.woka.feature.editor.tools.adjust.brightnessMatrix
 import com.woka.feature.editor.tools.adjust.contrastMatrix
 import com.woka.feature.editor.tools.adjust.exposureMatrix
 import com.woka.feature.editor.tools.adjust.saturationMatrix
 import com.woka.feature.editor.tools.adjust.tintMatrix
+import com.woka.feature.editor.tools.adjust.vibranceMatrix
 import com.woka.feature.editor.tools.adjust.warmthMatrix
 import kotlin.math.abs
 import kotlin.test.Test
@@ -13,7 +15,7 @@ import kotlin.test.assertContentEquals
 import kotlin.test.assertTrue
 
 /**
- * The six adjustments as arithmetic (ME-111), with no picture and no window.
+ * The eight adjustments as arithmetic (ME-111, ME-142), with no picture and no window.
  *
  * **Channels are 0..255 here**, because that is the scale a `ColorMatrix`'s fifth column
  * is added in. Asserting in 0..1 would make every offset look a hundred times too large
@@ -38,7 +40,9 @@ class AdjustMatrixTest {
             "exposure" to exposureMatrix(0f),
             "brightness" to brightnessMatrix(0f),
             "contrast" to contrastMatrix(0f),
+            "blackPoint" to blackPointMatrix(0f),
             "saturation" to saturationMatrix(0f),
+            "vibrance" to vibranceMatrix(0f),
             "warmth" to warmthMatrix(0f),
             "tint" to tintMatrix(0f)
         ).forEach { (name, matrix) ->

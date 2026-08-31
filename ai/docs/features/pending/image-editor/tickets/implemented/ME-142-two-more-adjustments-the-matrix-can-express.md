@@ -4,7 +4,7 @@
 |---|---|
 | **Order** | 73 — after ME-161, which is what makes room for them |
 | **Depends on** | ME-111 (the tool and its matrices), ME-161 (the panel) |
-| **Feature** | [Image Editor](../image-editor.md) |
+| **Feature** | [Image Editor](../../image-editor.md) |
 
 **Goal.** Add Black Point and a weighted Saturation to Adjust — two more `FloatParam`s and two more
 matrices, no engine change and no new stage kind.
@@ -61,26 +61,32 @@ place, and drawing it here stops ME-162 being sized against a list that is two i
 
 ## Files
 
-`tools/adjust/AdjustMatrix.kt` (edit), `tools/adjust/AdjustMatrixTone.kt` (new, step 1's split),
-`tools/adjust/AdjustTool.kt` (edit) under
-`shared/src/jvmMain/kotlin/com/woka/feature/editor/`;
+`tools/adjust/AdjustMatrix.kt` (edit — `channelMatrix` becomes `internal` so the split can reach it,
+and `adjustmentMatrix` composes the two new ones), `tools/adjust/AdjustMatrixTone.kt` (new, step 1's
+split), `tools/adjust/AdjustTool.kt` (edit) under `shared/src/jvmMain/kotlin/com/woka/feature/editor/`;
 `ai/docs/features/pending/image-editor/image-editor.md` (edit — a §9 row and the status table),
 `tickets/backlog.md` (edit — ME-162 gains Brilliance and loses the "three matrix ones" claim).
 
 ## Verification
 
-- `jvmTest/unit/AdjustMatrixTest.kt` (edit) — the tier this belongs in, no window involved:
-  - each new matrix is the identity at 0, which is what keeps an opened-and-untouched panel free,
-  - black point at its maximum maps the darkest input to 0 and leaves white at white,
+- `jvmTest/unit/AdjustMatrixTest.kt` (edit) — the two new matrices join the identity-at-zero sweep;
+- `jvmTest/unit/AdjustMatrixToneTest.kt` (new) — the rest, in the tier this belongs in, no window:
+  - black point at its maximum maps the level it names to 0 and **leaves white at white**, which is
+    what separates it from Brightness; the negative branch lifts the blacks and pins white too,
   - vibrance moves a desaturated blue further than a desaturated red at the same setting — the
     assertion that the weighting is actually weighted, and the one that would catch it being pasted
     from `saturationMatrix`,
-  - both are monotonic across the span: a slider that reverses direction anywhere is the defect a
-    range-mapping bug produces;
-- `jvmTest/unit/AdjustOrderTest.kt` (new) — black point composes **before** saturation, asserted on the
-  product rather than on the call order, because the call order is what a later edit changes silently;
-- `jvmTest/ui/AdjustPanelUiTest.kt` (edit, from ME-161) — the bar draws eight named buttons and still
-  wraps rather than scrolls;
+  - black point moves one way across the whole span: a slider that reverses direction anywhere is the
+    defect a range-mapping bug produces, and it is invisible until someone drags past the turn;
+- `jvmTest/unit/AdjustMatrixToneTest.kt` (new) — black point composes **before** saturation, asserted
+  on the product rather than the call order, because the call order is what a later edit changes
+  silently. Composed through the production `ColorMatrixMath.multiply` rather than a second
+  implementation of it: a test that spelled the "receiver acts first" convention out again could
+  agree with itself while disagreeing with the fold. It also asserts the two orders *differ*, or the
+  test could not tell them apart at all;
+- `jvmTest/ui/AdjustPanelUiTest.kt` (from ME-161) — **unchanged and still green**, which is the point
+  of having done ME-161 first: eight adjustments reach the chooser the same way six did, and the panel
+  does not measure a pixel taller for them;
 - `jvmTest/integration/AdjustReadersTest.kt` — **unchanged and still green**, which is what says a
   reader folding the recipe outside the editor picks the two new adjustments up for free. If it needs
   editing, something was added outside the matrix and the ticket is wrong.
@@ -91,6 +97,7 @@ place, and drawing it here stops ME-162 being sized against a list that is two i
 - an untouched panel still yields no filter at all (`adjustmentMatrix` returns null);
 - `AdjustTool`'s KDoc no longer says "six, not eight", and `AdjustMatrixTone`'s says why vibrance here
   is not Photos' vibrance;
+- the panel is unchanged in height: eight chips in the chooser ME-161 built, no new row;
 - ME-162's block names Brilliance;
 - no file touched exceeds 150 lines (`wc -l`);
 - `./gradlew.bat :shared:build` green.

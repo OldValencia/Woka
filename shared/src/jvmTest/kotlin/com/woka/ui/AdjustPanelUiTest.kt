@@ -32,20 +32,21 @@ class AdjustPanelUiTest {
     val mainDispatcher = MainDispatcherRule(UnconfinedTestDispatcher())
 
     @Test
-    fun `six adjustments draw one chooser and one slider, not six rows`() {
+    fun `a section draws one chooser and one slider, not a row each`() {
         onEditor(listOf(AdjustTool)) { harness ->
             onUi {
                 setContent { ParamPanel(AdjustTool, harness) }
                 waitForIdle()
 
                 onNodeWithTag("param-chooser").assertIsDisplayed()
+                // Light, which is what opens first (ME-164).
                 onNodeWithTag("param-chip-exposure").assertIsDisplayed()
-                onNodeWithTag("param-chip-tint").assertIsDisplayed()
+                onNodeWithTag("param-chip-blackPoint").assertIsDisplayed()
 
-                // The whole point: one control, whatever the run's length.
+                // The whole point: one control, whatever the section's length.
                 onNodeWithTag("param-exposure-slider").assertIsDisplayed()
                 onNodeWithTag("param-contrast-slider").assertDoesNotExist()
-                onNodeWithTag("param-tint-slider").assertDoesNotExist()
+                onNodeWithTag("param-blackPoint-slider").assertDoesNotExist()
             }
         }
     }
@@ -55,10 +56,10 @@ class AdjustPanelUiTest {
         onEditor(listOf(AdjustTool)) { harness ->
             onUi {
                 setContent { ParamPanel(AdjustTool, harness) }
-                onNodeWithTag("param-chip-warmth").performClick()
+                onNodeWithTag("param-chip-contrast").performClick()
                 waitForIdle()
 
-                onNodeWithTag("param-warmth-slider").assertIsDisplayed()
+                onNodeWithTag("param-contrast-slider").assertIsDisplayed()
                 onNodeWithTag("param-exposure-slider").assertDoesNotExist()
             }
         }

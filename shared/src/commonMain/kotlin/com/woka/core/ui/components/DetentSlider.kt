@@ -26,6 +26,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 private val KNOB_SIZE = 12.dp
@@ -65,6 +66,8 @@ fun DetentSlider(
     detents: List<Float> = emptyList(),
     /** Extra `pointerInput` key for callers whose mapping depends on more than width. */
     gestureKey: Any? = null,
+    /** Track thickness; the hit area is unchanged. Why a caller thins it is the caller's. */
+    trackHeight: Dp = TRACK_HEIGHT,
     onDragStart: ((Float) -> Unit)? = null,
     onDrag: (Float) -> Unit = onTap,
     onDragEnd: () -> Unit = {}
@@ -100,7 +103,7 @@ fun DetentSlider(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(TRACK_HEIGHT)
+                .height(trackHeight)
                 .clip(RoundedCornerShape(2.dp))
                 .background(colors.track)
         )
@@ -108,7 +111,7 @@ fun DetentSlider(
             Box(
                 modifier = Modifier
                     .fillMaxWidth(fraction)
-                    .height(TRACK_HEIGHT)
+                    .height(trackHeight)
                     .clip(RoundedCornerShape(2.dp))
                     .background(fillColor)
             )

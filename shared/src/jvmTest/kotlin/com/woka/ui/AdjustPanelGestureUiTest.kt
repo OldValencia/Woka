@@ -50,7 +50,7 @@ class AdjustPanelGestureUiTest {
                 setContent { ParamPanel(AdjustTool, harness) }
                 waitForIdle()
 
-                onNodeWithTag("param-chip-warmth").performMouseInput {
+                onNodeWithTag("param-chip-contrast").performMouseInput {
                     press(MouseButton.Primary)
                     moveBy(Offset(-DRAG_PX, 0f))
                     release(MouseButton.Primary)
@@ -58,7 +58,7 @@ class AdjustPanelGestureUiTest {
                 waitForIdle()
 
                 onNodeWithTag("param-exposure-slider").assertIsDisplayed()
-                onNodeWithTag("param-warmth-slider").assertDoesNotExist()
+                onNodeWithTag("param-contrast-slider").assertDoesNotExist()
             }
         }
     }

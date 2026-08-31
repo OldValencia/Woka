@@ -69,6 +69,11 @@ internal fun ParamValueControls(spec: FloatParam, params: ParamSet, writer: Para
             // slider moved here: Markup swaps `Width` for `Text size` in the same
             // position, and a gesture that outlived the swap wrote the wrong key.
             gestureKey = spec.key,
+            // **Thinner than the component's default** (reported by hand 2026-09-01).
+            // This slider used to live in a 224 dp popover; ME-161 put it across a
+            // ~390 dp card, where 3 dp of full-strength `onScrim` reads as a stripe
+            // painted over the panel rather than as a track with a knob on it.
+            trackHeight = INLINE_TRACK_HEIGHT,
             onTap = { writer.edit(spec, toValue(it), settled = true) },
             onDrag = { writer.edit(spec, toValue(it), settled = false) },
             onDragEnd = writer::settle,
@@ -88,3 +93,6 @@ internal fun ParamValueControls(spec: FloatParam, params: ParamSet, writer: Para
         )
     }
 }
+
+/** Two, not the component's three: the card is nearly twice the popover's width. */
+private val INLINE_TRACK_HEIGHT = 2.dp

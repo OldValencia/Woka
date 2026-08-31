@@ -49,7 +49,20 @@ data class FloatParam(
      * a 1.8 px stroke and a 180 px one, and a step read off that span is either useless
      * at the bottom or glacial at the top.
      */
-    val step: Float? = null
+    val step: Float? = null,
+    /**
+     * Which group of its tool's parameters this one belongs to (ME-164).
+     *
+     * The field `PreviewChoiceParam` already carries, for the same job: `FilterTool`
+     * heads its two strips "Undertone" and "Look". Null for every spec whose tool has
+     * one kind of parameter, which is all of them but Adjust.
+     *
+     * **Declared rather than derived, and that is not the hook ME-161 refused.** That
+     * one would have let a tool ask for a *shape*; this states a *fact* — "Warmth is
+     * about colour" cannot be read off a range, and facts about parameters are what a
+     * schema is. What the shell does with it stays the shell's decision.
+     */
+    val section: String? = null
 ) : ParamSpec<Float> {
     // Clamped on the way in and on the way out: a document written when the range
     // was wider must not hand a slider a value off its own track. A type mismatch

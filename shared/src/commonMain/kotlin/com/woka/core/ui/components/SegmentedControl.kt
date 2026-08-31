@@ -74,7 +74,7 @@ fun SegmentedControl(
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
-            .height(36.dp)
+            .height(24.dp)
             .clip(RoundedCornerShape(11.dp))
             .background(colors.track)
             .padding(3.dp)
@@ -119,7 +119,7 @@ fun SegmentedControl(
                         text = option,
                         style = TextStyle(
                             color = textColor,
-                            fontSize = 13.sp,
+                            fontSize = 12.sp,
                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
                         )
                     )

@@ -31,7 +31,7 @@ private const val MID = 127.5f
  */
 
 /** Rows of a 4×5 matrix: three scales down the diagonal and one shared offset. */
-private fun channelMatrix(
+internal fun channelMatrix(
     red: Float,
     green: Float,
     blue: Float,
@@ -102,17 +102,25 @@ fun tintMatrix(amount: Float): ColorMatrix {
 }
 
 /**
- * The six folded into one, or **null when none of them does anything**.
+ * The eight folded into one, or **null when none of them does anything**.
  *
  * Multiplied through the fold's own `multiply`, so this composes exactly as two colour
  * stages from two different tools would — one product, built once.
+ *
+ * **The order is not free.** Black Point is a level operation and sits with the other
+ * two, before anything touches colour: a saturation applied first would then be
+ * re-scaled by the stretch, and the slider would mean something different depending on
+ * where the black point happened to be. `AdjustOrderTest` asserts it on the product,
+ * because the call order below is what a later edit changes silently (ME-142).
  */
 fun adjustmentMatrix(params: ParamSet): ColorMatrix? {
     val matrices = listOf(
         exposureMatrix(params[AdjustTool.Exposure]),
         brightnessMatrix(params[AdjustTool.Brightness]),
         contrastMatrix(params[AdjustTool.Contrast]),
+        blackPointMatrix(params[AdjustTool.BlackPoint]),
         saturationMatrix(params[AdjustTool.Saturation]),
+        vibranceMatrix(params[AdjustTool.Vibrance]),
         warmthMatrix(params[AdjustTool.Warmth]),
         tintMatrix(params[AdjustTool.Tint])
     )
