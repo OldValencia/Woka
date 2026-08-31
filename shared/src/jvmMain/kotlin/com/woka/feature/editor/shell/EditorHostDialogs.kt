@@ -13,6 +13,11 @@ import androidx.compose.runtime.Composable
  * **At most one is ever open**, because each is raised by a control the others hide
  * behind, which is why a single [onKeepEditing] clearing all three is honest rather
  * than lax.
+ *
+ * A fourth question — the window's close button, ME-160 — is deliberately **not** here.
+ * It is raised from outside the editor rather than by a control inside it, so it can
+ * coexist with one of these three, and `EditorHost` had no lines left to hold its
+ * state: `EditorExitEffect` owns the question, the answer and the dialog together.
  */
 @Composable
 internal fun EditorHostDialogs(

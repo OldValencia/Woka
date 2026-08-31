@@ -4,7 +4,7 @@
 |---|---|
 | **Order** | 68 — after ME-123, before ME-128 |
 | **Depends on** | ME-130 (`EditorSaveStatus.scope` and the banner), ME-132 (`Done` writes the recipe) |
-| **Feature** | [Image Editor](../image-editor.md) |
+| **Feature** | [Image Editor](../../image-editor.md) |
 
 **Goal.** Make the two exit doors hold the window open while a save is in flight, show the pill that
 says so, and give up after a bounded wait — so `Done` immediately followed by closing Woka writes the

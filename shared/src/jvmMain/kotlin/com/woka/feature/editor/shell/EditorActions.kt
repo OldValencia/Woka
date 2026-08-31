@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
  * limit, and — the one that matters — the order below is the whole ticket, so it is
  * worth a file that says so and a test that drives it without a window.
  *
- * Three things this has to get right, each a defect if it does not:
+ * Four things this has to get right, each a defect if it does not:
  *
  * - **The document is read before [onClose].** `onClose` clears the target, the exit
  *   animation runs, `EditorHost` disposes and `EditorSession.close()` cancels the
@@ -25,6 +25,11 @@ import kotlinx.coroutines.launch
  *   exactly what is wanted — the save is still using it.
  * - **`NothingToDo` shows nothing** and clears any stale message. An empty document over
  *   a file that carries nothing is not an event, which `EditSaveResult` says itself.
+ * - **The write is bracketed for the exit gate** (ME-125). `started()` is called
+ *   *outside* the coroutine, because a launch on `Dispatchers.Main` from the main thread
+ *   does not run until the frame yields and a close request can land in that window;
+ *   `finished()` is in a `finally`, because a save that is cancelled or throws must not
+ *   leave the application unable to close.
  */
 internal fun saveAction(
     engine: EditorEngine,
@@ -49,15 +54,20 @@ internal fun saveAction(
     val document = session.document.value
     onClose()
     EditorSaveStatus.saving(name)
+    EditorSaveStatus.started()
     EditorSaveStatus.scope.launch {
-        when (val result = engine.save(document, scope)) {
-            is EditSaveResult.Saved -> {
-                if (leavingForVideo) EditorSaveStatus.savedLeaving(name)
-                else EditorSaveStatus.saved(name)
-                onSaved(result.path)
+        try {
+            when (val result = engine.save(document, scope)) {
+                is EditSaveResult.Saved -> {
+                    if (leavingForVideo) EditorSaveStatus.savedLeaving(name)
+                    else EditorSaveStatus.saved(name)
+                    onSaved(result.path)
+                }
+                is EditSaveResult.Failed -> EditorSaveStatus.failed(result.reason)
+                EditSaveResult.NothingToDo -> EditorSaveStatus.clear()
             }
-            is EditSaveResult.Failed -> EditorSaveStatus.failed(result.reason)
-            EditSaveResult.NothingToDo -> EditorSaveStatus.clear()
+        } finally {
+            EditorSaveStatus.finished()
         }
     }
     Unit

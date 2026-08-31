@@ -20,6 +20,8 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.woka.app.di.initKoin
+import com.woka.app.shell.AppExitRequest
+import com.woka.app.shell.ExitWhenQuiet
 import java.awt.Point
 import com.woka.app.App
 import java.awt.Dimension
@@ -34,8 +36,11 @@ fun main(args: Array<String>) {
             size = DpSize(1100.dp, 720.dp),
             position = WindowPosition(Alignment.Center)
         )
+        // Neither door closes anything itself: both raise the request, and the gate
+        // below decides when — after an open editor has answered for its unsaved work
+        // (ME-160) and after any running save has landed (ME-125).
         Window(
-            onCloseRequest = ::exitApplication,
+            onCloseRequest = { AppExitRequest.request() },
             title = "Woka",
             undecorated = true,
             transparent = true,
@@ -90,12 +95,13 @@ fun main(args: Array<String>) {
                             content()
                         }
                     },
-                    onCloseWindow = { exitApplication() },
+                    onCloseWindow = { AppExitRequest.request() },
                     onMinimizeWindow = { window.isMinimized = true },
                     onMaximizeWindow = { toggleMaximize() },
                     isMaximized = windowState.placement == WindowPlacement.Maximized
                 )
             }
+            ExitWhenQuiet(AppExitRequest.requested) { exitApplication() }
         }
     }
 }

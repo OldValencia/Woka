@@ -24,8 +24,11 @@ internal const val SAVING_PREFIX = "Saving"
  * `EditorEngine.save` moves itself to IO, and what stays here is the status write and
  * the `onSaved` callback, both of which touch Compose state.
  *
- * **This is not ME-125.** That question is what an in-flight save does when the
- * *application* closes, and a `SupervisorJob` in an object does not answer it.
+ * **Closing the window waits for it** (ME-125). What a `SupervisorJob` in an object
+ * outlives is every composable, not the process — so [inFlight] is the fact the two
+ * exit doors read: a close request is deferred while a save is running, and taken
+ * anyway once the grace period is up. The gate itself is `app/shell/AppExit.kt`,
+ * because the thing being closed is the application and not an editor.
  *
  * **One message, one save.** Two editors open at once is ME-128 and a list is what
  * that ticket brings; until then a second save replaces the first's message and
@@ -35,6 +38,30 @@ internal const val SAVING_PREFIX = "Saving"
 object EditorSaveStatus {
 
     val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
+    /**
+     * How many saves are running, and therefore whether the application may go
+     * (ME-125). `ExitWhenQuiet` reads it through a `snapshotFlow`.
+     *
+     * **A count rather than a flag**, for the reason `EditorPresence` keeps one:
+     * ME-128 makes two saves at once reachable, and a boolean would clear on the
+     * first of them to finish and let the window close over the second.
+     */
+    var inFlight by mutableStateOf(0)
+        private set
+
+    fun started() {
+        inFlight++
+    }
+
+    /**
+     * `coerceAtLeast` because a count that goes negative wedges the gate open for
+     * the rest of the session: nothing afterwards can bring it back to zero, and
+     * every close request then waits out the full grace period.
+     */
+    fun finished() {
+        inFlight = (inFlight - 1).coerceAtLeast(0)
+    }
 
     /** Null when nothing is running and nothing has just finished. */
     var message by mutableStateOf<String?>(null)

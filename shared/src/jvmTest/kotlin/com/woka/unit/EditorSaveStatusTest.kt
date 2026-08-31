@@ -14,8 +14,15 @@ import kotlin.test.assertNull
  */
 class EditorSaveStatusTest {
 
+    /**
+     * The count is drained rather than assigned: `inFlight` has no setter on purpose,
+     * and `finished()` coercing at zero is exactly what makes draining terminate.
+     */
     @BeforeTest
-    fun reset() = EditorSaveStatus.clear()
+    fun reset() {
+        EditorSaveStatus.clear()
+        while (EditorSaveStatus.inFlight > 0) EditorSaveStatus.finished()
+    }
 
     @Test
     fun `a running save names the file it is writing`() {
@@ -63,5 +70,34 @@ class EditorSaveStatusTest {
         EditorSaveStatus.saving("first.jpg")
         EditorSaveStatus.saving("second.jpg")
         assertEquals("Saving second.jpg…", EditorSaveStatus.message)
+    }
+
+    @Test
+    fun `a save that starts and finishes leaves nothing in flight`() {
+        EditorSaveStatus.started()
+        assertEquals(1, EditorSaveStatus.inFlight)
+        EditorSaveStatus.finished()
+        assertEquals(0, EditorSaveStatus.inFlight)
+    }
+
+    /**
+     * The count exists for this case: under a boolean the first save to answer would
+     * open the exit gate over the second, which is ME-128's shape (ME-125).
+     */
+    @Test
+    fun `two overlapping saves clear only when both have finished`() {
+        EditorSaveStatus.started()
+        EditorSaveStatus.started()
+        EditorSaveStatus.finished()
+        assertEquals(1, EditorSaveStatus.inFlight, "one save answered and the other was dropped")
+        EditorSaveStatus.finished()
+        assertEquals(0, EditorSaveStatus.inFlight)
+    }
+
+    /** A negative count can never return to zero, so every later close would hang. */
+    @Test
+    fun `a stray finish cannot drive the count below zero`() {
+        EditorSaveStatus.finished()
+        assertEquals(0, EditorSaveStatus.inFlight)
     }
 }
