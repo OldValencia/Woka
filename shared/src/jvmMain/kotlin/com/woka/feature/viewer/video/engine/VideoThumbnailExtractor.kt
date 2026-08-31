@@ -4,7 +4,9 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import com.woka.core.data.MediaItem
 import com.woka.core.data.WokaStorage
+import com.woka.core.data.markUsed
 import com.woka.core.ui.image.ImageBitmapCache
+import com.woka.core.ui.image.encodeWebp
 import org.bytedeco.ffmpeg.global.avutil.AV_LOG_QUIET
 import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_BGR24
 import org.bytedeco.ffmpeg.global.avutil.av_log_set_level
@@ -15,9 +17,7 @@ import org.bytedeco.javacv.Java2DFrameConverter
 import org.jetbrains.skia.Image
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
-import java.io.ByteArrayOutputStream
 import java.io.File
-import javax.imageio.ImageIO
 import kotlin.math.min
 
 /**
@@ -40,19 +40,34 @@ internal object VideoThumbnailExtractor {
 
     fun load(item: MediaItem.Video): ImageBitmap? {
         val previewFile = WokaStorage.thumbnailFile(item.file)
-        if (previewFile.exists() && previewFile.isFile) {
-            val existing = try {
-                ImageIO.read(previewFile)
-            } catch (_: Exception) {
-                null
-            }
-            if (existing != null && !isMonochrome(existing)) {
-                val bitmap = Image.makeFromEncoded(previewFile.readBytes()).toComposeImageBitmap()
-                ImageBitmapCache[item.file.absolutePath] = bitmap
-                return bitmap
-            }
+        readCached(previewFile)?.let { cached ->
+            ImageBitmapCache[item.file.absolutePath] = cached
+            return cached
         }
         return extract(item.file, previewFile)
+    }
+
+    /**
+     * The cached poster, decoded once and asked no questions.
+     *
+     * This used to re-run [isMonochrome] on what it read and go back to ffmpeg when the
+     * answer was yes — so a video whose poster is legitimately flat, a dark opening frame
+     * being an ordinary thing to own, was **re-extracted on every launch, forever**. The
+     * heuristic belongs to [extract], which is where a frame is chosen; by the time one
+     * has been chosen and written, re-asking only re-runs the same failing search.
+     *
+     * Measured 2026-08-31 by `ThumbnailCacheProbe`: 8 of 8 posters rewritten on a second
+     * pass, and 0 of 8 once a poster the heuristic accepts was planted at the same name.
+     * The old code also decoded the file twice, once through `ImageIO` for the check and
+     * again through Skia for the bitmap; one decode is left.
+     */
+    private fun readCached(previewFile: File): ImageBitmap? {
+        if (!previewFile.isFile) return null
+        val bitmap = runCatching {
+            Image.makeFromEncoded(previewFile.readBytes()).toComposeImageBitmap()
+        }.getOrNull()
+        if (bitmap != null) markUsed(previewFile)
+        return bitmap
     }
 
     private fun extract(file: File, previewFile: File): ImageBitmap? {
@@ -108,11 +123,12 @@ internal object VideoThumbnailExtractor {
             drawImage(image, 0, 0, w, h, null)
             dispose()
         }
-        val outputStream = ByteArrayOutputStream()
-        ImageIO.write(scaled, "png", outputStream)
-        val bytes = outputStream.toByteArray()
-        previewFile.writeBytes(bytes)
-        val bitmap = Image.makeFromEncoded(bytes).toComposeImageBitmap()
+        // Through Skia rather than `ImageIO.write`, which has no WebP encoder at all.
+        // It also removes a round trip the old code paid without needing to: the
+        // poster used to be encoded to PNG bytes only so that Skia could decode them
+        // straight back for the bitmap this returns.
+        val bitmap = scaled.toComposeImageBitmap()
+        previewFile.writeBytes(bitmap.encodeWebp())
         ImageBitmapCache[file.absolutePath] = bitmap
         return bitmap
     }

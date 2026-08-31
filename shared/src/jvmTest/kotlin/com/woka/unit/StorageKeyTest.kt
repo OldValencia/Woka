@@ -67,7 +67,7 @@ class StorageKeyTest {
         withTempStorageRoot { root ->
             val file = source(root, "Отпуск 2024/клип №1 — копия.mp4")
             val thumbnail = WokaStorage.thumbnailFile(file)
-            assertTrue(thumbnail.name.matches(Regex("[0-9a-f]{16}\\.png")), thumbnail.name)
+            assertTrue(thumbnail.name.matches(Regex("[0-9a-f]{16}\\.webp")), thumbnail.name)
         }
     }
 
@@ -75,7 +75,7 @@ class StorageKeyTest {
     fun `every key is positive hex of a fixed width`() {
         withTempStorageRoot { root ->
             val names = (1..20).map { WokaStorage.thumbnailFile(source(root, "clip$it.mp4")).name }
-            names.forEach { assertTrue(it.matches(Regex("[0-9a-f]{16}\\.png")), it) }
+            names.forEach { assertTrue(it.matches(Regex("[0-9a-f]{16}\\.webp")), it) }
             assertEquals(20, names.toSet().size, "two of twenty files collided")
         }
     }
@@ -95,7 +95,7 @@ class StorageKeyTest {
         withTempStorageRoot { _ ->
             val dir = WokaStorage.thumbnailsDir
             assertTrue(dir.isDirectory, "the cache directory was not created")
-            assertTrue(File(dir, ".keys-v2").isFile, "the schema marker was not written")
+            assertTrue(File(dir, ".keys-v3").isFile, "the schema marker was not written")
         }
     }
 

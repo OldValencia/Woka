@@ -9,9 +9,9 @@ import com.woka.fixtures.SampleMedia
 import com.woka.support.videoCopy
 import com.woka.support.withTempStorageRoot
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.skia.Image
 import java.io.File
 import java.nio.file.Files
-import javax.imageio.ImageIO
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -45,12 +45,18 @@ class ThumbnailPipelineTest {
         }
     }
 
+    /**
+     * Read back through Skia, not `ImageIO`: entries are WebP since the v3 schema and
+     * `ImageIO` ships no reader for it. Skia sniffs the container rather than trusting
+     * the name, so this asserts the bytes really are a decodable picture.
+     */
     @Test
     fun `the cached poster is a readable image of the size that was decoded`() {
         withTempStorageRoot {
             val item = videoCopy(BITMAP_SUBS, "picture.mkv")
             val bitmap = assertNotNull(poster(item))
-            val written = assertNotNull(ImageIO.read(WokaStorage.thumbnailFile(item.file)))
+            val bytes = WokaStorage.thumbnailFile(item.file).readBytes()
+            val written = assertNotNull(Image.makeFromEncoded(bytes))
             assertEquals(bitmap.width, written.width)
             assertEquals(bitmap.height, written.height)
             // Whether that frame is *interesting* is deliberately not asserted:

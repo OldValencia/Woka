@@ -55,6 +55,8 @@ fun App(
     val stack by router.stack.collectAsState()
     val currentScreen = stack.lastOrNull() ?: Screen.Home
 
+    ThumbnailHousekeeping()
+
     Theme(darkTheme = isDark) {
         Box(
             modifier = Modifier

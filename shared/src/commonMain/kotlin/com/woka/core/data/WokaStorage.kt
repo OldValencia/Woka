@@ -4,7 +4,14 @@ import java.io.File
 import java.security.MessageDigest
 
 /** Bumped whenever thumbnailFile changes how it names things. */
-private const val KEY_SCHEMA_MARKER = ".keys-v2"
+private const val KEY_SCHEMA_MARKER = ".keys-v3"
+
+/**
+ * What an entry is written as. WebP rather than PNG since v3 — a poster is a
+ * rebuildable 400 px copy, not an export, and the same picture is 32 % of the bytes.
+ * See `core/ui/image/PreviewEncoding.kt` for the measurement.
+ */
+private const val ENTRY_SUFFIX = ".webp"
 
 /**
  * Overrides [WokaStorage.root] when set. Exists for tests, which must never write
@@ -76,7 +83,18 @@ object WokaStorage {
      * every poster already on disk stays valid and no schema bump is needed.
      */
     fun thumbnailFile(source: File, frameIndex: Int = 0): File =
-        File(thumbnailsDir, "${cacheKey(source, frameIndex)}.png")
+        File(thumbnailsDir, "${cacheKey(source, frameIndex)}$ENTRY_SUFFIX")
+
+    /**
+     * Every poster currently on disk, and nothing else that lives beside them —
+     * [KEY_SCHEMA_MARKER] is not an entry, and a sweep that deleted it would wipe the
+     * whole directory on the next launch.
+     */
+    fun thumbnailEntries(): List<File> =
+        thumbnailsDir
+            .listFiles { file: File -> file.isFile && file.name.endsWith(ENTRY_SUFFIX) }
+            .orEmpty()
+            .toList()
 
     /** SHA-256 truncated to 64 bits: deterministic, positive, collision-free in practice. */
     private fun cacheKey(source: File, frameIndex: Int): String {

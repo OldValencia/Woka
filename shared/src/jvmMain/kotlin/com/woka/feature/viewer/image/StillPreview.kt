@@ -4,9 +4,10 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asSkiaBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import com.woka.core.data.WokaStorage
+import com.woka.core.data.markUsed
 import com.woka.core.ui.image.AppliedStillEdits
 import com.woka.core.ui.image.ImageBitmapCache
-import com.woka.core.ui.image.encodePng
+import com.woka.core.ui.image.encodeWebp
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.Rect
 import org.jetbrains.skia.Surface
@@ -46,13 +47,17 @@ internal object StillPreview {
 
     private fun readCached(cached: File): ImageBitmap? {
         if (!cached.isFile) return null
-        return runCatching { Image.makeFromEncoded(cached.readBytes()).toComposeImageBitmap() }
+        val bitmap = runCatching { Image.makeFromEncoded(cached.readBytes()).toComposeImageBitmap() }
             .getOrNull()
+        // Only on a hit: marking an entry the decode then rejected would keep an
+        // unreadable file alive at the young end of the sweep's ordering forever.
+        if (bitmap != null) markUsed(cached)
+        return bitmap
     }
 
     /**
      * The one expensive pass, paid once per file ever: decode at full size,
-     * scale down, write the PNG.
+     * scale down, write the entry.
      *
      * **The edit is folded in here and never on [readCached]'s path**, which is
      * already the edited picture: the disk entry is keyed on path, size *and*
@@ -63,7 +68,7 @@ internal object StillPreview {
     private fun build(file: File, cached: File, frameIndex: Int): ImageBitmap {
         val source = AppliedStillEdits.apply(file, frameIndex, decodeSmall(file, frameIndex))
         val scaled = source.scaledToPreview()
-        runCatching { cached.writeBytes(scaled.encodePng()) }
+        runCatching { cached.writeBytes(scaled.encodeWebp()) }
         return scaled.toComposeImageBitmap()
     }
 
