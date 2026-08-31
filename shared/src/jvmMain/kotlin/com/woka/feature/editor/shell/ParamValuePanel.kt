@@ -28,11 +28,6 @@ import com.woka.feature.editor.core.ParamSet
  */
 @Composable
 internal fun ParamValuePanel(spec: FloatParam, params: ParamSet, writer: ParamWriter) {
-    val value = params[spec]
-    val span = spec.range.endInclusive - spec.range.start
-    fun toValue(fraction: Float) = spec.range.start + fraction * span
-    fun toFraction(v: Float) = if (span == 0f) 0f else (v - spec.range.start) / span
-
     ParamAccessory(
         key = "param-${spec.key}",
         tag = "param-${spec.key}-popover",
@@ -40,37 +35,56 @@ internal fun ParamValuePanel(spec: FloatParam, params: ParamSet, writer: ParamWr
         // enough to aim along — measured against those three, not chosen.
         width = 224.dp
     ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            DetentSlider(
-                fraction = toFraction(value),
-                colors = DetentSliderColors(
-                    track = Theme.viewer.onScrimHover,
-                    detent = Theme.viewer.onScrimBorder,
-                    knob = Theme.viewer.onScrim,
-                    fill = Theme.viewer.onScrim
-                ),
-                detents = listOf(toFraction(spec.detent)),
-                // Keyed on the spec for the reason `FloatControl` recorded before the
-                // slider moved here: Markup swaps `Width` for `Text size` in the same
-                // position, and a gesture that outlived the swap wrote the wrong key.
-                gestureKey = spec.key,
-                onTap = { writer.edit(spec, toValue(it), settled = true) },
-                onDrag = { writer.edit(spec, toValue(it), settled = false) },
-                onDragEnd = writer::settle,
-                modifier = Modifier.testTag("param-${spec.key}-slider")
-            )
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            ValueField(spec, value, writer)
-            ResetButton(
-                enabled = value != spec.detent,
-                tag = "param-${spec.key}-reset",
-                onClick = { writer.resetTo(spec) }
-            )
-        }
+        ParamValueControls(spec, params, writer)
+    }
+}
+
+/**
+ * The three controls themselves, without the popover around them (ME-161).
+ *
+ * Split out when the chooser strip needed the same slider *inline*: a strip that showed
+ * fifteen adjustments and then opened a popover to set one would put a card over a card
+ * for a control the panel has room to draw. It emits no layout of its own, so both
+ * callers place the slider and the field as direct children of their own column and the
+ * popover's spacing is unchanged.
+ */
+@Composable
+internal fun ParamValueControls(spec: FloatParam, params: ParamSet, writer: ParamWriter) {
+    val value = params[spec]
+    val span = spec.range.endInclusive - spec.range.start
+    fun toValue(fraction: Float) = spec.range.start + fraction * span
+    fun toFraction(v: Float) = if (span == 0f) 0f else (v - spec.range.start) / span
+
+    Box(modifier = Modifier.fillMaxWidth()) {
+        DetentSlider(
+            fraction = toFraction(value),
+            colors = DetentSliderColors(
+                track = Theme.viewer.onScrimHover,
+                detent = Theme.viewer.onScrimBorder,
+                knob = Theme.viewer.onScrim,
+                fill = Theme.viewer.onScrim
+            ),
+            detents = listOf(toFraction(spec.detent)),
+            // Keyed on the spec for the reason `FloatControl` recorded before the
+            // slider moved here: Markup swaps `Width` for `Text size` in the same
+            // position, and a gesture that outlived the swap wrote the wrong key.
+            gestureKey = spec.key,
+            onTap = { writer.edit(spec, toValue(it), settled = true) },
+            onDrag = { writer.edit(spec, toValue(it), settled = false) },
+            onDragEnd = writer::settle,
+            modifier = Modifier.testTag("param-${spec.key}-slider")
+        )
+    }
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        ValueField(spec, value, writer)
+        ResetButton(
+            enabled = value != spec.detent,
+            tag = "param-${spec.key}-reset",
+            onClick = { writer.resetTo(spec) }
+        )
     }
 }

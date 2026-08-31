@@ -2,12 +2,13 @@
 
 | | |
 |---|---|
-| **Order** | 71 — independent; nothing waits on it |
-| **Depends on** | ME-147 (`iconOf` and the chip row that draws it) |
+| **Order** | 74 — after ME-142, whose two adjustments it must also draw |
+| **Depends on** | ME-147 (`iconOf` and the chip row that draws it), ME-161 (the chooser strip) |
 | **Feature** | [Image Editor](../image-editor.md) |
 
-**Goal.** Give Crop's aspect chips and Resize's presets their glyphs, and answer the one case the
-mechanism cannot serve — `Portrait`, which is a `BoolParam` and has no icon slot at all.
+**Goal.** Give Crop's aspect chips and Resize's presets their glyphs, put a glyph on every chip of the
+adjustments chooser, and answer the one case the mechanism cannot serve — `Portrait`, which is a
+`BoolParam` and has no icon slot at all.
 
 **Why now.** The block was written 2026-08-22 predicting "the work is mostly SVGs, not Kotlin; the row
 renderer is a small change". Checked 2026-09-01, it came out the other way round: **the renderer
@@ -23,7 +24,29 @@ words. And the drawable folder has grown from ~90 to **102** on its own, already
 `aspectratio.svg`, `rectangle.svg` and `rectangle_arrowtriangle_2_inward/outward.svg` — so part of the
 art this block was going to commission is in the tree.
 
-So the ticket is one sitting of Kotlin plus whatever glyphs are genuinely missing, not a drawing job.
+So the Crop and Resize half is one sitting of Kotlin plus whatever glyphs are genuinely missing.
+
+## The adjustments chooser, asked for by hand 2026-09-01
+
+ME-161 draws the adjustments as a scrolling strip of chips, each `name + value`. With eight after
+ME-142 and fifteen after ME-162 the strip is long, and a glyph is the obvious way to shorten a chip.
+
+**What it actually buys, measured rather than hoped.** A named chip is padding 20 + name ~68 + gap 6 +
+readout 48 ≈ **142 dp**, so about 2.8 fit in the 392 dp card. With a glyph instead of the name it is
+20 + 16 + 6 + 48 ≈ **90 dp**, about 4.4. That is a third more of the list in view — worth having, and
+**it does not remove the scrolling**: fifteen chips are ~1350 dp either way. The strip was designed to
+scroll and this makes the scrolling shorter, not unnecessary.
+
+**And it takes the name away, which is the part that needs answering.** ME-109 recorded what an
+unlabelled glyph costs: two tools whose icons had not been drawn were two identical squares nobody
+could tell apart, and that is how the rail gained its labels. Fifteen adjustment glyphs are a harder
+set than two tool icons — exposure, brilliance and brightness are three ideas one sun can be drawn
+for. So the name has to reappear where there is room for it: **beside the selected parameter's
+control**, which today shows a slider, a number and `Reset` and no name at all (`ParamValueControls`).
+One `BasicText` and the chooser reads as well as it did with fifteen words in it.
+
+A tooltip is *not* the answer, for the reason ME-161 rejected the compact bar: a name you have to hover
+to read is not a way to read a panel. The tooltip stays as the second line of defence.
 
 ## The one thing the mechanism cannot do
 
@@ -63,15 +86,36 @@ Two ways out, and step 4 takes the second:
    or every photograph carrying a crop from before this ticket reopens with its orientation lost. That
    is a decode fallback in the param layer, not a rename.
 
-5. **`composeResources/drawable/` (new files)** — only the glyphs steps 1–4 could not find. Named in
-   the family's style, `viewBox` only, no `width`/`height`.
+5. **`core/ParamSpec.kt` (edit)** — `FloatParam` gains `icon: DrawableResource? = null`, the field
+   `ChoiceParam` already has through `iconOf`. A spec type used by tools that will never want one pays
+   a null default, which is what `step` and `unit` already do on the same class.
+
+6. **`shell/ParamStripChip.kt` (edit)** — the glyph replaces the label when the spec carries one, and
+   the label stays when it does not, so a strip of un-iconed floats is unchanged.
+
+7. **`shell/ParamRowStrip.kt` (edit)** — the selected parameter's **name**, above its control. This is
+   not decoration: it is what pays for taking the name off the chips, and without it the strip is
+   fifteen glyphs and no words.
+
+8. **`tools/adjust/AdjustTool.kt` (edit)** — one `icon =` per `FloatParam`. Eight after ME-142.
+
+9. **`composeResources/drawable/` (new files)** — the glyphs steps 1–8 could not find, and this is the
+   bulk of the ticket: nothing in the ~102 drawables is an exposure, a contrast or a saturation. Named
+   in the family's style, `viewBox` only, no `width`/`height`.
 
 ## Files
 
 `tools/crop/CropAspect.kt` (edit), `tools/crop/CropTool.kt` (edit), `tools/resize/ResizeTool.kt`
-(edit), `shell/ParamRowChip.kt` (edit) under `shared/src/jvmMain/kotlin/com/woka/feature/editor/`;
+(edit), `tools/adjust/AdjustTool.kt` (edit), `shell/ParamRowChip.kt` (edit),
+`shell/ParamStripChip.kt` (edit), `shell/ParamRowStrip.kt` (edit) under
+`shared/src/jvmMain/kotlin/com/woka/feature/editor/`;
+`core/ParamSpec.kt` (edit) under `shared/src/commonMain/kotlin/com/woka/feature/editor/`;
 new SVGs under `shared/src/commonMain/composeResources/drawable/`;
 `ai/docs/features/pending/image-editor/image-editor.md` (edit — §9 row and status table).
+
+**Eleven files is past the eight this project aims at**, and the seam is between the Crop/Resize half
+(steps 1–4) and the adjustments half (steps 5–8). Two sittings under one id, or promote the second
+half to its own; the glyphs of step 9 belong to whichever half needs them.
 
 ## Verification
 
@@ -91,6 +135,10 @@ new SVGs under `shared/src/commonMain/composeResources/drawable/`;
 
 - Crop's aspect chips and Resize's presets show glyphs where a glyph is clearer, and words where a
   number or a mode is clearer;
+- every adjustment chip carries a glyph, and the selected adjustment's **name** is drawn beside its
+  control — a strip of unlabelled glyphs is the ME-109 defect restated;
+- a chip is about 90 dp rather than 142, so about four are in view rather than three. The strip still
+  scrolls at fifteen, and that is the design;
 - `Portrait` is a two-option choice with two glyphs, and a crop saved before this ticket still opens
   with its orientation;
 - every new SVG measures 100×100 (`EditorIconsTest`);
