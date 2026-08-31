@@ -45,7 +45,7 @@ internal fun PopoverListRow(
     var hovered by remember { mutableStateOf(false) }
     val background = when {
         selected -> Theme.colors.accent.copy(alpha = 0.30f)
-        hovered -> Color.White.copy(alpha = 0.10f)
+        hovered -> Theme.viewer.onScrimHover
         else -> Color.Transparent
     }
     Row(
@@ -63,7 +63,7 @@ internal fun PopoverListRow(
         Marquee(
             text = label,
             style = TextStyle(
-                color = Color.White.copy(alpha = if (selected) 1f else 0.72f),
+                color = if (selected) Theme.viewer.onScrim else Theme.viewer.onScrimSecondary,
                 fontSize = 12.sp
             ),
             animate = hovered || selected,
@@ -87,7 +87,7 @@ private fun RemoveRowButton(onClick: () -> Unit) {
             .padding(start = 6.dp)
             .size(16.dp)
             .clip(RoundedCornerShape(4.dp))
-            .background(if (hovered) Color.White.copy(alpha = 0.18f) else Color.Transparent)
+            .background(if (hovered) Theme.viewer.onScrimSelected else Color.Transparent)
             .onPointerEvent(PointerEventType.Enter) { hovered = true }
             .onPointerEvent(PointerEventType.Exit) { hovered = false }
             .clickable(onClick = onClick),
@@ -95,7 +95,10 @@ private fun RemoveRowButton(onClick: () -> Unit) {
     ) {
         BasicText(
             text = "✕",
-            style = TextStyle(fontSize = 10.sp, color = Color.White.copy(alpha = if (hovered) 1f else 0.6f))
+            style = TextStyle(
+                fontSize = 10.sp,
+                color = if (hovered) Theme.viewer.onScrim else Theme.viewer.onScrimDisabled
+            )
         )
     }
 }
@@ -106,6 +109,6 @@ internal fun PopoverSectionLabel(text: String) {
     BasicText(
         text = text,
         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-        style = TextStyle(fontSize = 10.sp, color = Color.White.copy(alpha = 0.45f))
+        style = TextStyle(fontSize = 10.sp, color = Theme.viewer.onScrimDisabled)
     )
 }

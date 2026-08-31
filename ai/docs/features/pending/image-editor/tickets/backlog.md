@@ -60,19 +60,24 @@ have been measured against: seven more on top of ME-142's eight is fifteen.
 *Depends on ME-142, ME-161.*
 
 
-### ME-163 — The rest of the viewer's on-media chrome
-The slices after ME-121, which converted the viewer shell's own chrome and settled which `onScrim`
-token replaces which `Theme.colors` one. What is left is two clusters, one sitting each: **the zoom
-menu** — `SizeIndicatorButton`, `ZoomMenuInput`, `ZoomMenuPopover`, `ZoomMenuPresetRow`,
-`ZoomMenuSlider` — and **the video controls**, the larger half, from `MediaViewerVideoControls` and
-its sliders through the player-settings and subtitle rows.
+### ME-163 — The rest of the `Color.White` literals on scrims
+ME-121 converted twelve sites in four files and set the mapping in `ViewerChrome`'s KDoc: `Color.White`
+→ `onScrim`, `0.72f` → `onScrimSecondary`, `0.45f`/`0.6f` → `onScrimDisabled`, a `0.10f` hover fill →
+`onScrimHover`, a `0.18f` one → `onScrimSelected`, a hairline → `onScrimBorder`. **46 sites across 21
+files are left**, and every one is on a `ViewerChrome` scrim, so this is substitution rather than
+judgement.
 
-Mechanical once ME-121 has set the mapping, and *visible* on a shipped surface either way, so each
-wants the author's eyes rather than a green build.
+The bulk is `feature/viewer/video/` — the player settings and sync rows, the speed slider and its
+parts, the subtitle customise panel and rows, the volume overlay, the sound-boost row, the playback
+notices — plus `MediaViewerAudioExtension` and `PlayerResetRow`. Two sittings by size, split wherever
+eight files fall.
 
-**Not everything on `Theme.colors` is a mistake.** A dialog is an app surface that happens to appear
-above a photograph, and stays on the app palette — the rule `DiscardChangesDialog`'s KDoc already
-states. Which of the twenty-eight are dialogs is ME-121's to write down.
+**Not everything is in scope, and ME-121 wrote down which.** The 28 files reading `Theme.colors` sit
+on `Theme.colors` plates and must not be touched. A fill describing a track — `MediaSliderTrack`'s
+lightening constant, `MediaVerticalSlider`'s 20 % default — is not a foreground and stays a literal.
+
+Each slice is a *visible* change on a shipped surface, small per site, so each wants the author's eyes
+rather than a green build.
 *Depends on ME-121.*
 
 ### ME-1xx — Opening a large photograph must not freeze the window

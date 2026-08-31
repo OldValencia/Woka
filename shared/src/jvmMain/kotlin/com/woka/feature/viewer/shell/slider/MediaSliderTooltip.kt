@@ -13,7 +13,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -63,7 +62,7 @@ internal fun MediaSliderTooltip(
                 .widthIn(min = if (aspect != null) PREVIEW_WIDTH else 0.dp, max = 240.dp)
                 .clip(shape)
                 .background(Theme.viewer.tooltipScrim)
-                .border(1.dp, Color.White.copy(alpha = 0.12f), shape)
+                .border(1.dp, Theme.viewer.onScrimBorder, shape)
                 .animateContentSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -80,7 +79,7 @@ internal fun MediaSliderTooltip(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         style = TextStyle(
-                            color = Color.White,
+                            color = Theme.viewer.onScrim,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -91,7 +90,8 @@ internal fun MediaSliderTooltip(
                 BasicText(
                     text = timeText,
                     style = TextStyle(
-                        color = Color.White.copy(alpha = if (chapterTitle != null) 0.7f else 1f),
+                        color = if (chapterTitle != null) Theme.viewer.onScrimSecondary
+                        else Theme.viewer.onScrim,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium
                     )

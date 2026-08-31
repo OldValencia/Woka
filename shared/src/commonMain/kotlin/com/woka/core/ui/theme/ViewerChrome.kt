@@ -42,8 +42,24 @@ object ViewerChrome {
      * one, i.e. legibility decided by the picture. Anything drawn on a scrim reads
      * these instead.
      *
-     * `feature/viewer/` still reads `Theme.colors` at ~27 call sites and is
-     * migrated by its own ticket; the editor reads these from its first commit.
+     * **Which surfaces take these, and which must not** (ME-121, checked against the
+     * tree 2026-09-01). The measurement above is against [hudScrim], and that is the
+     * whole of the rule: a foreground takes an `onScrim*` token when it is drawn on
+     * one of the three scrims **in this object**, which are dark whatever the theme.
+     * A foreground drawn on a plate derived from `Theme.colors` keeps `Theme.colors`,
+     * because plate and text invert together — the viewer's control pill paints
+     * `Theme.colors.surface` (`0xCC`-alpha, light or dark by theme), and its arrows and
+     * video bar sit on a clipped wash of `Theme.colors.background`. Converting those
+     * would put `#F4F4F6` on an 80 %-white plate.
+     *
+     * **A fill that describes a track is not a foreground**, and stays a literal:
+     * `MediaSliderTrack` lightens *toward* white by a constant and `MediaVerticalSlider`
+     * defaults its unplayed track to 20 % white, for which there is no token and should
+     * not be one — a value used by a single slider is a constant, not a palette entry.
+     *
+     * The editor reads these from its first commit. `feature/viewer/` draws on the
+     * scrims with `Color.White` literals instead — 58 of them at the last count, which
+     * is the same "scattered literals" this object was made to end, one layer up.
      */
     val onScrim: Color = Color(0xFFF4F4F6)
 

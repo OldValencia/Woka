@@ -18,7 +18,6 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
@@ -53,7 +52,7 @@ fun PlayPauseOverlay(event: ViewerEvent, isPlaying: Boolean, enabled: Boolean = 
                 modifier = Modifier
                     .size(40.dp)
                     .graphicsLayer { if (!isPlaying) scaleX = 0.7f },
-                colorFilter = ColorFilter.tint(Color.White)
+                colorFilter = ColorFilter.tint(Theme.viewer.onScrim)
             )
         }
     }
@@ -84,7 +83,7 @@ fun SkipOverlay(event: ViewerEvent, direction: Int) {
                 ),
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
-                colorFilter = ColorFilter.tint(Color.White)
+                colorFilter = ColorFilter.tint(Theme.viewer.onScrim)
             )
         }
     }
@@ -108,7 +107,7 @@ fun ZoomHudOverlay(event: ViewerEvent, label: String) {
                 .background(Theme.viewer.popoverScrim, RoundedCornerShape(Theme.viewer.cornerRadius))
                 .padding(Theme.viewer.hudPadding)
         ) {
-            BasicText(text = label, style = Theme.viewer.hudLabel.copy(color = Color.White))
+            BasicText(text = label, style = Theme.viewer.hudLabel.copy(color = Theme.viewer.onScrim))
         }
     }
 }

@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import com.woka.core.ui.theme.Theme
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -129,7 +130,7 @@ fun MediaViewerCarousel(
                             painter = painterResource(Icons.Static.PlayFill),
                             contentDescription = "Video",
                             modifier = Modifier.size(12.dp),
-                            colorFilter = ColorFilter.tint(Color.White)
+                            colorFilter = ColorFilter.tint(Theme.viewer.onScrim)
                         )
                     }
                 }
