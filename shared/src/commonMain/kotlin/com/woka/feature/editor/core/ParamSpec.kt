@@ -1,5 +1,7 @@
 package com.woka.feature.editor.core
 
+import org.jetbrains.compose.resources.DrawableResource
+
 /**
  * One editable parameter: its key on the wire, its default, and the pair of
  * functions that move it between the typed call site and [ParamValue].
@@ -62,7 +64,20 @@ data class FloatParam(
      * about colour" cannot be read off a range, and facts about parameters are what a
      * schema is. What the shell does with it stays the shell's decision.
      */
-    val section: String? = null
+    val section: String? = null,
+    /**
+     * A glyph to stand in for [label] where a control is too narrow for words (ME-144).
+     *
+     * The field `ChoiceParam` reaches through `iconOf`, on the spec type that needed it
+     * per option rather than per spec. Null for every parameter drawn as a labelled row,
+     * which is all of them but the adjustments chooser.
+     *
+     * **Null is a working state, not an unfinished one.** A chip with no glyph draws its
+     * name, so the art can arrive one file at a time and each one lights up without a
+     * line of Kotlin — which is what stops fifteen icons being a prerequisite for any of
+     * them.
+     */
+    val icon: DrawableResource? = null
 ) : ParamSpec<Float> {
     // Clamped on the way in and on the way out: a document written when the range
     // was wider must not hand a slider a value off its own track. A type mismatch

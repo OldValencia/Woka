@@ -1,11 +1,13 @@
 package com.woka.feature.editor.shell
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
@@ -13,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.testTag
@@ -23,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.editor.core.FloatParam
+import org.jetbrains.compose.resources.painterResource
 
 /**
  * One adjustment: its name, and what it is currently set to.
@@ -63,13 +67,23 @@ internal fun StripChip(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(STRIP_CHIP_GAP)
     ) {
+        val tint = if (selected) Theme.viewer.onScrim else Theme.viewer.onScrimSecondary
+        // **The glyph joins the name, it does not replace it** (asked for by hand
+        // 2026-09-01, reversing this ticket's own first reading). Icons alone were
+        // refused on screen, which is the same answer ME-109 got from the rail: an
+        // adjustment is told apart by its name, and a glyph beside it is what makes the
+        // strip readable at a glance rather than what makes it shorter.
+        if (spec.icon != null) {
+            Image(
+                painter = painterResource(spec.icon),
+                contentDescription = null,
+                modifier = Modifier.size(GLYPH_SIZE),
+                colorFilter = ColorFilter.tint(tint)
+            )
+        }
         BasicText(
             text = spec.label,
-            style = TextStyle(
-                color = if (selected) Theme.viewer.onScrim else Theme.viewer.onScrimSecondary,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium
-            )
+            style = TextStyle(color = tint, fontSize = 12.sp, fontWeight = FontWeight.Medium)
         )
         BasicText(
             text = formatFloat(value, spec),
@@ -88,3 +102,6 @@ internal fun StripChip(
 }
 
 private val STRIP_CHIP_PADDING = 10.dp
+
+/** The glyph sits inside a 26 dp chip, so it takes the rail's own 16. */
+private val GLYPH_SIZE = 16.dp

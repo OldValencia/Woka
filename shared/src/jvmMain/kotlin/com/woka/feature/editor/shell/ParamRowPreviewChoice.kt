@@ -1,7 +1,10 @@
 package com.woka.feature.editor.shell
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -70,6 +73,15 @@ internal fun PreviewChoiceStrip(
             modifier = Modifier
                 .weight(1f)
                 .horizontalScroll(scroll)
+                // Dragged with the primary button, as the adjustments chooser is
+                // (ME-161): two scrolling strips one panel apart that answered the
+                // mouse differently was the divergence reported by hand 2026-09-01.
+                // `draggable` waits for the touch slop, so a square's own `clickable`
+                // still takes a press that does not travel.
+                .draggable(
+                    orientation = Orientation.Horizontal,
+                    state = rememberDraggableState { delta -> scroll.dispatchRawDelta(-delta) }
+                )
                 .wheelScrollsStrip(scroll, scope, step),
             verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.spacedBy(EditorTokens.Inspector.rowGap)

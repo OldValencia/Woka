@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.ui.icons.Icons
-import com.woka.feature.editor.core.BoolParam
 import com.woka.feature.editor.core.CanvasTool
 import com.woka.feature.editor.core.ChoiceParam
 import com.woka.feature.editor.core.EditorToolScope
@@ -56,7 +55,17 @@ object CropTool : CanvasTool {
      * action is built from `tool.defaults()` by design, so pressing it would have
      * discarded the rect it was meant to turn. It also said nothing about what it did.
      */
-    val Portrait = BoolParam("portrait", "Portrait")
+    val Portrait = ChoiceParam(
+        key = "portrait",
+        label = "Orientation",
+        options = CropOrientation.entries.toList(),
+        default = CropOrientation.Landscape,
+        labelOf = CropOrientation::label,
+        iconOf = { orientation ->
+            if (orientation == CropOrientation.Portrait) Icons.Static.Portrait
+            else Icons.Static.Landscape
+        }
+    )
 
     override val manifest = ToolManifest(
         id = "crop",

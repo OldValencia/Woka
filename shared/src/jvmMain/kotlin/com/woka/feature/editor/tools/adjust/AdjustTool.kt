@@ -53,14 +53,46 @@ private const val COLOUR = "Colour"
  */
 object AdjustTool : EditorTool {
 
-    val Exposure = FloatParam("exposure", "Exposure", SPAN, default = 0f, section = LIGHT)
-    val Brightness = FloatParam("brightness", "Brightness", SPAN, default = 0f, section = LIGHT)
-    val Contrast = FloatParam("contrast", "Contrast", SPAN, default = 0f, section = LIGHT)
-    val BlackPoint = FloatParam("blackPoint", "Black Point", SPAN, default = 0f, section = LIGHT)
-    val Saturation = FloatParam("saturation", "Saturation", SPAN, default = 0f, section = COLOUR)
-    val Vibrance = FloatParam("vibrance", "Vibrance", SPAN, default = 0f, section = COLOUR)
-    val Warmth = FloatParam("warmth", "Warmth", SPAN, default = 0f, section = COLOUR)
-    val Tint = FloatParam("tint", "Tint", SPAN, default = 0f, section = COLOUR)
+    val Exposure =
+        FloatParam(
+            "exposure", "Exposure", SPAN,
+            default = 0f, section = LIGHT, icon = Icons.Static.Exposure
+        )
+    val Brightness =
+        FloatParam(
+            "brightness", "Brightness", SPAN,
+            default = 0f, section = LIGHT, icon = Icons.Static.Brightness
+        )
+    val Contrast =
+        FloatParam(
+            "contrast", "Contrast", SPAN,
+            default = 0f, section = LIGHT, icon = Icons.Static.Contrast
+        )
+    val BlackPoint =
+        FloatParam(
+            "blackPoint", "Black Point", SPAN,
+            default = 0f, section = LIGHT, icon = Icons.Static.BlackPoint
+        )
+    val Saturation =
+        FloatParam(
+            "saturation", "Saturation", SPAN,
+            default = 0f, section = COLOUR, icon = Icons.Static.Saturation
+        )
+    val Vibrance =
+        FloatParam(
+            "vibrance", "Vibrance", SPAN,
+            default = 0f, section = COLOUR, icon = Icons.Static.Vibrance
+        )
+    val Warmth =
+        FloatParam(
+            "warmth", "Warmth", SPAN,
+            default = 0f, section = COLOUR, icon = Icons.Static.Warmth
+        )
+    val Tint =
+        FloatParam(
+            "tint", "Tint", SPAN,
+            default = 0f, section = COLOUR, icon = Icons.Static.Tint
+        )
 
     override val manifest = ToolManifest(
         id = "adjust",

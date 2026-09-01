@@ -42,3 +42,17 @@ enum class CropAspect(val label: String) {
     /** The same ratio the other way up — what `Flip ratio` turns 16:9 into. */
     fun flippedIn(frame: IntSize): Float? = ratioIn(frame)?.let { 1f / it }
 }
+
+/**
+ * Which way round the chosen ratio is held (ME-144).
+ *
+ * **Was a `BoolParam` until the chips gained glyphs.** A switch labelled "Portrait" is a
+ * two-state choice wearing a boolean, and only a choice can carry an icon per option —
+ * a tall frame and a wide one, which is the clearest glyph pair in the editor. The key
+ * on the wire is unchanged, and `cropIsPortrait` still reads what an older document
+ * wrote there.
+ */
+enum class CropOrientation(val label: String) {
+    Landscape("Landscape"),
+    Portrait("Portrait")
+}

@@ -116,5 +116,21 @@ object Icons {
         // Stream selection (subtitles)
         val Subtitles = Res.drawable.captions_bubble
         val SubtitlesOff = Res.drawable.captions_bubble_slash
+
+        // The adjustments chooser, one glyph per slider (ME-144). Named for what the
+        // control *is*, not for the symbol it happens to use, so swapping the art is
+        // a change to one line here rather than to the tool.
+        val Exposure = Res.drawable.plusminus_circle
+        val Brightness = Res.drawable.sun_max
+        val Contrast = Res.drawable.circle_lefthalf_filled
+        val BlackPoint = Res.drawable.circle_bottomhalf_filled
+        val Saturation = Res.drawable.drop
+        val Vibrance = Res.drawable.sparkles
+        val Warmth = Res.drawable.thermometer_sun
+        val Tint = Res.drawable.eyedropper_halffull
+
+        // Crop's orientation, as a pair — a tall frame and a wide one (ME-144).
+        val Portrait = Res.drawable.rectangle_portrait
+        val Landscape = Res.drawable.rectangle
     }
 }

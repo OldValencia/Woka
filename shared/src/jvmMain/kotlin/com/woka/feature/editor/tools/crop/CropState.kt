@@ -3,6 +3,7 @@ package com.woka.feature.editor.tools.crop
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.unit.IntSize
+import com.woka.feature.editor.core.BoolValue
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.ToolOp
 import kotlin.math.roundToInt
@@ -39,9 +40,21 @@ fun EditDocument.cropRectIn(frame: IntSize): CropRect {
 fun EditDocument.cropAspect(): CropAspect =
     cropOp()?.params?.get(CropTool.Aspect) ?: CropAspect.Free
 
-/** Whether the stored crop is turned on its side. */
-fun EditDocument.cropIsPortrait(): Boolean =
-    cropOp()?.params?.get(CropTool.Portrait) ?: false
+/**
+ * Whether the stored crop is turned on its side.
+ *
+ * **The `BoolValue` branch is a migration, not a fallback** (ME-144). `Portrait` was a
+ * `BoolParam` until it needed a glyph per option; the key on the wire did not change, so
+ * a crop saved before that still holds a boolean under it. Without this every ratio a
+ * user had turned would quietly come back upright — `ChoiceParam.decode` answers null on
+ * a type mismatch and `ParamSet` substitutes the default, which is exactly the silent
+ * loss §3.4 promises not to have.
+ */
+fun EditDocument.cropIsPortrait(): Boolean {
+    val params = cropOp()?.params ?: return false
+    (params.values[CropTool.Portrait.key] as? BoolValue)?.let { return it.value }
+    return params[CropTool.Portrait] == CropOrientation.Portrait
+}
 
 /**
  * The ratio the rectangle is actually held to: the chosen aspect, on its side when
