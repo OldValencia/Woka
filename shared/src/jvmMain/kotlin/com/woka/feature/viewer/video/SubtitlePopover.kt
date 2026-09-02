@@ -12,7 +12,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import com.woka.core.ui.theme.Theme
 import androidx.compose.ui.unit.dp
 import com.woka.feature.viewer.shell.PopoverListRow
 import com.woka.feature.viewer.video.engine.subtitle.isBitmapSubtitleFile
@@ -71,7 +71,7 @@ internal fun SubtitlePopoverList(
                 .padding(vertical = 4.dp)
                 .fillMaxWidth()
                 .height(1.dp)
-                .background(Color.White.copy(alpha = 0.15f))
+                .background(Theme.viewer.onScrimBorder)
         )
         SubtitleActionRow(label = "Add subtitle file…", onClick = onAddFile)
         // A PGS / VobSub cue is a finished picture — §3 restyles text, so on those

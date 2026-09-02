@@ -20,7 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import com.woka.core.ui.theme.Theme
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
@@ -62,12 +62,12 @@ fun SubtitleCustomizePanel(onBack: () -> Unit) {
                     painter = painterResource(Icons.Static.ChevronLeft),
                     contentDescription = "Back",
                     modifier = Modifier.size(13.dp),
-                    colorFilter = ColorFilter.tint(Color.White)
+                    colorFilter = ColorFilter.tint(Theme.viewer.onScrim)
                 )
             }
             BasicText(
                 text = "Customize",
-                style = TextStyle(color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
+                style = TextStyle(color = Theme.viewer.onScrim, fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
                 modifier = Modifier.padding(start = 4.dp)
             )
         }

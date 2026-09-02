@@ -5,7 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.Color
+import com.woka.core.ui.theme.Theme
 import com.woka.core.data.PlaybackSpeed
 import com.woka.core.ui.components.DetentSlider
 import com.woka.core.ui.components.DetentSliderColors
@@ -39,10 +39,12 @@ internal fun PlayerSpeedSlider(speed: Float, onSpeedChange: (Float) -> Unit) {
 
     DetentSlider(
         fraction = fractionOf(dragSpeed ?: speed),
+        // The same four roles the editor's slider reads (ME-161), so both sliders in the
+        // app take one palette rather than two sets of alphas somebody once picked.
         colors = DetentSliderColors(
-            track = Color.White.copy(alpha = 0.15f),
-            detent = Color.White.copy(alpha = 0.45f),
-            knob = Color.White
+            track = Theme.viewer.onScrimHover,
+            detent = Theme.viewer.onScrimBorder,
+            knob = Theme.viewer.onScrim
         ),
         onTap = { onSpeedChange(speedAt(it)) },
         detents = listOf(fractionOf(PlaybackSpeed.NORMAL)),

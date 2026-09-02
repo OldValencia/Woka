@@ -15,7 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import com.woka.core.ui.theme.Theme
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.TextStyle
@@ -72,7 +72,7 @@ private fun SyncStepperRow(label: String, delayMs: Long, onChange: (Long) -> Uni
             .fillMaxWidth()
             .height(28.dp)
             .clip(RoundedCornerShape(7.dp))
-            .background(Color.White.copy(alpha = 0.08f)),
+            .background(Theme.viewer.onScrimHover),
         verticalAlignment = Alignment.CenterVertically
     ) {
         SyncGlyph("−") { onChange(delayMs - SYNC_STEP_MS) }
@@ -80,7 +80,7 @@ private fun SyncStepperRow(label: String, delayMs: Long, onChange: (Long) -> Uni
             BasicText(
                 text = formatSyncOffset(delayMs),
                 style = TextStyle(
-                    color = Color.White,
+                    color = Theme.viewer.onScrim,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -95,7 +95,7 @@ private fun SyncRowLabel(text: String) {
     BasicText(
         text = text,
         modifier = Modifier.padding(horizontal = 2.dp, vertical = 3.dp),
-        style = TextStyle(fontSize = 11.sp, color = Color.White.copy(alpha = 0.72f))
+        style = TextStyle(fontSize = 11.sp, color = Theme.viewer.onScrimSecondary)
     )
 }
 
@@ -111,7 +111,7 @@ private fun SyncGlyph(symbol: String, onClick: () -> Unit) {
     ) {
         BasicText(
             text = symbol,
-            style = TextStyle(color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            style = TextStyle(color = Theme.viewer.onScrim, fontSize = 15.sp, fontWeight = FontWeight.Bold)
         )
     }
 }
@@ -125,7 +125,7 @@ private fun SyncResetRow(enabled: Boolean, onReset: () -> Unit) {
             .padding(top = 6.dp)
             .height(26.dp)
             .clip(RoundedCornerShape(7.dp))
-            .background(Color.White.copy(alpha = if (enabled) 0.08f else 0.03f))
+            .background(if (enabled) Theme.viewer.onScrimHover else Theme.viewer.onScrimHover.copy(alpha = FADED_PLATE))
             .then(
                 if (enabled) {
                     Modifier
@@ -140,7 +140,7 @@ private fun SyncResetRow(enabled: Boolean, onReset: () -> Unit) {
         BasicText(
             text = "Reset sync",
             style = TextStyle(
-                color = Color.White.copy(alpha = if (enabled) 0.85f else 0.3f),
+                color = if (enabled) Theme.viewer.onScrimSecondary else Theme.viewer.onScrimDisabled,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium
             )

@@ -4,7 +4,7 @@
 |---|---|
 | **Order** | after ME-169; first of three slices |
 | **Depends on** | ME-121 |
-| **Feature** | [Image Editor](../image-editor.md) |
+| **Feature** | [Image Editor](../../image-editor.md) |
 
 **Goal.** Convert the eight video panel files that sit purely on `ViewerChrome` scrims from
 `Color.White` literals to the `onScrim*` tokens.

@@ -12,7 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import com.woka.core.ui.theme.Theme
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.TextStyle
@@ -52,7 +52,7 @@ private fun ResetRowBody(label: String, enabled: Boolean, onReset: () -> Unit) {
             .padding(top = 6.dp)
             .height(26.dp)
             .clip(RoundedCornerShape(7.dp))
-            .background(Color.White.copy(alpha = if (enabled) 0.08f else 0.03f))
+            .background(if (enabled) Theme.viewer.onScrimHover else Theme.viewer.onScrimHover.copy(alpha = FADED_PLATE))
             .then(
                 if (enabled) {
                     Modifier
@@ -67,10 +67,20 @@ private fun ResetRowBody(label: String, enabled: Boolean, onReset: () -> Unit) {
         BasicText(
             text = label,
             style = TextStyle(
-                color = Color.White.copy(alpha = if (enabled) 0.85f else 0.3f),
+                color = if (enabled) Theme.viewer.onScrimSecondary else Theme.viewer.onScrimDisabled,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium
             )
         )
     }
 }
+
+/**
+ * A plate that is present but switched off.
+ *
+ * **No token describes this**, and inventing one for two callers is what `ViewerChrome`'s
+ * own KDoc warns against — `onScrimHover` is the live weight and there is no faded
+ * sibling. The alpha is the value the row already drew, kept so a disabled control looks
+ * exactly as it did (ME-163).
+ */
+internal const val FADED_PLATE = 0.03f

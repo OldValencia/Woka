@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import com.woka.core.ui.theme.Theme
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -50,7 +50,7 @@ internal fun SoundBoostRow(enabled: Boolean, onChange: (Boolean) -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(1.dp)
-                .background(Color.White.copy(alpha = 0.15f))
+                .background(Theme.viewer.onScrimBorder)
         )
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -76,7 +76,7 @@ internal fun SoundBoostRow(enabled: Boolean, onChange: (Boolean) -> Unit) {
                     contentDescription = "Sound boost",
                     modifier = Modifier.size(16.dp),
                     colorFilter = ColorFilter.tint(
-                        Color.White.copy(alpha = if (enabled) 1f else 0.5f)
+                        if (enabled) Theme.viewer.onScrim else Theme.viewer.onScrimDisabled
                     )
                 )
             }

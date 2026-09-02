@@ -10,7 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import com.woka.core.ui.theme.Theme
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.TextStyle
@@ -28,7 +28,7 @@ internal fun SubtitleFieldLabel(text: String) {
     BasicText(
         text = text.uppercase(),
         style = TextStyle(
-            color = Color.White.copy(alpha = 0.5f),
+            color = Theme.viewer.onScrimDisabled,
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 0.6.sp
@@ -51,7 +51,7 @@ internal fun SubtitleResetRow(onClick: () -> Unit) {
         BasicText(
             text = "Reset to defaults",
             style = TextStyle(
-                color = Color.White.copy(alpha = 0.6f),
+                color = Theme.viewer.onScrimSecondary,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium
             )

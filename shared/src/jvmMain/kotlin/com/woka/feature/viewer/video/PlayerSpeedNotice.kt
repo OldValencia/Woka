@@ -14,7 +14,7 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import com.woka.core.ui.theme.Theme
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -57,14 +57,14 @@ internal fun PlayerSpeedNotice(videoState: VideoPlayerState, speed: Float) {
                 .fillMaxWidth()
                 .padding(horizontal = 2.dp, vertical = 4.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(Color.White.copy(alpha = 0.07f))
+                .background(Theme.viewer.onScrimHover)
                 .padding(horizontal = 8.dp, vertical = 6.dp)
         ) {
             BasicText(
                 text = "$quality — above 1x this file drops frames to keep the " +
                     "sound in step. Expected on a frame this large.",
                 style = TextStyle(
-                    color = Color.White.copy(alpha = 0.6f),
+                    color = Theme.viewer.onScrimSecondary,
                     fontSize = 10.sp,
                     lineHeight = 14.sp
                 )
