@@ -41,6 +41,7 @@ in the file names or in the stream metadata.
 | `anim.gif` / `anim.webp` | **8** frames, 320×240, 120 ms each | animated stills that must not freeze on frame 1 |
 | `multipage.tif` | **3** pages, 320×240, deflate | multi-page TIFF |
 | `hdr_pq.avif` / `hdr_hlg.avif` | **SDR pixels wearing HDR tags — see the warning below** | tag *reading* only; useless for anything about pixels |
+| `hdr_real_pq.avif` | **the one with real HDR pixels** — a frame of `DualVideo`'s PQ stream, re-encoded PQ AVIF 320×180 | anything about how HDR pixels are decoded, tone mapped or drawn |
 | `hdr_pq.png` | same warning — `rgb48be` SDR data with a `cICP` chunk | tag reading on the PNG path |
 
 > **These three files are not HDR pictures.** `setparams` writes the colour tags and does not touch a
@@ -56,8 +57,19 @@ in the file names or in the stream metadata.
 > genuine `HdrShader` bug that way on 2026-08-18 (gamut matrix before the tone curve); the bug was
 > ours, not theirs.
 >
-> So they test that a transfer tag is *read*, and nothing else. **Anything about how HDR pixels are
-> decoded, tone mapped or drawn needs a genuine HDR source**, and the corpus does not have one yet.
+> So those three test that a transfer tag is *read*, and nothing else — which is still worth having,
+> and they remain the fixtures for the tag path.
+>
+> **`hdr_real_pq.avif` is the genuine one** (added 2026-09-03). The corpus turned out to hold real HDR
+> content all along: `WokaSample.DualVideo.mkv` stream `v:0` is ffv1 `yuv420p10le` PQ/BT.2020, and a
+> frame cut from it and re-encoded PQ AVIF measures **YMAX 606/1023 = 0.592** against **YAVG 0.205** —
+> a real PQ distribution, and the 0.579 of the source plus what lossy AV1 adds. Set it beside the
+> three above, which reach 1.0, and the difference is the whole point.
+>
+> **Its limits, so nobody over-reads it.** 320×180, one scene, one master. Enough to measure a white
+> point and to show that a tone curve normalised by `W = 11.2` compresses an image with a fraction of
+> that range (ME-120). Not enough to judge a curve across a variety of content — that still wants a
+> photograph somebody took.
 | `tools/pgs_gen.py`, `tools/vobsub_idx.py` | generators for the `.sup` and `.idx`/`.sub` pair | how the bitmap subtitle files were produced |
 | `tools/frameset_gen.py` | generator for every frame-set fixture above | how the HEIC/AVIF/animation/HDR files were produced |
 
@@ -167,3 +179,21 @@ person does not:
   there is no motion track inside the container to find. `livephoto.heic` and
   `livephoto.mov` are that pair, so whatever resolves the `Motion` frame is
   tested against the shape it actually meets on disk.
+
+**`hdr_real_pq.avif`** — one frame of the PQ stream this corpus already had, re-encoded so a still
+carries real HDR pixels (ME-172, 2026-09-03). Written with the **bundled Bytedeco ffmpeg** rather
+than a system one, because that is the encoder Woka itself runs:
+
+```sh
+"$FF" -i "$D/WokaSample.DualVideo.mkv" -map 0:v:0 -frames:v 1   -c:v libaom-av1 -still-picture 1 -pix_fmt yuv420p10le   -color_primaries bt2020 -color_trc smpte2084 -colorspace bt2020nc   -crf 20 "$D/hdr_real_pq.avif"
+```
+
+4.9 KB. Two things worth keeping, for the same reason as the notes above:
+
+- **The output tags stick here, unlike above.** `libaom-av1` is re-encoding a frame that already
+  carries PQ side data from the source stream, so the `colr` box comes out right without `setparams`
+  in the chain. The three tags-only files needed the filter precisely because their source had
+  nothing to carry.
+- **AVIF and nothing else.** `libx265` cannot open a HEIF output at all, and `-color_trc
+  arib-std-b67` is silently ignored, so HLG is not an offerable target — both measured in ME-010.
+

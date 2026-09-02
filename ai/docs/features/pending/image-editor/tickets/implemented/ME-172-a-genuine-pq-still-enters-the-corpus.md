@@ -4,7 +4,7 @@
 |---|---|
 | **Order** | last of the 100 track; unblocks the whole 500 track |
 | **Depends on** | ME-011 |
-| **Feature** | [Image Editor](../image-editor.md) |
+| **Feature** | [Image Editor](../../image-editor.md) |
 
 **Goal.** Add one real PQ BT.2020 still to `jvmTest/resources/media/`, cut from HDR content the corpus
 already holds.

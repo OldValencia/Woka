@@ -26,14 +26,18 @@ Order is dependency order.
 
 Gathered here on 2026-09-01 because the three read as one subject.
 
-**The blocker changed on 2026-09-02, and shrank.** It was *"the corpus holds no genuine HDR still"* —
-`hdr_pq.avif`, `hdr_hlg.avif` and `hdr_pq.png` are SDR pixels wearing HDR tags, the first two
-pixel-identical with `psnr` reporting `inf`. That is still true of those three files, but the corpus
+**The blocker is gone as of 2026-09-03.** For a year it was *"the corpus holds no genuine HDR
+still"* — `hdr_pq.avif`, `hdr_hlg.avif` and `hdr_pq.png` are SDR pixels wearing HDR tags, the first
+two pixel-identical with `psnr` reporting `inf`. That is still true of those three, but the corpus
 turned out to hold real HDR content all along: `WokaSample.DualVideo.mkv` stream `v:0` is ffv1
-`yuv420p10le` PQ/BT.2020 and measures **YMAX 592/1023 = 0.579**, **YAVG 0.204** — a genuine PQ
-distribution, matching the README's own "a real HDR master peaks at 0.565 → 174 nits". So the blocker
-is now [ME-172](ME-172-a-genuine-pq-still-enters-the-corpus.md), which cuts a frame from it and
-encodes PQ AVIF, and not the absence of a source.
+`yuv420p10le` PQ/BT.2020, measuring **YMAX 592/1023 = 0.579** against **YAVG 0.204**. ME-172 cut a
+frame from it and encoded PQ AVIF, so **`hdr_real_pq.avif` is in the corpus** and measures 0.592 —
+the source's own distribution plus what lossy AV1 adds.
+
+**What it is not.** 320×180, one scene, one master. Enough to measure a white point and to show that
+`W = 11.2` compresses a picture with a fraction of that range; not enough to tune a curve across a
+variety of content. ME-120 can be done against it; whether its result *looks* right on a photograph
+somebody took is a separate question and a separate fixture.
 
 **ME-120 must still land before ME-118**, or the defect gets written into the user's files.
 
@@ -53,7 +57,7 @@ Confirmed still open 2026-09-02: `HdrShader.kt:76` is unchanged.
 
 Belongs to the viewer, not to the editor; listed with the feature because ME-010 is where it was
 measured and because the HDR tool's `To SDR` bakes this very curve into pixels.
-*Depends on ME-172.*
+*Depends on nothing — ME-172 landed 2026-09-03.*
 
 ### ME-118 — HDR tool
 `Output` domain, `Single`, one `ChoiceParam` — **`Keep` and `To SDR` only in v1** (§9, 2026-08-18).

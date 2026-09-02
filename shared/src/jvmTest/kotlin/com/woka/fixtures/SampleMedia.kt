@@ -93,10 +93,25 @@ const val STILL_AVIF = "still.avif"
  */
 const val ANIM_AVIF = "anim.avif"
 
-/** HDR stills. `hdr_pq.png` exists so the skia path has one even if AVIF fails. */
+/**
+ * HDR stills, and **three of the four are tags only** — `setparams` wrote the colour
+ * description and touched no pixel, so what they contain is an SDR pattern claiming PQ.
+ * They test that a transfer tag is read and nothing else. `hdr_pq.png` exists so the skia
+ * path has one even if AVIF fails.
+ */
 const val HDR_PQ_AVIF = "hdr_pq.avif"
 const val HDR_HLG_AVIF = "hdr_hlg.avif"
 const val HDR_PQ_PNG = "hdr_pq.png"
+
+/**
+ * The one with real HDR pixels in it (ME-172): a frame cut from [DUAL_VIDEO]'s PQ stream
+ * and re-encoded PQ AVIF.
+ *
+ * **Small, and one scene.** 320×180, from a single master — enough to measure a white
+ * point and to show a tone curve is not eleven times too aggressive, not enough to judge
+ * a curve across a range of content.
+ */
+const val HDR_REAL_PQ_AVIF = "hdr_real_pq.avif"
 
 /** A loader that honours the tag turns the 640×480 source portrait. */
 const val EXIF_EXPECTED_WIDTH = 480
