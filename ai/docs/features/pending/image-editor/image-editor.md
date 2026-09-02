@@ -56,22 +56,22 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-134](tickets/implemented/ME-134-reopening-an-edited-file.md)           | Reopening an edited file | **done** 2026-08-19 |
 | [ME-135](tickets/implemented/ME-135-readers-notice-a-save.md)              | Readers notice a save | **done** 2026-08-19 |
 | [ME-107](tickets/implemented/ME-107-revert-to-original.md)                 | Revert to Original — **un-dropped** | **done** 2026-08-19 |
-| [ME-108](tickets/implemented/ME-108-isobmff-carrier.md)                    | ISOBMFF carrier — HEIC, HEIF, AVIF | **done** 2026-08-19 — by hand outstanding |
-| [ME-137](tickets/implemented/ME-137-webp-carrier.md)                       | RIFF carrier — WebP, and bucket B empties | **done** 2026-08-19 — by hand outstanding |
+| [ME-108](tickets/implemented/ME-108-isobmff-carrier.md)                    | ISOBMFF carrier — HEIC, HEIF, AVIF | **done** 2026-08-19 — confirmed by hand |
+| [ME-137](tickets/implemented/ME-137-webp-carrier.md)                       | RIFF carrier — WebP, and bucket B empties | **done** 2026-08-19 — confirmed by hand |
 | [ME-138](tickets/implemented/ME-138-gif-carrier.md)                        | GIF carrier — Application Extension, one recipe for every frame | **done** 2026-08-21 — confirmed by hand |
-| [ME-139](tickets/implemented/ME-139-tiff-carrier.md)                       | TIFF carrier — private IFD tag | **done** 2026-08-20 — by hand outstanding |
+| [ME-139](tickets/implemented/ME-139-tiff-carrier.md)                       | TIFF carrier — private IFD tag | **done** 2026-08-20 — confirmed by hand |
 | [ME-140](tickets/implemented/ME-140-the-canvas-plays.md)                   | The editing canvas plays what the viewer plays | **done** 2026-08-21 — confirmed by hand |
 | [ME-109](tickets/implemented/ME-109-crop-tool.md)                          | Crop tool, and the fold at preview scale | **done** 2026-08-22 — confirmed by hand; the shape every later tool takes |
-| [ME-110](tickets/implemented/ME-110-resize-tool.md)                        | Resize tool | **done** 2026-08-22 — by hand outstanding |
+| [ME-110](tickets/implemented/ME-110-resize-tool.md)                        | Resize tool | **done** 2026-08-22 — confirmed by hand |
 | [ME-111](tickets/implemented/ME-111-adjustments-tool.md)                   | Adjustments — six sliders, one colour matrix | **done** 2026-08-22 — confirmed by hand |
-| [ME-112](tickets/implemented/ME-112-filter-presets.md)                     | Filter presets, and the preview-choice row | **done** 2026-08-22 — by hand outstanding |
+| [ME-112](tickets/implemented/ME-112-filter-presets.md)                     | Filter presets, and the preview-choice row | **done** 2026-08-22 — confirmed by hand |
 | [ME-113](tickets/implemented/ME-113-markup-engine.md)                      | Markup engine — four shapes, one draw routine | **done** 2026-08-24 |
-| [ME-114](tickets/implemented/ME-114-markup-interaction.md)                 | Markup interaction — the overlay and `Delete` | **done** 2026-08-24 — by hand outstanding |
+| [ME-114](tickets/implemented/ME-114-markup-interaction.md)                 | Markup interaction — the overlay and `Delete` | **done** 2026-08-24 — confirmed by hand |
 | [ME-122](tickets/implemented/ME-122-markup-text.md)                        | Markup text — the fifth shape | **done** 2026-08-26 — confirmed by hand with ME-145 |
 | [ME-145](tickets/implemented/ME-145-markup-text-editing.md)                | Markup text — editing on the canvas | **done** 2026-08-27 — confirmed by hand after four fixes |
 | [ME-146](tickets/implemented/ME-146-markup-text-box-and-background.md)     | Markup text — a box and a background | **done** 2026-08-27 — confirmed by hand after three fixes |
-| [ME-115](tickets/implemented/ME-115-editor-settings-panel.md)              | Editor settings panel | **done** 2026-08-28 — by hand outstanding |
-| [ME-116](tickets/implemented/ME-116-zoomed-canvas-fidelity.md)             | Zoomed canvas fidelity — the zoom itself shipped with ME-109 | **done** 2026-08-28 — by hand outstanding |
+| [ME-115](tickets/implemented/ME-115-editor-settings-panel.md)              | Editor settings panel | **done** 2026-08-28 — confirmed by hand |
+| [ME-116](tickets/implemented/ME-116-zoomed-canvas-fidelity.md)             | Zoomed canvas fidelity — the zoom itself shipped with ME-109 | **done** 2026-08-28 — confirmed by hand |
 | [ME-141](tickets/implemented/ME-141-styles-pad-and-palette.md)             | Styles: two carousels, a pad and a palette slider | **done** 2026-08-28 — panel reshaped by hand over three passes; the last one not yet seen on screen. What the pad *means* is [ME-150](tickets/implemented/ME-150-the-pad-shapes-the-look.md) |
 | [ME-147](tickets/implemented/ME-147-multi-select-chip-row.md)              | A chip row that lights more than one — `ToggleSetParam` | **done** 2026-08-29 — against `FixtureTool`; no tool touched |
 | [ME-151](tickets/implemented/ME-151-markup-text-faces.md)                  | Markup text — the four faces | **done** 2026-08-29 — confirmed by hand after one fix, the glyphs rendering as dots |
@@ -90,8 +90,8 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-157](tickets/implemented/ME-157-frames-that-carry-their-own-edit.md)   | The frame strip becomes shared, and says which frames carry their own edit | **done** 2026-08-30 — confirmed by hand |
 | [ME-158](tickets/implemented/ME-158-the-editors-frame-strip.md)            | The editor's frame strip | **done** 2026-08-30 — confirmed by hand |
 | [ME-123](tickets/implemented/ME-123-a-huge-source-never-enters-the-cache.md) | A huge source never enters the shared cache | **done** 2026-08-30 — it reverses a 2026-08-17 decision and the test that asserted it; `byteSize` and the gate split into `CacheAdmission.kt`. Confirmed by hand |
-| [ME-125](tickets/implemented/ME-125-closing-the-window-waits-for-the-save.md) | Closing the window waits for the save | **done** 2026-08-31 — by hand outstanding |
-| [ME-160](tickets/implemented/ME-160-the-close-button-asks-about-unsaved-work.md) | The close button asks about unsaved work | **done** 2026-08-31 — found by hand the same day ME-125 shipped; by hand outstanding |
+| [ME-125](tickets/implemented/ME-125-closing-the-window-waits-for-the-save.md) | Closing the window waits for the save | **done** 2026-08-31 — confirmed by hand |
+| [ME-160](tickets/implemented/ME-160-the-close-button-asks-about-unsaved-work.md) | The close button asks about unsaved work | **done** 2026-08-31 — found by hand the same day ME-125 shipped; confirmed by hand |
 | [ME-128](archive/ME-128-more-than-one-editor-at-once.md)                   | ~~More than one editor at once, and the dock list that reaches them~~ | **dropped** 2026-09-01 — its own "Why now" had stopped being true; the id is retained and never reused |
 | [ME-159](tickets/implemented/ME-159-markup-is-sized-in-absolute-pixels.md) | Markup defaults do not adapt to the picture that was opened | **done** 2026-08-31 |
 | [ME-121](tickets/implemented/ME-121-the-viewer-chrome-reads-the-onscrim-tokens.md) | The viewer's on-scrim chrome reads the tokens, not `Color.White` | **done** 2026-09-01 — rewritten before a line was changed: its premise was wrong and the sweep it asked for would have introduced the bug it claimed to fix. Confirmed by hand |
@@ -100,7 +100,19 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-142](tickets/implemented/ME-142-two-more-adjustments-the-matrix-can-express.md) | Two more adjustments the matrix can express | **done** 2026-09-01 — the block asked for three and only one of them was affine; confirmed by hand |
 | [ME-164](tickets/implemented/ME-164-the-adjustments-panel-groups-what-it-shows.md) | The adjustments panel groups what it shows | **done** 2026-09-01 — asked for by hand at eight, and the complaint was the mixing rather than the scrolling. Confirmed by hand, tab metrics tuned by the author |
 | ME-143                                                                     | ~~Crop that can pull one edge~~ | **dropped** 2026-09-01 — see `tickets/backlog.md` §900; the id is retained and never reused |
-| [ME-117…ME-1xx](tickets/backlog.md)                                        | Image editor | backlog |
+| [ME-168](tickets/ME-168-opening-a-large-photograph-must-not-freeze-the-window.md) | Opening a large photograph must not freeze the window | **open** |
+| [ME-165](tickets/ME-165-a-stage-that-is-a-shader.md)                       | A stage that is a shader | **open** |
+| [ME-162](tickets/ME-162-four-adjustments-the-matrix-cannot-express.md)     | Four adjustments the matrix cannot express | **open** |
+| [ME-166](tickets/ME-166-the-picture-reaches-the-tool.md)                   | The picture reaches the tool | **open** |
+| [ME-167](tickets/ME-167-auto-adjust.md)                                    | Auto adjust | **open** |
+| [ME-169](tickets/ME-169-an-unsaved-edit-per-frame.md)                      | An unsaved edit per frame | **open** |
+| [ME-163](tickets/ME-163-on-scrim-tokens-the-video-panels.md)               | On-scrim tokens: the video panels | **open** |
+| [ME-170](tickets/ME-170-on-scrim-tokens-the-overlays.md)                   | On-scrim tokens: the overlays | **open** |
+| [ME-171](tickets/ME-171-on-scrim-tokens-where-the-plate-decides.md)        | On-scrim tokens: where the plate decides | **open** |
+| [ME-172](tickets/ME-172-a-genuine-pq-still-enters-the-corpus.md)           | A genuine PQ still enters the corpus | **open** |
+| ME-117                                                                     | ~~Housekeeping: make `roadmap.md` describe the editor that exists~~ | **done** 2026-09-02 — corrected in place rather than ticketed; the id is retained and never reused |
+| [ME-120, ME-118, ME-119](tickets/backlog.md)                               | HDR — the white point, the tool, the view mode | backlog |
+| [ME-6xx](tickets/backlog.md)                                               | The four adjustments ME-162 did not take | backlog |
 
 ME-201…ME-204, the video editor's own tickets, moved to
 [`../video-editor/tickets/backlog.md`](../video-editor/tickets/backlog.md) on 2026-08-24 and are

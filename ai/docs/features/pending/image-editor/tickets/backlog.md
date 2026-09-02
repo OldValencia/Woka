@@ -1,9 +1,8 @@
 # Image Editor — Backlog
 
-Everything after the foundation (ME-001…ME-014, one file each in this directory). Each block says what
-it is for and what shape it takes, and **names no files** — those are written when the block is
-promoted into its own ticket file, against the tree as it is then
-(`ai/docs/conventions/tickets.md`).
+Everything not yet promoted into a ticket file. Each block says what it is for and what shape it
+takes, and **names no files** — those are written when the block becomes its own ticket, against the
+tree as it is then (`ai/docs/conventions/tickets.md`).
 
 Design behind all of it: [the feature doc](../image-editor.md).
 
@@ -11,109 +10,32 @@ The **200 track — the video editor** — left this file on 2026-08-24 for
 [`../../video-editor/tickets/backlog.md`](../../video-editor/tickets/backlog.md). Its blocks still
 depend on ME-001…ME-014 and on ME-106, which are here; the numbers did not change.
 
+**The 100 track emptied on 2026-09-02.** Its six remaining blocks were promoted into eight ticket
+files — ME-162, ME-163, ME-165…ME-172 — after the author decided what ships. Two blocks were folded
+rather than dropped: Auto adjust became ME-166 (the hook) plus ME-167 (the tool), and the scrim sweep
+became three slices instead of two, because twenty in-scope files do not fit the ~8-file line
+`tickets.md` §4 sets and the five files that mix a scrim with a `Theme.colors` plate are judgement
+rather than substitution. **ME-117 was deleted, not promoted**: `roadmap.md`'s Phase 5 was corrected
+in the same change, so there is nothing left for a ticket to do.
+
 Order is dependency order.
-
----
-
-## 100 — Image editor
-
-### ME-1xx — Auto adjust
-Lifted out of ME-111 when that ticket was written (2026-08-22), because it cannot be a tool as tools
-are defined: an automatic correction reads the **picture** — a histogram, a black point — and
-`stage()` receives parameters and nothing else (§3.4). `EditorTool.resolve` hands over the frame, not
-the pixels. It needs a hook that does not exist, and inventing one before something asks for it is
-the kind of engine change that should follow a want rather than precede it.
-*Depends on ME-111.*
-
-### ME-117 — Housekeeping: make `roadmap.md` describe the editor that exists
-Phase 5 still reads as it did on 2026-08-18 — *"No UI yet by design… **ME-101** is the first ticket
-that puts pixels on screen"* — while what ships has a shell, eight tools, a recipe carrier per
-container family, a save banner and thirty-odd closed tickets behind it. The same paragraph lists
-"save targets and the atomic write" among the foundation, and `SaveTarget` was deleted by ME-132.
-
-So: Phase 5 rewritten to "image half shipped, video half pending", pointing at the feature doc's status
-table rather than restating it, and the foundation sentence corrected where ME-132 removed something.
-
-**The `-edited` half of this block died 2026-08-30** — there is no copy to name. `copyNameFor` went
-with ME-132 and the tree holds no `-edited` anywhere; checked before deleting the sentence.
-*Depends on nothing.*
-
-### ME-162 — Adjustments a colour matrix cannot express
-Split from ME-142 when the matrix half was promoted (2026-09-01). Highlights, Shadows, Sharpness,
-Definition, Noise Reduction, Vignette — **and Brilliance, and the real Vibrance**, both moved here by
-ME-142 when its arithmetic was checked. A `ColorMatrix` is a 4×5 **affine** map: Brilliance is
-region-specific by definition, and Vibrance raises saturation more for pixels that are already less
-saturated, which makes the multiplier a function of the input and the map quadratic. ME-142 ships a
-*weighted linear* saturation under the name Vibrance and says so in its own KDoc; the per-pixel one is
-here.
-
-The rest are each either per-luminance (a tone curve) or per-neighbourhood (a convolution): a curve is
-not a linear map of the channels, and a blur reads the pixels around the one being written.
-
-So this needs a **fourth thing a stage can be** — a Skia `RuntimeEffect` carried through the fold and
-run identically in three places: the live canvas, the native-scale replay on save, and the reader path
-where every grid tile folds the recipe. §3.2's "three shapes and no more" is the sentence it argues
-with, and that argument belongs in §9 before any code is written.
-
-**The panel stopped being the blocker** — ME-161 answers it — but the count is the thing ME-161 has to
-have been measured against: seven more on top of ME-142's eight is fifteen.
-*Depends on ME-142, ME-161.*
-
-
-### ME-163 — The rest of the `Color.White` literals on scrims
-ME-121 converted twelve sites in four files and set the mapping in `ViewerChrome`'s KDoc: `Color.White`
-→ `onScrim`, `0.72f` → `onScrimSecondary`, `0.45f`/`0.6f` → `onScrimDisabled`, a `0.10f` hover fill →
-`onScrimHover`, a `0.18f` one → `onScrimSelected`, a hairline → `onScrimBorder`. **46 sites across 21
-files are left**, and every one is on a `ViewerChrome` scrim, so this is substitution rather than
-judgement.
-
-The bulk is `feature/viewer/video/` — the player settings and sync rows, the speed slider and its
-parts, the subtitle customise panel and rows, the volume overlay, the sound-boost row, the playback
-notices — plus `MediaViewerAudioExtension` and `PlayerResetRow`. Two sittings by size, split wherever
-eight files fall.
-
-**Not everything is in scope, and ME-121 wrote down which.** The 28 files reading `Theme.colors` sit
-on `Theme.colors` plates and must not be touched. A fill describing a track — `MediaSliderTrack`'s
-lightening constant, `MediaVerticalSlider`'s 20 % default — is not a foreground and stays a literal.
-
-Each slice is a *visible* change on a shipped surface, small per site, so each wants the author's eyes
-rather than a green build.
-*Depends on ME-121.*
-
-### ME-1xx — Opening a large photograph must not freeze the window
-Split out of ME-123 on 2026-08-30, when the cache half of that block was promoted and this half was
-found to be a different question. `EditorAnimatedProxy.kt` builds the canvas proxy inside
-`remember(file, frameIndex) { EditorProxy.load(...) }`, which runs **synchronously while composing** —
-667 ms for a 100 MP source, ~150 ms for a 24 MP one, measured in ME-010. Opening the editor on a large
-photograph freezes the UI for exactly that long.
-
-The fix needs three things the cache ticket did not: a placeholder for the frame the proxy is not there
-yet, an ordering against the frozen viewer still composed underneath (§4.1), and an answer for `Cancel`
-pressed mid-decode. That is why it was not improvised inside ME-103 and not folded into ME-123.
-*Depends on ME-123.*
-
-### ME-1xx — An unsaved edit per frame
-Raised by ME-158 (2026-08-30), which chose the discard dialog instead. Walking from frame 1 to frame 3
-inside the editor rebuilds the engine, the stored document and the session, so work on frame 1 is
-either lost or confirmed away. What is wanted is to carry it: `EditorSession` holding a document **and
-a history** per frame, so undo does not walk out of the frame being looked at into one that is not, and
-`Done` writing every frame it touched in one merge.
-
-That is a redesign of a 145-line state holder already at the size mandate, plus a rule for what `Undo`
-means when the answer is in another frame — which is why it was not improvised inside ME-158.
-*Depends on ME-158.*
 
 ---
 
 ## 500 — HDR
 
-Gathered here on 2026-09-01 because the three read as one subject and were previously scattered
-through the 100 track. **All three are blocked by the same missing thing**: the corpus holds no
-genuine HDR still. `hdr_pq.avif`, `hdr_hlg.avif` and `hdr_pq.png` are SDR pixels wearing HDR tags —
-the first two are pixel-identical, `psnr` reports `inf` — so they test that a transfer tag is *read*
-and nothing else (`jvmTest/resources/media/README.md`). Nothing in this section can be tuned, measured
-or confirmed until one or two real PQ BT.2020 stills land in the corpus, and ME-120 must land before
-ME-118 or the defect gets written into the user's files.
+Gathered here on 2026-09-01 because the three read as one subject.
+
+**The blocker changed on 2026-09-02, and shrank.** It was *"the corpus holds no genuine HDR still"* —
+`hdr_pq.avif`, `hdr_hlg.avif` and `hdr_pq.png` are SDR pixels wearing HDR tags, the first two
+pixel-identical with `psnr` reporting `inf`. That is still true of those three files, but the corpus
+turned out to hold real HDR content all along: `WokaSample.DualVideo.mkv` stream `v:0` is ffv1
+`yuv420p10le` PQ/BT.2020 and measures **YMAX 592/1023 = 0.579**, **YAVG 0.204** — a genuine PQ
+distribution, matching the README's own "a real HDR master peaks at 0.565 → 174 nits". So the blocker
+is now [ME-172](ME-172-a-genuine-pq-still-enters-the-corpus.md), which cuts a frame from it and
+encodes PQ AVIF, and not the absence of a source.
+
+**ME-120 must still land before ME-118**, or the defect gets written into the user's files.
 
 ### ME-120 — The tone curve's white point must come from the content
 `HdrShader` normalises Hable by the literal `W = 11.2`, which asserts every HDR source peaks at 1120
@@ -127,13 +49,11 @@ The shape: the white point becomes a uniform beside `transfer` and `wideGamut`. 
 full, so its peak can simply be measured; video should prefer the stream's mastering-display or
 MaxCLL metadata and fall back to a constant when a file carries neither.
 
-**Blocked on a fixture, not on the analysis** — see the section note above. Confirmed still open
-2026-09-01: `HdrShader.kt:76` is unchanged, and the corpus README still says in as many words that no
-genuine HDR source is in it.
+Confirmed still open 2026-09-02: `HdrShader.kt:76` is unchanged.
 
 Belongs to the viewer, not to the editor; listed with the feature because ME-010 is where it was
 measured and because the HDR tool's `To SDR` bakes this very curve into pixels.
-*Depends on a real HDR fixture reaching the corpus.*
+*Depends on ME-172.*
 
 ### ME-118 — HDR tool
 `Output` domain, `Single`, one `ChoiceParam` — **`Keep` and `To SDR` only in v1** (§9, 2026-08-18).
@@ -153,6 +73,23 @@ pixels at all: a `WokaSettings` field, a control in the viewer, and the same tog
 editor's top bar so the user can see what the HDR tool is about to write. Belongs to the viewer as
 much as to the editor; it is listed here because §6.1 is where the two halves are defined together.
 *Depends on ME-106.*
+
+---
+
+## 600 — Adjustments beyond the twelve
+
+### ME-6xx — The four ME-162 did not take
+Split off when ME-162 was written (2026-09-02), which chose Highlights, Shadows, Sharpness and Noise
+Reduction and stopped there. What is left: **Definition**, **Vignette**, **Brilliance**, and the
+**per-pixel Vibrance** Photos actually means — the one that raises saturation more for pixels that are
+already less saturated, which makes the multiplier a function of the input and the map quadratic.
+ME-142 ships a *weighted linear* saturation under the name Vibrance and says so in its own KDoc.
+
+**Nothing architectural is left to decide.** ME-165 built the shader stage and ME-162 proved it
+against four adjustments, so each of these is a shader and a `FloatParam`. Twelve plus four is
+sixteen; ME-161 measured the panel at fifteen, so **the panel is the open question here, not the
+engine** — which is the reverse of how this block read before 2026-09-02.
+*Depends on ME-162.*
 
 ---
 

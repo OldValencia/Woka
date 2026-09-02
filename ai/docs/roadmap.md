@@ -84,19 +84,27 @@ shipped image tickets and `backlog.md` for the ME-1xx track. `features/pending/v
 because the foundation is shared: the video editor adds a tool set, an engine and a saver to the
 image editor's shell and changes none of it.
 
+**5a has shipped; 5b has not started.** The image editor is on screen and in use — a shell, a rail,
+twelve-odd tools, a recipe carrier per container family, a save banner, and seventy-odd closed
+tickets behind it. What remains of it is nine open tickets and a short backlog, and the feature doc's
+status table is the only place that state is recorded — this paragraph deliberately does not restate
+it. The video editor is a tool set, an engine and a saver on top of the same shell.
+
 **The foundation is built** — ME-001…ME-014 all done as of 2026-08-18: the document, history and
 session; the parameter schema and tool contract; the registry with settings-backed enablement; the
-raster fold; the engine seam; save targets and the atomic write; the capability probes; the test
-harness and fixture tool; the visual spec and its tokens; and `material3` removed. No UI yet by
-design — every one of those is shared by both editors and provable without a window. **ME-101, the
-editor shell, is the first ticket that puts pixels on screen.**
+raster fold; the engine seam; the capability probes; the test harness and fixture tool; the visual
+spec and its tokens; and `material3` removed. Every one is shared by both editors and provable
+without a window. ME-009's save targets were part of it and were **deleted by ME-132**, which
+replaced the whole export path.
 
 - **UX:** `Edit` in the viewer's control pill and in the grid's context menu.
 - **Features:** Crop, resize, rotate/flip, adjustments, filters, HDR on/off, vector markup (arrows,
   shapes, text), and lossless video trimming.
 - **Logic:** an immutable `EditDocument` of tool ops, folded into one draw recipe; the same recipe
-  replayed at native resolution on save. **Save a Copy is the default**; overwrite is explicit and
-  confirmed, and there is no hidden backup store.
+  replayed at native resolution on save. **The recipe is written into the file itself** (ME-131…ME-135)
+  and every reader replays it, so `Done` edits the picture in place — there is no copy, no export
+  step and no hidden backup store. "Save a Copy is the default" was the 2026-08-16 decision and was
+  reversed on 2026-08-19.
 
 ### Phase 6: OS Integration
 - Register Woka in Windows Registry to handle `.jpg`, `.png`, `.mp4` file extensions.
