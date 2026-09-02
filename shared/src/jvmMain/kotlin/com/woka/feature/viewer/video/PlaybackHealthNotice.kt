@@ -106,13 +106,13 @@ private fun NoticeCard(text: String) {
             .widthIn(max = 420.dp)
             .clip(shape)
             .background(Theme.viewer.tooltipScrim)
-            .border(1.dp, Color.White.copy(alpha = 0.12f), shape)
+            .border(1.dp, Theme.viewer.onScrimBorder, shape)
             .padding(horizontal = 14.dp, vertical = 10.dp)
     ) {
         BasicText(
             text = text,
             style = TextStyle(
-                color = Color.White.copy(alpha = 0.85f),
+                color = Theme.viewer.onScrimSecondary,
                 fontSize = 12.sp,
                 lineHeight = 17.sp
             )

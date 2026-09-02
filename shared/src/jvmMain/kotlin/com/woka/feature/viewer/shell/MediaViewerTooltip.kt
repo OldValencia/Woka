@@ -30,7 +30,11 @@ fun SimpleTooltip(text: String, content: @Composable () -> Unit) {
             ) {
                 BasicText(
                     text,
-                    style = TextStyle(color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    style = TextStyle(
+                        color = Theme.viewer.onScrim,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
                 )
             }
         },

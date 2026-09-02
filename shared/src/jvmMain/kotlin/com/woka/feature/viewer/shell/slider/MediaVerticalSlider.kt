@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import com.woka.core.ui.theme.Theme
 
 /**
  * Vertical counterpart of [MediaSlider], used only by the volume overlay. Split
@@ -43,7 +44,12 @@ fun MediaVerticalSlider(
     value: Float,
     onValueChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
-    activeColor: Color = Color.White,
+    activeColor: Color = Theme.viewer.onScrim,
+    /**
+     * **Stays a literal, and ME-121's KDoc names this exact line.** The unplayed track is
+     * a *fill describing a track*, not a foreground: 20 % white is a value one slider
+     * uses, and a palette entry for it would be a token with a single caller.
+     */
     inactiveColor: Color = Color.White.copy(alpha = 0.2f),
     ceiling: Float = 1f,
     detent: Float? = null,

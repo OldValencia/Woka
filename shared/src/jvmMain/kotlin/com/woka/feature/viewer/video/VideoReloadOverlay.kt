@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.woka.core.ui.components.WokaSpinner
+import com.woka.core.ui.theme.Theme
 
 /**
  * Spinner shown while the video grabber is swapping tracks (§2.3). Re-opening a
@@ -36,7 +37,7 @@ fun VideoReloadOverlay(isVisible: Boolean) {
                     .background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(16.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                WokaSpinner(color = Color.White, strokeWidth = 2.dp, diameter = 26.dp)
+                WokaSpinner(color = Theme.viewer.onScrim, strokeWidth = 2.dp, diameter = 26.dp)
             }
         }
     }

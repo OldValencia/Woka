@@ -36,6 +36,9 @@ fun PipCornerFlash() {
             val padding = 16.dp.toPx()
             val w = size.width
             val h = size.height
+            // **Stays a literal** (ME-170). This is not a foreground drawn on a scrim —
+            // it is the corner of the screen lighting up, and the white *is* the effect.
+            // `onScrim` is #F4F4F6, which would make the flash read as a grey smudge.
             val color = Color.White.copy(alpha = alpha)
 
             // Top-Left

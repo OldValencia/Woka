@@ -14,6 +14,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import com.woka.core.ui.theme.Theme
 
 /** Where the boost zone starts and ends — the HIG's own green and red. */
 private val BOOST_START = Color(0xFF34C759)
@@ -41,6 +42,10 @@ internal fun VolumeSliderFill(fraction: Float, ceiling: Float) {
 
     val unity = (1f / ceiling).coerceIn(0f, 1f)
     val boost = (filled - unity).coerceAtLeast(0f)
+    // Two identical stops, because the boost branch beside it needs a gradient and a
+    // brush of one colour is how this half says "no gradient here". It was a file-level
+    // `WHITE_BAR` until ME-170; a token has to be read where there is a composition.
+    val plainBar = listOf(Theme.viewer.onScrim, Theme.viewer.onScrim)
     Column(
         verticalArrangement = Arrangement.Bottom,
         // Clipped once, around both: clipping each segment would pinch the joint
@@ -59,7 +64,7 @@ internal fun VolumeSliderFill(fraction: Float, ceiling: Float) {
             )
         }
         val plain = filled - boost
-        if (plain > 0f) Segment(weight = plain, brush = Brush.verticalGradient(WHITE_BAR))
+        if (plain > 0f) Segment(weight = plain, brush = Brush.verticalGradient(plainBar))
     }
 }
 
@@ -78,7 +83,6 @@ private fun boostColor(fraction: Float, unity: Float): Color {
     return lerp(BOOST_START, BOOST_END, travelled)
 }
 
-private val WHITE_BAR = listOf(Color.White, Color.White)
 
 @Composable
 private fun ColumnScope.Segment(weight: Float, brush: Brush) {

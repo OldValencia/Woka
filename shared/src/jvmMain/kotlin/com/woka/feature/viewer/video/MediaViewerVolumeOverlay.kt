@@ -63,7 +63,7 @@ fun VolumeVerticalOverlay(
                     modifier = Modifier
                         .width(1.dp)
                         .height(96.dp)
-                        .background(Color.White.copy(alpha = 0.15f))
+                        .background(Theme.viewer.onScrimBorder)
                 )
             }
             VolumeColumn(volume, soundBoost, onVolumeChange, onSoundBoostChange, onHover)
@@ -106,7 +106,7 @@ private fun VolumeColumn(
             style = Theme.viewer.overlayLabel.copy(
                 // The reading takes the bar's own colour past 100 %, so the number and
                 // the track never disagree about whether this is the range that clips.
-                color = boostLabelColor(volume, ceiling) ?: Color.White
+                color = boostLabelColor(volume, ceiling) ?: Theme.viewer.onScrim
             )
         )
         MediaVerticalSlider(
