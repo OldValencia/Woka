@@ -2,6 +2,7 @@ package com.woka.feature.editor.shell
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,7 +34,11 @@ import com.woka.feature.editor.core.ParamSpec
  * `horizontalScroll` reads `x`.
  */
 @Composable
-internal fun ParamStrip(run: List<ParamSpec<*>>, params: ParamSet, writer: ParamWriter) {
+internal fun ParamStrip(
+    run: List<ParamSpec<*>>,
+    params: ParamSet,
+    writer: ParamWriter
+) {
     val all = run.filterIsInstance<FloatParam>()
     val sections = all.mapNotNull { it.section }.distinct()
 

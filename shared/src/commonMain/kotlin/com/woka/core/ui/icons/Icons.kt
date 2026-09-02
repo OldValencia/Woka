@@ -12,7 +12,7 @@ object Icons {
     /**
      * Static SVG resources. Short-cuts for generated Res.drawable.
      */
-    object Static {
+    object Static : EditorIcons() {
         val Add = Res.drawable.add
         val Close = Res.drawable.close
         val Delete = Res.drawable.delete
@@ -70,7 +70,21 @@ object Icons {
         val ExportWait = Res.drawable.export_wait
         val Share = Res.drawable.share
 
+        /**
+         * **Auto's**, not Styles' (ME-174). A wand means "make this better on its own",
+         * which is what Auto does; Styles offers a look to choose from and now wears
+         * [Palette] instead. Two tools on one glyph is the mistake `EditorRail` records
+         * having made twice.
+         */
         val MagicWand = Res.drawable.magic_wand
+        val Palette = Res.drawable.paintpalette
+
+        /**
+         * One parameter back to its detent, and all of them back to theirs — the same
+         * arrowhead in both, so the pair reads as one idea at two scopes.
+         */
+        val Reset = Res.drawable.arrow_trianglehead_counterclockwise
+        val ResetAll = Res.drawable.slider_horizontal_2_arrow_trianglehead_counterclockwise
 
         // The five markup shapes, for the chip row that used to spell them out
         val ShapeArrow = Res.drawable.arrow_up_right
@@ -116,32 +130,5 @@ object Icons {
         // Stream selection (subtitles)
         val Subtitles = Res.drawable.captions_bubble
         val SubtitlesOff = Res.drawable.captions_bubble_slash
-
-        // The adjustments chooser, one glyph per slider (ME-144). Named for what the
-        // control *is*, not for the symbol it happens to use, so swapping the art is
-        // a change to one line here rather than to the tool.
-        val Exposure = Res.drawable.plusminus_circle
-        val Brightness = Res.drawable.sun_max
-        val Contrast = Res.drawable.circle_lefthalf_filled
-        val BlackPoint = Res.drawable.circle_bottomhalf_filled
-        val Saturation = Res.drawable.drop
-        val Vibrance = Res.drawable.sparkles
-        val Warmth = Res.drawable.thermometer_sun
-        val Tint = Res.drawable.eyedropper_halffull
-
-        // The four ME-162 adds. Highlights and Shadows are a metaphor pair rather than
-        // more of the `circle.*half.filled` family above, chosen on screen: the halves
-        // read as geometry, and what these two do is light and dark.
-        val Highlights = Res.drawable.sun_max_circle
-        val Shadows = Res.drawable.moon_circle
-        val Sharpness = Res.drawable.camera_filters
-        val Noise = Res.drawable.aqi_medium
-
-        /** Held down, the editor draws the picture as shot (ME-173). */
-        val PeekOriginal = Res.drawable.paintbrush_slash
-
-        // Crop's orientation, as a pair — a tall frame and a wide one (ME-144).
-        val Portrait = Res.drawable.rectangle_portrait
-        val Landscape = Res.drawable.rectangle
     }
 }

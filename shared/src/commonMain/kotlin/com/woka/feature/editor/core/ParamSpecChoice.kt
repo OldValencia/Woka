@@ -90,6 +90,14 @@ enum class ParamSwatchShape { Dot, Plate }
 data class ActionParam(
     override val key: String,
     val label: String,
+    /**
+     * Null draws the [label] as a button, which is every action today and what Transform
+     * has always looked like. A glyph is what a **header** action needs (ME-174): two
+     * words at the top of a card compete with the tabs beside them, and an icon with a
+     * tooltip does not. Carried on the spec for the same reason `FloatParam` carries one
+     * since ME-144 — the shell must not learn a tool's keys to pick art for them.
+     */
+    val icon: DrawableResource? = null,
     override val default: Boolean = false
 ) : ParamSpec<Boolean> {
     override fun encode(value: Boolean) = BoolValue(value)

@@ -55,36 +55,47 @@ internal fun ParamValueControls(spec: FloatParam, params: ParamSet, writer: Para
     fun toValue(fraction: Float) = spec.range.start + fraction * span
     fun toFraction(v: Float) = if (span == 0f) 0f else (v - spec.range.start) / span
 
-    Box(modifier = Modifier.fillMaxWidth()) {
-        DetentSlider(
-            fraction = toFraction(value),
-            colors = DetentSliderColors(
-                track = Theme.viewer.onScrimHover,
-                detent = Theme.viewer.onScrimBorder,
-                knob = Theme.viewer.onScrim,
-                fill = Theme.viewer.onScrim
-            ),
-            detents = listOf(toFraction(spec.detent)),
-            // Keyed on the spec for the reason `FloatControl` recorded before the
-            // slider moved here: Markup swaps `Width` for `Text size` in the same
-            // position, and a gesture that outlived the swap wrote the wrong key.
-            gestureKey = spec.key,
-            // **Thinner than the component's default** (reported by hand 2026-09-01).
-            // This slider used to live in a 224 dp popover; ME-161 put it across a
-            // ~390 dp card, where 3 dp of full-strength `onScrim` reads as a stripe
-            // painted over the panel rather than as a track with a knob on it.
-            trackHeight = INLINE_TRACK_HEIGHT,
-            onTap = { writer.edit(spec, toValue(it), settled = true) },
-            onDrag = { writer.edit(spec, toValue(it), settled = false) },
-            onDragEnd = writer::settle,
-            modifier = Modifier.testTag("param-${spec.key}-slider")
-        )
-    }
+    // **One row, not two bands** (2026-09-02). The number used to sit in a band of its
+    // own — a boxed field alone in the middle of the card with an icon beside it, which
+    // read as an orphan rather than as this slider's value. At the end of the track it is
+    // where every slider in every editor puts it, and the card loses a whole band.
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                // Right-click anywhere on the track, and the value goes back to the mark
+                // already drawn on it — the same gesture the chips have carried since
+                // 2026-08-29, now on the two controls that were missing it.
+                .resetOnRightClick { writer.resetTo(spec) }
+        ) {
+            DetentSlider(
+                fraction = toFraction(value),
+                colors = DetentSliderColors(
+                    track = Theme.viewer.onScrimHover,
+                    detent = Theme.viewer.onScrimBorder,
+                    knob = Theme.viewer.onScrim,
+                    fill = Theme.viewer.onScrim
+                ),
+                detents = listOf(toFraction(spec.detent)),
+                // Keyed on the spec for the reason `FloatControl` recorded before the
+                // slider moved here: Markup swaps `Width` for `Text size` in the same
+                // position, and a gesture that outlived the swap wrote the wrong key.
+                gestureKey = spec.key,
+                // **Thinner than the component's default** (reported by hand 2026-09-01).
+                // This slider used to live in a 224 dp popover; ME-161 put it across a
+                // ~390 dp card, where 3 dp of full-strength `onScrim` reads as a stripe
+                // painted over the panel rather than as a track with a knob on it.
+                trackHeight = INLINE_TRACK_HEIGHT,
+                onTap = { writer.edit(spec, toValue(it), settled = true) },
+                onDrag = { writer.edit(spec, toValue(it), settled = false) },
+                onDragEnd = writer::settle,
+                modifier = Modifier.testTag("param-${spec.key}-slider")
+            )
+        }
         ValueField(spec, value, writer)
         ResetButton(
             enabled = value != spec.detent,

@@ -92,7 +92,8 @@ object FilterTool : EditorTool {
         title = "Styles",
         summary = "Undertones, looks and a tone pad",
         // Its own glyph: a rail of identical squares is a mistake made twice already.
-        icon = Icons.Static.MagicWand,
+        // The wand went to Auto, which is what a wand means (ME-174).
+        icon = Icons.Static.Palette,
         domain = ToolDomain.Color,
         order = 1,
         cardinality = ToolCardinality.Single,

@@ -59,8 +59,15 @@ object AdjustTool : AdjustParams(), EditorTool {
         Auto,
         Exposure, Brightness, Contrast, Highlights, Shadows, BlackPoint,
         Saturation, Vibrance, Warmth, Tint,
-        Noise, Sharpness
+        Noise, Sharpness,
+        ResetAll
     )
+
+    /**
+     * The two that set the twelve rather than being two of them (ME-174) — drawn at the
+     * card's top right, and dropped from the rows by the shell.
+     */
+    override fun header(rows: List<ParamSpec<*>>): List<ParamSpec<*>> = listOf(Auto, ResetAll)
 
     /** What it performs is `AdjustStage`'s, which is where the order is argued. */
     override fun stage(params: ParamSet): ToolStage? = adjustStage(params)

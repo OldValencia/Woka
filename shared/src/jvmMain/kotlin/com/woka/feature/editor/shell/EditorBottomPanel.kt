@@ -102,6 +102,7 @@ internal fun BoxScope.EditorBottomPanel(
                 animationSpec = spring(dampingRatio = 0.82f, stiffness = 300f)
             )
 
+            val picture = PictureFacts(frame, engine.sourceSize, engine.stats)
             CompositionLocalProvider(LocalInspectorAccessory provides accessory) {
                 GooeyPair(
                     progress = progress,
@@ -118,12 +119,14 @@ internal fun BoxScope.EditorBottomPanel(
                         // range and never a number.
                         maxWidth = ceiling,
                         plateAlpha = plateAlpha,
+                        // Beside the title, because these are about the card (ME-174).
+                        actions = { InspectorHeaderActions(activeTool, session, picture, selectedId) },
                         content = {
                             ParamRows(
                                 tool = activeTool,
                                 session = session,
                                 document = document,
-                                picture = PictureFacts(frame, engine.sourceSize, engine.stats),
+                                picture = picture,
                                 selectedId = selectedId
                             ) { preview, modifier ->
                                 engine.Thumbnail(preview, modifier)

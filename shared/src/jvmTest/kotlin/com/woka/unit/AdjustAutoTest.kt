@@ -117,6 +117,20 @@ class AdjustAutoTest {
         assertEquals(ParamSet(), autoAdjustments(empty, ParamSet()))
     }
 
+    /**
+     * Reset All needs no maths and must keep needing none: `ParamWriter` seeds an action
+     * from `defaults()`, so the press *is* the reset. What would break it is giving it a
+     * `resolve`, so this asserts the tool answers null for it.
+     */
+    @Test
+    fun `reset all is not resolved into anything`() {
+        val picture = stats(spike(60), black = 0.1f, white = 0.4f, mean = 0.23f)
+        assertEquals(
+            null,
+            AdjustTool.resolve(AdjustTool.ResetAll, neutral, IntSize.Zero, picture)
+        )
+    }
+
     /** And with nothing measured yet, Auto is a press that does nothing rather than a crash. */
     @Test
     fun `auto with no statistics resolves to nothing`() {

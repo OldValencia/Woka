@@ -70,7 +70,11 @@ internal fun ParamRows(
     // (ME-155). `rows` still names it, and must: it is still written, still folded and
     // still saved — only the place it is reached from has moved.
     val ridden = shown.flatMap { tool.folded(it, shown) }.toSet()
-    val visible = shown.filterNot { it in ridden }
+    // And a spec the tool puts in the card's header gets no row either (ME-174) — the
+    // panel draws it beside the card's title, because it is *about* the other controls
+    // rather than one of them.
+    val header = tool.header(shown)
+    val visible = shown.filterNot { it in ridden || it in header }
     // Which of those the tool draws as one compact bar — none, for every tool but Markup.
     val compact = tool.lines(visible)
     Column(

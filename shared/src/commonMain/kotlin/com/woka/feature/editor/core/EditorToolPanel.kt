@@ -43,6 +43,21 @@ interface EditorToolPanel {
     fun lines(rows: List<ParamSpec<*>>): List<List<ParamSpec<*>>> = emptyList()
 
     /**
+     * Specs drawn in the card's **header** — its top right — rather than as rows of
+     * their own (ME-174).
+     *
+     * The same shape as [folded] and for the same reason: only the tool knows that one of
+     * its controls is *about* the others rather than one of them. Adjust's Auto and Reset
+     * All set the twelve sliders, so standing in the stack with them they read as a
+     * thirteenth and fourteenth adjustment.
+     *
+     * The shell drops whatever is named here from the rows, exactly as it drops [folded].
+     * Empty for every tool but Adjust — this is a declaration, never a rule about
+     * `ActionParam`: Transform's four actions are the tool, and stay rows.
+     */
+    fun header(rows: List<ParamSpec<*>>): List<ParamSpec<*>> = emptyList()
+
+    /**
      * Specs that ride inside [spec]'s own popover instead of taking a control of their
      * own — `Corner` inside `Fill`, and nothing else today (ME-155).
      *

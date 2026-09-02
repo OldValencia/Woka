@@ -2,7 +2,10 @@ package com.woka.feature.editor.shell
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -19,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -32,7 +36,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.woka.core.ui.icons.Icons
 import com.woka.core.ui.theme.Theme
+import com.woka.feature.viewer.shell.ViewerTooltip
+import org.jetbrains.compose.resources.painterResource
 import com.woka.feature.editor.core.FloatParam
 
 /**
@@ -65,6 +72,9 @@ internal fun ValueField(spec: FloatParam, value: Float, writer: ParamWriter) {
             .clip(RoundedCornerShape(8.dp))
             .background(Theme.viewer.onScrimHover)
             .border(1.dp, Theme.viewer.onScrimBorder, RoundedCornerShape(8.dp))
+            // The same gesture the track and the chips answer: right-click is reset
+            // wherever a value is shown, so nothing has to be remembered per control.
+            .resetOnRightClick { writer.resetTo(spec) }
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -106,20 +116,30 @@ internal fun ValueField(spec: FloatParam, value: Float, writer: ParamWriter) {
 /** The written-out twin of the right-click every control already answers (`ParamReset`). */
 @Composable
 internal fun ResetButton(enabled: Boolean, tag: String, onClick: () -> Unit) {
-    BasicText(
-        text = "Reset",
-        modifier = Modifier
-            .clip(RoundedCornerShape(7.dp))
-            .then(if (enabled) Modifier.pointerHoverIcon(PointerIcon.Hand) else Modifier)
-            .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 5.dp)
-            .testTag(tag),
-        style = TextStyle(
-            color = if (enabled) Theme.colors.accentEditor else Theme.viewer.onScrimDisabled,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold
-        )
-    )
+    ViewerTooltip("Reset") {
+        Box(
+            modifier = Modifier
+                .size(RESET_SIZE)
+                .clip(RoundedCornerShape(7.dp))
+                .then(if (enabled) Modifier.pointerHoverIcon(PointerIcon.Hand) else Modifier)
+                .clickable(enabled = enabled, onClick = onClick)
+                .testTag(tag),
+            contentAlignment = Alignment.Center
+        ) {
+            Image(
+                painter = painterResource(Icons.Static.Reset),
+                contentDescription = null,
+                modifier = Modifier.size(RESET_GLYPH),
+                colorFilter = ColorFilter.tint(
+                    if (enabled) Theme.colors.accentEditor else Theme.viewer.onScrimDisabled
+                )
+            )
+        }
+    }
 }
+
+/** Sized against the field beside it, not against the word it replaced. */
+private val RESET_SIZE = 22.dp
+private val RESET_GLYPH = 13.dp
 
 private val FIELD_WIDTH = 84.dp

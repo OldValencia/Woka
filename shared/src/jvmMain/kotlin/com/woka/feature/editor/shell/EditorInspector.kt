@@ -53,6 +53,20 @@ internal fun EditorInspector(
      */
     maxWidth: Dp = EditorTokens.Inspector.maxWidth,
     /**
+     * Drawn beside [title], for the actions that are about **this card** rather than
+     * about one of its controls — Adjust's Auto and Reset All (ME-174).
+     *
+     * **Not the Reset that was removed from here on 2026-08-19.** That one cleared the
+     * working document — every tool's operations — from a header naming one tool. These
+     * write this tool's own parameters and nothing else, which is the difference that
+     * makes the position right this time rather than wrong again.
+     *
+     * Beside the title and not at the card's far edge, because this row is deliberately
+     * **not** `fillMaxWidth` (see [InspectorHeader]): pushing them right would need that
+     * back, and it is what made every card measure the ceiling.
+     */
+    actions: @Composable () -> Unit = {},
+    /**
      * How much of its own plate this card paints (ME-155).
      *
      * 1 when it stands alone. While a control has a panel open beside it, `GooeyPair`
@@ -79,7 +93,7 @@ internal fun EditorInspector(
             .testTag("editor-inspector"),
         verticalArrangement = Arrangement.spacedBy(EditorTokens.Inspector.rowGap)
     ) {
-        InspectorHeader(title)
+        InspectorHeader(title, actions)
         content()
         if (footnote != null) InspectorFootnote(footnote)
     }
@@ -108,7 +122,7 @@ private fun InspectorFootnote(text: String) {
  * beside Back where a destructive control belongs (ME-107).
  */
 @Composable
-private fun InspectorHeader(title: String) {
+private fun InspectorHeader(title: String, actions: @Composable () -> Unit) {
     Row(
         // **Not `fillMaxWidth`** (measured 2026-08-29). Inside a `widthIn` column that
         // fills the *ceiling*, so every card in the editor measured 420 dp whatever was
@@ -118,7 +132,9 @@ private fun InspectorHeader(title: String) {
         // panel, and it was the first thing reported.
         modifier = Modifier.padding(bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        // Spaced, not `SpaceBetween`: with the row sized to its content there is no
+        // space to put between them, and the two would sit flush against the name.
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         BasicText(
             text = title,
@@ -129,5 +145,6 @@ private fun InspectorHeader(title: String) {
                 fontWeight = FontWeight.Bold
             )
         )
+        actions()
     }
 }
