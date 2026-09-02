@@ -40,6 +40,7 @@ internal fun EditorTopBarSetup(
     canUndo: Boolean,
     canRedo: Boolean,
     canRevert: Boolean,
+    peek: PeekState,
     onLeave: () -> Unit,
     onRevert: () -> Unit,
     onUndo: () -> Unit,
@@ -53,6 +54,7 @@ internal fun EditorTopBarSetup(
     // rebuild the accessory while the user is looking at it.
     val curCanUndo by rememberUpdatedState(canUndo)
     val curCanRevert by rememberUpdatedState(canRevert)
+    val curPeek by rememberUpdatedState(peek)
     val curRevert by rememberUpdatedState(onRevert)
     val curCanRedo by rememberUpdatedState(canRedo)
     val curLeave by rememberUpdatedState(onLeave)
@@ -73,6 +75,7 @@ internal fun EditorTopBarSetup(
     DisposableEffect(Unit) {
         val previousLeading = accessories.leadingAccessory
         val previousCenter = accessories.centerAccessory
+        val previousTrailing = accessories.centerTrailingAccessory
         val previousRight = accessories.rightAccessory
         val previousBack = accessories.backActionOverride
 
@@ -94,6 +97,11 @@ internal fun EditorTopBarSetup(
         if (previousCenter == null) {
             accessories.centerAccessory = { CanvasZoomPill() }
         }
+        // **Its own slot, not the centre** (ME-173). Opened from the viewer the centre is
+        // that viewer's pill and must stay the very same lambda — wrapping it would
+        // replay its enter animation — so the peek button goes beside it instead. Opened
+        // from the grid it lands beside the zoom pill. Present on both paths either way.
+        accessories.centerTrailingAccessory = { EditorPeekButton(curPeek) }
         accessories.rightAccessory = {
             EditorActions(
                 canUndo = curCanUndo,
@@ -110,6 +118,7 @@ internal fun EditorTopBarSetup(
             override.edited = false
             accessories.leadingAccessory = previousLeading
             accessories.centerAccessory = previousCenter
+            accessories.centerTrailingAccessory = previousTrailing
             accessories.rightAccessory = previousRight
             accessories.backActionOverride = previousBack
         }

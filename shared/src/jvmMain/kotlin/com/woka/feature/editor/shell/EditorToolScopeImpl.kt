@@ -83,8 +83,17 @@ internal class EditorToolScopeImpl(
  * A crop folded into the picture underneath its own rectangle is a crop measuring
  * itself — the frame shrinks, the rect is clamped into it, and it shrinks again.
  */
-internal fun canvasDocumentFor(tool: EditorTool?, document: EditDocument): EditDocument =
-    (tool as? CanvasTool)
+internal fun canvasDocumentFor(
+    tool: EditorTool?,
+    document: EditDocument,
+    peeking: Boolean = false
+): EditDocument {
+    // ME-173: the whole original, geometry included, so the frame returns to the
+    // source's own dimensions. Nothing is written and no op is dropped — the caller
+    // still holds the document, and releasing the button asks for it again.
+    if (peeking) return EditDocument()
+    return (tool as? CanvasTool)
         ?.takeIf { it.previewsThroughOverlay }
         ?.let { document.without(it.manifest.id) }
         ?: document
+}

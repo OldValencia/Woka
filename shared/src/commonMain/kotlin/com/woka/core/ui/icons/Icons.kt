@@ -137,6 +137,9 @@ object Icons {
         val Sharpness = Res.drawable.camera_filters
         val Noise = Res.drawable.aqi_medium
 
+        /** Held down, the editor draws the picture as shot (ME-173). */
+        val PeekOriginal = Res.drawable.paintbrush_slash
+
         // Crop's orientation, as a pair — a tall frame and a wide one (ME-144).
         val Portrait = Res.drawable.rectangle_portrait
         val Landscape = Res.drawable.rectangle

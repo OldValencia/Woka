@@ -78,8 +78,15 @@ fun GlobalTopBar(
             }
         }
 
-        Box(modifier = Modifier.align(Alignment.Center)) {
+        // A Row rather than a Box since ME-173: the pair is centred, so an editor
+        // control can sit beside the viewer's pill without being composed inside it.
+        Row(
+            modifier = Modifier.align(Alignment.Center),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             topBarAccessories.centerAccessory?.invoke()
+            topBarAccessories.centerTrailingAccessory?.invoke()
         }
 
         // Win Controls & Right Accessory on the right

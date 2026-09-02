@@ -29,8 +29,12 @@ internal fun EditorCanvasOverlay(
     document: EditDocument,
     geometry: EditorCanvasGeometry,
     canvasKeys: CanvasKeys?,
-    selection: ToolSelection
+    selection: ToolSelection,
+    peeking: Boolean = false
 ) {
+    // A crop frame or a markup handle left up while the original is shown would point
+    // at where the pixels used to be (ME-173).
+    if (peeking) return
     ActiveToolOverlay(
         // With nothing open, the tool that owns a mark is mounted anyway, so the mark
         // can still be moved (ME-149) — `idleCanvasTool` holds why it is one tool and

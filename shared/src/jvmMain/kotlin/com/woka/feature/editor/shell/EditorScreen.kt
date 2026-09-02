@@ -58,6 +58,7 @@ internal fun EditorScreen(
     val tools by registry.tools(engine.kind).collectAsState()
 
     var activeToolId by remember { mutableStateOf<String?>(null) }
+    val peek = remember { PeekState() }
 
     // **Hoisted out of the overlay's scope** (ME-114). The inspector needs it too, so that
     // choosing a colour with a shape selected restyles that shape — and a selection living
@@ -74,6 +75,7 @@ internal fun EditorScreen(
         canUndo = canUndo,
         canRedo = canRedo,
         canRevert = canRevert,
+        peek = peek,
         onLeave = onCancel,
         onRevert = onRevert,
         onUndo = session::undo,
@@ -91,7 +93,7 @@ internal fun EditorScreen(
     }
 
     val activeTool = tools.firstOrNull { it.manifest.id == activeToolId }
-    val canvasDocument = canvasDocumentFor(activeTool, document)
+    val canvasDocument = canvasDocumentFor(activeTool, document, peek.active)
     val skipped = skippedOps(document, registry, engine.kind)
 
     // One `if`, and a photograph pays exactly this much for the frame band existing.
@@ -123,7 +125,8 @@ internal fun EditorScreen(
                     document = canvasDocument,
                     geometry = geometry,
                     canvasKeys = canvasKeys,
-                    selection = selection
+                    selection = selection,
+                    peeking = peek.active
                 )
             }
         )

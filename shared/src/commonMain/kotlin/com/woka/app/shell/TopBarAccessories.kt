@@ -26,6 +26,17 @@ class TopBarAccessoriesState {
      */
     var leadingAccessory by mutableStateOf<(@Composable () -> Unit)?>(null)
     var centerAccessory by mutableStateOf<(@Composable () -> Unit)?>(null)
+
+    /**
+     * Beside [centerAccessory], never instead of it (ME-173).
+     *
+     * The editor wanted a control next to the viewer's pill and there was no way to add
+     * one: taking the centre removes the viewer's zoom, eye and Edit, and *wrapping* the
+     * pill in a new parent re-composes it, so its enter animation runs again on a control
+     * that never left. A second slot leaves the accessory itself untouched — the same
+     * lambda, in the same place — and `EditorTopBarUiTest` asserts that identity.
+     */
+    var centerTrailingAccessory by mutableStateOf<(@Composable () -> Unit)?>(null)
     var rightAccessory by mutableStateOf<(@Composable () -> Unit)?>(null)
     var backActionOverride by mutableStateOf<(() -> Unit)?>(null)
 
