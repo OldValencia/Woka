@@ -100,7 +100,7 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-142](tickets/implemented/ME-142-two-more-adjustments-the-matrix-can-express.md) | Two more adjustments the matrix can express | **done** 2026-09-01 — the block asked for three and only one of them was affine; confirmed by hand |
 | [ME-164](tickets/implemented/ME-164-the-adjustments-panel-groups-what-it-shows.md) | The adjustments panel groups what it shows | **done** 2026-09-01 — asked for by hand at eight, and the complaint was the mixing rather than the scrolling. Confirmed by hand, tab metrics tuned by the author |
 | ME-143                                                                     | ~~Crop that can pull one edge~~ | **dropped** 2026-09-01 — see `tickets/backlog.md` §900; the id is retained and never reused |
-| [ME-168](tickets/ME-168-opening-a-large-photograph-must-not-freeze-the-window.md) | Opening a large photograph must not freeze the window | **open** |
+| [ME-168](tickets/implemented/ME-168-opening-a-large-photograph-must-not-freeze-the-window.md) | Opening a large photograph must not freeze the window | **done** 2026-09-02 — the engine needed no guard after all: `Surface` and `Thumbnail` are one call, so one gate covers both and `ImageEditorEngine` was not touched. Confirmed by hand on a 252 MB HEIC |
 | [ME-165](tickets/ME-165-a-stage-that-is-a-shader.md)                       | A stage that is a shader | **open** |
 | [ME-162](tickets/ME-162-four-adjustments-the-matrix-cannot-express.md)     | Four adjustments the matrix cannot express | **open** |
 | [ME-166](tickets/ME-166-the-picture-reaches-the-tool.md)                   | The picture reaches the tool | **open** |
@@ -819,9 +819,12 @@ it becomes the next question, per `ai/docs/conventions/feature-docs.md`.
   667 ms to **384 MB** of native pixels; a 24 MP one is 91 MB. The proxy is cheap at both — 2560 px
   in 6–8 ms — and it is what the canvas draws, so *editing* a huge photo is comfortable. *Holding* it
   is not: 384 MB exceeds the whole 256 MB `ImageBitmapCache` budget, so one such picture would evict
-  everything else and still not fit. The guard rail this points at is "keep the native bitmap out of
+  everything else and still not fit. ~~The guard rail this points at is "keep the native bitmap out of
   the shared cache for the duration of an edit", not "refuse the file" — but the rail itself is still
-  a ticket to write.
+  a ticket to write.~~ — **closed 2026-09-02** in two halves that turned out to be different
+  questions: ME-123 built the rail (a huge source never enters the shared cache), and ME-168 answered
+  the one nobody had noticed — the proxy was decoded *while composing*, so the 667 ms was a frozen
+  window rather than a slow one. Both confirmed by hand, the second on a 252 MB HEIC.
 - **Save cancellation.** What happens to an in-flight save when the app is closing. Nothing writes a
   partial file — the atomic move is the last step — but the banner and the job's lifetime are unstated.
 - **Editor plus PiP.** ~~Who owns the keyboard, and whether editing is allowed at all then~~ —

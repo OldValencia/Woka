@@ -4,7 +4,7 @@
 |---|---|
 | **Order** | first of the 100 track — the only defect on a shipped surface |
 | **Depends on** | ME-123 |
-| **Feature** | [Image Editor](../image-editor.md) |
+| **Feature** | [Image Editor](../../image-editor.md) |
 
 **Goal.** Move the editor's still-proxy decode off the composition thread, so opening the editor on a
 large photograph draws a frame instead of blocking.

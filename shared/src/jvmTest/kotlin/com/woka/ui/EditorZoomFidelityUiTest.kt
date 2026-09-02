@@ -54,19 +54,30 @@ class EditorZoomFidelityUiTest {
         return file
     }
 
+    /**
+     * Two claims on one composition: the proxy is what Fit draws (ME-116), and it is
+     * not there on the first frame (ME-168). The second is asserted on that frame
+     * rather than on a clock — a timing test would pass on a fast machine with the
+     * synchronous decode still in.
+     */
     @Test
-    fun `at fit the canvas draws the proxy`() = onUi {
+    fun `at fit the canvas draws the proxy, and not while composing`() = onUi {
         val file = wideSource()
+        var firstWasEmpty: Boolean? = null
         var width = 0
         setContent {
             // Fit for a 3000 px picture in an ordinary window, and far below the
             // proxy's own 0.85 of source — there is nothing here to sharpen.
             CompositionLocalProvider(LocalCanvasScale provides 0.5f) {
-                width = rememberCanvasSource(file, 0, EditorPlayback(), sourceSize).width
+                val source = rememberCanvasSource(file, 0, EditorPlayback(), sourceSize)
+                if (firstWasEmpty == null) firstWasEmpty = source == null
+                width = source?.width ?: 0
             }
         }
-        waitForIdle()
+        // The proxy is decoded off the composition's dispatcher, so idling is not enough.
+        waitUntil(timeoutMillis = 10_000) { width != 0 }
         assertEquals(PROXY_MAX_PX, width, "the canvas asked for a native decode it did not need")
+        assertEquals(true, firstWasEmpty, "the proxy was decoded while composing")
     }
 
     @Test
@@ -75,7 +86,7 @@ class EditorZoomFidelityUiTest {
         var width = 0
         setContent {
             CompositionLocalProvider(LocalCanvasScale provides 2f) {
-                width = rememberCanvasSource(file, 0, EditorPlayback(), sourceSize).width
+                width = rememberCanvasSource(file, 0, EditorPlayback(), sourceSize)?.width ?: 0
             }
         }
         // The decode runs off the composition's dispatcher, so idling is not enough.
@@ -95,9 +106,9 @@ class EditorZoomFidelityUiTest {
         val before = ImageBitmapCache.retainedBytes
         var width = 0
         setContent {
-            width = rememberCanvasSource(file, 0, EditorPlayback(), sourceSize).width
+            width = rememberCanvasSource(file, 0, EditorPlayback(), sourceSize)?.width ?: 0
         }
-        waitForIdle()
+        waitUntil(timeoutMillis = 10_000) { width != 0 }
         assertEquals(PROXY_MAX_PX, width, "a thumbnail read a canvas scale it was never given")
         assertTrue(
             ImageBitmapCache.retainedBytes <= before,
@@ -118,7 +129,7 @@ class EditorZoomFidelityUiTest {
         var scale by mutableStateOf(2f)
         setContent {
             CompositionLocalProvider(LocalCanvasScale provides scale) {
-                width = rememberCanvasSource(file, 0, EditorPlayback(), sourceSize).width
+                width = rememberCanvasSource(file, 0, EditorPlayback(), sourceSize)?.width ?: 0
             }
         }
         waitUntil(timeoutMillis = 10_000) { width == NATIVE_WIDTH }

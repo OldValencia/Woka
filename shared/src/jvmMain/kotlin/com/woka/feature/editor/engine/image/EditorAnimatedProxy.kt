@@ -47,18 +47,30 @@ internal class EditorPlayback {
  * [isAnimating] is about the **source**, not about the clock: a paused GIF is still
  * showing an animation frame, and replacing it with the file's native first frame
  * would be a different picture, not a sharper one.
+ *
+ * [bitmap] is null while the proxy is still being decoded (ME-168). Nothing is drawn
+ * then — see [rememberEditorFrame].
  */
 @Immutable
-internal data class EditorFrame(val bitmap: ImageBitmap, val isAnimating: Boolean)
+internal data class EditorFrame(val bitmap: ImageBitmap?, val isAnimating: Boolean)
 
 /**
  * The picture the canvas draws: one frame of an animation while it runs, or the still
  * proxy for everything else.
  *
- * **The still comes first and never goes away.** It is decoded synchronously, as it
- * always was, so the canvas has a picture on its first composition; the animation is
- * read on the IO dispatcher behind it and takes over when it arrives. A file that is
- * not an animation, or is too large to hold, simply never gets one.
+ * **Both are decoded off the composition thread** (ME-168). The still used to be read
+ * inside a `remember`, which runs *while composing* — 667 ms for the 100 MP source
+ * ME-010 measured, ~150 ms for a 24 MP one, and the window frozen for exactly that
+ * long on every open and every frame change. It now runs on the same IO dispatcher the
+ * animation always used, and the canvas draws nothing until it lands.
+ *
+ * **Nothing is the right placeholder here.** §4.1 mounts the editor over a frozen,
+ * still-mounted viewer, so an empty picture box shows the picture the user was already
+ * looking at. A spinner would cover it with less.
+ *
+ * **The still comes first and never goes away.** The animation is read behind it and
+ * takes over when it arrives. A file that is not an animation, or is too large to hold,
+ * simply never gets one.
  *
  * The clock is `playFrames`, the same loop the viewer's frame index runs on — the
  * timings, the wrap and the repeat count are one implementation, not two.
@@ -74,7 +86,11 @@ internal fun rememberEditorFrame(
     frameIndex: Int,
     playback: EditorPlayback
 ): EditorFrame {
-    val still = remember(file, frameIndex) { EditorProxy.load(file, frameIndex) }
+    val still by produceState<ImageBitmap?>(null, file, frameIndex) {
+        value = withContext(ImageBitmapCache.ioDispatcher) {
+            EditorProxy.load(file, frameIndex)
+        }
+    }
 
     val animation by produceState<EditorAnimation?>(null, file) {
         value = withContext(ImageBitmapCache.ioDispatcher) { editorAnimationOf(file) }

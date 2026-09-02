@@ -27,6 +27,10 @@ private const val SHARPEN_MARGIN = 1.05f
  *
  * A separate file because `ImageEditorEngine` is at the size mandate, and because the
  * sharing is the point worth stating once rather than twice.
+ *
+ * **The one guard for a proxy that has not arrived** (ME-168), which is why the engine's
+ * `Surface` and `Thumbnail` carry none: both are this call, so guarding here guards both
+ * and there is no second place to keep in step.
  */
 @Composable
 internal fun ImageCanvas(
@@ -37,8 +41,9 @@ internal fun ImageCanvas(
     recipe: RasterRecipe,
     modifier: Modifier
 ) {
+    val source = rememberCanvasSource(file, frameIndex, playback, sourceSize) ?: return
     RasterSurface(
-        source = rememberCanvasSource(file, frameIndex, playback, sourceSize),
+        source = source,
         sourceSize = sourceSize,
         recipe = recipe,
         modifier = modifier
@@ -59,6 +64,10 @@ internal fun ImageCanvas(
  * — the filter strip's thumbnails above all — fails this test by arithmetic and is
  * never named here.
  *
+ * Null until the proxy has been decoded (ME-168), and the native frame is not asked for
+ * before then: the two decodes would otherwise race for the same file, and the picture
+ * the zoom is meant to sharpen is the one that has not arrived yet.
+ *
  * Split out of [ImageCanvas] so a test can assert on the bitmap `RasterSurface` was
  * handed, which is not observable once it has been drawn into a `Canvas`.
  */
@@ -68,15 +77,18 @@ internal fun rememberCanvasSource(
     frameIndex: Int,
     playback: EditorPlayback,
     sourceSize: IntSize
-): ImageBitmap {
+): ImageBitmap? {
     val frame = rememberEditorFrame(file, frameIndex, playback)
-    val proxyScale = if (sourceSize.width > 0) {
-        frame.bitmap.width.toFloat() / sourceSize.width
+    val proxy = frame.bitmap
+    val proxyScale = if (proxy != null && sourceSize.width > 0) {
+        proxy.width.toFloat() / sourceSize.width
     } else {
         1f
     }
     // Never under an animation: those are held frame by frame at proxy size, and one
     // native still swapped in would be a different picture rather than a sharper one.
-    val wanted = !frame.isAnimating && LocalCanvasScale.current > proxyScale * SHARPEN_MARGIN
-    return rememberNativeFrame(file, frameIndex, sourceSize, wanted) ?: frame.bitmap
+    val wanted = proxy != null &&
+        !frame.isAnimating &&
+        LocalCanvasScale.current > proxyScale * SHARPEN_MARGIN
+    return rememberNativeFrame(file, frameIndex, sourceSize, wanted) ?: proxy
 }
