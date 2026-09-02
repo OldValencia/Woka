@@ -1,30 +1,16 @@
 package com.woka.feature.editor.tools.adjust
 
+import androidx.compose.ui.unit.IntSize
 import com.woka.core.ui.icons.Icons
 import com.woka.feature.editor.core.EditorTool
-import com.woka.feature.editor.core.FloatParam
 import com.woka.feature.editor.core.ParamSet
 import com.woka.feature.editor.core.ParamSpec
+import com.woka.feature.editor.core.SourceStats
 import com.woka.feature.editor.core.ToolCardinality
 import com.woka.feature.editor.core.ToolDomain
 import com.woka.feature.editor.core.ToolInteraction
 import com.woka.feature.editor.core.ToolManifest
 import com.woka.feature.editor.core.ToolStage
-
-/** Every adjustment runs the same span, so a slider means the same thing in each row. */
-private val SPAN = -100f..100f
-
-/**
- * The three groups the panel shows one at a time (ME-164), Photos' own split.
- *
- * Reported by hand at eight: what was wrong was not the length of the strip but that
- * Exposure sat beside Warmth for no reason a reader could see. **Detail** arrived with
- * ME-162. `ParamRowStrip` derives its segmented control from the sections the specs
- * declare, so a third group is a third constant here and no UI change anywhere.
- */
-private const val LIGHT = "Light"
-private const val COLOUR = "Colour"
-private const val DETAIL = "Detail"
 
 /**
  * Adjustments — twelve sliders, one colour matrix and three shaders (ME-111, ME-142,
@@ -46,73 +32,12 @@ private const val DETAIL = "Detail"
  * Vignette, Brilliance and the real Vibrance are each a shader and a `FloatParam` now,
  * and wait in the backlog on the panel rather than on the engine.
  *
- * **Auto is deliberately absent.** An automatic correction reads the *picture* — a
- * histogram, a black point — and a tool receives parameters and nothing else;
- * `EditorTool.resolve` hands over the frame, never the pixels. It waits in the backlog
- * for a hook that something actually asks for.
+ * **Auto reads the picture, and only four of these follow from it.** ME-166 gave
+ * `resolve` a histogram — numbers, never pixels — and `AdjustAuto` turns it into Black
+ * Point, Exposure, Shadows and Highlights. Contrast, the four colour sliders, Noise and
+ * Sharpness are left where the user put them, for reasons that file states.
  */
-object AdjustTool : EditorTool {
-
-    val Exposure =
-        FloatParam(
-            "exposure", "Exposure", SPAN,
-            default = 0f, section = LIGHT, icon = Icons.Static.Exposure
-        )
-    val Brightness =
-        FloatParam(
-            "brightness", "Brightness", SPAN,
-            default = 0f, section = LIGHT, icon = Icons.Static.Brightness
-        )
-    val Contrast =
-        FloatParam(
-            "contrast", "Contrast", SPAN,
-            default = 0f, section = LIGHT, icon = Icons.Static.Contrast
-        )
-    val BlackPoint =
-        FloatParam(
-            "blackPoint", "Black Point", SPAN,
-            default = 0f, section = LIGHT, icon = Icons.Static.BlackPoint
-        )
-    val Highlights =
-        FloatParam(
-            "highlights", "Highlights", SPAN,
-            default = 0f, section = LIGHT, icon = Icons.Static.Highlights
-        )
-    val Shadows =
-        FloatParam(
-            "shadows", "Shadows", SPAN,
-            default = 0f, section = LIGHT, icon = Icons.Static.Shadows
-        )
-    val Saturation =
-        FloatParam(
-            "saturation", "Saturation", SPAN,
-            default = 0f, section = COLOUR, icon = Icons.Static.Saturation
-        )
-    val Vibrance =
-        FloatParam(
-            "vibrance", "Vibrance", SPAN,
-            default = 0f, section = COLOUR, icon = Icons.Static.Vibrance
-        )
-    val Warmth =
-        FloatParam(
-            "warmth", "Warmth", SPAN,
-            default = 0f, section = COLOUR, icon = Icons.Static.Warmth
-        )
-    val Tint =
-        FloatParam(
-            "tint", "Tint", SPAN,
-            default = 0f, section = COLOUR, icon = Icons.Static.Tint
-        )
-    val Noise =
-        FloatParam(
-            "noise", "Noise", SPAN,
-            default = 0f, section = DETAIL, icon = Icons.Static.Noise
-        )
-    val Sharpness =
-        FloatParam(
-            "sharpness", "Sharpness", SPAN,
-            default = 0f, section = DETAIL, icon = Icons.Static.Sharpness
-        )
+object AdjustTool : AdjustParams(), EditorTool {
 
     override val manifest = ToolManifest(
         id = "adjust",
@@ -131,6 +56,7 @@ object AdjustTool : EditorTool {
     // Declared in the order the panel reads in (§3.4), which is also the order the
     // chooser's chips appear in: each new one beside the adjustment it qualifies.
     override val params: List<ParamSpec<*>> = listOf(
+        Auto,
         Exposure, Brightness, Contrast, Highlights, Shadows, BlackPoint,
         Saturation, Vibrance, Warmth, Tint,
         Noise, Sharpness
@@ -138,4 +64,12 @@ object AdjustTool : EditorTool {
 
     /** What it performs is `AdjustStage`'s, which is where the order is argued. */
     override fun stage(params: ParamSet): ToolStage? = adjustStage(params)
+
+    /** Auto, and nothing else — the maths and the reasoning are `AdjustAuto`'s. */
+    override fun resolve(
+        spec: ParamSpec<*>,
+        params: ParamSet,
+        frame: IntSize,
+        stats: SourceStats?
+    ): ParamSet? = if (spec == Auto && stats != null) autoAdjustments(stats, params) else null
 }

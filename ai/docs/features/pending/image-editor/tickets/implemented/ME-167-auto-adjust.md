@@ -4,7 +4,7 @@
 |---|---|
 | **Order** | after ME-166 and ME-162 |
 | **Depends on** | ME-166, ME-162 |
-| **Feature** | [Image Editor](../image-editor.md) |
+| **Feature** | [Image Editor](../../image-editor.md) |
 
 **Goal.** One button in the Adjust tool that reads the picture and writes the twelve sliders.
 
