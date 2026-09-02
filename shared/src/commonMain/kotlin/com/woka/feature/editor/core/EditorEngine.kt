@@ -80,6 +80,17 @@ interface EditorEngine : EditorEngineSurface {
     fun storedDocument(): EditDocument = EditDocument()
 
     /**
+     * What **another** frame already carries, for the session that walks between them
+     * (ME-169). Only the engine can answer: the shell is not allowed to know a file has
+     * frames in it (§3.3). Defaulted to [storedDocument], which is a medium with one
+     * picture — what the video engine inherits without a line.
+     */
+    fun storedDocumentIn(frameIndex: Int): EditDocument = storedDocument()
+
+    /** The file-wide layer alone, which a frame's own work sits on top of (ME-175). */
+    fun storedBase(): EditDocument = storedDocument()
+
+    /**
      * How a **source** coordinate lands on the picture this engine draws for [document].
      *
      * Identity for a medium whose preview is its source laid out plainly, which is why
@@ -117,10 +128,7 @@ interface EditorEngine : EditorEngineSurface {
      * timeline has no frame to key on, so its engine ignores the parameter and
      * compiles unchanged.
      */
-    suspend fun save(
-        document: EditDocument,
-        scope: EditScope = EditScope.AllFrames
-    ): EditSaveResult
+    suspend fun save(layers: EditLayers): EditSaveResult
 
     /**
      * Puts the file back exactly as it was shot, removing everything Woka wrote into
@@ -133,5 +141,8 @@ interface EditorEngine : EditorEngineSurface {
      *
      * Defaulted, so a medium that has nothing to remove is unaffected.
      */
-    suspend fun revert(): EditSaveResult = EditSaveResult.NothingToDo
+    suspend fun revert(
+        scope: EditScope = EditScope.AllFrames,
+        frameIndex: Int = 0
+    ): EditSaveResult = EditSaveResult.NothingToDo
 }

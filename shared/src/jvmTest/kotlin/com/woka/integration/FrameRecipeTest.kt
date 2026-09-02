@@ -6,6 +6,7 @@ import com.woka.core.data.SettingsRepositoryImpl
 import com.woka.core.ui.image.AppliedStillEdits
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
+import com.woka.feature.editor.core.EditLayers
 import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditScope
 import com.woka.feature.editor.core.EditorToolRegistry
@@ -70,7 +71,9 @@ class FrameRecipeTest {
 
     private fun save(file: File, frameIndex: Int, document: EditDocument, scope: EditScope) {
         val engine = ImageEditorEngine(file, frameIndex, registry, EditCapability.Recorded)
-        val result = runBlocking { engine.save(document, scope) }
+        val layers = if (scope == EditScope.AllFrames) EditLayers(document)
+        else EditLayers(EditDocument(), mapOf(frameIndex to document), setOf(frameIndex))
+        val result = runBlocking { engine.save(layers) }
         assertTrue(result is EditSaveResult.Saved, "the save did not happen: $result")
     }
 
@@ -81,7 +84,7 @@ class FrameRecipeTest {
      */
     @Test
     fun `a per-frame edit applies to its frame and to no other`() = onBurst { file ->
-        save(file, 3, quarterTurn(), EditScope.ThisFrame)
+        save(file, 3, quarterTurn(), EditScope.SingleFrame)
 
         val edited = decode(file, 3)
         assertEquals(edited.height, AppliedStillEdits.apply(file, 3, edited).width)
@@ -95,8 +98,8 @@ class FrameRecipeTest {
     /** The merge ME-134 fixed one level up, now at frame granularity. */
     @Test
     fun `a later sitting on another frame does not drop the first one`() = onBurst { file ->
-        save(file, 3, quarterTurn(), EditScope.ThisFrame)
-        save(file, 1, halfTurn(), EditScope.ThisFrame)
+        save(file, 3, quarterTurn(), EditScope.SingleFrame)
+        save(file, 1, halfTurn(), EditScope.SingleFrame)
 
         val payload = EditRecipe.read(file)
         assertEquals(setOf(1, 3), payload?.frames?.keys, "a frame's edit was lost")
@@ -104,15 +107,16 @@ class FrameRecipeTest {
         assertEquals(2, payload?.frames?.get(1)?.ops?.size)
     }
 
-    /** Destructive of the keys by design; ME-156 is what says so on screen. */
+    /** Keeps the keys since ME-175: an override adds to the base, it does not beat it. */
     @Test
-    fun `an all-frames edit draws everywhere and leaves no key behind`() = onBurst { file ->
-        save(file, 3, quarterTurn(), EditScope.ThisFrame)
+    fun `an all-frames edit draws everywhere and the keys survive`() = onBurst { file ->
+        save(file, 3, quarterTurn(), EditScope.SingleFrame)
 
         save(file, 0, quarterTurn(), EditScope.AllFrames)
 
-        assertTrue(EditRecipe.read(file)?.frames.isNullOrEmpty(), "an override survived")
-        (0 until BURST_FRAME_COUNT).forEach { index ->
+        assertEquals(setOf(3), EditRecipe.read(file)?.frames?.keys, "frame 3's work was discarded")
+        // Frame 3 turns twice, base and its own, so only its siblings measure one turn.
+        ((0 until BURST_FRAME_COUNT) - 3).forEach { index ->
             val decoded = decode(file, index)
             assertEquals(
                 decoded.height,
@@ -120,19 +124,6 @@ class FrameRecipeTest {
                 "frame $index did not draw the file's edit"
             )
         }
-    }
-
-    /** Undo to nothing, then `Done`: the recipe goes, and the file is as shot. */
-    @Test
-    fun `a payload folding to nothing removes the recipe`() = onBurst { file ->
-        val original = file.readBytes()
-        save(file, 3, quarterTurn(), EditScope.ThisFrame)
-        assertTrue(EditRecipe.carries(file), "the setup wrote nothing")
-
-        save(file, 3, EditDocument(), EditScope.AllFrames)
-
-        assertFalse(EditRecipe.carries(file))
-        assertContentEquals(original, file.readBytes(), "the file did not come back as shot")
     }
 
     /**

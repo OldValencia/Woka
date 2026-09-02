@@ -6,6 +6,7 @@ import com.woka.core.ui.image.AppliedStillEdits
 import com.woka.core.ui.image.ImageBitmapCache
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
+import com.woka.feature.editor.core.EditLayers
 import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.core.ToolOp
@@ -150,7 +151,7 @@ class HeicRecipeTest {
         val before = ImageLoader.load(file)
         val engine = ImageEditorEngine(file, 0, registry, EditCapability.Recorded)
 
-        val result = runBlocking { engine.save(quarterTurn()) }
+        val result = runBlocking { engine.save(EditLayers(quarterTurn())) }
 
         assertTrue(result is EditSaveResult.Saved)
         ImageBitmapCache.remove(ImageBitmapCache.key(file.absolutePath, 0))

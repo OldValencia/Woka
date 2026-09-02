@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.MediaKind
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
+import com.woka.feature.editor.core.EditLayers
 import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditScope
 import com.woka.feature.editor.core.EditorEngine
@@ -74,6 +75,9 @@ class FixtureEngine(
     /** Every document `Done` handed over. There is no target to record any more (§5). */
     val saveRequests = mutableListOf<EditDocument>()
 
+    /** Both layers as handed over, for the tests that care which half went where. */
+    val savedLayers = mutableListOf<EditLayers>()
+
     /** And which slot each was written into — the switch's whole observable effect. */
     val saveScopes = mutableListOf<EditScope>()
 
@@ -113,9 +117,13 @@ class FixtureEngine(
         Box(modifier = modifier.background(colour).testTag(THUMBNAIL_TAG))
     }
 
-    override suspend fun save(document: EditDocument, scope: EditScope): EditSaveResult {
-        saveRequests += document
-        saveScopes += scope
+    override suspend fun save(layers: EditLayers): EditSaveResult {
+        // Two layers since 2026-09-02; the tests that read this ask about the base.
+        saveRequests += layers.base
+        savedLayers += layers
+        // The switch is no longer passed: the layers say what it meant. Recorded as
+        // Single Frame exactly when a frame carries something of its own.
+        saveScopes += if (layers.frames.isEmpty()) EditScope.AllFrames else EditScope.SingleFrame
         savingGate?.await()
         return result
     }

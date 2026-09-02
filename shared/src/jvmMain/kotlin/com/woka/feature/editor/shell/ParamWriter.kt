@@ -4,6 +4,9 @@ import androidx.compose.runtime.Stable
 import com.woka.feature.editor.core.ActionParam
 import com.woka.feature.editor.core.CanvasTool
 import com.woka.feature.editor.core.EditorSession
+import com.woka.feature.editor.core.cancelPending
+import com.woka.feature.editor.core.commit
+import com.woka.feature.editor.core.preview
 import com.woka.feature.editor.core.EditorTool
 import com.woka.feature.editor.core.ParamSpec
 import com.woka.feature.editor.core.ToolInteraction

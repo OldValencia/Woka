@@ -63,3 +63,15 @@ internal fun editorFramesOf(file: File, frameIndex: Int): EditorFrames {
  */
 internal fun storedDocumentIn(file: File, frameIndex: Int): EditDocument =
     EditRecipe.documentIn(file, frameIndex) ?: EditDocument()
+
+/**
+ * The file-wide layer alone — `EditPayload.ops`, without any frame's own work folded on
+ * (ME-175's base, read back).
+ *
+ * The session needs the two apart to tell a frame's *delta* from the composition it is
+ * shown as: arriving at a frame carrying its own stored crop, with unsaved shared work
+ * in hand, means base-plus-that-crop, and neither half can be recovered from the
+ * composed document alone.
+ */
+internal fun storedBaseIn(file: File): EditDocument =
+    EditRecipe.read(file)?.let { EditDocument(it.ops) } ?: EditDocument()

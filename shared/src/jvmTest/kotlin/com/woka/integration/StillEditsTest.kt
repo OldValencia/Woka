@@ -5,6 +5,7 @@ import com.woka.core.ui.image.AppliedStillEdits
 import com.woka.core.ui.image.ImageBitmapCache
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
+import com.woka.feature.editor.core.EditLayers
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.core.ToolOp
 import com.woka.feature.editor.engine.image.ImageEditorEngine
@@ -125,7 +126,7 @@ class StillEditsTest {
             val registry = EditorToolRegistry(listOf(TransformTool), SettingsRepositoryImpl())
             val engine = ImageEditorEngine(file, 0, registry, EditCapability.Recorded)
 
-            runBlocking { engine.save(quarterTurn()) }
+            runBlocking { engine.save(EditLayers(quarterTurn())) }
 
             assertEquals(engine.drawnSize(quarterTurn()).width, ImageLoader.load(file).width)
             assertEquals(engine.drawnSize(quarterTurn()).height, ImageLoader.load(file).height)

@@ -4,6 +4,7 @@ import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.SettingsRepositoryImpl
 import com.woka.feature.editor.core.ActionParam
 import com.woka.feature.editor.core.EditCapability
+import com.woka.feature.editor.core.EditLayers
 import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.engine.image.ImageEditorEngine
@@ -76,7 +77,7 @@ class TransformSaveTest {
             val document = harness.session.document.value
             assertEquals(IntSize(480, 640), engine.drawnSize(document), "the frame did not turn")
 
-            val result = runBlocking { engine.save(document) }
+            val result = runBlocking { engine.save(EditLayers(document)) }
             assertTrue(result is EditSaveResult.Saved, "got $result")
 
             val saved = ImageLoader.load(file)

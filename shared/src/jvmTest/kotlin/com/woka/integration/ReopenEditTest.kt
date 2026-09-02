@@ -5,8 +5,11 @@ import com.woka.core.data.MediaItem
 import com.woka.core.data.SettingsRepositoryImpl
 import com.woka.core.ui.image.AppliedStillEdits
 import com.woka.feature.editor.core.EditCapability
+import com.woka.feature.editor.core.EditLayers
 import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditorSession
+import com.woka.feature.editor.core.commit
+import com.woka.feature.editor.core.preview
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.core.ToolCardinality
 import com.woka.feature.editor.core.ToolOp
@@ -76,7 +79,7 @@ class ReopenEditTest {
                 session.preview(turn())
                 session.commit(ToolCardinality.Repeating)
             }
-            runBlocking { engine.save(session.document.value) }
+            runBlocking { engine.save(EditLayers(session.document.value)) }
         } finally {
             session.close()
         }

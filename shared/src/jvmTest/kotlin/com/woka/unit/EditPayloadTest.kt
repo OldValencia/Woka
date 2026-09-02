@@ -44,21 +44,26 @@ class EditPayloadTest {
 
     @Test
     fun `the scope is per frame exactly where a key exists`() {
-        assertEquals(EditScope.ThisFrame, keyed.scopeOf(3))
+        assertEquals(EditScope.SingleFrame, keyed.scopeOf(3))
         assertEquals(EditScope.AllFrames, keyed.scopeOf(1))
     }
 
+    /**
+     * **It dropped them until ME-175.** An override no longer beats the base, it adds to
+     * it, so an all-frames save is a statement about the base alone — and the pair
+     * survives one `Done` instead of the second write destroying the first's.
+     */
     @Test
-    fun `saving for all frames drops every override`() {
+    fun `saving for all frames keeps every override`() {
         val next = keyed.with(document("adjust"), EditScope.AllFrames, 2)
 
         assertEquals(listOf(op("adjust")), next.ops)
-        assertTrue(next.frames.isEmpty(), "an override survived an all-frames save")
+        assertEquals(setOf(3), next.frames.keys, "an override was discarded")
     }
 
     @Test
     fun `saving for one frame leaves the file's ops and every other key alone`() {
-        val next = keyed.with(document("adjust"), EditScope.ThisFrame, 2)
+        val next = keyed.with(document("adjust"), EditScope.SingleFrame, 2)
 
         assertEquals(listOf(op("transform")), next.ops)
         assertEquals(document("adjust"), next.frames[2])
@@ -70,7 +75,7 @@ class EditPayloadTest {
     fun `a pending operation never reaches the payload`() {
         val dragging = EditDocument(ops = listOf(op("transform")), pending = op("crop"))
 
-        val next = EditPayload().with(dragging, EditScope.ThisFrame, 0)
+        val next = EditPayload().with(dragging, EditScope.SingleFrame, 0)
 
         assertEquals(document("transform"), next.frames[0])
     }

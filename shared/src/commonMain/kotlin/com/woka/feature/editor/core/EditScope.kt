@@ -26,10 +26,10 @@ enum class EditScope {
     AllFrames,
 
     /**
-     * This frame draws its own edit; the rest are left exactly as they were.
+     * This one frame draws its own edit on top of the file's; the rest are untouched.
      *
      * The un-keyed [EditPayload.ops] survive untouched, so the other frames keep
      * whatever the file already said about them.
      */
-    ThisFrame
+    SingleFrame
 }

@@ -2,6 +2,7 @@ package com.woka.feature.editor.engine.image
 
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
+import com.woka.feature.editor.core.EditLayers
 import com.woka.feature.editor.core.EditPayload
 import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditScope
@@ -37,14 +38,18 @@ import java.io.File
 internal fun writeFor(
     capability: EditCapability,
     file: File,
-    document: EditDocument,
-    scope: EditScope,
+    layers: EditLayers,
+    /** The frame on screen, which is the one bucket B re-encodes. */
     frameIndex: Int,
     stamp: SourceStamp,
     reEncode: (EditDocument) -> EditSaveResult
 ): EditSaveResult = when (capability) {
-    EditCapability.Recorded -> recordRecipe(file, document, scope, frameIndex, stamp)
-    EditCapability.Destructive -> reEncode(document)
+    EditCapability.Recorded -> recordRecipe(file, layers, stamp)
+    // **Bucket B takes the open frame alone** and could not take more: it rewrites the
+    // picture rather than recording a recipe (ME-126). It is empty today.
+    EditCapability.Destructive -> reEncode(
+        EditDocument(layers.base.ops + (layers.frames[frameIndex]?.ops ?: emptyList()))
+    )
     EditCapability.Unavailable -> EditSaveResult.Failed(
         "${file.extension.uppercase()} files cannot be edited."
     )
@@ -66,9 +71,7 @@ internal fun writeFor(
  */
 internal fun recordRecipe(
     file: File,
-    document: EditDocument,
-    scope: EditScope,
-    frameIndex: Int,
+    layers: EditLayers,
     stamp: SourceStamp
 ): EditSaveResult {
     if (!stamp.matches(file)) {
@@ -77,33 +80,25 @@ internal fun recordRecipe(
         )
     }
     val existing = EditRecipe.read(file) ?: EditPayload()
-    val next = existing.with(document, scope, frameIndex)
-    val written = if (next.isEmpty) EditRecipe.clear(file) else EditRecipe.write(file, next)
+
+    // **The base first, then each frame's own on top.** `with` stores a frame's document
+    // minus the payload's base, so handing it base-plus-delta *after* the base has landed
+    // stores exactly the delta — the order is not free.
+    val based = existing.with(layers.base, EditScope.AllFrames, 0)
+    val next = layers.frames.entries.fold(based) { payload, (frame, own) ->
+        payload.with(EditDocument(payload.ops + own.ops), EditScope.SingleFrame, frame)
+    }
+    // Never opened keeps what the file said; opened and emptied loses its key.
+    val kept = next.frames.filterKeys { it in layers.frames || it !in layers.touched }
+    val pruned = next.copy(frames = kept)
+
+    val written = if (pruned.isEmpty) EditRecipe.clear(file) else EditRecipe.write(file, pruned)
     return written.fold(
         onSuccess = { EditSaveResult.Saved(file.absolutePath) },
         onFailure = { writeFailed(file) }
     )
 }
 
-/**
- * Revert: the file goes back to exactly what came off the camera (ME-107).
- *
- * There is no backup store and there does not need to be one — the original pixels
- * never left the file, so this deletes a few hundred bytes of metadata. It is also
- * the whole of "remove Woka's data from this photograph": the segment holds the
- * serialised document and nothing else (§5.2).
- *
- * **No stale-source guard.** A save writes something of the user's over a file that
- * may have moved on; this only removes what Woka itself put there, and refusing that
- * because the picture was touched elsewhere would leave a segment nobody can delete.
- */
-internal fun revertRecipe(file: File): EditSaveResult {
-    if (!EditRecipe.carries(file)) return EditSaveResult.NothingToDo
-    return EditRecipe.clear(file).fold(
-        onSuccess = { EditSaveResult.Saved(file.absolutePath) },
-        onFailure = { writeFailed(file) }
-    )
-}
-
-private fun writeFailed(file: File) =
+/** Shared with `ImageRevertWrites`: one message for every refused write. */
+internal fun writeFailed(file: File) =
     EditSaveResult.Failed("${file.name} could not be written. The picture is untouched.")

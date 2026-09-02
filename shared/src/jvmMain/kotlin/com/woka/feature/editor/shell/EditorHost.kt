@@ -12,7 +12,11 @@ import com.woka.core.data.MediaItem
 import com.woka.feature.editor.EditorTarget
 import com.woka.feature.editor.core.EditorEngine
 import com.woka.feature.editor.core.EditorEngineFactory
+import com.woka.feature.editor.core.EditScope
 import com.woka.feature.editor.core.EditorSession
+import com.woka.feature.editor.core.moveToFrame
+import com.woka.feature.editor.core.detachFrame
+import com.woka.feature.editor.core.rebase
 import com.woka.feature.editor.core.EditorToolRegistry
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -61,19 +65,18 @@ internal fun EditorHost(
     }
 
     val file = remember(target.path) { File(target.path) }
-    // Opened on what the file already holds (ME-134): a session starting empty made
-    // the second `Done` on a photograph replace the first one's edit instead of
-    // continuing it. A few kilobytes off the file's head, once per open.
-    val stored = remember(target.path, frameIndex) { engine.storedDocument() }
-    val session = remember(target.path, frameIndex) { EditorSession(MediaItem.Image(file), stored) }
+    val session = rememberEditorSession(target.path, frameIndex, file, engine)
 
-    // **Seeded from the file, never from a constant** (ME-156), and re-seeded on every
-    // frame change: reopening frame 3 of a burst that already carries a frame-3
-    // override must come back in `This Frame`, or a `Done` the user thinks changed one
-    // picture clears every other frame's work.
-    var editScope by remember(target.path, frameIndex) {
-        mutableStateOf(engine.frames.storedScope)
-    }
+    // **Seeded from the file** (ME-156), and **once per sitting, not per frame**
+    // (2026-09-02): keyed on the frame it re-seeded to `All Frames` on every move and
+    // the switch flipped under the user's hand. Re-seeding guarded against an
+    // `All Frames` save clearing other frames' work, which ME-175 made impossible.
+    var editScope by remember(target.path) { mutableStateOf(engine.frames.storedScope) }
+
+    // The engine is still keyed on the frame — it draws one frame's pixels — but the
+    // session is not, so it is told to look elsewhere rather than rebuilt. **After the
+    // switch is declared**, because what a frame change means depends on it.
+    LaunchedEffect(frameIndex) { session.moveToFrame(frameIndex, editScope) }
 
     EditorPresenceEffect(engine, session, file.name, editScope, onClose, onSaved)
 
@@ -89,7 +92,10 @@ internal fun EditorHost(
         session = session,
         file = file,
         editScope = editScope,
-        carriesStoredEdit = !stored.isEmpty,
+        frameIndex = frameIndex,
+        // **What the file carries, not what this frame draws** (2026-09-02): read off
+        // the open frame, a base-less file whose frame 3 held a crop looked unedited.
+        carriesStoredEdit = !engine.storedBase().isEmpty || engine.frames.overridden.isNotEmpty(),
         onFrameIndex = { frameIndex = it },
         onClose = onClose,
         onSaved = onSaved
@@ -118,7 +124,15 @@ internal fun EditorHost(
                 frames = engine.frames,
                 scope = editScope,
                 frameIndex = frameIndex,
-                onScopeChange = { editScope = it },
+                // Leaving All Frames fixes what was made there as the shared layer, so a
+                // frame reached afterwards still shows it (2026-09-02).
+                // The switch moves what is *shown*, not only what a save means: leaving
+                // All Frames fixes the layer, entering it puts the frame's own work aside
+                // and shows the layer alone (2026-09-02).
+                onScopeChange = { picked ->
+                    if (picked == EditScope.SingleFrame) session.rebase() else session.detachFrame()
+                    editScope = picked
+                },
                 onSelectFrame = actions.selectFrame
             )
         )

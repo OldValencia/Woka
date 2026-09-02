@@ -5,6 +5,8 @@ import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditScope
 import com.woka.feature.editor.core.EditorEngine
 import com.woka.feature.editor.core.EditorSession
+import com.woka.feature.editor.core.layers
+import com.woka.feature.editor.core.revertedToOriginal
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -51,13 +53,15 @@ internal fun saveAction(
      */
     leavingForVideo: Boolean = false
 ): () -> Unit = {
-    val document = session.document.value
+    // The two layers, not a composed document per frame (2026-09-02): only the session
+    // knows which half of a frame's edit is the file's and which is that frame's own.
+    val layers = session.layers(scope)
     onClose()
     EditorSaveStatus.saving(name)
     EditorSaveStatus.started()
     EditorSaveStatus.scope.launch {
         try {
-            when (val result = engine.save(document, scope)) {
+            when (val result = engine.save(layers)) {
                 is EditSaveResult.Saved -> {
                     if (leavingForVideo) EditorSaveStatus.savedLeaving(name)
                     else EditorSaveStatus.saved(name)
@@ -113,11 +117,17 @@ internal fun revertAction(
     engine: EditorEngine,
     session: EditorSession,
     scope: CoroutineScope,
+    /** What the switch says Revert is for — read at the press (ME-176). */
+    editScope: () -> EditScope,
+    frameIndex: () -> Int,
     onFinished: (reverted: Boolean) -> Unit
 ): () -> Unit = {
     scope.launch {
-        val reverted = engine.revert() !is EditSaveResult.Failed
-        if (reverted) session.revertedToOriginal()
+        val scope = editScope()
+        val reverted = engine.revert(scope, frameIndex()) !is EditSaveResult.Failed
+        // The session catches up with the file, and how much of it depends on how much
+        // the file lost (2026-09-02).
+        if (reverted) session.revertedToOriginal(scope)
         onFinished(reverted)
     }
 }

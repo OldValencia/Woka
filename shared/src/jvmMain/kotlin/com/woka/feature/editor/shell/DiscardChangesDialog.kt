@@ -15,12 +15,12 @@ import com.woka.core.ui.theme.Theme
  * changes, which rebuilds the engine, the document and the session and would discard
  * the work just as completely. One component, one pair of buttons, one sentence apart
  * — a second dialog for the second cause would be two things to keep in step.
+ *
+ * **ME-158's third cause is gone** (ME-169). A frame change asked the same question,
+ * because the host rebuilt the session and the work went with it; frames now keep their
+ * own, so `body` has one caller again and the constant it took went with the question.
  */
 private const val LEAVING = "This edit has not been saved. Closing the editor now loses it"
-
-/** ME-158: the same loss, reached from inside the editor rather than out of it. */
-internal const val CHANGING_FRAME =
-    "This edit has not been saved. Moving to another frame now loses it"
 
 /**
  * Asked when unsaved work is about to be thrown away.

@@ -9,6 +9,9 @@ import androidx.compose.ui.unit.IntSize
 import com.woka.feature.editor.core.CanvasTool
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditorSession
+import com.woka.feature.editor.core.cancelPending
+import com.woka.feature.editor.core.commit
+import com.woka.feature.editor.core.preview
 import com.woka.feature.editor.core.EditorTool
 import com.woka.feature.editor.core.EditorToolScope
 import com.woka.feature.editor.core.ToolCardinality

@@ -5,6 +5,7 @@ import com.woka.core.data.SettingsRepositoryImpl
 import com.woka.core.ui.image.ImageBitmapCache
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
+import com.woka.feature.editor.core.EditLayers
 import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.core.ToolDomain
@@ -73,11 +74,11 @@ class EditorSaveTest {
             val filesBefore = file.parentFile.list()!!.toList()
             val pixelsBefore = file.pixels()
 
-            val first = runBlocking { engine.save(tinted()) }
+            val first = runBlocking { engine.save(EditLayers(tinted())) }
             val afterOne = file.length()
             // The second save is the case the stale-source guard would wrongly refuse:
             // the file changed on disk, and it was this editor that changed it.
-            val second = runBlocking { engine.save(tinted()) }
+            val second = runBlocking { engine.save(EditLayers(tinted())) }
 
             assertTrue(first is EditSaveResult.Saved, "first save: $first")
             assertTrue(second is EditSaveResult.Saved, "second save: $second")
@@ -92,10 +93,10 @@ class EditorSaveTest {
     fun `saving an emptied document removes the recipe`() {
         onPhoto { file, engine ->
             val original = file.readBytes()
-            runBlocking { engine.save(tinted()) }
+            runBlocking { engine.save(EditLayers(tinted())) }
             assertTrue(EditRecipe.carries(file), "nothing was recorded to revert")
 
-            val result = runBlocking { engine.save(EditDocument()) }
+            val result = runBlocking { engine.save(EditLayers(EditDocument())) }
 
             assertTrue(result is EditSaveResult.Saved, "got $result")
             assertNull(EditRecipe.documentIn(file, 0))
@@ -113,7 +114,7 @@ class EditorSaveTest {
             file.writeBytes(SampleMedia.file(STILL_JPG).readBytes() + byteArrayOf(0))
             val afterTamper = file.readBytes()
 
-            val result = runBlocking { engine.save(tinted()) }
+            val result = runBlocking { engine.save(EditLayers(tinted())) }
 
             assertTrue(result is EditSaveResult.Failed, "got $result")
             assertContentEquals(afterTamper, file.readBytes(), "the source was written over")
@@ -131,7 +132,7 @@ class EditorSaveTest {
             val other = "somewhere/else.jpg"
             ImageBitmapCache[other] = bitmap
 
-            runBlocking { engine.save(tinted()) }
+            runBlocking { engine.save(EditLayers(tinted())) }
 
             assertNull(ImageBitmapCache[ImageBitmapCache.key(path, 0)])
             assertNull(ImageBitmapCache[ImageBitmapCache.previewKey(path)])

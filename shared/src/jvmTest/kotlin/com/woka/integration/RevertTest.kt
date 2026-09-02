@@ -4,8 +4,10 @@ import com.woka.core.data.MediaItem
 import com.woka.core.data.SettingsRepositoryImpl
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
+import com.woka.feature.editor.core.EditLayers
 import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditorSession
+import com.woka.feature.editor.core.revertedToOriginal
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.core.ToolOp
 import com.woka.feature.editor.engine.image.ImageEditorEngine
@@ -67,7 +69,7 @@ class RevertTest {
             val asShot = file.readBytes()
             val engine = engineOn(file)
 
-            runBlocking { engine.save(turn()) }
+            runBlocking { engine.save(EditLayers(turn())) }
             assertFalse(asShot.contentEquals(file.readBytes()), "the edit was never written")
 
             val result = runBlocking { engine.revert() }

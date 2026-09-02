@@ -7,6 +7,7 @@ import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.MediaKind
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
+import com.woka.feature.editor.core.EditLayers
 import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditorEngine
 import com.woka.feature.editor.core.EditorFrames
@@ -41,14 +42,15 @@ internal class ImageEditorEngine(
     /** Read lazily, and from the decoder — see [nativeFrameSize]. */
     override val sourceSize: IntSize by lazy { nativeFrameSize(file, frameIndex) }
 
-    /**
-     * Lazy for the same reason [sourceSize] is: a menu item is greyed out from the
-     * format alone, and neither the frame count nor the stored payload may be read
-     * to decide it.
-     */
+    /** Lazy for [sourceSize]'s reason: a menu item greys out from the format alone. */
     override val frames: EditorFrames by lazy { editorFramesOf(file, frameIndex) }
 
-    override fun storedDocument(): EditDocument = storedDocumentIn(file, frameIndex)
+    override fun storedDocument(): EditDocument = storedDocumentIn(frameIndex)
+
+    /** Any frame's, for the session that walks between them (ME-169). */
+    override fun storedDocumentIn(frameIndex: Int) = storedDocumentIn(file, frameIndex)
+
+    override fun storedBase(): EditDocument = storedBaseIn(file)
 
     internal fun recipe(document: EditDocument): RasterRecipe =
         fold(document, registry, sourceSize)
@@ -100,14 +102,12 @@ internal class ImageEditorEngine(
     private var stamp = SourceStamp.of(file)
 
     /**
-     * The write, then the two things that follow every successful one. Which write
-     * it is, is [writeFor]'s — §5.1's buckets are a branch over a value this class
-     * only carries.
+     * The write, then the two things that follow it. Which write it is, is [writeFor]'s
+     * — §5.1's buckets are a branch over a value this class only carries.
      */
-    override suspend fun save(document: EditDocument, scope: EditScope): EditSaveResult =
+    override suspend fun save(layers: EditLayers): EditSaveResult =
         withContext(Dispatchers.IO) {
-            val result =
-                writeFor(capability, file, document, scope, frameIndex, stamp, ::reEncode)
+            val result = writeFor(capability, file, layers, frameIndex, stamp, ::reEncode)
             if (result is EditSaveResult.Saved) {
                 stamp = SourceStamp.of(file)
                 evictCachesFor(file)
@@ -116,18 +116,19 @@ internal class ImageEditorEngine(
         }
 
     /**
-     * Back to as shot, in one action (ME-107) — and the only place that *removes*
-     * rather than writes. Answered by the same [EditSaveResult] as a save, so the
-     * shell has one outcome type and one banner to draw.
+     * Back to as shot (ME-107) — the only place that *removes* rather than writes, and
+     * answered by the same [EditSaveResult] as a save so the shell draws one banner.
+     * **Scoped since ME-176**, and `revertRecipe` holds what each scope takes.
      */
-    override suspend fun revert(): EditSaveResult = withContext(Dispatchers.IO) {
-        val result = revertRecipe(file)
-        if (result is EditSaveResult.Saved) {
-            stamp = SourceStamp.of(file)
-            evictCachesFor(file)
+    override suspend fun revert(scope: EditScope, frameIndex: Int): EditSaveResult =
+        withContext(Dispatchers.IO) {
+            val result = revertRecipe(file, scope, frameIndex)
+            if (result is EditSaveResult.Saved) {
+                stamp = SourceStamp.of(file)
+                evictCachesFor(file)
+            }
+            result
         }
-        result
-    }
 
     /**
      * Bucket B: no slot to record in, so the picture itself is re-encoded in place.

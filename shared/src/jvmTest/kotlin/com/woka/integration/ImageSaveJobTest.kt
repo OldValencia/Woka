@@ -5,6 +5,7 @@ import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.SettingsRepositoryImpl
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
+import com.woka.feature.editor.core.EditLayers
 import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.core.ToolDomain
@@ -79,7 +80,7 @@ class ImageSaveJobTest {
         onWebp { file, engine ->
             val original = file.readBytes()
 
-            val result = runBlocking { engine.save(EditDocument()) }
+            val result = runBlocking { engine.save(EditLayers(EditDocument())) }
 
             assertEquals(EditSaveResult.NothingToDo, result)
             assertContentEquals(original, file.readBytes())
@@ -92,7 +93,7 @@ class ImageSaveJobTest {
             val before = file.parentFile.list()!!.toList()
             val pixelsBefore = file.pixels()
 
-            val result = runBlocking { engine.save(tinted()) }
+            val result = runBlocking { engine.save(EditLayers(tinted())) }
 
             assertEquals(EditSaveResult.Saved(file.absolutePath), result)
             assertEquals(before, file.parentFile.list()!!.toList(), "a file was minted")
@@ -109,7 +110,7 @@ class ImageSaveJobTest {
             file.writeBytes(SampleMedia.file(STILL_WEBP).readBytes() + byteArrayOf(0))
             val afterTamper = file.readBytes()
 
-            val result = runBlocking { engine.save(tinted()) }
+            val result = runBlocking { engine.save(EditLayers(tinted())) }
 
             assertTrue(result is EditSaveResult.Failed, "got $result")
             assertContentEquals(afterTamper, file.readBytes(), "the source was written over")
@@ -121,7 +122,7 @@ class ImageSaveJobTest {
         onPicture(STILL_PNG, "picture.bmp", EditCapability.Unavailable) { file, engine ->
             val original = file.readBytes()
 
-            val result = runBlocking { engine.save(tinted()) }
+            val result = runBlocking { engine.save(EditLayers(tinted())) }
 
             assertTrue(result is EditSaveResult.Failed, "got $result")
             assertEquals(listOf("picture.bmp"), file.parentFile.list()!!.toList())

@@ -1,14 +1,17 @@
 package com.woka.feature.editor.shell
 
 import androidx.compose.runtime.Composable
+import com.woka.feature.editor.core.EditScope
 
 /**
- * The three questions the editor asks before it throws something away: a revert, a
- * close with unsaved work, and — since ME-158 — a frame change with unsaved work.
+ * The two questions the editor asks before it throws something away: a revert, and a
+ * close with unsaved work.
  *
- * Split out of `EditorHost` when the third arrived. They are one concern: each is a
- * boolean the host holds, a dialog, and a confirmed action, and none of them touches
- * the session, the engine or the canvas.
+ * **It was three until ME-169.** A frame change asked as well, because the host rebuilt
+ * the session and the work went with it; the session now keeps a document and a history
+ * per frame, so there is nothing to lose and nothing to ask. They are one concern: each
+ * is a boolean the host holds, a dialog, and a confirmed action, and none of them
+ * touches the session, the engine or the canvas.
  *
  * **At most one is ever open**, because each is raised by a control the others hide
  * behind, which is why a single [onKeepEditing] clearing all three is honest rather
@@ -22,27 +25,18 @@ import androidx.compose.runtime.Composable
 @Composable
 internal fun EditorHostDialogs(
     askingToRevert: Boolean,
+    /** Which Revert the switch is pointing at, for the dialog to say so (ME-176). */
+    revertScope: EditScope,
     onRevert: () -> Unit,
     askingToDiscard: Boolean,
     onDiscard: () -> Unit,
-    /** The frame the user reached for while the document was dirty (ME-158). */
-    pendingFrame: Int?,
-    onChangeFrame: () -> Unit,
     onKeepEditing: () -> Unit
 ) {
     if (askingToRevert) {
-        RevertDialog(onRevert = onRevert, onKeepEditing = onKeepEditing)
+        RevertDialog(onRevert = onRevert, onKeepEditing = onKeepEditing, scope = revertScope)
     }
 
     if (askingToDiscard) {
         DiscardChangesDialog(onDiscard = onDiscard, onKeepEditing = onKeepEditing)
-    }
-
-    if (pendingFrame != null) {
-        DiscardChangesDialog(
-            onDiscard = onChangeFrame,
-            onKeepEditing = onKeepEditing,
-            body = CHANGING_FRAME
-        )
     }
 }

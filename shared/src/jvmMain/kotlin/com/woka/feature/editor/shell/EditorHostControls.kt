@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import com.woka.feature.editor.core.EditScope
 import com.woka.feature.editor.core.EditorEngine
 import com.woka.feature.editor.core.EditorSession
+import com.woka.feature.editor.core.ownOpsOfOpenFrame
 import java.io.File
 
 /** What the editor's controls invoke, and whether Revert has anything to take back. */
@@ -47,6 +48,8 @@ internal fun EditorHostControls(
     session: EditorSession,
     file: File,
     editScope: EditScope,
+    /** Which frame the switch's Single Frame means, for Revert (ME-176). */
+    frameIndex: Int,
     /** What the file carried when it opened — `!stored.isEmpty`, read once (ME-107). */
     carriesStoredEdit: Boolean,
     onFrameIndex: (Int) -> Unit,
@@ -59,9 +62,11 @@ internal fun EditorHostControls(
     var carriesEdit by remember(session) { mutableStateOf(carriesStoredEdit) }
     var askingToRevert by remember { mutableStateOf(false) }
     var askingToDiscard by remember { mutableStateOf(false) }
-    var pendingFrame by remember(file) { mutableStateOf<Int?>(null) }
 
     val isDirty by session.isDirty.collectAsState()
+    // Recomputed with the document, because that is what it is derived from.
+    val document by session.document.collectAsState()
+    val ownOps = remember(document) { session.ownOpsOfOpenFrame() }
     val scope = rememberCoroutineScope()
 
     val leave = { if (isDirty) askingToDiscard = true else onClose() }
@@ -72,8 +77,16 @@ internal fun EditorHostControls(
     val done = saveAction(engine, session, file.name, editScope, onClose, onSaved)
     EditorExitEffect(isDirty = isDirty, onSave = done)
 
-    val revert = revertAction(engine, session, scope) { reverted ->
-        if (reverted) carriesEdit = false
+    val revert = revertAction(
+        engine = engine,
+        session = session,
+        scope = scope,
+        editScope = { editScope },
+        frameIndex = { frameIndex }
+    ) { reverted ->
+        // Only an all-frames revert empties the file. A single-frame one takes a layer
+        // off and leaves the base, so the file still carries something to remove.
+        if (reverted && editScope == EditScope.AllFrames) carriesEdit = false
         askingToRevert = false
     }
 
@@ -82,23 +95,35 @@ internal fun EditorHostControls(
             leave = leave,
             done = done,
             askRevert = { askingToRevert = true },
-            // A clean document switches with no dialog at all, which is the ordinary
-            // case; a dirty one asks, because the rebuild the host does on a frame
-            // change would discard it silently otherwise (ME-158).
-            selectFrame = { next -> if (isDirty) pendingFrame = next else onFrameIndex(next) },
+            // **No question any more** (ME-169). ME-158 asked because the host rebuilt
+            // the session on a frame change and the work went with it; the session now
+            // keeps a document and a history per frame, so walking away from one costs
+            // nothing and coming back finds it as it was left.
+            selectFrame = onFrameIndex,
             // Live while there is anything to take back: what the file carries, or what
             // this sitting has done and not saved. Both end at the same picture.
-            canRevert = carriesEdit || isDirty
+            //
+            // **In Single Frame it asks a narrower question** (ME-176): this frame's own
+            // layer, which only exists where the file carries a key for it. A control
+            // that offered to remove nothing would be a control that does nothing.
+            canRevert = when (editScope) {
+                EditScope.AllFrames -> carriesEdit || isDirty
+                // **This frame's own layer, and nothing else** (2026-09-02). Asking the
+                // file alone greyed the button over unsaved work; asking `isDirty` lit it
+                // over work that belongs to the *shared* layer, and pressing it then did
+                // nothing visible — a Single Frame revert removes a frame's own half.
+                EditScope.SingleFrame ->
+                    frameIndex in engine.frames.overridden || ownOps.isNotEmpty()
+            }
         )
     )
 
     EditorHostDialogs(
         askingToRevert = askingToRevert,
+        revertScope = editScope,
         onRevert = revert,
         askingToDiscard = askingToDiscard,
         onDiscard = { askingToDiscard = false; onClose() },
-        pendingFrame = pendingFrame,
-        onChangeFrame = { pendingFrame?.let(onFrameIndex); pendingFrame = null },
-        onKeepEditing = { askingToRevert = false; askingToDiscard = false; pendingFrame = null }
+        onKeepEditing = { askingToRevert = false; askingToDiscard = false }
     )
 }

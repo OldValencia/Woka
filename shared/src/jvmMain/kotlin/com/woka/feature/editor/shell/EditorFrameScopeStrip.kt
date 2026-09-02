@@ -33,7 +33,7 @@ private val FOOTNOTE_SIZE = 11.5.sp
 internal const val FRAME_SCOPE_TAG = "editor-frame-scope"
 
 private const val ALL_FRAMES = "All Frames"
-private const val THIS_FRAME = "This Frame"
+private const val SINGLE_FRAME = "Single Frame"
 
 /**
  * Who the edit is for, for a file holding more than one picture (ME-156).
@@ -64,11 +64,11 @@ internal fun EditorFrameScopeStrip(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         SegmentedControl(
-            options = listOf(ALL_FRAMES, THIS_FRAME),
-            selected = if (scope == EditScope.ThisFrame) THIS_FRAME else ALL_FRAMES,
+            options = listOf(ALL_FRAMES, SINGLE_FRAME),
+            selected = if (scope == EditScope.SingleFrame) SINGLE_FRAME else ALL_FRAMES,
             onSelect = { chosen ->
                 onScopeChange(
-                    if (chosen == THIS_FRAME) EditScope.ThisFrame else EditScope.AllFrames
+                    if (chosen == SINGLE_FRAME) EditScope.SingleFrame else EditScope.AllFrames
                 )
             },
             colors = SegmentedControlDefaults.onScrim
@@ -93,7 +93,7 @@ internal fun EditorFrameScopeStrip(
  * this very save, so naming it would report the user's own document as a loss.
  */
 private fun consequenceOf(frames: EditorFrames, scope: EditScope, frameIndex: Int): String {
-    if (scope == EditScope.ThisFrame) return "Applies to frame ${frameIndex + 1} only"
+    if (scope == EditScope.SingleFrame) return "Applies to frame ${frameIndex + 1} only"
     val replaced = frames.overridden.count { it != frameIndex }
     return when (replaced) {
         0 -> "Applies to all ${frames.count} frames"

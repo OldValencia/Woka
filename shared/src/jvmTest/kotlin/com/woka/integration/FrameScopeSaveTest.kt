@@ -3,6 +3,7 @@ package com.woka.integration
 import com.woka.core.data.SettingsRepositoryImpl
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
+import com.woka.feature.editor.core.EditLayers
 import com.woka.feature.editor.core.EditScope
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.core.ToolOp
@@ -61,7 +62,7 @@ class FrameScopeSaveTest {
     @Test
     fun `a this-frame save writes a key and leaves the file's own ops alone`() =
         onCopy(BURST_HEIC) { file ->
-            runBlocking { engineOn(file, 3).save(quarterTurn(), EditScope.ThisFrame) }
+            runBlocking { engineOn(file, 3).save(EditLayers(EditDocument(), mapOf(3 to quarterTurn()), setOf(3))) }
 
             val payload = EditRecipe.read(file)
             assertEquals(setOf(3), payload?.frames?.keys)
@@ -71,20 +72,21 @@ class FrameScopeSaveTest {
     /** A second sitting on the same frame continues per-frame rather than going back. */
     @Test
     fun `a reopened frame reports the scope it was written in`() = onCopy(BURST_HEIC) { file ->
-        runBlocking { engineOn(file, 3).save(quarterTurn(), EditScope.ThisFrame) }
+        runBlocking { engineOn(file, 3).save(EditLayers(EditDocument(), mapOf(3 to quarterTurn()), setOf(3))) }
 
-        assertEquals(EditScope.ThisFrame, engineOn(file, 3).frames.storedScope)
+        assertEquals(EditScope.SingleFrame, engineOn(file, 3).frames.storedScope)
         assertEquals(EditScope.AllFrames, engineOn(file, 1).frames.storedScope)
         assertEquals(setOf(3), engineOn(file, 1).frames.overridden)
     }
 
+    /** It kept them from ME-175 on: an override adds to the base rather than beating it. */
     @Test
-    fun `an all-frames save clears the keys`() = onCopy(BURST_HEIC) { file ->
-        runBlocking { engineOn(file, 3).save(quarterTurn(), EditScope.ThisFrame) }
+    fun `an all-frames save keeps the keys`() = onCopy(BURST_HEIC) { file ->
+        runBlocking { engineOn(file, 3).save(EditLayers(EditDocument(), mapOf(3 to quarterTurn()), setOf(3))) }
 
-        runBlocking { engineOn(file, 0).save(quarterTurn(), EditScope.AllFrames) }
+        runBlocking { engineOn(file, 0).save(EditLayers(quarterTurn())) }
 
-        assertTrue(EditRecipe.read(file)?.frames.isNullOrEmpty())
+        assertEquals(setOf(3), EditRecipe.read(file)?.frames?.keys)
         assertEquals(1, EditRecipe.read(file)?.ops?.size)
     }
 

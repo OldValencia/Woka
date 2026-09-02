@@ -98,7 +98,7 @@ class EditorFrameScopeUiTest {
     @Test
     fun `choosing this frame names the frame it is about`() =
         scoped(burst(), frameIndex = 2) {
-            onNodeWithText("This Frame").performClick()
+            onNodeWithText("Single Frame").performClick()
             waitForIdle()
 
             onNodeWithText("Applies to frame 3 only").assertIsDisplayed()

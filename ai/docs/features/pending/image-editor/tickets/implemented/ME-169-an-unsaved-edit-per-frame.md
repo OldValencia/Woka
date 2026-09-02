@@ -4,7 +4,7 @@
 |---|---|
 | **Order** | after ME-167 |
 | **Depends on** | ME-158, ME-156, ME-126 |
-| **Feature** | [Image Editor](../image-editor.md) |
+| **Feature** | [Image Editor](../../image-editor.md) |
 
 **Goal.** Carry unsaved work across a frame change inside the editor, so walking from frame 1 to
 frame 3 and back finds frame 1 as it was left.

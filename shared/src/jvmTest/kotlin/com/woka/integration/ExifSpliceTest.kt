@@ -2,6 +2,7 @@ package com.woka.integration
 
 import com.woka.core.data.SettingsRepositoryImpl
 import com.woka.feature.editor.core.EditDocument
+import com.woka.feature.editor.core.EditLayers
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditorToolRegistry
@@ -63,7 +64,7 @@ class ExifSpliceTest {
                     EditCapability.Destructive
                 )
                 val result = runBlocking {
-                    engine.save(EditDocument(ops = listOf(ToolOp("tint", redder.defaults()))))
+                    engine.save(EditLayers(EditDocument(ops = listOf(ToolOp("tint", redder.defaults())))))
                 }
                 assertTrue(result is EditSaveResult.Saved, "save failed: $result")
                 block(before, file)
