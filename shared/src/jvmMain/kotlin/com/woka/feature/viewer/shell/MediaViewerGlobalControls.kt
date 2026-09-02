@@ -41,18 +41,6 @@ fun MediaViewerControlsContainer(
     }
 }
 
-private val PILL_GAP = 8.dp
-
-@Composable
-private fun PillGap() {
-    Spacer(modifier = Modifier.width(PILL_GAP))
-}
-
-@Composable
-private fun PillDivider() {
-    Box(modifier = Modifier.height(16.dp).width(1.dp).background(Theme.colors.border))
-}
-
 @Composable
 fun MediaViewerNormalControls(
     sizeMode: SizeMode,
@@ -65,6 +53,17 @@ fun MediaViewerNormalControls(
     onEdit: () -> Unit,
     onInfo: () -> Unit,
     isInfoOpen: Boolean,
+    /**
+     * Whether the HDR control belongs in the pill (ME-180).
+     *
+     * **False for video, and hidden rather than removed.** Everything ME-177 built runs
+     * at the still decode; a video frame is still tone mapped by `HdrImagePainter` with
+     * the assumed white point, and the switch reaches none of that. A control that moves
+     * nothing is worse than no control. Whether video ever gets the same treatment is
+     * open — it needs a white point that does not pump between frames — so the parameter
+     * stays and only the argument is false.
+     */
+    showHdrMode: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val override = LocalCanvasOverride.current
@@ -84,6 +83,16 @@ fun MediaViewerNormalControls(
                 sizeMode, containerSize, nativeSize, onSizeModeChange, onOffsetReset,
                 onRecentre = onOffsetReset
             )
+        }
+
+        // **Outside the group below, which retracts while editing** (ME-179). How the
+        // picture's colour is read is the one question that matters *more* in the editor,
+        // not less — it decides what the adjustments are being applied to.
+        if (showHdrMode) {
+            PillGap()
+            PillDivider()
+            PillGap()
+            HdrModeControl()
         }
 
         PillGap()

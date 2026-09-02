@@ -5,7 +5,9 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.IntSize
@@ -46,7 +48,11 @@ class CanvasPillUiTest {
     private val native = IntSize(1600, 1200)
 
     @Composable
-    private fun Pill(override: CanvasOverrideState, onEdit: () -> Unit = {}) {
+    private fun Pill(
+        override: CanvasOverrideState,
+        onEdit: () -> Unit = {},
+        showHdrMode: Boolean = true
+    ) {
         CompositionLocalProvider(LocalCanvasOverride provides override) {
             MediaViewerNormalControls(
                 sizeMode = SizeMode.Preset(ScalePreset.Fit),
@@ -58,7 +64,8 @@ class CanvasPillUiTest {
                 onToggleCarousel = {},
                 onEdit = onEdit,
                 onInfo = {},
-                isInfoOpen = false
+                isInfoOpen = false,
+                showHdrMode = showHdrMode
             )
         }
     }
@@ -147,4 +154,29 @@ class CanvasPillUiTest {
         onPercent = onPercent,
         onReset = {}
     )
+
+    @Test
+    fun `the HDR control stays while the editor owns the canvas`() = onUi {
+        val override = CanvasOverrideState()
+        setContent { Pill(override) }
+
+        onNodeWithTag("hdr-mode-anchor").assertIsDisplayed()
+
+        // Unlike the eye and Edit, it does **not** retract: what the colour is read as
+        // decides what the adjustments are applied to (ME-179).
+        override.editing = true
+        waitUntil { onAllNodesWithContentDescription("Edit").fetchSemanticsNodes().isEmpty() }
+        onNodeWithTag("hdr-mode-anchor").assertIsDisplayed()
+    }
+
+    @Test
+    fun `and it is absent for a video`() = onUi {
+        setContent { Pill(CanvasOverrideState(), showHdrMode = false) }
+
+        // Hidden rather than removed: everything ME-177 built runs at the still decode,
+        // so the switch would move nothing here (ME-180).
+        onAllNodesWithTag("hdr-mode-anchor").fetchSemanticsNodes().also {
+            assertEquals(0, it.size, "the HDR control was offered over a video")
+        }
+    }
 }

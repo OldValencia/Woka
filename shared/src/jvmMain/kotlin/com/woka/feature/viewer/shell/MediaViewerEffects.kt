@@ -22,7 +22,9 @@ fun MediaViewerTopBarSetup(
     onClose: (String) -> Unit,
     onEdit: () -> Unit,
     onInfo: () -> Unit,
-    isInfoOpen: Boolean
+    isInfoOpen: Boolean,
+    /** See `MediaViewerNormalControls.showHdrMode` — false while a video is open. */
+    showHdrMode: Boolean = true
 ) {
     val topBarAccessories = LocalTopBarAccessories.current
 
@@ -36,6 +38,7 @@ fun MediaViewerTopBarSetup(
     val curCarousel by rememberUpdatedState(carouselMode)
     val curCurrentId by rememberUpdatedState(currentId)
     val curIsInfoOpen by rememberUpdatedState(isInfoOpen)
+    val curShowHdr by rememberUpdatedState(showHdrMode)
     val curOnSizeModeChange by rememberUpdatedState(onSizeModeChange)
     val curOnOffsetReset by rememberUpdatedState(onOffsetReset)
     val curOnClose by rememberUpdatedState(onClose)
@@ -69,7 +72,8 @@ fun MediaViewerTopBarSetup(
                 },
                 onEdit = { curOnEdit() },
                 onInfo = { curOnInfo() },
-                isInfoOpen = curIsInfoOpen
+                isInfoOpen = curIsInfoOpen,
+                showHdrMode = curShowHdr
             )
         }
         onDispose {

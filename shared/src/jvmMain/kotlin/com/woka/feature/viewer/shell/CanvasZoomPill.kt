@@ -39,5 +39,9 @@ fun CanvasZoomPill(modifier: Modifier = Modifier) {
     val zoom = LocalCanvasOverride.current.zoom ?: return
     MediaViewerControlsContainer(modifier) {
         CanvasZoomControl(zoom)
+        PillGap()
+        PillDivider()
+        PillGap()
+        HdrModeControl()
     }
 }

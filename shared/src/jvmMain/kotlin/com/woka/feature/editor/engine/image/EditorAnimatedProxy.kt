@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ImageBitmap
 import com.woka.core.data.playFrames
 import com.woka.core.ui.image.ImageBitmapCache
+import com.woka.feature.viewer.image.rememberHdrModeAccess
 import kotlinx.coroutines.withContext
 import java.io.File
 
@@ -86,13 +87,17 @@ internal fun rememberEditorFrame(
     frameIndex: Int,
     playback: EditorPlayback
 ): EditorFrame {
-    val still by produceState<ImageBitmap?>(null, file, frameIndex) {
+    // Keyed on the HDR view mode as well: since ME-177 it decides what the decoded
+    // pixels are, so a change to it is a change to this bitmap (ME-180).
+    val hdrMode = rememberHdrModeAccess().current()
+
+    val still by produceState<ImageBitmap?>(null, file, frameIndex, hdrMode) {
         value = withContext(ImageBitmapCache.ioDispatcher) {
             EditorProxy.load(file, frameIndex)
         }
     }
 
-    val animation by produceState<EditorAnimation?>(null, file) {
+    val animation by produceState<EditorAnimation?>(null, file, hdrMode) {
         value = withContext(ImageBitmapCache.ioDispatcher) { editorAnimationOf(file) }
     }
 

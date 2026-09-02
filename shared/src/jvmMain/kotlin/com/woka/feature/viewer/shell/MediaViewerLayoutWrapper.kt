@@ -19,6 +19,8 @@ fun MediaViewerLayoutWrapper(
     onEdit: () -> Unit,
     onInfo: () -> Unit,
     isInfoOpen: Boolean,
+    /** See `MediaViewerNormalControls.showHdrMode`. */
+    showHdrMode: Boolean = true,
     playerContent: @Composable () -> Unit
 ) {
     MediaViewerTopBarSetup(
@@ -33,7 +35,8 @@ fun MediaViewerLayoutWrapper(
         onClose = onClose,
         onEdit = onEdit,
         onInfo = onInfo,
-        isInfoOpen = isInfoOpen
+        isInfoOpen = isInfoOpen,
+        showHdrMode = showHdrMode
     )
     playerContent()
 }

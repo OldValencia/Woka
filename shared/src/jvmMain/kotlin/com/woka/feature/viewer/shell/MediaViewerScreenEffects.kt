@@ -2,20 +2,18 @@ package com.woka.feature.viewer.shell
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.focus.FocusRequester
 import com.woka.core.data.MediaItem
-import com.woka.core.data.SettingsRepository
 import com.woka.core.data.WokaSettings
 import com.woka.core.ui.image.rememberReloadKey
 import com.woka.feature.viewer.pip.PipManager
-import com.woka.feature.viewer.video.engine.VideoPlayerState
-import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.milliseconds
 import com.woka.feature.viewer.video.VideoAlreadyOpenedDialog
 
 /**
- * Side effects of [MediaViewerScreen], split out per the §2 file-size mandate so
- * the screen itself stays a composition of state, effects and layout.
+ * Loading the active item — the half of [MediaViewerScreen]'s effects that is about
+ * *which picture*, as opposed to the ambient ones beside it in `MediaViewerAmbient.kt`.
+ *
+ * Split in two when keying the decode on the HDR view mode put the file over the size
+ * mandate (ME-180); the two halves never shared a line.
  */
 
 /** Loads the active item, restores its size state, and guards the PiP conflict. */
@@ -100,8 +98,18 @@ internal fun MediaViewerActiveItemEffects(
     // ...and on the reload key, which is how a save reaches the screen (ME-135). The
     // editor is mounted over a viewer that stays composed, so nothing above moves
     // while an edit is made: `Done` changed nothing until the viewer was re-entered.
+    // ...and on the HDR view mode, because since ME-177 that decides what the decoded
+    // pixels *are*, not how they are drawn (ME-180). Without it the cache key moved and
+    // nothing asked for the new entry: flipping the switch changed the picture only after
+    // the file was reopened.
     val reloadKey = rememberReloadKey(activeItem?.file?.absolutePath)
-    LaunchedEffect(activeItem, showConflictDialog, state.frameIndex, reloadKey) {
+    LaunchedEffect(
+        activeItem,
+        showConflictDialog,
+        state.frameIndex,
+        reloadKey,
+        settings.hdrViewMode
+    ) {
         if (showConflictDialog || activeItem == null) return@LaunchedEffect
         val frame = state.frameIndex
         state.sourceSize = thumbnails.sourceSize(activeItem)
@@ -119,30 +127,4 @@ internal fun MediaViewerActiveItemEffects(
         // from the previous file would otherwise do for one composition.
         thumbnails.full(activeItem, frame)?.let { state.imageBitmap = it }
     }
-}
-
-/** Volume persistence, the volume HUD timer, UI auto-hide and initial focus. */
-@Composable
-internal fun MediaViewerAmbientEffects(
-    state: MediaViewerState,
-    videoState: VideoPlayerState?,
-    mediaVolume: Float,
-    settingsRepo: SettingsRepository,
-    focusRequester: FocusRequester
-) {
-    PopoverHoverEffect(state.hover)
-    ViewerNativeSizeEffect(state)
-    LaunchedEffect(mediaVolume) {
-        settingsRepo.setMediaVolume(mediaVolume)
-        videoState?.updateVolume(mediaVolume)
-    }
-    LaunchedEffect(state.lastInteractionTime, videoState?.isPlaying, state.hover.rawTarget) {
-        if (videoState?.isPlaying == false || state.hover.rawTarget != HoverTarget.None) {
-            state.isUiVisible = true
-        } else {
-            delay(2500.milliseconds)
-            state.isUiVisible = false
-        }
-    }
-    LaunchedEffect(Unit) { focusRequester.requestFocus() }
 }
