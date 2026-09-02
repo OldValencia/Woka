@@ -3,8 +3,16 @@ package com.woka.unit
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.unit.IntSize
+import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.engine.image.RasterRecipe
+import com.woka.feature.editor.engine.image.fold
 import com.woka.feature.editor.engine.image.scaledBy
+import com.woka.feature.editor.core.ToolDomain
+import com.woka.support.FOLD_SOURCE
+import com.woka.support.StageTool
+import com.woka.support.fixtureShader
+import com.woka.support.toolOp
+import com.woka.support.withFoldRegistry
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertSame
@@ -90,5 +98,49 @@ class RasterRecipeTest {
         val turned = scaled.matrix.map(Offset(100f, 0f))
         assertEquals(0f, turned.x, 0.001f)
         assertEquals(100f, turned.y, 0.001f)
+    }
+
+    /**
+     * The fourth stage is a **sequence**, not a collapse (ME-165): two convolutions do
+     * not compose the way two colour matrices do, so the fold keeps both and keeps the
+     * order it folded them in.
+     */
+    @Test
+    fun `the fold carries every shader stage, in domain order`() {
+        val colour = StageTool("gain", ToolDomain.Color, fixtureShader(gain = 0.5f))
+        val output = StageTool("offset", ToolDomain.Output, fixtureShader(offset = 0.25f))
+
+        withFoldRegistry(listOf(output, colour)) { registry, _ ->
+            // Clicked Output first; Colour must still run first, as §3.4 orders it.
+            val document = EditDocument(ops = listOf(toolOp("offset"), toolOp("gain")))
+            val shaders = fold(document, registry, FOLD_SOURCE).shaders
+
+            assertEquals(2, shaders.size, "a shader stage was collapsed away")
+            assertEquals(listOf(0.5f, 0f, 0f), shaders[0].uniforms, "Colour did not run first")
+            assertEquals(listOf(1f, 0.25f, 0f), shaders[1].uniforms)
+        }
+    }
+
+    /**
+     * A radius stated in source pixels describes a different picture once the bitmap is
+     * a fraction of the source, so the scale travels with the recipe — otherwise a grid
+     * tile is sharpened as though the tile were the whole photograph.
+     */
+    @Test
+    fun `scaling a recipe scales what its shaders call a source pixel`() {
+        val recipe = RasterRecipe(
+            matrix = Matrix(),
+            outputSize = IntSize(600, 400),
+            colorFilter = null,
+            shaders = listOf(fixtureShader(tapX = 8f)),
+            paints = emptyList(),
+            skipped = emptyList()
+        )
+
+        val scaled = recipe.scaledBy(0.25f)
+
+        assertEquals(0.25f, scaled.shaders.single().resolutionScale, 0.0001f)
+        // The uniforms themselves are the tool's and are never rewritten.
+        assertEquals(listOf(1f, 0f, 8f), scaled.shaders.single().uniforms)
     }
 }

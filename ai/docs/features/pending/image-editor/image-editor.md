@@ -101,7 +101,7 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-164](tickets/implemented/ME-164-the-adjustments-panel-groups-what-it-shows.md) | The adjustments panel groups what it shows | **done** 2026-09-01 — asked for by hand at eight, and the complaint was the mixing rather than the scrolling. Confirmed by hand, tab metrics tuned by the author |
 | ME-143                                                                     | ~~Crop that can pull one edge~~ | **dropped** 2026-09-01 — see `tickets/backlog.md` §900; the id is retained and never reused |
 | [ME-168](tickets/implemented/ME-168-opening-a-large-photograph-must-not-freeze-the-window.md) | Opening a large photograph must not freeze the window | **done** 2026-09-02 — the engine needed no guard after all: `Surface` and `Thumbnail` are one call, so one gate covers both and `ImageEditorEngine` was not touched. Confirmed by hand on a 252 MB HEIC |
-| [ME-165](tickets/ME-165-a-stage-that-is-a-shader.md)                       | A stage that is a shader | **open** |
+| [ME-165](tickets/implemented/ME-165-a-stage-that-is-a-shader.md)           | A stage that is a shader | **done** 2026-09-02 — the two draw routines became **one function** both callers share, rather than the same chain written twice. `FixtureShaderTool` was not needed: `FixtureTool` and `StageTool` already take a stage. Nothing on screen by design, so nothing to confirm by hand until ME-162 |
 | [ME-162](tickets/ME-162-four-adjustments-the-matrix-cannot-express.md)     | Four adjustments the matrix cannot express | **open** |
 | [ME-166](tickets/ME-166-the-picture-reaches-the-tool.md)                   | The picture reaches the tool | **open** |
 | [ME-167](tickets/ME-167-auto-adjust.md)                                    | Auto adjust | **open** |
@@ -184,20 +184,33 @@ rather than a rewrite.
 
 ### 3.2 Rendering: a recipe, not a pipeline
 
-Ops fold into three draw-time primitives, so the live canvas allocates **no bitmap at all** while
+Ops fold into four draw-time primitives, so the live canvas allocates **no bitmap at all** while
 editing:
 
 ```
 RasterStage.Geometry(matrix, outputSize)   crop, rotate, flip, resize
 RasterStage.Pixels(colorFilter)            adjustments, filter presets
+RasterStage.Shader(effect, uniforms)       adjustments a colour matrix cannot express
 RasterStage.Paint(draw)                    markup
 ```
 
 The fold walks the ops, asks each owning tool for its stage, and collapses them into **one** matrix,
-**one** `ColorFilter` (colour matrices multiply) and an ordered paint list. The canvas draws: source →
-matrix → colour filter → paints. A brightness slider at 60 fps costs one `ColorFilter` rebuild per
-frame and zero pixel work. The save path replays the same recipe onto a Skia surface at scale 1.0
-against the **native-resolution** bitmap.
+**one** `ColorFilter` (colour matrices multiply), an ordered **shader chain** and an ordered paint
+list. The canvas draws: source → matrix → colour filter → shaders → paints. A brightness slider at
+60 fps costs one `ColorFilter` rebuild per frame and zero pixel work. The save path replays the same
+recipe onto a Skia surface at scale 1.0 against the **native-resolution** bitmap.
+
+**Why the fourth exists, and why it is a chain rather than a collapse** (ME-165, 2026-09-02). Three
+was the right number for as long as every adjustment was affine: a `ColorMatrix` is a 4×5 map, two of
+them multiply into one, and the canvas does one thing per pixel. It stopped being right at the first
+adjustment that is not — a tone curve is per-luminance and a convolution reads the pixels *around*
+the one being written, and neither is a linear map of the channels. Two shaders cannot be multiplied
+into one the way two matrices can, so they stay ordered and run in sequence.
+
+It still allocates no bitmap. The chain is built out of Skia shaders — the picture becomes an image
+shader, the colour filter is attached to it with `makeWithColorFilter`, and each effect takes the
+previous one as its child — so a convolution samples the image directly rather than an offscreen copy
+of it. What the fourth primitive costs is texture fetches per pixel, not a surface per frame.
 
 The canvas draws a **proxy**: the source downscaled so its longest edge is ≤ 2560 px. A 24 MP photo is
 edited against a ~7 MP texture; the native bitmap is touched once, on save. Above 100 % canvas zoom
@@ -686,6 +699,7 @@ sheet instead of a dead Edit button.
 | 2026-08-16 | One op type or one per tool? | One `ToolOp` + generic `ParamSet` | No polymorphic serialiser, history is a list copy, the shell renders panels it does not know |
 | 2026-08-16 | `Map<String, Any>` for params? | No — closed `ParamValue` hierarchy | `Any` cannot round-trip through `kotlinx.serialization` |
 | 2026-08-16 | Does `stage()` return `RasterStage`? | No — a `ToolStage` marker | A trim stage is not a matrix; without this the video editor cannot reuse the tool contract |
+| 2026-08-16 | ~~How many shapes may a raster stage take? **Three, and no more**~~ | **Superseded 2026-09-02 (ME-165)** — a fourth, `RasterStage.Shader` | The reason for three was that the fold *collapses* them, and that reason held exactly as long as every adjustment was affine. Highlights and Shadows are per-luminance; Sharpness and Noise Reduction are per-neighbourhood. Neither is expressible as a 4×5 map, so no amount of matrix multiplication reaches them. The fourth is a chain rather than a collapse — two convolutions do not compose into one — and it still allocates no bitmap, because the chain is Skia shaders over an image shader rather than an offscreen surface |
 | 2026-08-16 | How does video reuse the shell? | An `EditorEngine` per `MediaKind` | The shell composes `engine.Surface(...)` and never branches on media |
 | 2026-08-16 | Is the document persisted in v1? | No, but serialisable by construction | Re-opening a saved edit is a later ticket, not a rewrite |
 | 2026-08-16 | Where is the editor mounted? | Over a frozen, still-mounted viewer | Cancel returns to the exact zoom/pan/frame; the bitmap is already cached |
@@ -807,6 +821,8 @@ sheet instead of a dead Edit button.
 | 2026-08-18 | Is HDR *display* now correct? | **No — one defect left, and it is the viewer's, not the editor's** | The tone curve's white point is the literal `W = 11.2`, asserting 1120-nit content. A real 174-nit HDR frame therefore draws SDR white at 148/255 instead of 255. Needs a genuine HDR still to tune against, so it is **ME-120** in the backlog rather than a hold on ME-010 |
 | 2026-08-17 | Is a transfer-tag read-back enough to certify HDR output? | **No** | The probe reported "PQ + wide" for the file rejected on sight. And a visual check is only as good as the viewer doing the looking |
 | 2026-08-17 | What does a 100 MP source cost? | 384 MB native, 667 ms to decode — larger than the whole cache budget | Editing is fine because the canvas draws a 2560 px proxy built in 8 ms; caching the native is what has to be avoided |
+| 2026-09-02 | Where does a shader stage sit in the draw order? | After the colour filter, **before** the paints | Markup is drawn on top of a sharpened picture, not sharpened with it — the same reason a crop clips an arrow rather than moving it (§3.4) |
+| 2026-09-02 | Does the shader path need an offscreen surface? | **No** — `Shader.makeWithColorFilter` plus effect children | Checked against skiko 0.144.6 before the design was written, not assumed. An offscreen copy per frame would have cost §3.2's one real claim, and a convolution can sample the image shader directly instead |
 
 ---
 

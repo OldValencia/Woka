@@ -9,6 +9,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import com.woka.feature.editor.engine.image.RasterRecipe
+import com.woka.feature.editor.engine.image.drawRecipeImage
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.Surface
 
@@ -42,12 +43,10 @@ internal fun renderAtNativeScale(
 
     CanvasDrawScope().draw(Density(1f), LayoutDirection.Ltr, canvas, size) {
         withTransform({ transform(recipe.matrix) }) {
-            drawImage(
-                image = source,
-                srcSize = IntSize(source.width, source.height),
-                dstSize = sourceSize,
-                colorFilter = recipe.colorFilter
-            )
+            // The same function the screen calls, not a copy of it (ME-165). A shader
+            // chain written twice is how a saved file starts disagreeing with the
+            // preview the user approved.
+            drawRecipeImage(source, sourceSize, recipe)
         }
         // Outside the transform, exactly as on screen: a crop clips markup rather
         // than moving it (§3.4's application order).

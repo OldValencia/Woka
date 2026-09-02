@@ -57,21 +57,18 @@ internal fun RasterSurface(
 
         scale(scale = fitScale, pivot = Offset.Zero) {
             withTransform({ transform(recipe.matrix) }) {
-                // `dstSize` is the *source's* dimensions, so everything above this
-                // call reasons in source pixels and never learns the bitmap was
-                // smaller. That is what lets the same recipe run here against a
-                // 2560 px copy and again on save against the native bitmap, with no
-                // branch between them — and it is what ME-116 spends: swapping the
-                // two at zoom needs no logic here at all.
-                drawImage(
-                    image = source,
-                    srcSize = IntSize(source.width, source.height),
-                    dstSize = sourceSize,
-                    colorFilter = recipe.colorFilter
-                )
+                // Everything inside this call reasons in source pixels and never
+                // learns the bitmap was smaller. That is what lets the same recipe run
+                // here against a 2560 px copy and again on save against the native
+                // bitmap, with no branch between them — and it is what ME-116 spends:
+                // swapping the two at zoom needs no logic here at all. Shared with the
+                // save path rather than written twice, so the two cannot drift.
+                drawRecipeImage(source, sourceSize, recipe)
             }
             // Markup is drawn in source coordinates too, but *outside* the matrix:
-            // a crop must clip an arrow, not move it (§3.4's application order).
+            // a crop must clip an arrow, not move it (§3.4's application order). After
+            // the shaders as well as the filter: markup sits on top of a sharpened
+            // picture rather than being sharpened with it (ME-165).
             recipe.paints.forEach { paint -> paint.draw(this) }
         }
     }

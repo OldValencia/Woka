@@ -4,7 +4,7 @@
 |---|---|
 | **Order** | after ME-168; before ME-162, the first tool to use it |
 | **Depends on** | ME-007 |
-| **Feature** | [Image Editor](../image-editor.md) |
+| **Feature** | [Image Editor](../../image-editor.md) |
 
 **Goal.** Add `RasterStage.Shader` as a fourth thing a stage can be — a Skia `RuntimeEffect` and its
 uniforms — folded into the recipe and drawn identically everywhere a recipe is drawn.

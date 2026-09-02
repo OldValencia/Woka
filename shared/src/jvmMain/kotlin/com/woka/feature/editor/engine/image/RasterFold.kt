@@ -32,6 +32,7 @@ fun fold(
     val matrix = Matrix()
     var outputSize = sourceSize
     var colorMatrix: ColorMatrix? = null
+    val shaders = mutableListOf<RasterStage.Shader>()
     val paints = mutableListOf<RasterStage.Paint>()
 
     stages.forEach { stage ->
@@ -50,6 +51,9 @@ fun fold(
                 outputSize = frame
             }
             is RasterStage.Pixels -> colorMatrix = multiply(colorMatrix, stage.colorMatrix)
+            // Appended rather than merged: two convolutions do not compose into one,
+            // so the order they were folded in is the order they run in (ME-165).
+            is RasterStage.Shader -> shaders += stage
             is RasterStage.Paint -> paints += stage
         }
     }
@@ -60,6 +64,7 @@ fun fold(
         colorFilter = colorMatrix
             ?.takeUnless { it.isIdentity() }
             ?.let { ColorFilter.colorMatrix(it) },
+        shaders = shaders,
         paints = paints,
         skipped = skipped
     )
