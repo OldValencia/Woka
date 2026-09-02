@@ -3,8 +3,16 @@ package com.woka.core.data
 import java.io.File
 import java.security.MessageDigest
 
-/** Bumped whenever thumbnailFile changes how it names things. */
-private const val KEY_SCHEMA_MARKER = ".keys-v3"
+/**
+ * Bumped whenever an existing entry stops being the right answer — because
+ * [WokaStorage.thumbnailFile] names things differently, or because what goes *inside* an
+ * entry changed under an unchanged name.
+ *
+ * v4 is the second kind (ME-177): the key is path, size and mtime, and an HDR still now
+ * decodes to tone-mapped pixels without any of the three moving. Its old thumbnail would
+ * otherwise outlive the change and sit dull beside a correct picture.
+ */
+private const val KEY_SCHEMA_MARKER = ".keys-v4"
 
 /**
  * What an entry is written as. WebP rather than PNG since v3 — a poster is a
@@ -99,7 +107,12 @@ object WokaStorage {
     /** SHA-256 truncated to 64 bits: deterministic, positive, collision-free in practice. */
     private fun cacheKey(source: File, frameIndex: Int): String {
         val frame = if (frameIndex == 0) "" else "|frame$frameIndex"
-        val input = "${source.absolutePath}|${source.length()}|${source.lastModified()}$frame"
+        // The view mode joins path, size and mtime for the reason ME-119 gives: a disk
+        // entry written under one mode is not the answer under another, and none of the
+        // other three moves when the mode does.
+        val input =
+            "${source.absolutePath}|${source.length()}|${source.lastModified()}$frame" +
+                HdrView.cacheSuffix
         val digest = MessageDigest.getInstance("SHA-256").digest(input.toByteArray())
         return digest.take(8).joinToString("") { "%02x".format(it.toInt() and 0xFF) }
     }

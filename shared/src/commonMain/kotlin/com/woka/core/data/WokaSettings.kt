@@ -63,6 +63,8 @@ data class WokaSettings(
     val ambientFill: Boolean = false,
     val pinnedSessions: List<PinnedSession> = emptyList(),
     val scalePreset: ScalePreset = ScalePreset.Fit,
+    /** Overrides HDR *detection*, never the output — see [HdrViewMode] (ME-119). */
+    val hdrViewMode: HdrViewMode = HdrViewMode.Auto,
     // Default size state applied when a video opens. If [rememberSizeState] is on,
     // adjusting zoom/preset inside a video writes back into these fields.
     // [defaultZoomPercent] is a percentage of native 1:1 pixels (Step 8b);

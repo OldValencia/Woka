@@ -16,8 +16,8 @@ import org.jetbrains.skia.SamplingMode
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-/** `vec2 scale` then two floats — declaration order is the packing order. */
-private const val UNIFORM_BYTES = 16
+/** `vec2 scale` then three floats — declaration order is the packing order. */
+private const val UNIFORM_BYTES = 20
 
 /**
  * Compiled once per process.
@@ -52,7 +52,16 @@ class HdrImagePainter(
      * not care; the ambient fill magnifies a 64-pixel-wide sample across a whole
      * panel, where nearest turns it into hard-edged blocks.
      */
-    private val smooth: Boolean = false
+    private val smooth: Boolean = false,
+    /**
+     * What this picture peaks at, in units of SDR white — the divisor the tone curve is
+     * normalised by (ME-120).
+     *
+     * Defaulted to [ASSUMED_WHITE_POINT] so a caller with nothing to say keeps the
+     * behaviour it had, rather than silently acquiring a new one. A still measures its
+     * own; a video frame cannot, and says so by leaving this alone.
+     */
+    private val whitePoint: Float = ASSUMED_WHITE_POINT
 ) : Painter() {
 
     override val intrinsicSize: Size
@@ -94,6 +103,7 @@ class HdrImagePainter(
             .putFloat(intrinsicSize.height / size.height)
             .putFloat(transferCode())
             .putFloat(if (isWideGamut) 1f else 0f)
+            .putFloat(whitePoint)
             .array()
 
     /** Floats rather than an int uniform: every Skia build takes these. */

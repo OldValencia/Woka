@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.ImageFrame
 import com.woka.feature.viewer.image.forwardFrames
+import com.woka.feature.viewer.image.displayable
 import com.woka.feature.viewer.image.stillDecoderFor
 import java.io.File
 import kotlin.math.max
@@ -59,7 +60,9 @@ internal fun editorAnimationOf(file: File): EditorAnimation? {
     // One forward walk rather than one decode per frame: skia builds each frame on the
     // one before it, so asking for them independently is quadratic (`forwardFrames`).
     runCatching {
-        forwardFrames(file) { index, bitmap -> bitmaps[index] = bitmap.cappedToProxy() }
+        forwardFrames(file) { index, bitmap ->
+            bitmaps[index] = displayable(file, bitmap.cappedToProxy())
+        }
     }.getOrElse { return null }
 
     if (bitmaps.isEmpty()) return null

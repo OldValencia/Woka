@@ -12,11 +12,15 @@ package com.woka.feature.viewer.video
  * the 100-nit SDR reference white**, so 1.0 is SDR white whichever transfer it
  * arrived on. That is what lets one tone curve serve both HDR transfers, and
  * what lets the SDR branch skip it without the rest of the chain changing.
+ *
+ * `whitePoint` is in those same units, which is why it is a uniform rather than a
+ * constant: it is a fact about the picture, and only the caller has seen the pixels.
  */
 internal const val HDR_SHADER = """
     uniform vec2 scale;
     uniform float transfer;   // 0 = SDR, 1 = PQ, 2 = HLG
     uniform float wideGamut;  // 1 when the primaries are BT.2020
+    uniform float whitePoint;  // the picture's own peak, in units of SDR white
     uniform shader image;
 
     const float m1 = 0.1593017578125, m2 = 78.84375;
@@ -71,10 +75,15 @@ internal const val HDR_SHADER = """
         // The tone curve belongs to the HDR transfers alone. A wide-gamut SDR
         // picture has no extra range to compress and must come out with its
         // luminance untouched — only its primaries converted.
+        // **The curve is normalised by what this picture actually reaches** (ME-120).
+        // It was the literal 11.2 — 1120 nits — asserted of every HDR source, so a frame
+        // peaking at 174 was compressed as though it had eleven times the range and SDR
+        // reference white came out at 148/255. Normalised by a real peak of ~2.3 it comes
+        // out near 213 instead: 255 belongs to the picture's own brightest tone, which is
+        // what `hable(x) / hable(W)` reaching 1.0 at x = W means.
         vec3 mapped = lin;
         if (isPq || isHlg) {
-            const float W = 11.2;
-            mapped = hable(lin) / hable(vec3(W));
+            mapped = hable(lin) / hable(vec3(whitePoint));
         }
         mapped = clamp(mapped, 0.0, 1.0);
 

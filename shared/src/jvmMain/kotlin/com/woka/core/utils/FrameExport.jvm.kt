@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import com.woka.core.ui.image.AppliedStillEdits
 import com.woka.core.ui.image.ImageBitmapCache
 import com.woka.core.ui.image.encodePng
+import com.woka.feature.viewer.image.displayable
 import com.woka.feature.viewer.image.stillDecoderFor
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -25,7 +26,8 @@ actual suspend fun exportFramesToPng(
             // An exported frame is the picture the user is looking at, edit included
             // (ME-133) — an export that quietly returned the original would be the one
             // place in the app where what is on screen and what is written disagree.
-            val bitmap = AppliedStillEdits.apply(source, frame, decoder.frame(source, frame))
+            val drawn = displayable(source, decoder.frame(source, frame))
+            val bitmap = AppliedStillEdits.apply(source, frame, drawn)
             bitmap.writePng(File(destination, nameFor(source, position, total)))
         }.isSuccess
         if (written) exported++ else failed++

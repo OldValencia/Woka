@@ -66,7 +66,8 @@ internal object StillPreview {
      * cached path too would fold the recipe over a picture that already carries it.
      */
     private fun build(file: File, cached: File, frameIndex: Int): ImageBitmap {
-        val source = AppliedStillEdits.apply(file, frameIndex, decodeSmall(file, frameIndex))
+        val decoded = displayable(file, decodeSmall(file, frameIndex))
+        val source = AppliedStillEdits.apply(file, frameIndex, decoded)
         val scaled = source.scaledToPreview()
         runCatching { cached.writeBytes(scaled.encodeWebp()) }
         return scaled.toComposeImageBitmap()

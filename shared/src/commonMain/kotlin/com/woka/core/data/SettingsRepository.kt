@@ -25,6 +25,7 @@ interface LibrarySettings {
     fun setCarouselMode(mode: CarouselVisibility)
     fun setAmbientFill(enabled: Boolean)
     fun setScalePreset(preset: ScalePreset)
+    fun setHdrViewMode(mode: HdrViewMode)
     fun setRememberSizeState(remember: Boolean)
     fun setDefaultUseZoom(useZoom: Boolean)
     fun setDefaultZoomPercent(percent: Int)

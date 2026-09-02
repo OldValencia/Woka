@@ -1,6 +1,7 @@
 package com.woka.core.ui.image
 
 import androidx.compose.ui.graphics.ImageBitmap
+import com.woka.core.data.HdrView
 import kotlinx.coroutines.Dispatchers
 
 /** Overridable for tests, the same way `woka.storageRoot` is (see `WokaStorage`). */
@@ -60,7 +61,10 @@ object ImageBitmapCache {
      * being told: paging through a burst evicts the frames behind it.
      */
     fun key(path: String, frameIndex: Int): String =
-        if (frameIndex == 0) path else "$path#$frameIndex"
+        // The HDR view mode is part of what a bitmap *is*, so it is part of the key
+        // rather than something a settings change has to remember to invalidate
+        // (ME-119). Empty on `Auto`, which keeps every key it had.
+        (if (frameIndex == 0) path else "$path#$frameIndex") + HdrView.cacheSuffix
 
     /**
      * A still's carousel-sized copy, which must **not** share the bare path with
@@ -68,7 +72,8 @@ object ImageBitmapCache {
      * and handing it a 400 px preview would show a blurred picture.
      */
     fun previewKey(path: String, frameIndex: Int = 0): String =
-        if (frameIndex == 0) "$path#preview" else "$path#preview$frameIndex"
+        (if (frameIndex == 0) "$path#preview" else "$path#preview$frameIndex") +
+            HdrView.cacheSuffix
 
     operator fun get(key: String): ImageBitmap? = synchronized(lock) { entries[key] }
 

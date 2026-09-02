@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.ui.image.ImageBitmapCache
+import com.woka.feature.viewer.image.displayable
 import com.woka.feature.viewer.image.stillDecoderFor
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -70,7 +71,9 @@ internal fun rememberNativeFrame(
     LaunchedEffect(file, frameIndex, wanted, allowed) {
         if (!wanted || !allowed || held.value != null) return@LaunchedEffect
         held.value = withContext(ImageBitmapCache.ioDispatcher) {
-            runCatching { stillDecoderFor(file).frame(file, frameIndex) }.getOrNull()
+            runCatching {
+                displayable(file, stillDecoderFor(file).frame(file, frameIndex))
+            }.getOrNull()
         }
     }
 

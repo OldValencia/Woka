@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asSkiaBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import com.woka.feature.viewer.image.FfmpegStillDecoder
+import com.woka.feature.viewer.image.displayable
 import com.woka.feature.viewer.image.stillDecoderFor
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.Rect
@@ -40,7 +41,13 @@ internal const val PROXY_MAX_PX = 2560
  */
 internal object EditorProxy {
 
-    fun load(file: File, frameIndex: Int = 0): ImageBitmap {
+    fun load(file: File, frameIndex: Int = 0): ImageBitmap =
+        // Mapped after the cap, so an HDR source pays for the proxy and not for its
+        // native size (ME-177). This is the line that makes the canvas agree with the
+        // viewer; the editor itself knows nothing about HDR.
+        displayable(file, decodeCapped(file, frameIndex))
+
+    private fun decodeCapped(file: File, frameIndex: Int): ImageBitmap {
         val decoder = stillDecoderFor(file)
         // A tile grid assembles *at* the target size rather than assembling whole and
         // shrinking — the difference between allocating half a megabyte and 138 MB.

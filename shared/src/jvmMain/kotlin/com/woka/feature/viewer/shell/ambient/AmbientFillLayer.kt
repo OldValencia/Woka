@@ -83,7 +83,9 @@ internal fun AmbientFillLayer(player: VideoPlayerState) {
             // The same painter choice the picture gets, so an HDR video's bars are
             // tone mapped by the same shader rather than clipping to blown-out
             // colour — filtered, because this one is magnified sixty times.
-            painter = rememberFramePainter(bitmap, sampler.color, smooth = true),
+            // `moving`: the sampler blends a fresh frame every 200 ms, and this is a
+            // 64-pixel smear of the picture rather than the picture (ME-120).
+            painter = rememberFramePainter(bitmap, sampler.color, smooth = true, moving = true),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             colorFilter = saturation,

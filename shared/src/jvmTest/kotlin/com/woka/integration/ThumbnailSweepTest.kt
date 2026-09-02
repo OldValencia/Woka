@@ -90,7 +90,7 @@ class ThumbnailSweepTest {
      */
     @Test
     fun `the schema marker is never swept`() = withTempStorageRoot {
-        val marker = File(WokaStorage.thumbnailsDir, ".keys-v3")
+        val marker = File(WokaStorage.thumbnailsDir, ".keys-v4")
         repeat(6) { entry("entry$it", 1_000_000L + it) }
 
         sweepThumbnails(budgetBytes = 1L * ENTRY_BYTES)

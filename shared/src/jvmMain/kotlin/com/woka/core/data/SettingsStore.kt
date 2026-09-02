@@ -62,6 +62,7 @@ internal class SettingsStore(private val scope: CoroutineScope) {
         return loaded.copy(
             defaultUseZoom = false,
             scalePreset = ScalePreset.Fit,
+            hdrViewMode = HdrViewMode.Auto,
             defaultZoomPercent = 100,
             sizeSchemaVersion = SIZE_SCHEMA_VERSION
         )

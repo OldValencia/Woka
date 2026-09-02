@@ -24,7 +24,12 @@ Order is dependency order.
 
 ## 500 — HDR
 
-Gathered here on 2026-09-01 because the three read as one subject.
+Gathered here on 2026-09-01 because the three read as one subject. **Two of the three left on
+2026-09-03** — [ME-120](implemented/ME-120-the-tone-curve-asks-the-picture-how-bright-it-is.md) and
+[ME-119](implemented/ME-119-the-hdr-view-mode.md) — along with
+[ME-177](implemented/ME-177-one-tone-map-at-the-decode.md), which this file never predicted: the
+editor had never tone mapped at all, and §6.1 said the opposite plainly enough that nobody looked.
+ME-118 alone is left here.
 
 **The blocker is gone as of 2026-09-03.** For a year it was *"the corpus holds no genuine HDR
 still"* — `hdr_pq.avif`, `hdr_hlg.avif` and `hdr_pq.png` are SDR pixels wearing HDR tags, the first
@@ -36,28 +41,12 @@ the source's own distribution plus what lossy AV1 adds.
 
 **What it is not.** 320×180, one scene, one master. Enough to measure a white point and to show that
 `W = 11.2` compresses a picture with a fraction of that range; not enough to tune a curve across a
-variety of content. ME-120 can be done against it; whether its result *looks* right on a photograph
+variety of content. ME-120 was done against it; whether its result *looks* right on a photograph
 somebody took is a separate question and a separate fixture.
 
-**ME-120 must still land before ME-118**, or the defect gets written into the user's files.
-
-### ME-120 — The tone curve's white point must come from the content
-`HdrShader` normalises Hable by the literal `W = 11.2`, which asserts every HDR source peaks at 1120
-nits. Measured in ME-010: a real HDR frame peaks at **174**, so the curve compresses a picture that
-barely exceeds SDR as though it had eleven times the range, and SDR reference white lands at
-**148/255** instead of 255. That is the "brightness at −50 %" the author reported — the second of two
-defects found on 2026-08-18, the first (gamut matrix before the curve, wrecking every saturated
-colour) being fixed in ME-010.
-
-The shape: the white point becomes a uniform beside `transfer` and `wideGamut`. A still is decoded in
-full, so its peak can simply be measured; video should prefer the stream's mastering-display or
-MaxCLL metadata and fall back to a constant when a file carries neither.
-
-Confirmed still open 2026-09-02: `HdrShader.kt:76` is unchanged.
-
-Belongs to the viewer, not to the editor; listed with the feature because ME-010 is where it was
-measured and because the HDR tool's `To SDR` bakes this very curve into pixels.
-*Depends on nothing — ME-172 landed 2026-09-03.*
+**ME-120 shipped 2026-09-03**, and the measurement corrected two of its own numbers. **ME-118 is no
+longer blocked by it**: the tone curve `To SDR` would bake is now normalised by what the picture
+reaches, so the fixture's SDR reference white renders above 200 rather than at 148/255.
 
 ### ME-118 — HDR tool
 `Output` domain, `Single`, one `ChoiceParam` — **`Keep` and `To SDR` only in v1** (§9, 2026-08-18).
@@ -66,17 +55,13 @@ source's transfer through, which needs the ffmpeg encode path since Skia cannot 
 deferred** — no measurement blocks it (PQ AVIF via libaom writes correctly, ME-010) but it is inverse
 tone mapping and does not recover clipped highlights, so it is not MVP.
 
-**Blocked on ME-120, not just on ME-104.** `To SDR` bakes the tone curve into pixels permanently, and
-that curve is currently normalised by the literal `W = 11.2` — on real HDR content SDR white lands at
-148/255. Shipping `To SDR` first would write the defect into the user's files.
-*Depends on ME-013, ME-132, ME-120.*
-
-### ME-119 — HDR view mode
-A tri-state — `Auto` / `Force HDR` / `Force SDR` — that changes how a still is *displayed* and no
-pixels at all: a `WokaSettings` field, a control in the viewer, and the same toggle mirrored in the
-editor's top bar so the user can see what the HDR tool is about to write. Belongs to the viewer as
-much as to the editor; it is listed here because §6.1 is where the two halves are defined together.
-*Depends on ME-106.*
+**The ME-120 block is lifted (2026-09-03).** `To SDR` bakes the tone curve into pixels permanently,
+and that curve was normalised by the literal `W = 11.2` — on real HDR content SDR white landed at
+148/255, so shipping `To SDR` first would have written the defect into the user's files. It now
+measures the picture. What ME-118 inherits instead is ME-120's stated limit: **a still measures, a
+video frame still assumes**, so the tool must not offer `To SDR` on a video frame without saying what
+divisor it used.
+*Depends on ME-013, ME-132.*
 
 ---
 

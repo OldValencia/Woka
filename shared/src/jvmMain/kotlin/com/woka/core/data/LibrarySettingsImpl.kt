@@ -43,6 +43,9 @@ internal class LibrarySettingsImpl(private val mutator: SettingsMutator) : Libra
     override fun setScalePreset(preset: ScalePreset) =
         mutator.update { it.copy(scalePreset = preset) }
 
+    override fun setHdrViewMode(mode: HdrViewMode) =
+        mutator.update { it.copy(hdrViewMode = mode) }
+
     override fun setRememberSizeState(remember: Boolean) =
         mutator.update { it.copy(rememberSizeState = remember) }
 

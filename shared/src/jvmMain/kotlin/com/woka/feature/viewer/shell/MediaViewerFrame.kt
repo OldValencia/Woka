@@ -41,7 +41,8 @@ fun MediaViewerFrame(
     // scope reports is the pair it actually drew (§6).
     val drawnFrameId = video?.player?.currentFrameId ?: 0L
     val color = frameColorInfo(media, frameToDraw)
-    val painter = rememberFramePainter(frameToDraw, color)
+    val moving = isMovingFrame(media, frameToDraw)
+    val painter = rememberFramePainter(frameToDraw, color, moving = moving)
 
     // Built once per action set. This composable recomposes on every presented
     // frame (it reads `currentFrame` above), and the list was rebuilt each time

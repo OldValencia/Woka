@@ -24,7 +24,10 @@ object ImageLoader {
      * format: everything the app lists now has a decoder routed to it.
      */
     fun load(file: File, frameIndex: Int = 0): ImageBitmap {
-        val decoded = stillDecoderFor(file).frame(file, frameIndex)
+        // **Tone mapped before the edit, not after** (ME-177). The recipe is folded
+        // over displayable colour, so an Adjust value means the same thing here as it
+        // does on the editor's canvas.
+        val decoded = displayable(file, stillDecoderFor(file).frame(file, frameIndex))
         // **Before caching, not after.** The cache holds what the viewer draws, so an
         // entry made from the raw decode would serve the unedited picture to every
         // reader that hits it — and the edit would appear only on a cold miss (ME-133).
