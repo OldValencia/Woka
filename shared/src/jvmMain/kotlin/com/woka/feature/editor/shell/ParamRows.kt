@@ -36,15 +36,8 @@ internal fun ParamRows(
     tool: EditorTool,
     session: EditorSession,
     document: EditDocument,
-    /** What the picture measures right now — see `ParamWriter.frame`. */
-    frame: IntSize = IntSize.Zero,
-    /**
-     * The **source's** own dimensions, which is a different question from [frame]: that
-     * one is the folded result and moves when a crop lands. A tool may derive a row's
-     * default from this (ME-159), and one derived from the folded size would make a
-     * caption resize itself the moment a crop was applied.
-     */
-    sourceSize: IntSize = IntSize.Zero,
+    /** The frame, the source size and the histogram — see [PictureFacts]. */
+    picture: PictureFacts = PictureFacts(),
     /**
      * What the canvas has selected, for `CanvasTool.restyled` (ME-114) — **a function,
      * not a value**.
@@ -62,17 +55,17 @@ internal fun ParamRows(
      */
     thumbnail: @Composable (EditDocument, Modifier) -> Unit = { _, _ -> }
 ) {
-    val stored = paramsOf(document, tool, sourceSize)
+    val stored = paramsOf(document, tool, picture.sourceSize)
     // **What the panel shows follows the selection; what it writes still starts from the
     // document** (`CanvasTool.displayed`, reported by hand 2026-08-29). The two are not the
     // same question: a control reports the shape under the cursor, and every control sends
     // an absolute value, so reporting the pen instead would make the next click write from
     // a number nobody was looking at.
     val params = (tool as? CanvasTool)?.displayed(stored, selectedId()) ?: stored
-    val writer = ParamWriter(session, tool, frame, selectedId, sourceSize)
+    val writer = ParamWriter(session, tool, picture, selectedId)
     // What this tool wants shown for the values it currently holds — all of them, for
     // every tool but Markup.
-    val shown = tool.rows(params, sourceSize)
+    val shown = tool.rows(params, picture.sourceSize)
     // A spec that rides inside another spec's popover gets **no control of its own**
     // (ME-155). `rows` still names it, and must: it is still written, still folded and
     // still saved — only the place it is reached from has moved.

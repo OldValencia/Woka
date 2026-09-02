@@ -4,7 +4,7 @@
 |---|---|
 | **Order** | after ME-162; before ME-167, the only thing that asks for it |
 | **Depends on** | ME-005, ME-008 |
-| **Feature** | [Image Editor](../image-editor.md) |
+| **Feature** | [Image Editor](../../image-editor.md) |
 
 **Goal.** Give a tool a way to read a statistic of the picture — a histogram, a black point — without
 giving it the pixels, and without `stage()` ever seeing a frame.

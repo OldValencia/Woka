@@ -11,6 +11,7 @@ import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditorEngine
 import com.woka.feature.editor.core.EditorFrames
 import com.woka.feature.editor.core.EditorToolRegistry
+import com.woka.feature.editor.core.SourceStats
 import com.woka.feature.editor.core.EditScope
 import com.woka.feature.editor.save.ImageSaveJob
 import com.woka.feature.editor.save.SourceStamp
@@ -61,6 +62,11 @@ internal class ImageEditorEngine(
     /** Whether the canvas is running, when the file is something that runs. */
     private val playback = EditorPlayback()
 
+    /** Measured off the proxy the canvas already decoded, never by decoding again. */
+    private val measured = SourceStatsHolder()
+
+    override val stats: SourceStats? get() = measured.stats
+
     override fun togglePlayback() = playback.toggle()
 
     /**
@@ -70,7 +76,10 @@ internal class ImageEditorEngine(
      */
     @Composable
     override fun Surface(document: EditDocument, modifier: Modifier) =
-        ImageCanvas(file, frameIndex, playback, sourceSize, recipe(document), modifier)
+        ImageCanvas(
+            file, frameIndex, playback, sourceSize, recipe(document), modifier,
+            onProxy = measured::measureOnce
+        )
 
     /** One option of a filter strip, from the **same proxy** — see `ImageCanvas`. */
     @Composable

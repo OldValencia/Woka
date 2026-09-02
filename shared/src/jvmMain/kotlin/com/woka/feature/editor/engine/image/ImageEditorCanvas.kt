@@ -1,6 +1,7 @@
 package com.woka.feature.editor.engine.image
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.IntSize
@@ -39,9 +40,22 @@ internal fun ImageCanvas(
     playback: EditorPlayback,
     sourceSize: IntSize,
     recipe: RasterRecipe,
-    modifier: Modifier
+    modifier: Modifier,
+    /**
+     * Handed the proxy the moment it exists, so the engine can measure a histogram off a
+     * bitmap that is already decoded (ME-166). The alternative was a lazy `stats` that
+     * decoded its own copy on the first click, which is the freeze ME-168 removed,
+     * reintroduced on a different button.
+     *
+     * **Suspending, and called once for the first bitmap only.** What arrives here is
+     * whatever the surface drew — the proxy at Fit, the native frame once ME-116 swaps it
+     * in — so the receiver keeps the first and ignores the rest. The first is always the
+     * proxy, because the native one is not asked for until the canvas is zoomed past it.
+     */
+    onProxy: suspend (ImageBitmap) -> Unit = {}
 ) {
     val source = rememberCanvasSource(file, frameIndex, playback, sourceSize) ?: return
+    LaunchedEffect(source) { onProxy(source) }
     RasterSurface(
         source = source,
         sourceSize = sourceSize,

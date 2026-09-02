@@ -42,6 +42,17 @@ interface EditorEngine : EditorEngineSurface {
     val sourceSize: IntSize
 
     /**
+     * What the picture *is*, for the one hook that needs it: `EditorTool.resolve`
+     * (ME-166).
+     *
+     * Null by default and null forever for a medium with no still to measure, so the
+     * video engine inherits this without a line. Null too until the proxy has arrived —
+     * the shell never blocks on it, and nothing can ask before there is a picture on
+     * screen to ask about.
+     */
+    val stats: SourceStats? get() = null
+
+    /**
      * How large the *result* is, which is not the same question as [sourceSize].
      *
      * A crop changes the frame: the picture drawn after it has the crop's dimensions

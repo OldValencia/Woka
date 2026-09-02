@@ -24,13 +24,8 @@ import com.woka.feature.editor.core.ToolOp
 internal class ParamWriter(
     private val session: EditorSession,
     private val tool: EditorTool,
-    /**
-     * The frame the picture currently has, for the one thing a tool cannot work out
-     * for itself: turning "long edge 2560" into a scale (`EditorTool.resolve`, ME-110).
-     * Zero before the canvas has measured, which resolves to nothing and writes the
-     * plain value.
-     */
-    private val frame: IntSize = IntSize.Zero,
+    /** The frame, the source size and the histogram — see [PictureFacts]. */
+    private val picture: PictureFacts = PictureFacts(),
     /**
      * What the canvas has selected, for the one hook that needs it:
      * `CanvasTool.restyled` (ME-114). Null for every tool without an overlay, and for an
@@ -41,8 +36,6 @@ internal class ParamWriter(
      * (2026-08-26).
      */
     private val selectedId: () -> String? = { null },
-    /** The source's own dimensions, for the seed a write starts from — see `paramsOf`. */
-    private val sourceSize: IntSize = IntSize.Zero
 ) {
 
     /**
@@ -64,12 +57,12 @@ internal class ParamWriter(
         // set up — and every drag rebuilt its parameters from a stale base, wiping the
         // slider moved before it (2026-08-22).
         val live = session.document.value
-        val base = if (spec is ActionParam) tool.defaults(sourceSize) else paramsOf(live, tool, sourceSize)
+        val base = if (spec is ActionParam) tool.defaults(picture.sourceSize) else paramsOf(live, tool, picture.sourceSize)
         val written = base.with(spec, value)
         // A tool may rewrite its own parameters now that the frame is known — a preset
         // that means "this many pixels on the long edge" resolves to a scale here, so
         // the document stores the number and `stage()` never needs the frame (§3.4).
-        val resolved = tool.resolve(spec, written, frame) ?: written
+        val resolved = tool.resolve(spec, written, picture.frame, picture.stats) ?: written
         // And a canvas tool may apply the same edit to what is *selected* — choosing red
         // with an arrow selected means "make this one red", not only "draw the next one
         // red" (ME-114). Part of the same operation, so it is the same undo step.

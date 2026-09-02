@@ -123,8 +123,7 @@ internal fun BoxScope.EditorBottomPanel(
                                 tool = activeTool,
                                 session = session,
                                 document = document,
-                                frame = frame,
-                                sourceSize = engine.sourceSize,
+                                picture = PictureFacts(frame, engine.sourceSize, engine.stats),
                                 selectedId = selectedId
                             ) { preview, modifier ->
                                 engine.Thumbnail(preview, modifier)

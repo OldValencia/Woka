@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.IntSize
  * adjustment left at its detent — and the fold skips it rather than composing an
  * identity matrix it would then have to recognise.
  */
-interface EditorTool {
+interface EditorTool : EditorToolPanel {
 
     val manifest: ToolManifest
 
@@ -51,44 +51,6 @@ interface EditorTool {
     fun rows(params: ParamSet, sourceSize: IntSize): List<ParamSpec<*>> = this.params
 
     /**
-     * Whether this tool's inspector may grow to the **dock's** width rather than
-     * stopping at the card's usual ceiling (2026-08-28).
-     *
-     * False for every tool but Styles, and deliberately a declaration rather than
-     * something the shell infers: a wide card is only worth it where the content is a
-     * line that can use any width, and widening the rest put Markup's swatches and
-     * Transform's four buttons in a field of empty space — the defect a fixed 420 dp
-     * caused once already, in the other direction.
-     */
-    val wideInspector: Boolean get() = false
-
-    /**
-     * Which of the visible [rows] this tool draws as a **compact line** — labelless
-     * controls side by side, each collapsed into a button that opens its own popover
-     * (ME-155). Empty for every tool but Markup, and whatever is not claimed here falls
-     * to the shell's own grouping untouched.
-     *
-     * Re-pointed from ME-153's "two controls share a line", which was refused on screen:
-     * buttons beside a slider do not work, so the answer is to shorten the controls
-     * rather than to merge the rows.
-     *
-     * **A function of the rows, not a static list.** Markup's rows come and go with the
-     * pen, so a fixed line would name a control that is not being shown.
-     */
-    fun lines(rows: List<ParamSpec<*>>): List<List<ParamSpec<*>>> = emptyList()
-
-    /**
-     * Specs that ride inside [spec]'s own popover instead of taking a control of their
-     * own — `Corner` inside `Fill`, and nothing else today (ME-155).
-     *
-     * The plate's roundness has no meaning without the plate, so it belongs where the
-     * plate is set. The shell drops whatever is named here from the line it was going to
-     * draw, which is why this is asked of the tool rather than inferred: only the tool
-     * knows that two of its specs are one idea.
-     */
-    fun folded(spec: ParamSpec<*>, rows: List<ParamSpec<*>>): List<ParamSpec<*>> = emptyList()
-
-    /**
      * A chance to rewrite this tool's own parameters when one of them is set, knowing
      * the frame — the escape hatch [stage] deliberately does not have (ME-110).
      *
@@ -97,10 +59,21 @@ interface EditorTool {
      * moment of the click**, where the shell knows the picture's size, and what lands in
      * the document is the resolved value — the fold stays a pure function of parameters.
      *
+     * [stats] is the same escape hatch widened to the **picture** (ME-166): a histogram
+     * and a black point, never the pixels. An automatic correction has to read the
+     * photograph, and the alternative — letting [stage] sample it — would end the purity
+     * that lets one fold serve the preview and the save. Null when the medium has no
+     * still to measure, and while the proxy is still being decoded.
+     *
      * Null means "nothing to rewrite", which is every tool but one today, and is why
      * this is defaulted rather than added to each of them.
      */
-    fun resolve(spec: ParamSpec<*>, params: ParamSet, frame: IntSize): ParamSet? = null
+    fun resolve(
+        spec: ParamSpec<*>,
+        params: ParamSet,
+        frame: IntSize,
+        stats: SourceStats? = null
+    ): ParamSet? = null
 
     /**
      * One line the inspector prints under this tool's rows — `4000 × 3000 → 2000 × 1500`

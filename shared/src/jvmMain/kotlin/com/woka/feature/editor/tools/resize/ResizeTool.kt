@@ -8,6 +8,7 @@ import com.woka.feature.editor.core.EditorTool
 import com.woka.feature.editor.core.FloatParam
 import com.woka.feature.editor.core.ParamSet
 import com.woka.feature.editor.core.ParamSpec
+import com.woka.feature.editor.core.SourceStats
 import com.woka.feature.editor.core.ToolCardinality
 import com.woka.feature.editor.core.ToolDomain
 import com.woka.feature.editor.core.ToolInteraction
@@ -121,7 +122,12 @@ object ResizeTool : EditorTool {
      * click, from the shell, which knows it — rather than reaching [stage], so the fold
      * stays a pure function of parameters (§3.4).
      */
-    override fun resolve(spec: ParamSpec<*>, params: ParamSet, frame: IntSize): ParamSet? = when (spec) {
+    override fun resolve(
+        spec: ParamSpec<*>,
+        params: ParamSet,
+        frame: IntSize,
+        stats: SourceStats?
+    ): ParamSet? = when (spec) {
         Preset -> params.with(Scale, params[Preset].percent)
         LongEdge -> params.with(Scale, scaleForLongEdge(params[LongEdge].pixels, frame))
         else -> null
