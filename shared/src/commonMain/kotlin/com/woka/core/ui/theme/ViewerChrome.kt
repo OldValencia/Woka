@@ -57,9 +57,18 @@ object ViewerChrome {
      * defaults its unplayed track to 20 % white, for which there is no token and should
      * not be one — a value used by a single slider is a constant, not a palette entry.
      *
-     * The editor reads these from its first commit. `feature/viewer/` draws on the
-     * scrims with `Color.White` literals instead — 58 of them at the last count, which
-     * is the same "scattered literals" this object was made to end, one layer up.
+     * **The sweep finished on 2026-09-03.** This used to read "`feature/viewer/` draws on
+     * the scrims with `Color.White` literals instead — 58 of them at the last count".
+     * ME-121 converted twelve, and ME-163, ME-170 and ME-171 took the rest across
+     * twenty files. What is left is **five literals, every one of them documented where
+     * it sits**: the PiP corner flash (the white *is* the effect), `MediaSliderTrack`'s
+     * two `lerp` targets and `MediaVerticalSlider`'s unplayed track (a direction and a
+     * constant, not foregrounds), and the subtitle swatch's unselected rim, which
+     * separates a circle of the user's own colour from the panel and needs more than
+     * `onScrimBorder`'s 0.08 to do it.
+     *
+     * So the count is not "58 undocumented" but **zero**. A new `Color.White` under
+     * `feature/viewer/` is now either a mistake or a case that owes a comment.
      */
     val onScrim: Color = Color(0xFFF4F4F6)
 

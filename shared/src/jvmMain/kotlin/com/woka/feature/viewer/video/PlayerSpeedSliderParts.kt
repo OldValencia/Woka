@@ -28,13 +28,13 @@ internal fun PlayerSpeedHeader(speed: Float) {
     ) {
         BasicText(
             text = "Speed",
-            style = TextStyle(color = Color.White.copy(alpha = 0.72f), fontSize = 11.sp),
+            style = TextStyle(color = Theme.viewer.onScrimSecondary, fontSize = 11.sp),
             modifier = Modifier.weight(1f)
         )
         BasicText(
             text = PlaybackSpeed.label(speed),
             style = TextStyle(
-                color = if (speed == PlaybackSpeed.NORMAL) Color.White.copy(alpha = 0.6f)
+                color = if (speed == PlaybackSpeed.NORMAL) Theme.viewer.onScrimSecondary
                 else Theme.colors.accent,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold

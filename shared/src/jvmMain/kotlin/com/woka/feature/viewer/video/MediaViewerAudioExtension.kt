@@ -62,7 +62,7 @@ private fun AudioTrackRow(label: String, selected: Boolean, onClick: () -> Unit)
     var hovered by remember { mutableStateOf(false) }
     val background = when {
         selected -> Theme.colors.accent.copy(alpha = 0.30f)
-        hovered -> Color.White.copy(alpha = 0.10f)
+        hovered -> Theme.viewer.onScrimHover
         else -> Color.Transparent
     }
     Box(
@@ -79,7 +79,8 @@ private fun AudioTrackRow(label: String, selected: Boolean, onClick: () -> Unit)
         Marquee(
             text = label,
             style = TextStyle(
-                color = Color.White.copy(alpha = if (selected) 1f else 0.72f),
+                color =
+                    if (selected) Theme.viewer.onScrim else Theme.viewer.onScrimSecondary,
                 fontSize = 12.sp
             ),
             animate = hovered || selected,

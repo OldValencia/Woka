@@ -62,7 +62,7 @@ private fun ValueRow(label: String, value: String, active: Boolean, onClick: () 
             .clip(RoundedCornerShape(7.dp))
             .background(
                 if (active) Theme.colors.accent.copy(alpha = 0.30f)
-                else Color.White.copy(alpha = 0.08f)
+                else Theme.viewer.onScrimHover
             )
             .pointerHoverIcon(PointerIcon.Hand)
             .clickable(onClick = onClick)
@@ -71,13 +71,14 @@ private fun ValueRow(label: String, value: String, active: Boolean, onClick: () 
     ) {
         BasicText(
             text = label,
-            style = TextStyle(color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp),
+            style = TextStyle(color = Theme.viewer.onScrimSecondary, fontSize = 11.sp),
             modifier = Modifier.weight(1f)
         )
         BasicText(
             text = value,
             style = TextStyle(
-                color = Color.White.copy(alpha = if (active) 1f else 0.6f),
+                color =
+                    if (active) Theme.viewer.onScrim else Theme.viewer.onScrimSecondary,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold
             )

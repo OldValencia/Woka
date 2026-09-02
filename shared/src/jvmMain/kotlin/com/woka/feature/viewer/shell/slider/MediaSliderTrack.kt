@@ -65,6 +65,11 @@ internal fun MediaSliderTrack(
 ) {
     val baseHeight by animateDpAsState(if (hovered) trackHeight + HOVER_GROWTH else trackHeight)
     val tallHeight = baseHeight + HOVER_GROWTH
+    // **Both stay literals** (ME-121, restated here by ME-171 so the next sweep does not
+    // have to rediscover it). White is not a foreground here — it is the *direction* the
+    // track is lightened toward, the far end of a `lerp` whose near end is the caller's
+    // own colour. `onScrim` is #F4F4F6, so substituting it would silently cap how far
+    // either state can travel.
     val hoveredColor = lerp(inactiveColor, Color.White, HOVER_LIGHTEN)
     val previewColor = lerp(inactiveColor, Color.White, PREVIEW_LIGHTEN)
 

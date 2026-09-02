@@ -27,11 +27,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.woka.core.ui.theme.Theme
 
-/** Preset text colours offered in the subtitle customizer (0xAARRGGBB). */
-val subtitleColorSwatches = listOf(
-    0xFFFFFFFFL, 0xFFFFF04DL, 0xFF4DD2FFL, 0xFF6EE86EL, 0xFFFF7AB2L, 0xFFFF5A4DL
-)
-
 /** Compact dark segmented control matching the subtitle popover style. */
 @Composable
 fun <T> SubtitlePillGroup(
@@ -52,7 +47,7 @@ fun <T> SubtitlePillGroup(
                     .clip(RoundedCornerShape(7.dp))
                     .background(
                         if (isSelected) Theme.colors.accent.copy(alpha = 0.30f)
-                        else Color.White.copy(alpha = 0.08f)
+                        else Theme.viewer.onScrimHover
                     )
                     .pointerHoverIcon(PointerIcon.Hand)
                     .clickable { onSelect(value) },
@@ -61,37 +56,14 @@ fun <T> SubtitlePillGroup(
                 BasicText(
                     text = label,
                     style = TextStyle(
-                        color = Color.White.copy(alpha = if (isSelected) 1f else 0.7f),
+                        color =
+                            if (isSelected) Theme.viewer.onScrim
+                            else Theme.viewer.onScrimSecondary,
                         fontSize = 11.sp,
                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
                     )
                 )
             }
-        }
-    }
-}
-
-@Composable
-fun SubtitleColorSwatchRow(selectedArgb: Long, onSelect: (Long) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        subtitleColorSwatches.forEach { argb ->
-            val isSelected = argb == selectedArgb
-            Box(
-                modifier = Modifier
-                    .size(24.dp)
-                    .clip(CircleShape)
-                    .background(argb.toSubtitleColor())
-                    .border(
-                        width = if (isSelected) 2.dp else 1.dp,
-                        color = if (isSelected) Theme.colors.accent else Color.White.copy(alpha = 0.3f),
-                        shape = CircleShape
-                    )
-                    .pointerHoverIcon(PointerIcon.Hand)
-                    .clickable { onSelect(argb) }
-            )
         }
     }
 }
@@ -104,14 +76,18 @@ fun SubtitlePercentStepper(percent: Int, onChange: (Int) -> Unit) {
             .fillMaxWidth()
             .height(28.dp)
             .clip(RoundedCornerShape(7.dp))
-            .background(Color.White.copy(alpha = 0.08f)),
+            .background(Theme.viewer.onScrimHover),
         verticalAlignment = Alignment.CenterVertically
     ) {
         StepperGlyph("−") { onChange((percent - 10).coerceAtLeast(0)) }
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
             BasicText(
                 text = "$percent%",
-                style = TextStyle(color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                style = TextStyle(
+                    color = Theme.viewer.onScrim,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
             )
         }
         StepperGlyph("+") { onChange((percent + 10).coerceAtMost(100)) }
@@ -130,7 +106,11 @@ private fun StepperGlyph(symbol: String, onClick: () -> Unit) {
     ) {
         BasicText(
             text = symbol,
-            style = TextStyle(color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            style = TextStyle(
+                color = Theme.viewer.onScrim,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold
+            )
         )
     }
 }

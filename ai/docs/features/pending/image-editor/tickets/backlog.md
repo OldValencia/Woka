@@ -18,20 +18,45 @@ became three slices instead of two, because twenty in-scope files do not fit the
 rather than substitution. **ME-117 was deleted, not promoted**: `roadmap.md`'s Phase 5 was corrected
 in the same change, so there is nothing left for a ticket to do.
 
+**Every ticket from that batch has shipped**, the last two — ME-170 and ME-171, the remaining slices
+of the scrim sweep — on 2026-09-03. `feature/viewer/` now holds five `Color.White` literals, each
+documented where it sits, against the 58 undocumented ones ME-121 counted.
+
 Order is dependency order.
 
 ---
 
 ## 500 — HDR
 
-Gathered here on 2026-09-01 because the three read as one subject. **Two of the three left on
-2026-09-03** — [ME-120](implemented/ME-120-the-tone-curve-asks-the-picture-how-bright-it-is.md) and
-[ME-119](implemented/ME-119-the-hdr-view-mode.md) — along with
-[ME-177](implemented/ME-177-one-tone-map-at-the-decode.md), which this file never predicted: the
-editor had never tone mapped at all, and §6.1 said the opposite plainly enough that nobody looked.
-ME-118 alone is left here.
+Gathered here on 2026-09-01 because the three read as one subject. **The track emptied on 2026-09-03
+except for ME-118**, and it did not empty the way this file predicted.
 
-**The blocker is gone as of 2026-09-03.** For a year it was *"the corpus holds no genuine HDR
+Two blocks became tickets and shipped —
+[ME-120](implemented/ME-120-the-tone-curve-asks-the-picture-how-bright-it-is.md), the tone curve's
+white point, and [ME-119](implemented/ME-119-the-hdr-view-mode.md), the view mode. Three more
+tickets were written the same day that **this file never anticipated**, and each came from looking at
+the app rather than at the plan:
+
+- [ME-177](implemented/ME-177-one-tone-map-at-the-decode.md) — **the editor had never tone mapped at
+  all.** It draws through `RasterRecipe` and never read `StillColorInfo`, so a PQ file's codes were
+  painted as sRGB for as long as the editor has existed. Nothing recorded it because §6.1 opened by
+  asserting the opposite, which was true of the viewer only. Found by hand, minutes after ME-120 made
+  the viewer correct and the same file stayed dull in the editor. The fix moved the map under the
+  decode, so no surface owns a tone curve any more.
+- [ME-179](implemented/ME-179-the-hdr-mode-lives-in-the-pill.md) — ME-119's settings row lived one
+  day. The mode is a question about *this picture*, and `Force SDR` is a probe; a probe three screens
+  from what it probes compares against nothing. It moved into the top bar's pill.
+- [ME-180](implemented/ME-180-the-switch-reaches-the-picture.md) — flipping the mode redrew nothing.
+  ME-119 put the mode in both **cache** keys and called invalidation unnecessary, which was right and
+  beside the point: nobody asked for the new key, because neither decode was keyed on the mode. A
+  cache key and a recomposition key are different mechanisms and that change needed both.
+
+**ME-178 is retired, not deferred.** It was raised on 2026-09-03 to mirror the mode into the editor's
+top bar and closed the same day without a line of code: ME-177 had already put the tone map under
+both surfaces, so there was nothing editor-specific left to mirror and one control in the shared pill
+serves both. The id is retired rather than reused.
+
+**The fixture blocker is gone as of 2026-09-03.** For a year it was *"the corpus holds no genuine HDR
 still"* — `hdr_pq.avif`, `hdr_hlg.avif` and `hdr_pq.png` are SDR pixels wearing HDR tags, the first
 two pixel-identical with `psnr` reporting `inf`. That is still true of those three, but the corpus
 turned out to hold real HDR content all along: `WokaSample.DualVideo.mkv` stream `v:0` is ffv1
@@ -44,23 +69,36 @@ the source's own distribution plus what lossy AV1 adds.
 variety of content. ME-120 was done against it; whether its result *looks* right on a photograph
 somebody took is a separate question and a separate fixture.
 
-**ME-120 shipped 2026-09-03**, and the measurement corrected two of its own numbers. **ME-118 is no
-longer blocked by it**: the tone curve `To SDR` would bake is now normalised by what the picture
-reaches, so the fixture's SDR reference white renders above 200 rather than at 148/255.
-
 ### ME-118 — HDR tool
 `Output` domain, `Single`, one `ChoiceParam` — **`Keep` and `To SDR` only in v1** (§9, 2026-08-18).
-`To SDR` bakes the existing tone map into the pixels and writes an SDR file; `Keep` carries the
-source's transfer through, which needs the ffmpeg encode path since Skia cannot write PQ. **`To HDR` is
-deferred** — no measurement blocks it (PQ AVIF via libaom writes correctly, ME-010) but it is inverse
-tone mapping and does not recover clipped highlights, so it is not MVP.
+**`To HDR` is deferred** — no measurement blocks it (PQ AVIF via libaom writes correctly, ME-010) but
+it is inverse tone mapping and does not recover clipped highlights, so it is not MVP.
 
-**The ME-120 block is lifted (2026-09-03).** `To SDR` bakes the tone curve into pixels permanently,
-and that curve was normalised by the literal `W = 11.2` — on real HDR content SDR white landed at
-148/255, so shipping `To SDR` first would have written the defect into the user's files. It now
-measures the picture. What ME-118 inherits instead is ME-120's stated limit: **a still measures, a
-video frame still assumes**, so the tool must not offer `To SDR` on a video frame without saying what
-divisor it used.
+**Both halves changed shape on 2026-09-03 and the block is smaller than it was.**
+
+`Keep` was specified as *"carries the source's transfer through, which needs the ffmpeg encode path
+since Skia cannot write PQ"*. **That path is not needed, because nothing re-encodes.** Every format
+Woka lists resolves to `EditCapability.Recorded` — checked 2026-09-03, `EditCapabilityTest` asserts it
+for JPEG, PNG, WebP, HEIC and AVIF — and `Recorded` splices a recipe into the file and leaves the
+pixels untouched. Bucket B has been empty since ME-137. So an HDR file already keeps its transfer,
+its primaries and its PQ codes through an edit, and `Keep` is **the behaviour today** rather than
+something to build. What v1 owes it is a name in the UI, not an encoder.
+
+`To SDR` is the half that writes pixels, and it is the one that got cheaper: since ME-177 the canvas
+already holds tone-mapped sRGB, so baking is no longer "run the shader into a surface" but "write out
+what is being drawn". It still needs a real write path, because it is the first thing in the editor
+that would take a file out of `Recorded`.
+
+**The ME-120 block is lifted.** `To SDR` bakes the tone curve into pixels permanently, and that curve
+was normalised by the literal `W = 11.2` — on real HDR content SDR white landed at 148/255, so
+shipping it first would have written the defect into the user's files. It now measures the picture.
+
+**What ME-118 inherits instead is ME-120's stated limit: a still measures its white point, a video
+frame still assumes 11.2.** Not a problem for the image editor, which never opens a video at all —
+`EditorEngineFactoryImpl` answers `Unavailable` for anything that is not `MediaKind.Image`. It is a
+problem for **the 200 track**, whose editor reuses these tools on frames that cannot be measured: a
+`To SDR` there would bake a divisor nobody chose. ME-180 acts on the same fact from the other end, by
+hiding the view mode over video in the viewer.
 *Depends on ME-013, ME-132.*
 
 ---
@@ -102,5 +140,8 @@ engine** — which is the reverse of how this block read before 2026-09-02.
   minting anything (`Copy`, 2026-08-19), and an export step is precisely what §5 removed. ME-136 was
   raised for this on 2026-08-19 and closed the same day by making `Copy` the picture; the number is
   retired rather than reused.
+- ~~ME-178 — the editor's HDR top-bar mirror~~ — **retired 2026-09-03**, the id kept and never reused.
+  Raised and closed the same day: ME-177 put the tone map under the decode, so the editor and the
+  viewer read one mode through one pill and there was nothing to mirror.
 - Batch apply across a selection in the grid — the grid's `Edit` entry is single-selection only.
 - RAW, layers, masks, healing — out of scope for this feature entirely.

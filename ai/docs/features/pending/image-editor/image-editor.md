@@ -116,11 +116,11 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-119](tickets/implemented/ME-119-the-hdr-view-mode.md) | The HDR view mode | **done** 2026-09-03 — `Auto` / `Force HDR` / `Force SDR`, and the backlog's wording was **corrected rather than shipped**: Woka draws into an sRGB Skia window with no HDR swapchain, so the switch overrides *detection*, never output, and the panel's subtitle says so. The mode joins both cache keys instead of a change clearing them — switching misses, switching back hits, nothing has to remember to invalidate — and the suffix is **empty on `Auto`**, so no existing key moves. **Its settings-panel control lived one day**: ME-179 moved it into the pill, where the question is asked. By hand outstanding |
 | [ME-179](tickets/implemented/ME-179-the-hdr-mode-lives-in-the-pill.md) | The HDR mode lives in the pill | **done** 2026-09-03 — a dropdown in the top bar's pill, viewer and editor, replacing the settings row ME-119 shipped that morning. The mode is a question about **this picture** — `Force SDR` is a probe, and a probe three screens from what it probes compares against nothing. Each row carries a caption because "HDR" alone reads as an output setting the app does not have. `PillGap`/`PillDivider` were extracted: the control put `MediaViewerGlobalControls` at 154 lines and `CanvasZoomPill` now builds the same row. **Closes ME-178 rather than deferring it** — ME-177 left nothing editor-specific to mirror. By hand outstanding |
 | [ME-180](tickets/implemented/ME-180-the-switch-reaches-the-picture.md) | The switch reaches the picture | **done** 2026-09-03 — flipping the mode redrew nothing, and the cause is worth keeping: ME-119 put the mode in both **cache** keys and called invalidation unnecessary, which was right and irrelevant. Nobody asked for the new key — the decode's `LaunchedEffect` and the editor's `produceState` were not keyed on it, so the state kept the old bitmap. A cache key and a recomposition key are different mechanisms; ME-119 wrote a Done-when for the first only, which is why its tests passed and the app did not. Also **hides the control over video**: everything ME-177 built runs at the still decode, so the switch moved nothing there. Hidden, not removed — video needs a white point that does not pump between frames. By hand outstanding |
-| [ME-170](tickets/ME-170-on-scrim-tokens-the-overlays.md)                   | On-scrim tokens: the overlays | **open** |
-| [ME-171](tickets/ME-171-on-scrim-tokens-where-the-plate-decides.md)        | On-scrim tokens: where the plate decides | **open** |
+| [ME-170](tickets/implemented/ME-170-on-scrim-tokens-the-overlays.md) | On-scrim tokens: the overlays | **done** 2026-09-03 — nine sites, eight converted. The two that stayed carry the reason in the code: `PipCornerFlash` is a **flash, not a foreground** — the white *is* the effect, and `onScrim`'s #F4F4F6 would draw a grey smudge — and `MediaVerticalSlider`'s unplayed track is a constant one slider uses. `VolumeSliderFill`'s `WHITE_BAR` had to stop being a file-level `val`: a token needs a composition to be read in. By hand outstanding |
+| [ME-171](tickets/implemented/ME-171-on-scrim-tokens-where-the-plate-decides.md) | On-scrim tokens: where the plate decides | **done** 2026-09-03 — **the ticket's premise was wrong and the work was smaller than it feared.** It expected five files torn between a scrim and a `Theme.colors` plate; traced through `ToolbarPopover`, all five sit on `popoverScrim`, and every `Theme.colors` in them is `accent` — a foreground colour, never a plate. So thirteen of fourteen sites were mechanical. The fourteenth is the one real judgement call: the subtitle swatch's unselected rim is drawn on **the user's own colour**, not on the scrim, and `onScrimBorder`'s 0.08 is four times too faint to keep a white swatch's edge — it stays a literal. `SubtitleColorSwatches.kt` split out, both because that note pushed the file past 150 and because the one exception reads as an oversight when it sits among the rules. `ViewerChrome`'s "58 of them at the last count" is now history: **five literals left, every one documented where it sits**. Checking both themes is the author's |
 | [ME-172](tickets/implemented/ME-172-a-genuine-pq-still-enters-the-corpus.md) | A genuine PQ still enters the corpus | **done** 2026-09-03 — `hdr_real_pq.avif`, 4.9 KB, cut from `DualVideo`'s PQ stream with the **bundled** ffmpeg and measuring YMAX 0.592 against the fakes' 1.0. Its test makes the pixel claim against one of those fakes rather than against a number: both go through one decoder, so what survives the comparison is the only thing that differs. Unblocks ME-120, and behind it ME-118 and ME-119 |
 | ME-117                                                                     | ~~Housekeeping: make `roadmap.md` describe the editor that exists~~ | **done** 2026-09-02 — corrected in place rather than ticketed; the id is retained and never reused |
-| [ME-118, ME-119](tickets/backlog.md)                                       | HDR — the tool and the view mode | backlog |
+| [ME-118](tickets/backlog.md) | HDR tool — `Keep` / `To SDR` | backlog — **the only 500 block left**. ME-119 shipped 2026-09-03 and has its own row above; this row named both until then. Re-costed the same day and it shrank: `Keep` needs no encoder, because every format resolves to `EditCapability.Recorded` and nothing re-encodes, so an HDR file already keeps its transfer through an edit. `To SDR` is the half that still needs building — a write path out of `Recorded` — and ME-177 already put the sRGB it would bake on the canvas |
 | [ME-6xx](tickets/backlog.md)                                               | The four adjustments ME-162 did not take | backlog |
 
 ME-201…ME-204, the video editor's own tickets, moved to
@@ -377,7 +377,7 @@ and the dock accessories are hidden while editing — the editor is a mode, not 
 
 ```
 ┌───────────────────────────────────────────────────────────────┐
-│  Cancel        photo.jpg · Edited    HDR ▾   ↶  ↷     [Done ▾]│  top bar (accessory)
+│  Cancel    photo.jpg · Edited   [ 42% · HDR ▾ ]   ↶ ↷   [Done │  top bar
 ├───────────────────────────────────────────────────────────────┤
 │              ╭──────────────┬──────────────╮                  │  frame scope (ME-156) —
 │              │  All Frames  │  This Frame  │                  │  multi-frame stills only
@@ -609,9 +609,17 @@ different questions and conflating them is how HDR features become confusing.
 
 | Value | What it does | Needs |
 |---|---|---|
-| `Keep` | the output carries the source's transfer function unchanged | an HDR-capable encoder — **ffmpeg**, not Skia |
-| `To SDR` | bakes the tone map into the pixels and writes an SDR file | the existing shader, rendered into the surface |
+| `Keep` | the output carries the source's transfer function unchanged | **nothing — this is already what happens** (2026-09-03) |
+| `To SDR` | bakes the tone map into the pixels and writes an SDR file | a write path out of `Recorded`; the mapped pixels are already on the canvas |
 | `To HDR` | expands an SDR source into a PQ output | inverse tone mapping + an HDR encoder — **still gated**, see below |
+
+**Both of the first two rows were re-costed on 2026-09-03 and both got smaller.** `Keep` was
+specified as needing the ffmpeg encode path because Skia cannot write PQ. It needs no encoder at all:
+every format Woka lists resolves to `EditCapability.Recorded`, which splices a recipe into the file
+and never touches the pixels — bucket B has been empty since ME-137. An HDR file therefore already
+keeps its transfer, its primaries and its PQ codes through an edit. What v1 owes `Keep` is a name in
+the UI. And `To SDR` no longer has to run the shader into a surface: ME-177 put the tone map under
+the decode, so the canvas already holds the sRGB it would bake.
 
 **Probe results, 2026-08-17 (ME-010, ffmpeg 8.1.2-1.5.14). The gate is not resolved yet.**
 
@@ -644,18 +652,25 @@ Whether it *ships* is still a product call for §6.1, but no measurement blocks 
 certify an HDR file — the probe reported "PQ + wide" for a file rejected on sight. And a visual check
 is only as good as the viewer doing the looking, **including when that viewer is ours**.
 
-**None of this touches HDR *display*.** Woka already tone-maps HDR stills at draw time, and the
-`Auto` / `Force HDR` / `Force SDR` view mode below is unaffected. Everything above is about what a
-save *writes*.
+**None of this touches HDR *display*.** Everything above is about what a save *writes*; the tone map
+and the view mode below are about what is drawn, and they shipped on 2026-09-03 (ME-177, ME-119,
+ME-179, ME-180).
 
 Skia is not the encoder for any HDR output: it does not even read a valid PQ `cICP` PNG correctly
 (measured 2026-08-07, recorded in `StillColorInfo`). HDR output therefore goes through the bundled
 ffmpeg, which is why the HDR tool depends on ME-013.
 
-**The HDR view mode** — *not* part of the document. A tri-state (`Auto` / `Force HDR` / `Force SDR`)
-changing how a still is *displayed*, in the viewer and mirrored as a preview toggle in the editor's
-top bar. It changes no pixels and is persisted in `WokaSettings`. It exists so the user can see what a
-tone-mapped file actually looks like before deciding what the tool should write.
+**The HDR view mode** — *not* part of the document, and **shipped 2026-09-03**. A tri-state
+(`Auto` / `Force HDR` / `Force SDR`) changing how a still is *read*, persisted in `WokaSettings`,
+changing no pixels. It exists so the user can see what a tone-mapped file actually looks like before
+deciding what the tool should write.
+
+Two corrections to how it was specified here. It is **not** "mirrored in the editor's top bar": there
+is one control, in the pill both surfaces share, because ME-177 left nothing editor-specific to
+mirror (ME-179 closed ME-178 on that ground). And `Force HDR` overrides **detection, not output** —
+Woka draws into an sRGB Skia window with no HDR swapchain under it, so it means *read this file as
+PQ*, which is useful for the three mistagged files in the corpus and nothing more. It is hidden over
+video, where the switch reaches nothing (ME-180).
 
 ---
 

@@ -46,7 +46,8 @@ internal fun SubtitleActionRow(
     disabledHint: String? = null
 ) {
     var hovered by remember { mutableStateOf(false) }
-    val background = if (hovered && enabled) Color.White.copy(alpha = 0.10f) else Color.Transparent
+    val background =
+        if (hovered && enabled) Theme.viewer.onScrimHover else Color.Transparent
     val row: @Composable () -> Unit = {
         Box(
             modifier = Modifier
