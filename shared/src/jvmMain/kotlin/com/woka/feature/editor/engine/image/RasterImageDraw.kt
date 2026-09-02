@@ -129,11 +129,13 @@ private fun imageShaderFor(image: Image, source: ImageBitmap, sourceSize: IntSiz
 }
 
 /**
- * Declaration order, little-endian, `resolutionScale` last — the contract
- * `RasterStage.Shader` states and the packing `HdrImagePainter` has always used.
+ * Declaration order, little-endian, `resolutionScale` last **when the effect declares
+ * one at all** — the contract `RasterStage.Shader` states and the packing
+ * `HdrImagePainter` has always used. An effect that reads one pixel appends nothing,
+ * because a uniform it never reads is one SkSL may drop from the layout.
  */
 private fun pack(stage: RasterStage.Shader): ByteArray {
-    val values = stage.uniforms + stage.resolutionScale
+    val values = stage.uniforms + listOfNotNull(stage.resolutionScale)
     val buffer = ByteBuffer.allocate(values.size * FLOAT_BYTES).order(ByteOrder.LITTLE_ENDIAN)
     values.forEach { buffer.putFloat(it) }
     return buffer.array()

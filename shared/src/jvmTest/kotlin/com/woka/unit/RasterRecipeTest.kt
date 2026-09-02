@@ -139,7 +139,7 @@ class RasterRecipeTest {
 
         val scaled = recipe.scaledBy(0.25f)
 
-        assertEquals(0.25f, scaled.shaders.single().resolutionScale, 0.0001f)
+        assertEquals(0.25f, scaled.shaders.single().resolutionScale!!, 0.0001f)
         // The uniforms themselves are the tool's and are never rewritten.
         assertEquals(listOf(1f, 0f, 8f), scaled.shaders.single().uniforms)
     }

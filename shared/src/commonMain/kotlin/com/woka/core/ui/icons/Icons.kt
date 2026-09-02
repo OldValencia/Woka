@@ -129,6 +129,14 @@ object Icons {
         val Warmth = Res.drawable.thermometer_sun
         val Tint = Res.drawable.eyedropper_halffull
 
+        // The four ME-162 adds. Highlights and Shadows are a metaphor pair rather than
+        // more of the `circle.*half.filled` family above, chosen on screen: the halves
+        // read as geometry, and what these two do is light and dark.
+        val Highlights = Res.drawable.sun_max_circle
+        val Shadows = Res.drawable.moon_circle
+        val Sharpness = Res.drawable.camera_filters
+        val Noise = Res.drawable.aqi_medium
+
         // Crop's orientation, as a pair — a tall frame and a wide one (ME-144).
         val Portrait = Res.drawable.rectangle_portrait
         val Landscape = Res.drawable.rectangle

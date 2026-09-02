@@ -75,7 +75,7 @@ internal fun RasterRecipe.scaledBy(factor: Float): RasterRecipe {
 
     return copy(
         matrix = scaled,
-        shaders = shaders.map { it.copy(resolutionScale = it.resolutionScale * factor) },
+        shaders = shaders.map { it.copy(resolutionScale = it.resolutionScale?.times(factor)) },
         // At least one pixel: a recipe scaled into a thumbnail must not describe a
         // zero-sized frame that the renderer then hands to Skia.
         outputSize = IntSize(

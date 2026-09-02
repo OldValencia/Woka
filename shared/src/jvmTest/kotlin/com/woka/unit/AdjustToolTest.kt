@@ -19,6 +19,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /**
  * The adjustments tool, and what the fold does with it (ME-111).
@@ -96,5 +97,54 @@ class AdjustToolTest {
             assertNotNull(recipe.colorFilter, "the turn dropped the adjustment")
             assertEquals(IntSize(480, 640), recipe.outputSize, "the adjustment blocked the turn")
         }
+    }
+
+    /**
+     * Each of ME-162's four is a no-op at its detent, asserted **one at a time**: a
+     * neutral panel already passes above, and would pass even if a shader ignored its
+     * own slider and always produced a stage.
+     */
+    @Test
+    fun `each new adjustment composes nothing at its detent`() {
+        listOf(
+            AdjustTool.Highlights,
+            AdjustTool.Shadows,
+            AdjustTool.Sharpness,
+            AdjustTool.Noise
+        ).forEach { spec ->
+            assertNull(
+                AdjustTool.stage(adjusted(spec to 0f).params),
+                "${spec.label} composed a stage while sitting on its detent"
+            )
+        }
+    }
+
+    /**
+     * A matrix and three shaders as one composite, in `AdjustStage`'s order: colour,
+     * tone, denoise, sharpen — what a later edit changes silently.
+     */
+    @Test
+    fun `the matrix and the shaders arrive as one composite, in order`() {
+        val op = adjusted(
+            AdjustTool.Contrast to 40f,
+            AdjustTool.Highlights to -30f,
+            AdjustTool.Noise to 50f,
+            AdjustTool.Sharpness to 60f
+        )
+        val composite = assertIs<RasterStage.Composite>(assertNotNull(AdjustTool.stage(op.params)))
+
+        assertEquals(4, composite.stages.size)
+        assertIs<RasterStage.Pixels>(composite.stages[0])
+        composite.stages.drop(1).forEach { assertIs<RasterStage.Shader>(it) }
+        // Only the two convolutions declare a scale; the tone curve reads one pixel.
+        assertNull((composite.stages[1] as RasterStage.Shader).resolutionScale)
+        assertTrue(composite.stages.drop(2).all { (it as RasterStage.Shader).resolutionScale != null })
+    }
+
+    /** One shader alone is still returned bare, so the common path is unchanged. */
+    @Test
+    fun `a single shader is not wrapped in a composite`() {
+        val stage = AdjustTool.stage(adjusted(AdjustTool.Shadows to 25f).params)
+        assertIs<RasterStage.Shader>(assertNotNull(stage))
     }
 }

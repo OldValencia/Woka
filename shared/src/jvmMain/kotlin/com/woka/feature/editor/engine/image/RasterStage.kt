@@ -65,18 +65,38 @@ sealed interface RasterStage : ToolStage {
      * convolution costs anywhere.
      *
      * [uniforms] are packed in **declaration order**, little-endian, which is how Skia
-     * reads them and how `HdrImagePainter` has always written them. [resolutionScale]
-     * is appended after them and the effect must therefore declare it **last**: it is
-     * how many coordinate units make one source pixel, so a radius stated in source
-     * pixels stays the same *picture* when a reader folds the recipe against a bitmap
-     * that is not source-sized. It is 1.0 in a recipe folded at source scale, and
-     * `scaledBy` is the only thing that changes it.
+     * reads them and how `HdrImagePainter` has always written them.
+     *
+     * [resolutionScale] says how many coordinate units make one source pixel, so a
+     * radius stated in source pixels stays the same *picture* when a reader folds the
+     * recipe against a bitmap that is not source-sized. It is 1.0 in a recipe folded at
+     * source scale, and `scaledBy` is the only thing that changes it.
+     *
+     * **It is null for an effect that does not sample its neighbours**, and that is not
+     * tidiness (ME-162). Appended, it becomes one more declared uniform, and a uniform
+     * an effect never reads is one SkSL is free to eliminate — leaving the packed data a
+     * float longer than the layout Skia computed. A tone curve reads one pixel and wants
+     * no scale; only a convolution declares one.
      */
     data class Shader(
         val effect: RuntimeEffect,
         val uniforms: List<Float> = emptyList(),
-        val resolutionScale: Float = 1f
+        val resolutionScale: Float? = null
     ) : RasterStage
+
+    /**
+     * More than one of the above, from a single tool (ME-162).
+     *
+     * `EditorTool.stage()` answers one `ToolStage`, and that signature is shared with
+     * the video engine — widening it to a list would make every trim tool carry a
+     * collection it has no use for. So a tool with several stages says so *here*, in the
+     * raster vocabulary, and the fold flattens it in place: one branch, and no other
+     * tool changed.
+     *
+     * Adjust is the first to need it, holding a colour matrix and up to three shaders.
+     * Flattened depth-first, so the order written is the order run.
+     */
+    data class Composite(val stages: List<RasterStage>) : RasterStage
 
     /** Markup. Drawn in source coordinates, after the matrix, filter and shaders. */
     data class Paint(val draw: DrawScope.() -> Unit) : RasterStage

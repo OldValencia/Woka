@@ -48,5 +48,7 @@ fun fixtureShader(
     tapX: Float = 0f
 ): RasterStage.Shader = RasterStage.Shader(
     effect = FIXTURE_EFFECT,
-    uniforms = listOf(gain, offset, tapX)
+    uniforms = listOf(gain, offset, tapX),
+    // Non-null because the fixture genuinely reads it — see the note above.
+    resolutionScale = 1f
 )

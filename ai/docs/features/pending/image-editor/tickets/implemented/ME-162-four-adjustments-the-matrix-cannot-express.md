@@ -4,7 +4,7 @@
 |---|---|
 | **Order** | after ME-165, which is the stage it stands on |
 | **Depends on** | ME-165, ME-161, ME-142 |
-| **Feature** | [Image Editor](../image-editor.md) |
+| **Feature** | [Image Editor](../../image-editor.md) |
 
 **Goal.** Ship Highlights, Shadows, Sharpness and Noise Reduction as shader stages, taking the
 adjustments panel from eight to twelve.

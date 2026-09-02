@@ -55,6 +55,9 @@ fun fold(
             // so the order they were folded in is the order they run in (ME-165).
             is RasterStage.Shader -> shaders += stage
             is RasterStage.Paint -> paints += stage
+            // Flattened before the walk, so this branch is unreachable and says so
+            // rather than silently doing nothing if that ever stops being true.
+            is RasterStage.Composite -> error("a composite reached the fold unflattened")
         }
     }
 
@@ -114,6 +117,19 @@ private fun orderedStages(
         .mapNotNull { op -> resolve(op, registry, enabled, skipped) }
         .sortedBy { (_, tool) -> tool.manifest.domain.ordinal }
         .mapNotNull { (op, tool) -> tool.stage(op.params) as? RasterStage }
+        .flatMap { flatten(it) }
+}
+
+/**
+ * A [RasterStage.Composite] is its own contents, in order (ME-162).
+ *
+ * Recursive rather than one level deep, because nothing stops a composite holding a
+ * composite and a fold that silently ignored the inner one would drop an edit — which
+ * §3.4 promises never happens.
+ */
+private fun flatten(stage: RasterStage): List<RasterStage> = when (stage) {
+    is RasterStage.Composite -> stage.stages.flatMap { flatten(it) }
+    else -> listOf(stage)
 }
 
 private fun resolve(
