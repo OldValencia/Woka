@@ -77,18 +77,21 @@ of that pass; the rare formats are the one part still outstanding.
   carrier, ME-138, which shipped the next day. Moved to `implemented/` 2026-08-24.
 
 ### Phase 5: Media Editor (Editing tools)
-Two folders since 2026-08-24, one per shipping half. `features/pending/image-editor/` is **5a** —
-`image-editor.md` is the feature file, and `tickets/` holds the fourteen foundation tickets, the
-shipped image tickets and `backlog.md` for the ME-1xx track. `features/pending/video-editor/` is
-**5b** — nothing built, ME-201…ME-204 in its backlog. The ticket IDs are shared and unchanged,
-because the foundation is shared: the video editor adds a tool set, an engine and a saver to the
-image editor's shell and changes none of it.
+Two folders since 2026-08-24, one per shipping half. **5a — the image editor — is complete and moved
+to `features/implemented/image-editor/` on 2026-09-03.** `features/pending/video-editor/` is **5b** —
+nothing built, ME-201…ME-204 in its backlog. The ticket IDs are shared and unchanged, because the
+foundation is shared: the video editor adds a tool set, an engine and a saver to the image editor's
+shell and changes none of it.
 
-**5a has shipped; 5b has not started.** The image editor is on screen and in use — a shell, a rail,
-twelve-odd tools, a recipe carrier per container family, a save banner, and seventy-odd closed
-tickets behind it. What remains of it is nine open tickets and a short backlog, and the feature doc's
-status table is the only place that state is recorded — this paragraph deliberately does not restate
-it. The video editor is a tool set, an engine and a saver on top of the same shell.
+**5a is done: no open tickets, and its backlog holds only the things deliberately not built.** A
+shell, a rail, twelve tools, a recipe carrier per container family, a per-frame edit, an HDR path
+that tone maps at the decode, and an HDR tool that can bake to SDR. The feature doc's status table
+is where the ticket-by-ticket record lives; this paragraph deliberately does not restate it.
+
+Two things are named there as gaps rather than tickets — what a save in flight does when the app
+closes, and localisation — and the 600 track (four further adjustments) was **declined by the author
+on 2026-09-03**, not deferred. The video editor is a tool set, an engine and a saver on top of the
+same shell.
 
 **The foundation is built** — ME-001…ME-014 all done as of 2026-08-18: the document, history and
 session; the parameter schema and tool contract; the registry with settings-backed enablement; the

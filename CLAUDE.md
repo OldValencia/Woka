@@ -73,7 +73,7 @@ com.woka/
           decode/ grabber, decode loop, pacer, presenter, renderScale
           audio/ · subtitle/ · track/ · sync/ (A/V offsets, seek) · probe/ (HDR, chapters)
       pip/    PipManager, GlobalPipWindow, Pip*
-    editor/   Phase 5, image + video behind one shell (`pending/image-editor/`, `pending/video-editor/`)
+    editor/   Phase 5, image + video behind one shell (`implemented/image-editor/`, `pending/video-editor/`)
       core/   media-agnostic: ParamSpec/ParamSet, ToolOp, EditDocument, EditorHistory,
               EditorSession, ToolManifest, EditorTool/CanvasTool, ToolStage,
               EditorToolRegistry, EditorEngine + its factory                (commonMain)
