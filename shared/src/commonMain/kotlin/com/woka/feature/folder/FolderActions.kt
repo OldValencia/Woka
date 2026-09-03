@@ -24,17 +24,7 @@ object FolderActions {
         paths.forEach { path ->
             val file = File(path)
             if (file.exists()) {
-                val nameWithoutExt = file.nameWithoutExtension
-                val ext = file.extension
-                val parent = file.parentFile
-                var newName = if (ext.isNotEmpty()) "$nameWithoutExt copy.$ext" else "$nameWithoutExt copy"
-                var newFile = File(parent, newName)
-                var counter = 1
-                while (newFile.exists()) {
-                    newName = if (ext.isNotEmpty()) "$nameWithoutExt copy $counter.$ext" else "$nameWithoutExt copy $counter"
-                    newFile = File(parent, newName)
-                    counter++
-                }
+                val newFile = copyNameBeside(file.parentFile, file)
                 if (file.isDirectory) {
                     file.copyRecursively(newFile)
                 } else {
@@ -61,7 +51,11 @@ object FolderActions {
         if (destDir.exists() && destDir.isDirectory) {
             paths.forEach { path ->
                 val file = File(path)
-                if (file.exists()) {
+                // Moving a file into the folder it is already in is nothing to do, and
+                // saying so beats relying on `renameTo` to no-op: the fallback below
+                // copies and then **deletes the source**, which for a self-move is the
+                // same catastrophe `copyFiles` had.
+                if (file.exists() && !isSamePlace(destDir, file)) {
                     val newFile = File(destDir, file.name)
                     if (!file.renameTo(newFile)) {
                         if (file.isDirectory) {
@@ -93,7 +87,7 @@ object FolderActions {
             paths.forEach { path ->
                 val file = File(path)
                 if (file.exists()) {
-                    val newFile = File(destDir, file.name)
+                    val newFile = targetFor(destDir, file)
                     if (file.isDirectory) {
                         file.copyRecursively(newFile, overwrite = true)
                     } else {
@@ -103,4 +97,43 @@ object FolderActions {
             }
         }
     }
+}
+
+/** Whether [dir] is the folder [file] already sits in, compared canonically. */
+private fun isSamePlace(dir: File, file: File): Boolean =
+    runCatching { dir.canonicalFile == file.parentFile?.canonicalFile }.getOrDefault(false)
+
+/**
+ * Where a copy of [file] should land in [dir] — **its own name, unless that would be
+ * the file itself**.
+ *
+ * This is a data-loss guard, not a naming convenience. `File.copyTo(overwrite = true)`
+ * deletes the target *before* it opens the source, so a copy onto itself removes the
+ * photograph and then fails reading it — nothing is written and the original is gone.
+ * Reported 2026-09-03: "Duplicate to…", the same folder chosen, and the file vanished
+ * with a `FileNotFoundException` from `FileInputStream.open`.
+ *
+ * The guard lives here rather than in the context menu because the menu is not the only
+ * caller and the next one will not remember.
+ */
+private fun targetFor(dir: File, file: File): File =
+    if (isSamePlace(dir, file)) copyNameBeside(dir, file) else File(dir, file.name)
+
+/**
+ * `photo copy.jpg`, then `photo copy 2.jpg` — the name `duplicateFiles` has always
+ * given, now written once so the two cannot drift.
+ */
+private fun copyNameBeside(dir: File, file: File): File {
+    val stem = file.nameWithoutExtension
+    val ext = file.extension
+    fun named(suffix: String) =
+        File(dir, if (ext.isNotEmpty()) "$stem copy$suffix.$ext" else "$stem copy$suffix")
+
+    var candidate = named("")
+    var counter = 1
+    while (candidate.exists()) {
+        candidate = named(" $counter")
+        counter++
+    }
+    return candidate
 }
