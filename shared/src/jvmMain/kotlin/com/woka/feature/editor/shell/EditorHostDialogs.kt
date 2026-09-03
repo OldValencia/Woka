@@ -30,7 +30,15 @@ internal fun EditorHostDialogs(
     onRevert: () -> Unit,
     askingToDiscard: Boolean,
     onDiscard: () -> Unit,
-    onKeepEditing: () -> Unit
+    onKeepEditing: () -> Unit,
+    /**
+     * `To SDR` is about to rewrite the photograph's pixels (ME-118).
+     *
+     * Defaulted, so a caller that cannot raise this question — the frame-discard tests
+     * exercise the other two — says nothing rather than passing a pair of blanks.
+     */
+    askingToBake: Boolean = false,
+    onBake: () -> Unit = {}
 ) {
     if (askingToRevert) {
         RevertDialog(onRevert = onRevert, onKeepEditing = onKeepEditing, scope = revertScope)
@@ -38,5 +46,9 @@ internal fun EditorHostDialogs(
 
     if (askingToDiscard) {
         DiscardChangesDialog(onDiscard = onDiscard, onKeepEditing = onKeepEditing)
+    }
+
+    if (askingToBake) {
+        BakeToSdrDialog(onBake = onBake, onKeepEditing = onKeepEditing)
     }
 }

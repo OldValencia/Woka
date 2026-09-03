@@ -4,8 +4,13 @@ import androidx.compose.ui.unit.IntSize
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.engine.image.RasterRecipe
+import androidx.compose.ui.graphics.toComposeImageBitmap
+import com.woka.feature.viewer.image.displayable
 import com.woka.feature.viewer.image.stillDecoderFor
 import java.io.File
+
+/** The one container Skia cannot write and ME-181 can. */
+private const val AVIF_EXTENSION = "avif"
 
 /**
  * A document becoming pixels, for the one bucket that has nowhere to record it.
@@ -51,10 +56,15 @@ internal class ImageSaveJob(
             )
         }
 
+        // AVIF has no Skia encoder and no longer needs one: ME-181 writes it. Every
+        // other format still goes through `formatFor`, and one neither can take is
+        // refused rather than half-written.
         val format = formatFor(file)
-            ?: return EditSaveResult.Failed(
+        if (format == null && file.extension.lowercase() != AVIF_EXTENSION) {
+            return EditSaveResult.Failed(
                 "${file.extension.uppercase()} files cannot be saved directly. Convert first."
             )
+        }
 
         val bytes = runCatching { encode(document, format) }.getOrElse { error ->
             return EditSaveResult.Failed(
@@ -73,10 +83,20 @@ internal class ImageSaveJob(
         )
     }
 
-    private fun encode(document: EditDocument, format: SaveFormat): ByteArray {
+    /**
+     * **`displayable`, not the bare decoder** (ME-118). This read
+     * `stillDecoderFor(file).frame(...)`, the raw decode, which for an HDR source is PQ
+     * codes — baking those would write into the user's file the very defect ME-177 took
+     * off the screen. Bucket B is empty so it was never wrong in practice; `To SDR` is
+     * the first caller that would have made it so.
+     *
+     * A null [format] means AVIF, which Skia cannot encode and ME-181 can.
+     */
+    private fun encode(document: EditDocument, format: SaveFormat?): ByteArray {
         // Native, once, and released when this returns.
-        val native = stillDecoderFor(file).frame(file, frameIndex)
+        val native = displayable(file, stillDecoderFor(file).frame(file, frameIndex))
         val rendered = renderAtNativeScale(native, sourceSize, recipeOf(document))
+        if (format == null) return rendered.use { encodeSdrAvif(it.toComposeImageBitmap()) }
         val encoded = rendered.use {
             it.encodeToData(format.skia, format.quality)?.bytes
                 ?: error("the ${format.name} encoder produced nothing")

@@ -2,6 +2,7 @@ package com.woka.feature.editor.engine.image
 
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
+import com.woka.feature.editor.tools.hdr.bakesToSdr
 import com.woka.feature.editor.core.EditLayers
 import com.woka.feature.editor.core.EditPayload
 import com.woka.feature.editor.core.EditSaveResult
@@ -43,13 +44,27 @@ internal fun writeFor(
     frameIndex: Int,
     stamp: SourceStamp,
     reEncode: (EditDocument) -> EditSaveResult
+): EditSaveResult {
+    val open = EditDocument(layers.base.ops + (layers.frames[frameIndex]?.ops ?: emptyList()))
+    // **Ahead of the capability switch, deliberately** (ME-118). `To SDR` rewrites the
+    // photograph, so it leaves bucket A whatever the format's carrier can do — a recipe
+    // spliced beside baked pixels would replay the edit on top of itself.
+    if (capability != EditCapability.Unavailable && bakesToSdr(open)) return reEncode(open)
+    return writeByCapability(capability, file, layers, open, stamp, reEncode)
+}
+
+private fun writeByCapability(
+    capability: EditCapability,
+    file: File,
+    layers: EditLayers,
+    open: EditDocument,
+    stamp: SourceStamp,
+    reEncode: (EditDocument) -> EditSaveResult
 ): EditSaveResult = when (capability) {
     EditCapability.Recorded -> recordRecipe(file, layers, stamp)
     // **Bucket B takes the open frame alone** and could not take more: it rewrites the
     // picture rather than recording a recipe (ME-126). It is empty today.
-    EditCapability.Destructive -> reEncode(
-        EditDocument(layers.base.ops + (layers.frames[frameIndex]?.ops ?: emptyList()))
-    )
+    EditCapability.Destructive -> reEncode(open)
     EditCapability.Unavailable -> EditSaveResult.Failed(
         "${file.extension.uppercase()} files cannot be edited."
     )

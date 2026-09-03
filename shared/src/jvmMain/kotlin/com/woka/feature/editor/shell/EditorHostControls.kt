@@ -6,6 +6,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import com.woka.feature.editor.tools.hdr.bakesToSdr
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.woka.feature.editor.core.EditScope
@@ -62,6 +63,7 @@ internal fun EditorHostControls(
     var carriesEdit by remember(session) { mutableStateOf(carriesStoredEdit) }
     var askingToRevert by remember { mutableStateOf(false) }
     var askingToDiscard by remember { mutableStateOf(false) }
+    var askingToBake by remember { mutableStateOf(false) }
 
     val isDirty by session.isDirty.collectAsState()
     // Recomputed with the document, because that is what it is derived from.
@@ -74,7 +76,11 @@ internal fun EditorHostControls(
     // `Done` writes into the file that was opened and closes. **There is nothing to
     // choose** (§4.5) beyond which frames it is for. The order it closes in, and the
     // scope the write outlives this composable in, are `saveAction`'s (ME-130).
-    val done = saveAction(engine, session, file.name, editScope, onClose, onSaved)
+    val write = saveAction(engine, session, file.name, editScope, onClose, onSaved)
+    // **The one question `Done` asks** (ME-118). Everything else it writes is a recipe
+    // the file can give back; `To SDR` rewrites the pixels, so it is asked about before
+    // it happens rather than regretted after.
+    val done = { if (bakesToSdr(document)) askingToBake = true else write() }
     EditorExitEffect(isDirty = isDirty, onSave = done)
 
     val revert = revertAction(
@@ -124,6 +130,12 @@ internal fun EditorHostControls(
         onRevert = revert,
         askingToDiscard = askingToDiscard,
         onDiscard = { askingToDiscard = false; onClose() },
-        onKeepEditing = { askingToRevert = false; askingToDiscard = false }
+        askingToBake = askingToBake,
+        onBake = { askingToBake = false; write() },
+        onKeepEditing = {
+            askingToRevert = false
+            askingToDiscard = false
+            askingToBake = false
+        }
     )
 }
