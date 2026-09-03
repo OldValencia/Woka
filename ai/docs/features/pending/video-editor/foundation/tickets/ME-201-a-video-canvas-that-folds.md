@@ -201,12 +201,16 @@ editor"*. So the **functional** half of step 9 has passed — the canvas draws t
 through the fold, the five reused tools change it live, and nothing about the shell behaves
 differently from a photograph's editor.
 
-**The gate itself is still open**, and it is a narrower question than "does it work": what has not
-been reported is the *file's resolution*, whether **Highlights, Shadows, Noise and Sharpness** were
-moved off their detents at the same time — the four sliders that fold to shaders, and the only ones
-the probe found expensive — and what `PlaybackHealth` made of the displayed rate against the declared
-one. Until that is answered, [`picture/`](../../picture/picture.md) stays planned on the assumption
-that matrix work is free and shader work is not.
+**Closed by the author 2026-09-03** — *"201 я подтвердил, всё окей"* — after a second run over
+ME-207's fixes. The ticket is done.
+
+**What that closes and what it does not.** It closes this ticket: a video opens, folds and behaves as
+the image editor does. It does not close the *shader* question, because the four sliders the probe
+found expensive — Highlights, Shadows, Noise, Sharpness — were never reported as having been moved
+together on a 2160p file, and no `PlaybackHealth` figure was read. That is
+[`picture/`](../../picture/picture.md)'s gate rather than this one's, it is recorded there, and the
+first ticket in that folder is the natural place to answer it: ME-260 has to exercise those tools by
+hand anyway.
 
 Three defects came out of the same run and all three were ME-207's three answers, against the build
 that had none of them: no sound, the space bar re-opening the last tool instead of pausing, and the

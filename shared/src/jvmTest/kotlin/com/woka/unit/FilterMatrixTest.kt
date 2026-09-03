@@ -5,6 +5,7 @@ import com.woka.feature.editor.tools.filter.PhotoFilter
 import com.woka.feature.editor.tools.filter.filterMatrix
 import kotlin.math.abs
 import kotlin.test.Test
+import com.woka.feature.editor.core.ParamPoint
 import kotlin.test.assertContentEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -67,6 +68,35 @@ class FilterMatrixTest {
     }
 
     /** A monochrome look answers the same number on all three channels. */
+    /**
+     * **The pad is not broken; it is inert without a look** (reported 2026-09-03).
+     *
+     * ME-150 made the axes shape the *chosen look* rather than the photograph, and said
+     * in as many words that at `Original` there is nothing to shape. Asserted here
+     * because the report read as "the square does nothing" and the two readings — wired
+     * wrongly, or working as designed — lead to completely different work.
+     */
+    @Test
+    fun `the pad shapes a chosen look`() {
+        val flat = assertNotNull(filterMatrix(PhotoFilter.Vivid, 100f)).values
+        val shaped = assertNotNull(
+            filterMatrix(PhotoFilter.Vivid, 100f, ParamPoint(x = 60f, y = 40f))
+        ).values
+
+        assertTrue(
+            flat.indices.any { abs(flat[it] - shaped[it]) > 0.001f },
+            "moving the pad over a chosen look changed nothing"
+        )
+    }
+
+    @Test
+    fun `the pad is inert at Original, whatever it is set to`() {
+        assertNull(
+            filterMatrix(PhotoFilter.Original, 100f, ParamPoint(x = 100f, y = -100f)),
+            "the pad shaped a look that is the absence of one"
+        )
+    }
+
     @Test
     fun `Mono and Noir turn a colour grey`() {
         listOf(PhotoFilter.Mono, PhotoFilter.Noir).forEach { filter ->

@@ -7,9 +7,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.unit.IntSize
+import kotlin.math.max
+import kotlin.math.min
 
 /**
  * The picture, through the recipe, in one draw pass.
@@ -38,7 +39,18 @@ internal fun RasterSurface(
     source: ImageBitmap,
     sourceSize: IntSize,
     recipe: RasterRecipe,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /**
+     * Whether the picture **fills** the box instead of fitting inside it.
+     *
+     * False for the canvas, whose box is measured to `drawnSize`'s own proportions — the
+     * two scales are equal there and this parameter changes nothing. True for a
+     * preview-choice thumbnail, whose box is a **square** whatever shape the picture is:
+     * a 16:9 frame fitted into one drew across the top and left the bottom empty
+     * (reported 2026-09-03). A look strip is for judging colour rather than composition,
+     * so filling and cropping is what the mockup draws and what iOS Photos does.
+     */
+    fill: Boolean = false
 ) {
     // **Clipped, and a crop is why** (2026-08-22). The box is `recipe.outputSize`; the
     // picture drawn inside it is the *source*, which a crop makes larger than the box.
@@ -53,9 +65,21 @@ internal fun RasterSurface(
         if (output.width <= 0 || output.height <= 0) return@Canvas
         if (sourceSize.width <= 0 || sourceSize.height <= 0) return@Canvas
 
-        val fitScale = size.width / output.width.toFloat()
+        // **Both axes, and centred** (2026-09-03). It was `size.width / output.width`
+        // anchored at the origin, which is right only while the box has the picture's own
+        // proportions — true of the canvas and false of every thumbnail.
+        val across = size.width / output.width.toFloat()
+        val down = size.height / output.height.toFloat()
+        val fitScale = if (fill) max(across, down) else min(across, down)
+        // Zero on the canvas, where the two scales are equal. What a `fill` crops is
+        // split between the two edges rather than taken off one of them.
+        val left = (size.width - output.width * fitScale) / 2f
+        val top = (size.height - output.height * fitScale) / 2f
 
-        scale(scale = fitScale, pivot = Offset.Zero) {
+        withTransform({
+            translate(left, top)
+            scale(fitScale, fitScale, pivot = Offset.Zero)
+        }) {
             withTransform({ transform(recipe.matrix) }) {
                 // Everything inside this call reasons in source pixels and never
                 // learns the bitmap was smaller. That is what lets the same recipe run

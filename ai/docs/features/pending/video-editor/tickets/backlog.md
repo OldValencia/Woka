@@ -361,6 +361,36 @@ places. The double-click-to-detent on a slider stays, because a detent is not al
 gesture is free: the canvas owns the context menu and no inspector row has one.
 *Depends on nothing. Design: [`../video-editor.md`](../video-editor.md) §4.1b.*
 
+### ME-302 — HDR controls appear only for an HDR picture
+Reported 2026-09-03: an **SDR** photograph shows both the HDR tool in the rail and the HDR dropdown
+in the pill, and neither can move anything. **Detection is not the hard part** — `TransferKind` is
+PQ, HLG or SDR, read at the decode, and its own KDoc records that wide-gamut SDR is *not* HDR — so
+the predicate is `transfer != TransferKind.SDR`.
+
+What it costs is that the colour has to *reach* two surfaces. The viewer's pill has
+`state.stillColor` one expression away; the editor's own pill (`CanvasZoomPill`, the grid→editor
+path) and the rail have nothing — `SourceStats` carries a histogram and no colour, so the engine
+would have to answer for it.
+
+**Settled 2026-09-03: hidden, on both surfaces.** The author's words — *"скрывать только на SDR
+картинках. Эти настройки и дропдауны не нужны для SDR картинок. Поэтому скрыть во вьювере и
+редакторе."* Grey-with-a-reason was the alternative and it was **not** taken: `EditorRail`'s
+`unavailable` map is built, shipped and filled by nobody, and it draws a struck-through button with
+the reason in a tooltip — the house pattern for a refusal. It is the right shape for "this tool
+cannot apply *here*", and the wrong one for a control that has nothing to say about this file at all.
+A greyed HDR entry on every photograph in a library that is almost all SDR is a permanent piece of
+furniture explaining an absence.
+
+So it needs the **per-file hide the registry has not got**: `tools(kind)` filters on `supports` and
+on Settings, and this is a third question — asked of the file rather than of the medium or the
+preference. Whether that lands as a filter in the shell or as a widened registry is the ticket's to
+decide against the tree.
+
+Three surfaces, one predicate: the viewer's pill (`state.stillColor` is one expression away), the
+editor's own pill on the grid→editor path, and the rail. The last two need the colour to reach the
+engine, which today answers `SourceStats` — a histogram and no colour.
+*Depends on nothing. Changes the image editor too, which is why it is here and not in §260.*
+
 ### ME-301 — The HDR control reaches a video frame
 `showHdrMode` is false for video (ME-180) because the switch reached nothing: the tone map ran in
 `HdrImagePainter` with an assumed white point. ME-205 puts it in the recipe chain, which is half the

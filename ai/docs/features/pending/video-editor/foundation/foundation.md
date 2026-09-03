@@ -13,7 +13,7 @@ Umbrella and the architecture this implements: [`../video-editor.md`](../video-e
 
 | Ticket | Title | State |
 |---|---|---|
-| [ME-201](tickets/ME-201-a-video-canvas-that-folds.md) | A video canvas that folds | **steps 1–8 done 2026-09-03**, build green, 1313 tests. Step 9 — the by-hand gate — outstanding |
+| [ME-201](tickets/ME-201-a-video-canvas-that-folds.md) | A video canvas that folds | **done 2026-09-03** — confirmed by hand by the author, build green |
 | [ME-206](tickets/ME-206-the-band-the-seam-and-a-scrubber.md) | The band, the seam, and a scrubber | **written** — not started |
 | [ME-207](tickets/ME-207-the-canvas-opens-paused.md) | The canvas opens paused, and a drag holds it | **done 2026-09-03** — build green; opens paused, space toggles, a drag holds, sound at the app's volume |
 | [ME-205](tickets/ME-205-hdr-on-the-video-canvas.md) | HDR on the video canvas | **written** — not started |

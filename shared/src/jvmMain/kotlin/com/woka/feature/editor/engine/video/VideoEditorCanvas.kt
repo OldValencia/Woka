@@ -121,5 +121,7 @@ internal fun VideoEditorThumbnail(
     modifier: Modifier
 ) {
     val frame = holder.state?.currentFrame ?: return
-    RasterSurface(source = frame, sourceSize = sourceSize, recipe = recipe, modifier = modifier)
+    // **`fill`, because the box is a square and a video frame never is** (2026-09-03):
+    // fitted, a 16:9 frame drew across the top and left the bottom of the square empty.
+    RasterSurface(frame, sourceSize, recipe, modifier, fill = true)
 }

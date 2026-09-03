@@ -32,8 +32,13 @@ in two:
 
 Those are CPU-raster figures and therefore a ceiling, not a frame budget — but a 443× multiplier is a
 property of the work, and a hardware backend has the same texture-fetch count with more cores to
-spend on it. **ME-201's step 9 is the by-hand half of the gate**, and until it is run this folder is
-planned on the assumption that matrix work is free and shader work is not.
+spend on it.
+
+**The by-hand half is still open, and it moved here.** ME-201 was closed by the author on 2026-09-03
+with the canvas confirmed working, but the four shader sliders were never reported as moved together
+on a 2160p file and no `PlaybackHealth` figure was read. **ME-260 is where that is answered** — it
+has to exercise these tools by hand regardless — and until it is, this folder is planned on the
+assumption that matrix work is free and shader work is not.
 
 ---
 

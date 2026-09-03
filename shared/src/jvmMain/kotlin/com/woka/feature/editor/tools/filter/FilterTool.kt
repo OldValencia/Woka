@@ -128,6 +128,17 @@ object FilterTool : EditorTool {
         listOf(Undertone, Filter, Tone)
 
     /**
+     * **Why the pad appears to do nothing** (reported 2026-09-03). ME-150 made the axes
+     * shape the *chosen look*, and left the row visible and inert at `Original` — hiding
+     * it had been tried and reversed. What it did not do is *say* so, and an inert
+     * control reads on screen as a broken one. Dimming the square needs a "this row is
+     * inert" the schema has not got; that is still ME-150's named follow-on.
+     */
+    override fun footnote(params: ParamSet, frame: IntSize): String? =
+        "Pick a look — the pad shapes the look, not the photograph"
+            .takeIf { params[Filter] == PhotoFilter.Original }
+
+    /**
      * Nothing when none of the four parts does anything — the rule every tool follows,
      * so a panel opened and closed leaves the document untouched. The arithmetic is
      * `styleMatrix`, beside the matrices it multiplies.

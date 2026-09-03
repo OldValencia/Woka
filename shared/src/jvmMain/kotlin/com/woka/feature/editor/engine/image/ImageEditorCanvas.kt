@@ -41,6 +41,8 @@ internal fun ImageCanvas(
     sourceSize: IntSize,
     recipe: RasterRecipe,
     modifier: Modifier,
+    /** True for a thumbnail, whose box is a square whatever shape the picture is. */
+    fill: Boolean = false,
     /**
      * Handed the proxy the moment it exists, so the engine can measure a histogram off a
      * bitmap that is already decoded (ME-166). The alternative was a lazy `stats` that
@@ -60,7 +62,8 @@ internal fun ImageCanvas(
         source = source,
         sourceSize = sourceSize,
         recipe = recipe,
-        modifier = modifier
+        modifier = modifier,
+        fill = fill
     )
 }
 

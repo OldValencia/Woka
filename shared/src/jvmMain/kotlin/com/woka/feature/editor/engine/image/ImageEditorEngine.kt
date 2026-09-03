@@ -83,10 +83,16 @@ internal class ImageEditorEngine(
             onProxy = measured::measureOnce
         )
 
-    /** One option of a filter strip, from the **same proxy** — see `ImageCanvas`. */
+    /**
+     * One option of a filter strip, from the **same proxy** — see `ImageCanvas`.
+     *
+     * **`fill`, because the box is a square and the picture is not** (2026-09-03). Fitted,
+     * a 3:2 photograph drew across the top of its square and left the bottom empty; a look
+     * strip is for judging colour rather than composition, so it crops.
+     */
     @Composable
     override fun Thumbnail(document: EditDocument, modifier: Modifier) =
-        ImageCanvas(file, frameIndex, playback, sourceSize, recipe(document), modifier)
+        ImageCanvas(file, frameIndex, playback, sourceSize, recipe(document), modifier, fill = true)
 
     /**
      * The stamp is taken **when the engine is built**, not when a save starts.

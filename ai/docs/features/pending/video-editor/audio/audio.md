@@ -114,6 +114,26 @@ a markup shape's span on the strip.
 there is no second number, because "loop three times" is a thing a user counts and a thing the
 editor would then have to explain when the video gets longer.
 
+### 3.3b Three volumes, and they are three different things
+
+Author's note, 2026-09-03, raised against the seeker the band will grow. Naming them apart now is
+cheap; discovering later that one control was doing two jobs is not.
+
+| | Whose | Where it lives | Who hears it |
+|---|---|---|---|
+| **A clip's gain** | the edit | an op in that clip's layer (§3.2) | everyone who ever plays the result |
+| **The whole video's gain** | the edit | the same op under **All Clips** | everyone who ever plays the result |
+| **Monitoring volume** | *not* the edit | the app's own `mediaVolume`, which the viewer already persists | only the person editing, on this machine |
+
+**The third is the one to keep out of the document.** It is the number the editor's canvas already
+opens the player at (ME-207), it belongs beside the seeker in the band, and it must never reach a
+recipe or a render: turning the monitor down to spare the neighbours cannot be allowed to write a
+quiet file. Whoever builds the band's volume control (ME-206 or its follow-on) has to point it at
+`mediaVolume` and at nothing else, and the audio tool has to leave that number alone.
+
+The first two are one control and one op, separated by the scope switch — which is the whole point
+of §3.2's rule and the reason there is no third op here.
+
 ### 3.4 An external file makes the recipe stop being self-contained, and that has to be said out loud
 
 Every other edit in this app is a description of the file it lives in. An external track is a
@@ -179,3 +199,4 @@ encodes only when it does not. It respects the cuts, because everything does.
 | 2026-09-03 | Fade shape? | **Linear, in seconds, one shape** | A curve editor is a professional control for a difference nobody hears at 300 ms |
 | 2026-09-03 | What settings does a second-row entry get? | **`TimeWindow` — the same group markup takes — plus volume and repeat** | The two ask the same three questions, and one envelope function called by both the canvas and the renderer is what keeps the export matching the preview (§3.3a) |
 | 2026-09-03 | Does `Repeat` take a count? | **No — a loop ends when the video does** | A count is a thing the editor would then have to explain every time the video's length changed |
+| 2026-09-03 | How many volumes are there? | **Three, and only two are the edit** | A clip's gain and the file's are one op under the scope switch; monitoring volume is the app's `mediaVolume` and must never reach a recipe or a render, or turning the monitor down would write a quiet file (§3.3b) |
