@@ -88,11 +88,11 @@ object FolderActions {
                 val file = File(path)
                 if (file.exists()) {
                     val newFile = targetFor(destDir, file)
-                    if (file.isDirectory) {
-                        file.copyRecursively(newFile, overwrite = true)
-                    } else {
-                        file.copyTo(newFile, overwrite = true)
-                    }
+                    // **No `overwrite`, and it is unreachable rather than merely absent**:
+                    // `targetFor` has already found a free name, so there is nothing there
+                    // to overwrite. Passing it anyway would leave a loaded gun for the next
+                    // person who changes the naming rule.
+                    if (file.isDirectory) file.copyRecursively(newFile) else file.copyTo(newFile)
                 }
             }
         }
@@ -104,20 +104,28 @@ private fun isSamePlace(dir: File, file: File): Boolean =
     runCatching { dir.canonicalFile == file.parentFile?.canonicalFile }.getOrDefault(false)
 
 /**
- * Where a copy of [file] should land in [dir] — **its own name, unless that would be
- * the file itself**.
+ * Where a copy of [file] should land in [dir] — **its own name, unless something is
+ * already there**.
  *
- * This is a data-loss guard, not a naming convenience. `File.copyTo(overwrite = true)`
- * deletes the target *before* it opens the source, so a copy onto itself removes the
- * photograph and then fails reading it — nothing is written and the original is gone.
- * Reported 2026-09-03: "Duplicate to…", the same folder chosen, and the file vanished
- * with a `FileNotFoundException` from `FileInputStream.open`.
+ * This is a data-loss guard, not a naming convenience, and it covers two cases with one
+ * rule because they were two ways to lose a photograph:
  *
- * The guard lives here rather than in the context menu because the menu is not the only
- * caller and the next one will not remember.
+ * - **Copying onto itself.** `File.copyTo(overwrite = true)` deletes the target *before*
+ *   it opens the source, so for the file's own folder the original was removed and the
+ *   read then failed. Reported 2026-09-03: "Duplicate to…", the same folder chosen, and
+ *   the file vanished with a `FileNotFoundException` from `FileInputStream.open`.
+ * - **Copying onto someone else's file.** The same `overwrite = true` silently replaced a
+ *   different photograph that happened to share a name — no question, no undo. Woka has
+ *   no trash of its own to fish it back out of.
+ *
+ * Asking whether the *name is taken* answers both: the first case is the one where the
+ * name is taken by the source itself. The guard lives here rather than in the context
+ * menu because the menu is not the only caller and the next one will not remember.
  */
-private fun targetFor(dir: File, file: File): File =
-    if (isSamePlace(dir, file)) copyNameBeside(dir, file) else File(dir, file.name)
+private fun targetFor(dir: File, file: File): File {
+    val sameName = File(dir, file.name)
+    return if (sameName.exists()) copyNameBeside(dir, file) else sameName
+}
 
 /**
  * `photo copy.jpg`, then `photo copy 2.jpg` — the name `duplicateFiles` has always

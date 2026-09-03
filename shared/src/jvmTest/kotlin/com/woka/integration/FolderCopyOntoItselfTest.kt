@@ -97,4 +97,19 @@ class FolderCopyOntoItselfTest {
         assertContentEquals(before, file.readBytes())
         assertEquals(1, dir.listFiles()?.size, "a self-move left something behind")
     }
+
+    @Test
+    fun `a copy never replaces a different photograph of the same name`() = runTest {
+        // The second way to lose a picture, and the one nobody reported because it is
+        // quiet: `overwrite = true` replaced a stranger's file that happened to share a
+        // name. Woka has no trash of its own to fish it back out of.
+        val file = photograph()
+        val elsewhere = File(dir, "sub").apply { mkdirs() }
+        val occupant = File(elsewhere, "photo.avif").apply { writeBytes(byteArrayOf(1, 2, 3)) }
+
+        FolderActions.copyFiles(listOf(file.absolutePath), elsewhere.absolutePath)
+
+        assertContentEquals(byteArrayOf(1, 2, 3), occupant.readBytes(), "the occupant was replaced")
+        assertContentEquals(file.readBytes(), File(elsewhere, "photo copy.avif").readBytes())
+    }
 }
