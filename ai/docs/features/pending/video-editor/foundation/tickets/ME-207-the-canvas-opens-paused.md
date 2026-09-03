@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Order** | third in the feature, after ME-206 |
-| **Depends on** | ME-201. ME-206 gives it a visible play/pause control, and nothing here needs it |
+| **Depends on** | ME-201 and **ME-206** — step 1 edits `VideoPlayerHolder`, which ME-206 introduces |
 | **Feature** | [Foundation](../foundation.md) · umbrella [Video Editor](../../video-editor.md) |
 
 **Goal.** Make the editing surface stand still by default, and hold still while a control is being
@@ -21,6 +21,7 @@ possible.
 | Playing or paused on open? | **Paused, on the frame it opens at.** A click or the space bar starts it |
 | What does the space bar do? | play / pause |
 | A slider dragged while it plays? | **It holds for the length of the drag** and resumes on release, only if it was playing |
+| How loud? | **The app's own media volume**, read the way the viewer reads it. Answered 2026-09-03 after ME-201 shipped muted and the author's first run reported the silence |
 
 ---
 
@@ -59,8 +60,12 @@ possible.
      rule — a document carrying a pending op pauses, and clearing the pending op resumes only if it
      was playing. Asked of the shell's contract, so `FixtureEngine` grows a `pauseRequests`-shaped
      counter rather than the test opening a decoder.
-   - one video-level check over `episodeTwoFile()`: after the canvas composes, `isPlaying` is false
-     and a frame has arrived.
+   - `jvmTest/kotlin/com/woka/ui/VideoCanvasHoldUiTest.kt` (new) for the drag rule — **the planned
+     `FixtureEngine` counter does not reach it**, because the rule lives in the video canvas and the
+     shell knows nothing about pausing. It drives `HoldWhileDragging` against a real player from the
+     corpus, and covers the half a naive implementation gets wrong: releasing a drag must not *start*
+     a video the user had stopped. `startKoinOnce()` is required — the decode loop reads
+     `AppDependencies.settingsRepository` for playback resume.
 
 ## Files
 
@@ -76,6 +81,21 @@ possible.
 editor's design names a `?` popover built from the manifests and no such file exists under
 `feature/editor/`. Space is a shell key like `Esc` and `Ctrl+Z`, which are equally unlisted; building
 the popover is not this ticket's work and inventing a home for one key would be.
+
+## What the author's run of ME-201 confirmed — 2026-09-03
+
+All three of this ticket's answers arrived as observations of the ME-201 build, which is the build
+that had none of them:
+
+- *"звука нет"* — ME-201 opened the player at `0f` and named this ticket as the owner of the number.
+  The answer is the app's media volume.
+- *"если нажал на инструмент, то пробел открывает опять этот инструмент, а не ставит видео на
+  паузу"* — **a rail button keeps focus after it is clicked.** This is the confirmation that step 3's
+  mechanism is the right one rather than a guess: `EditorKeyEffect` installs its handler in
+  `GlobalShortcutState.onPreviewKey`, which runs in the **preview (tunneling) phase from the root**,
+  before focus reaches any button — so consuming `Spacebar` there takes it away from the button. The
+  bug was not a focus bug to chase; it was the absence of this step.
+- *"запускается не на паузе"* — step 1, and the same build.
 
 ## Done when
 

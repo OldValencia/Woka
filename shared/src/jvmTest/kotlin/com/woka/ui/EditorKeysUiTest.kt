@@ -89,7 +89,7 @@ class EditorKeysUiTest {
             setContent {
                 val focus = remember { FocusRequester() }
                 LaunchedEffect(Unit) { focus.requestFocus() }
-                EditorKeyEffect(shortcuts, false, false, {}, {}, {}, {}, canvasKeys)
+                EditorKeyEffect(shortcuts, false, false, {}, {}, {}, {}, canvasKeys = canvasKeys)
                 Box(
                     Modifier
                         .size(40.dp)

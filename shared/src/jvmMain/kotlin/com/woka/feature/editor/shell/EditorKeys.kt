@@ -36,6 +36,11 @@ internal fun EditorKeyEffect(
     onRedo: () -> Unit,
     onDone: () -> Unit,
     /**
+     * Start or stop whatever moves on the canvas — a video's player, an animated still's
+     * clock (ME-207). **Defaulted**, so the image editor is unchanged.
+     */
+    onTogglePlayback: () -> Unit = {},
+    /**
      * The open canvas tool's `Delete`, through the editor's one keyboard slot (ME-114).
      * Null when no such tool is open, which is every tool but Markup today.
      */
@@ -47,6 +52,7 @@ internal fun EditorKeyEffect(
     val curDone by rememberUpdatedState(onDone)
     val curCanUndo by rememberUpdatedState(canUndo)
     val curCanRedo by rememberUpdatedState(canRedo)
+    val curTogglePlayback by rememberUpdatedState(onTogglePlayback)
     val curCanvasKeys by rememberUpdatedState(canvasKeys)
 
     DisposableEffect(globalShortcuts) {
@@ -73,6 +79,11 @@ internal fun EditorKeyEffect(
                 // shape selected to use it on.
                 event.key == Key.Delete || event.key == Key.Backspace ->
                     consume { curCanvasKeys?.onDelete?.invoke() }
+                // **Consumed here, which is the whole point** (ME-207, found by hand):
+                // this handler is previewed at the window root, before focus, and a rail
+                // button keeps focus after it is clicked — so an unconsumed space
+                // re-activated the last tool instead of pausing the video.
+                event.key == Key.Spacebar -> consume { curTogglePlayback() }
                 else -> false
             }
         }

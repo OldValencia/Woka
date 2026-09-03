@@ -57,13 +57,11 @@ measurement here is [`video-editor.html`](../../../../../../mockups/design/video
      it was playing.
    - `MediaSlider`'s `segments: List<SliderSegment>` parameter is what the clip strip will use in
      ME-211. Leave it on its default here and add nothing for it.
-6. Add `VideoPlayerHolder.kt` in the same package: an `@Stable` class with a nullable
-   `VideoPlayerState`, held by the engine, **written by the canvas's `DisposableEffect`** and read by
-   the band. It arrives now rather than in ME-201 because this is the ticket that gives the player a
-   second reader; the shape is `ImageEditorEngine`'s own `playback` and `measured` holders. The band
-   draws an empty track and `0:00` until the player exists.
-7. `VideoEditorEngine` overrides `Timeline` and hands the band the holder; `VideoEditorCanvas` takes
-   its player from the holder instead of `remember`ing one privately.
+6. **`VideoPlayerHolder` already exists** — ME-201 introduced it in `VideoEditorCanvas.kt`, because
+   `Thumbnail` was already a second reader of the same player. The band is its third: read
+   `holder.state`, and draw an empty track and `0:00` until it is non-null. Nothing about its
+   lifetime changes — the canvas's `DisposableEffect` still owns it.
+7. `VideoEditorEngine` overrides `Timeline` and hands the band the holder it already carries.
 8. Tests, `jvmTest/kotlin/com/woka/ui/EditorBandUiTest.kt`: the band is composed for an engine that
    overrides `Timeline` and **absent for one that does not** — asked of the shell against
    `FixtureEngine`, exactly as `EditorCanvasPlaybackUiTest` asks about the click, so what is proved is
@@ -77,9 +75,7 @@ measurement here is [`video-editor.html`](../../../../../../mockups/design/video
 `shared/src/jvmMain/kotlin/com/woka/feature/editor/shell/EditorBottomPanel.kt` (edit) ·
 `shared/src/jvmMain/kotlin/com/woka/feature/editor/shell/EditorInspectorCard.kt` (new) ·
 `shared/src/jvmMain/kotlin/com/woka/feature/editor/engine/video/VideoEditorBand.kt` (new) ·
-`shared/src/jvmMain/kotlin/com/woka/feature/editor/engine/video/VideoPlayerHolder.kt` (new) ·
 `shared/src/jvmMain/kotlin/com/woka/feature/editor/engine/video/VideoEditorEngine.kt` (edit) ·
-`shared/src/jvmMain/kotlin/com/woka/feature/editor/engine/video/VideoEditorCanvas.kt` (edit) ·
 `shared/src/jvmTest/kotlin/com/woka/ui/EditorBandUiTest.kt` (new)
 
 ## Done when

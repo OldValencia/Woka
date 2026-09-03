@@ -226,11 +226,6 @@ the whole video. One alpha function in `commonMain`, called by the canvas and by
 two cannot disagree.
 *Depends on ME-215.*
 
-### ME-264 — The HDR tool stops claiming video
-The first `supports` override in the app. Its question on a video is about an encoded stream's
-transfer characteristics, not about pixels, so it belongs to the renderer or nowhere.
-*Depends on ME-201.*
-
 ### ME-265 — Auto-enhance in one tap
 `AdjustAuto` (ME-167) measures **the frame at the play head, once, when the button is pressed** — not
 per frame, which would make the suggestion move while the video plays — and writes an All-Clips

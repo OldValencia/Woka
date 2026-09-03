@@ -124,9 +124,10 @@ tools arrive by wiring rather than by porting.**
 
 Measured against the tree, 2026-09-03, and this is the finding that shrinks the whole feature:
 **every tool already declares support for video.** `ToolManifest.supports` defaults to
-`setOf(MediaKind.Image, MediaKind.Video)` and not one tool in `tools/` overrides it, so
-`registry.tools(MediaKind.Video)` returns the full rail today. Nothing has to be marked, moved or
-generalised for Crop, Adjust, Filters, Markup and Resize to appear.
+`setOf(MediaKind.Image, MediaKind.Video)`, so `registry.tools(MediaKind.Video)` returns the full rail.
+Nothing has to be marked, moved or generalised for Crop, Adjust, Filters, Markup and Resize to
+appear. **HDR is the single override** — added by ME-264 on 2026-09-03, after the author saw it in a
+video's rail — and its being the only one is the measure of how well the default was chosen.
 
 Two consequences, both real work and both shaped:
 

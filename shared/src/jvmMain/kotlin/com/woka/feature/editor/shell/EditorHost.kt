@@ -108,6 +108,7 @@ internal fun EditorHost(
             onUndo = session::undo,
             onRedo = session::redo,
             onDone = actions.done,
+            onTogglePlayback = engine::togglePlayback,
             canvasKeys = canvasKeys
         )
 

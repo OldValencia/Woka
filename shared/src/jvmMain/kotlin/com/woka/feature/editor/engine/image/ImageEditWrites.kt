@@ -62,6 +62,11 @@ private fun writeByCapability(
     reEncode: (EditDocument) -> EditSaveResult
 ): EditSaveResult = when (capability) {
     EditCapability.Recorded -> recordRecipe(file, layers, stamp)
+    // **Unreachable for an image**, and here so the `when` stays total: the factory
+    // answers `Preview` for a video alone, and a video is not written by this function
+    // at all. `VideoEditorEngine.save` returns the same sentence, and ME-280 deletes
+    // both the case and this branch.
+    EditCapability.Preview -> EditSaveResult.Failed("Video edits cannot be saved yet.")
     // **Bucket B takes the open frame alone** and could not take more: it rewrites the
     // picture rather than recording a recipe (ME-126). It is empty today.
     EditCapability.Destructive -> reEncode(open)

@@ -11,10 +11,29 @@ Umbrella: [`../video-editor.md`](../video-editor.md) §3.1. Ticket ids: **ME-260
 
 ## 1. Status
 
-No tickets written. Blocks in [the shared backlog](../tickets/backlog.md) §260.
+| Ticket | Title | State |
+|---|---|---|
+| [ME-264](tickets/ME-264-the-hdr-tool-stops-claiming-video.md) | The HDR tool stops claiming video | **done 2026-09-03** — build green |
 
-Gated on ME-201's frame-rate measurement. If a shader chain cannot be run per presented frame, Adjust
-and Filters need a different route and this folder is re-planned rather than promoted.
+Everything else is in [the shared backlog](../tickets/backlog.md) §260. ME-264 was taken out of band,
+on the author's word, because ME-201 made the rail visibly wrong and the fix was one manifest line.
+
+**Half the gate has been measured — 2026-09-03, `VideoFoldProbe`, recorded in
+[ME-201](../foundation/tickets/ME-201-a-video-canvas-that-folds.md).** The finding splits this folder
+in two:
+
+- **A colour matrix costs 5× a plain draw**, at 1080p and at 2160p alike. So **Filters and the eight
+  Adjust sliders that fold to a matrix are not in question** at any size.
+- **The four sliders ME-162 made shaders are.** Highlights and Shadows cost 18×, Noise 22×, Sharpness
+  **87×** — and all four together cost **443×**, not the 133× they would if the costs added. Each
+  effect takes the previous as its *child*, so every tap of the sharpen convolution re-evaluates
+  noise, the tone curve, the colour filter and the image beneath it. **A trailing convolution
+  multiplies everything before it by its tap count.**
+
+Those are CPU-raster figures and therefore a ceiling, not a frame budget — but a 443× multiplier is a
+property of the work, and a hardware backend has the same texture-fetch count with more cores to
+spend on it. **ME-201's step 9 is the by-hand half of the gate**, and until it is run this folder is
+planned on the assumption that matrix work is free and shader work is not.
 
 ---
 
@@ -22,8 +41,9 @@ and Filters need a different route and this folder is re-planned rather than pro
 
 Measured 2026-09-03, and it is the finding that made this folder small:
 
-- **`ToolManifest.supports` defaults to `setOf(MediaKind.Image, MediaKind.Video)`, and not one tool
-  overrides it.** `registry.tools(MediaKind.Video)` returns the whole rail today.
+- **`ToolManifest.supports` defaults to `setOf(MediaKind.Image, MediaKind.Video)`**, so
+  `registry.tools(MediaKind.Video)` returned the whole rail. **HDR is the one override**, added by
+  ME-264; every other tool still takes the default, and that default is what makes the reuse free.
 - **`RasterSurface` draws an `ImageBitmap`** and does not care where it came from, so a video frame
   goes through the same fold, the same colour filter, the same shader chain and the same paint list.
 - **Every stage is expressed in source coordinates**, and the draw scales the bitmap up to source
@@ -98,10 +118,11 @@ audio into a gain; whichever of the two is built first builds it for both.
 
 ## 4. What does not come across
 
-- **The HDR tool.** For a still it decides what the save writes and can bake to SDR. On video that
-  question is the renderer's, in a vocabulary the tool does not speak (a transfer characteristic on
-  an encoded stream, not a pixel operation). It is therefore the **first tool to override
-  `supports`**, and it comes back — if it comes back — as part of [`render/`](../render/render.md).
+- **The HDR tool** — **done 2026-09-03 (ME-264)**, and it is the app's first `supports` override. For
+  a still it decides what the save writes and can bake to SDR; on video that question is the
+  renderer's, in a vocabulary the tool does not speak (a transfer characteristic on an encoded
+  stream, not a pixel operation). It comes back — if it comes back — as part of
+  [`render/`](../render/render.md).
 - **Markup precision at 4K.** A still zooms to the native bitmap for exactly this reason (ME-116).
   A video canvas has whatever the decoder presented, which may be a quarter of the coded size, so a
   markup point placed on the canvas is placed against a coarser picture than the render will use.

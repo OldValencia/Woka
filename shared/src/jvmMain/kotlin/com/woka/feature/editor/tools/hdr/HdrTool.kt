@@ -1,5 +1,6 @@
 package com.woka.feature.editor.tools.hdr
 
+import com.woka.core.data.MediaKind
 import com.woka.core.ui.icons.Icons
 import com.woka.feature.editor.core.ChoiceParam
 import com.woka.feature.editor.core.EditDocument
@@ -66,6 +67,15 @@ object HdrTool : EditorTool {
         // After Resize, which is order 0: a resize is about the picture, this is about
         // the file it becomes.
         order = 1,
+        // **The first `supports` override in the app** (ME-264). Every other tool takes
+        // the default — both media kinds — and that default is what makes reusing the
+        // rail on video free. This one cannot take it: what it decides is *what a save
+        // writes*, and for a still that is a pixel operation this tool can perform,
+        // while for a video it is a transfer characteristic on an encoded stream. That
+        // question belongs to the renderer, in a vocabulary this tool does not speak —
+        // and a control that cannot move what it names is worse than no control (the
+        // same line ME-180 held for the pill's HDR switch).
+        supports = setOf(MediaKind.Image),
         cardinality = ToolCardinality.Single,
         interaction = ToolInteraction.Instant
     )

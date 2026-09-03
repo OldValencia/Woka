@@ -49,11 +49,13 @@ class EditorEntryTest {
     }
 
     @Test
-    fun `a video is not editable`() = withFactory { factory ->
-        // Not "not yet" from this side — the factory returns null for video until
-        // ME-201, and the menu greys out rather than opening a shell with no canvas.
+    fun `a video is editable`() = withFactory { factory ->
+        // **Reversed by ME-201**, and this is the assertion that says so. It read
+        // `assertFalse` while the factory answered null for every video; the canvas now
+        // draws the player's frame through the folded document, so both doors offer
+        // `Edit` — and `EditCapability.Preview` is what says a save does not exist yet.
         val video = SampleMedia.file("WokaSample.S01E02.2160p.HDR.TEST.mkv")
-        assertFalse(isEditable(factory, video.absolutePath))
+        assertTrue(isEditable(factory, video.absolutePath))
     }
 
     @Test
