@@ -3,7 +3,7 @@
 Two editors, one shell. This is the first one, and it carries **the shell both of them use**:
 ME-001…ME-014 are the foundation, media-agnostic from the first commit, and they live here because
 here is where they were built. The video editor (5b) is a sibling folder —
-[`../video-editor/`](../video-editor/video-editor.md) — that adds a tool set, an engine and a saver to
+[`../../pending/video-editor/`](../../pending/video-editor/video-editor.md) — that adds a tool set, an engine and a saver to
 this machinery and changes none of it. Split out of one `media-editor/` folder on 2026-08-24; the
 ticket IDs are unchanged, because an ID is never reused (`conventions/feature-docs.md` §3).
 
@@ -126,7 +126,7 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-6xx](tickets/backlog.md)                                               | The four adjustments ME-162 did not take | backlog |
 
 ME-201…ME-204, the video editor's own tickets, moved to
-[`../video-editor/tickets/backlog.md`](../video-editor/tickets/backlog.md) on 2026-08-24 and are
+[`../../pending/video-editor/tickets/backlog.md`](../../pending/video-editor/tickets/backlog.md) on 2026-08-24 and are
 tracked by that feature's status table. The fourteen foundation tickets above are shared, and stay
 here.
 
@@ -147,7 +147,7 @@ HDR on/off, Markup (arrow, rectangle, ellipse, freehand, text), Undo/Redo, and *
 save there is (§5).
 
 **In (video, 5b):** nothing here — Trim and Mute belong to
-[the video editor](../video-editor/video-editor.md), on this shell and this save model.
+[the video editor](../../pending/video-editor/video-editor.md), on this shell and this save model.
 
 **Out:** layers, masks, healing, straighten/arbitrary-angle rotation, batch editing, RAW, re-encoding
 video filters.

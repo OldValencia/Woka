@@ -1,306 +1,479 @@
 # Feature: Video Editor (Roadmap Phase 5b)
 
-The second half of Phase 5. Everything structural already exists: the document, the history, the tool
-contract, the schema-driven inspector, the shell, the shortcut table, the save banner —
-[the image editor](../image-editor/image-editor.md) built all of it as ME-001…ME-014, deliberately
-media-agnostic, and this feature is a tool set, an engine and a saver plugged into it.
+The second half of Phase 5, and the umbrella over seven features that ship separately. Everything
+structural already exists: the document, the history, the tool contract, the schema-driven inspector,
+the shell, the shortcut table, the save banner — [the image editor](../../implemented/image-editor/image-editor.md)
+built all of it as ME-001…ME-182, deliberately media-agnostic. What is missing is a canvas that draws
+a moving picture, a strip that cuts one, an audio model, and two ways out to a file.
 
-Split out of `pending/media-editor/` on 2026-08-24, so that a folder holds one shipping unit. **The
-ticket IDs are unchanged** — ME-201…ME-204, on the ME prefix the shared foundation is numbered in —
-because an ID is stable and never reused (`conventions/feature-docs.md` §3).
+**Restructured 2026-09-03**, from one folder with four backlog blocks into seven feature folders with
+one shared backlog. The reason is §1: the author's brief is several times the size the old scope
+described, and a single status table covering "an engine", "a trim tool" and "an audio mixer" says
+nothing useful about any of them.
 
 ```
 video-editor/
-  video-editor.md   ← you are here: what the thing is and why. The feature file.
-  tickets/          backlog.md, plus one file per ticket once one is promoted
+  video-editor.md   ← you are here. The vision, the architecture every folder rests on, the UI
+                      grammar, and the decision log. It holds no ticket rows.
+  tickets/
+    backlog.md      THE backlog — every unpromoted block for every folder below, one section each
+  foundation/ timeline/ playback/ audio/ picture/ save/ render/
+                    one feature each: <name>/<name>.md plus tickets/ for promoted tickets only
 ```
 
-Conventions: `ai/docs/conventions/feature-docs.md` · `tickets.md` · `code-style/README.md`.
-Architecture, in full and not repeated here: [`../image-editor/image-editor.md`](../image-editor/image-editor.md)
-§3 (the document, the fold, the engine seam, the tool contract) and §4 (the shell this inherits
-unchanged).
+Conventions: `ai/docs/conventions/feature-docs.md` · `tickets.md` · `plans.md` · `code-style/README.md`.
+The shell this inherits unchanged, and the architecture it extends:
+[`image-editor.md`](../../implemented/image-editor/image-editor.md) §3 and §4.
 
 ---
 
-## 1. Status
+## 0. What the author asked for — 2026-09-03
 
-Nothing is built. This table is the only place a ticket's state is recorded.
+Quoted rather than paraphrased, because every decision below is a consequence of it:
 
-| Ticket | Title | State |
+> Я хочу максимально простой, но одновременно крайне функциональный видеоредактор. Мой референс —
+> это iOS Photos… без перегруженных интерфейсов профессиональных редакторов, без многослойных
+> автоматизаций. Однако я бы хотел ещё возможность нарезать видосы (например вырезать из центра
+> часть и удалить её либо вставить её в другое место) и аудио в видео. UI я бы хотел сделать таким,
+> чтобы любой без особой трудности мог сразу же разобраться.
+
+And, in the same session, that the image editor's tools are to be **reused, not rewritten**: Resize,
+Crop, Adjust, Filters, Markup.
+
+Answered the same day, and these answers are what the seven folders are drawn around:
+
+| Question | Answer |
+|---|---|
+| What does "audio in video" mean? | **All four**: audio follows the cuts, audio can be detached onto its own row, an external audio file can be laid over the video, and the audio can be extracted to a file of its own |
+| Playback across a cut | **Must be seamless.** A 0.1–0.3 s stall at every join was offered and refused, so the editor needs a decoder that pre-rolls the next segment |
+| Containers in the library | **Mixed.** So the Matroska carrier is the second piece of work in `save/`, not a someday |
+| Time effects | **Speed per clip, freeze-frame, and "this frame as a photo".** **Reverse was refused** |
+| What `Render video…` asks | **Nothing.** The best quality it can manage, sized against the original — and, in the author's words, a re-render after few edits should come out *no larger* than the source |
+| The second row | **Appears when asked**, never by default |
+| Phase 0 | **The foundation alone, with no save**, so the frame-rate question is answered before anything is built on top of it |
+
+---
+
+## 1. Seven features, and why not one
+
+The old document treated the video editor as four tickets on the image editor's shell. That was true
+of the scope it described — a keyframe-snapped trim and a mute switch — and it is not true of the
+brief above. Cutting, seamless playback, four audio behaviours, five reused tools, two containers'
+carriers and a hybrid renderer are not four tickets; they are seven bodies of work that fail
+independently and ship independently.
+
+| Folder | What it owns | State |
 |---|---|---|
-| [ME-201](tickets/backlog.md) | Video engine | backlog |
-| [ME-202](tickets/backlog.md) | Trim tool | backlog |
-| [ME-203](tickets/backlog.md) | Mute tool | backlog |
-| [ME-204](tickets/backlog.md) | Video save | backlog |
+| [`foundation/`](foundation/foundation.md) | An `EditorEngine` for `MediaKind.Video`: the player's frame drawn through the recipe, HDR in the chain, frame retention, playback on the canvas, the timeline seam | **fully specified** — ME-201, ME-206, ME-207, ME-205 written; nothing built |
+| [`timeline/`](timeline/timeline.md) | The strip and the document behind it: trim, split, select, delete, reorder, per-clip scope, speed, freeze-frame | not started |
+| [`playback/`](playback/playback.md) | Playing an *edited* timeline seamlessly — the pre-rolling second decoder, and the audio that follows it | not started |
+| [`audio/`](audio/audio.md) | Mute, volume and fades per clip; detach; an external track; extract to a file | not started |
+| [`picture/`](picture/picture.md) | Making Crop, Resize, Adjust, Filters and Markup *true* on a moving picture, and markup that appears, holds and fades | not started |
+| [`save/`](save/save.md) | `Done`: a recipe inside a video container, written without copying the file, folded by every reader | not started |
+| [`render/`](render/render.md) | `Render video…`: a new file, copying every segment it can and re-encoding only what it must | not started |
 
-The foundation these claim is done: ME-001…ME-014, and ME-106 for the entry points, all in the image
-editor's table. Nothing here is blocked by an unshipped image ticket — 5a's remaining work is tools
-and polish, not shell.
+**This table is a feature roll-up and deliberately carries no ticket rows.** Each folder's own
+document holds the only status table for its own tickets (`feature-docs.md` §4). A ticket state
+recorded in two files is a ticket state that will disagree with itself.
+
+**Numbering.** The `ME-` prefix stands for **Media Editor** and covers all of Phase 5 — which is why
+the video work was numbered into it rather than given a prefix of its own (decision 2026-08-24, and
+it stands). Bands inside the 200s, one per folder: foundation **201–209**, timeline **210–229**,
+playback **230–239**, audio **240–259**, picture **260–279**, save **280–289**, render **290–299**.
+ME-202, ME-203 and ME-204 are **retired**, their ids kept and never reused (`feature-docs.md` §3):
+the work they named is redistributed across four folders whose blocks are written fresh.
+
+Two sections of the backlog sit **outside** those bands, and deliberately. **§300 — the shared
+shell** holds work that changes the shell *both* editors use, so a still is affected by every one of
+it; §4.1b's right-click reset is the first. **§950** holds what needs no work at all — two things that
+fall out of features already planned, recorded so nobody builds them twice. Everything proposed on
+2026-09-03 was ruled on the same day: eight accepted with ids, one declined into §900.
 
 ---
 
 ## 2. Scope
 
-**In:** Trim by keyframe-snapped stream copy, and Mute. Same shell, same history, same undo, same
-`Done`.
+**In:** everything in §0's table, in the shape §3 and §4 give it.
 
-**Out:** re-encoding filters of any kind, precise (non-keyframe) trim, speed changes, concatenation,
-audio editing beyond the mute switch, subtitles, and anything that touches the picture's pixels.
+**Out, and decided rather than deferred:**
 
-**Formats:** whatever the player already opens and ffmpeg can stream-copy. The list is written when
-ME-201 is promoted, against the probe results of the day, not guessed here.
+- **Reverse playback.** Refused by the author 2026-09-03. Decoding backwards is not something a
+  decoder does — it means buffering every frame between two keyframes — and it buys one effect.
+- **A project holding several files.** An `EditDocument` describes edits to *one* file and lives in
+  that file's own metadata. A sequence of clips from different files has nowhere to live, and needs a
+  project, a clip library and a timeline of tracks. That is the line between this and iMovie, and it
+  is where the feature stops. **Cutting within one file is not that** — see §3.2.
+- **Transitions, keyframed parameter animation, layers, masks, chroma key, stabilisation.**
+- **Precise (non-keyframe) cuts in the copy path.** A cut that must land mid-GOP re-encodes, and
+  `render/` says what that costs.
+- **Subtitles.** The viewer owns them; the editor does not touch them.
 
 ---
 
-## 2a. The shape the author wants — 2026-09-03
+## 3. The five loads
 
-**"Как в iOS Photos."** The same short rail the image editor has — Resize, Crop, Trim, Filters,
-Adjust, Markup — and nothing behind it. Five of those six are already built and media-agnostic; Trim
-is the one this feature adds. The stated test is the one 5a passed: *"Из image редактора я же не
-сделал photoshop"* — simple and useful, not capable and heavy.
+Everything in the seven folders rests on these. They are stated once, here, and no folder restates
+them.
 
-**This contradicts §2 above, and the contradiction is the decision ME-201 has to make.** §2 puts
-"re-encoding filters of any kind" and "anything that touches the picture's pixels" out of scope, and
-draws the line at stream copy precisely so a save stays instant and lossless. Crop, Adjust, Filters
-and Markup on video are all pixel work. One of the two sections has to give.
+### 3.1 The recipe already reaches a video frame
 
-### The way out, and it is the one 5a already took
+`VideoPlayerState` publishes `currentFrame: ImageBitmap`, replaced 24–60 times a second.
+`RasterSurface(source, sourceSize, recipe)` draws *an* `ImageBitmap` through a folded document. The
+video canvas is therefore the composition of two things that already exist — and **the five reused
+tools arrive by wiring rather than by porting.**
 
-**Do not re-encode. Write a recipe and let the player fold it.** That is not a new idea here — it is
-§5 of the image editor, shipped as ME-132: the document goes into the file's private metadata and the
-pixels are never rewritten. Every reader folds it at draw time.
+Measured against the tree, 2026-09-03, and this is the finding that shrinks the whole feature:
+**every tool already declares support for video.** `ToolManifest.supports` defaults to
+`setOf(MediaKind.Image, MediaKind.Video)` and not one tool in `tools/` overrides it, so
+`registry.tools(MediaKind.Video)` returns the full rail today. Nothing has to be marked, moved or
+generalised for Crop, Adjust, Filters, Markup and Resize to appear.
 
-For video the reader is the player, and the player is **already a folding surface**: it runs
-`HdrShader` per frame today, and draws subtitle and markup-shaped overlays per frame. A colour matrix,
-a crop matrix and a set of paints are the same road it is already on. So:
+Two consequences, both real work and both shaped:
 
-| Tool | As a recipe | Cost at save |
+- **HDR.** A frame that needs colour management is drawn today by `HdrImagePainter`, which
+  `RasterSurface` does not go through. `RasterStage.Shader` is the seam: `HDR_SHADER` declares
+  `vec2 scale, float transfer, float wideGamut, float whitePoint, shader image`, which is exactly the
+  chain's packing convention — declaration order, little-endian, and no appended `resolutionScale`
+  because it samples one pixel. So the HDR pass becomes the chain's first stage rather than a second
+  draw path.
+- **Frame retention.** `FrameRetention.acknowledge(currentFrameId)` is what frees a 15 MB frame, and
+  it is called today from `MediaViewerFrame`'s draw scope. A canvas that draws frames and does not
+  call it does not leak slowly — it holds every frame of the file.
+
+**The unmeasured gate.** The image canvas folds once per bitmap; this one folds per presented frame.
+A document with no shader costs one `drawImage` with a colour filter attached, which is what the
+viewer does today; a document *with* one builds a Skia shader chain per draw and closes it again.
+Whether that survives at 60 fps on 4K is the first step of ME-201, and it is why Phase 0 carries no
+save: if the answer is no, [`picture/`](picture/picture.md) changes shape and nothing built on top of
+the foundation is wasted.
+
+### 3.2 One file, so cutting fits the document
+
+The old document declined cutting outright: *"an `EditDocument` describes edits to one file… a
+sequence is a document about several files and has nowhere to live."* **That is true of a sequence and
+false of the brief.** Cutting a piece out of the middle of a clip and moving it elsewhere in the
+*same* clip is a re-ordering of ranges of **one** source file — one op, on one file, in that file's
+own metadata, with no project and no clip library.
+
+```
+source   0 ─────────────────────────────────────────────── 40s
+clips    [ 0.0 – 8.4 ] [ 22.1 – 29.6 ] [ 8.4 – 22.1 ]
+                        ↑ moved forward   ↑ what used to be the middle, now last
+```
+
+An ordered list of `(fromMs, toMs)` over one source, plus a per-clip payload, is a few hundred bytes
+of the same JSON the stills already carry. Delete-the-middle is dropping an entry; move-it-elsewhere
+is re-ordering the list; trim is the first and last entry's bounds. **Nothing in §5 of the image
+editor's design stops holding.**
+
+What it does cost is [`playback/`](playback/playback.md): a list of ranges is trivial to *store*, and
+is the whole reason the editor needs a decoder that can cross a join without stalling.
+
+### 3.3 A clip is a frame — the scope machinery exists
+
+"Adjust seconds 10–20 rather than the whole clip" was listed as a someday extra. It is not an
+extension at all: **split at 10 and at 20, select that clip, edit it.** A clip is a time range, and
+the file's edit already has exactly this shape:
+
+| Stills (shipped: ME-156, ME-169, ME-175, ME-176) | Video |
+|---|---|
+| `EditScope.AllFrames` / `SingleFrame` | All Clips / This Clip — the same enum, the same switch |
+| `EditLayers(base, frames: Map<Int, EditDocument>, touched)` | the same type, keyed on clip index |
+| `EditorFrames(count, overridden, storedScope)` | the same type, `count` = clips |
+| `storedDocumentIn(frameIndex)`, `storedBase()` | the same two methods |
+| the strip's ● marking a frame that carries its own edit | a clip that carries its own edit, marked the same way |
+
+So per-clip editing is a **binding**, not a mechanism, and the words on the switch are the only thing
+that changes. `EditorFrames.allowsPerFrame` excludes an animation because an edit on one frame of
+eight is a flicker; a clip is seconds long, so video wants the opposite answer — and that rule
+already lives in exactly one place.
+
+### 3.4 The timeline is an engine surface, not a tool overlay
+
+A `CanvasTool.Overlay` draws over the **canvas**. The strip is not the canvas, and a trim handle
+dragged on the picture is not a design anybody wants. Three ways out were considered:
+
+1. **The shell grows a timeline slot and asks the engine to fill it** — one
+   `@Composable fun Timeline(document, modifier) = Unit` on `EditorEngineSurface`, defaulted to
+   nothing, exactly as `Thumbnail` already is. The shell places it in the column it already builds
+   and names no `MediaKind`. **Chosen.**
+2. The shell grows a timeline of its own, reading a timeline model. Rejected: it puts time into
+   `commonMain` shell code for the sake of one medium, which is the branch §3.3 of the image editor's
+   design exists to prevent.
+3. The trim tool's overlay is re-pointed at a second surface. Rejected: `EditorToolScope` would have
+   to describe two canvases, and every existing overlay would have to say which one it wants.
+
+The band is drawn by the video engine and writes through `EditorSession` exactly as an overlay does,
+so undo, preview-vs-commit and history granularity stay the shell's and never become the strip's.
+
+### 3.5 Two saves, and a render that copies what it can
+
+`Done` is the only save for a still (§5, image editor): the document goes into the file's private
+metadata and pixels are never rewritten. For video that is worth **more**, not less — a re-encode is
+slow *and* lossy — but it cannot be the only save, because a clip sent to somebody must not require
+them to have Woka. So `Done` becomes a split button (§4.5), and both halves are real work:
+
+- **`Done`** → [`save/`](save/save.md). The recipe goes into the container. `IsoBmffRecipe` already
+  writes the `uuid` box that `mp4` and `mov` use; Matroska needs a carrier of its own; and the write
+  path has to stop copying the file (§5).
+- **`Render video…`** → [`render/`](render/render.md). A new file, never an overwrite — a lossy
+  overwrite is irreversible, and a second edit would then encode an already-encoded picture with the
+  pristine original gone.
+
+**The renderer copies before it encodes, and that is the answer to the author's size requirement.** A
+document holding only cuts touches no pixel, so each segment is a stream copy and the output carries
+the input's own frames — instant, lossless, and *smaller* than the source by exactly what was cut.
+Only a segment carrying pixel work — crop, adjust, filter, markup — is re-encoded, and only that
+segment. "Few edits, no bigger" therefore falls out of the design rather than being a quality knob.
+
+---
+
+## 4. UI
+
+### 4.1 Layout
+
+The image editor's layout with one band added. Nothing else moves.
+
+```
+┌───────────────────────────────────────────────────────────────────┐
+│ < Revert   [−  Fit·42% ▾  +│HDR│ⓘ] [◉]   ↶ ↷ [Done ▾]  — ❐ ✕ │  the SHELL's bar (§4.1a)
+├───────────────────────────────────────────────────────────────────┤
+│                                                                   │
+│                    ┌───────────────────────┐                      │
+│                    │  the player's frame,  │                      │  canvas: engine.Surface —
+│                    │  through the recipe   │                      │  the frame folded per draw
+│                    └───────────────────────┘                      │
+│                                                                   │
+│              ╭──────────────┬──────────────╮                      │  clip scope — only once
+│              │  All Clips   │  This Clip   │                      │  there is more than one clip
+│              ╰──────────────┴──────────────╯                      │
+│         ╭─────────────────────────────────────────╮               │
+│         │  Brightness  ──────●────────      +12   │               │  inspector — unchanged,
+│         │  Contrast    ─────●─────────       −4   │               │  schema-driven
+│         ╰─────────────────────────────────────────╯               │
+│    ╭──────────────────────────────────────────────────────╮       │
+│    │ ▶  ▓▓▓▓▓▓▓▓▓▓│▓▓▓▓▓▓▓▓▓▓▓▓▓▓│▓▓▓▓▓▓   0:12 / 0:34   │       │  THE BAND — always there
+│    ╰──────────────────────────────────────────────────────╯       │  for a video, never moves
+│         ╭───────────────────────────────────────────╮             │
+│         │ ✂ Trim │ ⛶ Crop │ ◐ Adjust │ ♪ Audio │ ✎ … │             │  rail — unchanged
+│         ╰───────────────────────────────────────────╯             │
+└───────────────────────────────────────────────────────────────────┘
+```
+
+**The band sits between the inspector and the rail**, so it and the rail are the two fixed things at
+the bottom edge and the inspector opens *above* it. The strip therefore never moves when a tool is
+picked — which matters, because the strip is where the selection lives, and a selection that jumps
+under the cursor is the opposite of "anyone can work it out immediately".
+
+Geometry, colour and timing: [`ai/mockups/design/video-editor.html`](../../../../mockups/design/video-editor.html),
+which is the spec and not a proposal — a disagreement is settled by changing it first. It reuses
+`editor.html`'s tokens verbatim.
+
+### 4.1a The top bar is the shell's, and the video editor changes nothing about it
+
+**The editor draws no top bar** — read against the code 2026-09-03, and worth stating because the
+first draft of this document drew one. `EditorTopBarSetup` fills `GlobalTopBar`'s accessory slots and
+restores every one of them on dispose; it used to draw its own bar, which put two on screen at once
+with the folder path above an editor that had already said which file it was editing.
+
+| Slot | While the editor is up |
+|---|---|
+| Back | `<`. **Back *is* cancel** — one control, one meaning, which is what the viewer already does. There is no `Cancel` button |
+| Leading (the breadcrumb's slot) | **`Revert`**, red, always drawn and disabled when there is nothing to remove. Beside Back rather than beside undo/redo: those two give work back and this one throws it away |
+| Centre | **the viewer's own pill, the very same lambda** — `[− Fit·42% ▾ +]` then `HDR` then `ⓘ`. Wrapping it would replay its enter animation, so it is not touched; the carousel eye and `Edit` retract as one group. Opened from the grid there is no pill to borrow and the editor brings one |
+| Centre-trailing | the **peek** button — hold to see the original. Its own container beside the pill, for the reason above |
+| Right | `↶` `↷` `[Done ▾]` |
+| After them | `WinControls` — minimise, maximise, close. The shell's, untouched |
+
+Two consequences the video half must not get wrong:
+
+- **The bar is an ordinary themed surface, not a scrim.** Its controls read `Theme.colors`; reading
+  the `onScrim*` set there would put near-white text on a light background. Only what sits *on the
+  picture* — the band, the inspector, the rail — takes `ViewerChrome`.
+- **The `HDR` control is hidden for video today** (ME-180): everything ME-177 built runs at the still
+  decode, so the switch reaches nothing on a moving frame, and a control that moves nothing is worse
+  than no control. **§3.1's HDR stage is what makes it reachable** — once the tone map is in the
+  recipe chain the switch has something to switch. It needs one more thing than the stage: a white
+  point that does not pump between frames, which is the `save/`-adjacent probe named in the backlog.
+
+There is **no file name in the bar**. It left with the second bar, and the "edited" mark went to the
+Information panel — the thing that already answers *what is this file*.
+
+### 4.1b Right-click resets — every input, one gesture
+
+**Right-clicking any control the schema renders returns it to its default**, and right-clicking the
+inspector's header resets the whole tool. It holds for every `ParamSpec` type: slider, stepper,
+switch, segmented control, chip row, preview strip, swatch row, pad.
+
+Why it is worth a rule of its own rather than a per-control affordance: the schema renders eight row
+types today and a double-click reset only ever meant something on the two that have a track. One
+gesture that works everywhere is one thing to learn; eight controls with three reset conventions
+between them is what the schema-driven inspector exists to avoid. The existing double-click-to-detent
+on a slider stays — it is a *detent*, which is not always the default.
+
+The gesture is free: the canvas owns the right-click context menu, and no inspector row has one.
+Applies to the **image** editor identically, so it is a shared-shell ticket
+([backlog](tickets/backlog.md) §300) rather than a video one.
+
+### 4.2 The strip, in two states
+
+One control, two states, and the second is reached only by picking Trim:
+
+- **Resting (44 dp).** Thumbnails, a play head, `0:12 / 0:34`, a play/pause affordance. It reads as
+  the viewer's scrubber, because for every tool other than Trim that is what it is for. Clicking
+  scrubs; clicking a clip selects it.
+- **Trim selected (76 dp).** The outer handles appear on the first and last clip, the area outside
+  them dims, a **✂** sits on the play head, and each join grows a grip. Clips become draggable.
+
+Thumbnails come from `SeekPreviewSource` and `SeekPreviewCache`, which already decode 240 px stills
+keyframes-only on one dedicated thread with an LRU in front — the filmstrip is a row of the cells
+that machinery already produces, and a second decoder for it would be the mistake the seek preview
+was written to avoid.
+
+### 4.3 The grammar — one row, no gaps
+
+Four rules, and they are what keep this out of iMovie:
+
+1. **There is exactly one picture row.** No layers, no tracks, no free positioning.
+2. **Clips are butt-joined and there is never a gap.** Deleting a clip closes the hole; dragging one
+   pushes the others aside. Nothing has an "x position" a user can get wrong.
+3. **Selection is a clip.** Every clip-scoped operation — delete, duplicate, speed, freeze, mute, and
+   any of the five picture tools under *This Clip* — acts on the selected clip and on nothing else.
+4. **Splitting is the only way to make a boundary.** ✂ at the play head. That one verb produces
+   trim-from-the-middle, delete-a-piece and move-a-piece, which is the whole of the brief.
+
+The four gestures the brief asks for, in full:
+
+| Wanted | How |
+|---|---|
+| Trim the ends | drag the outer handles |
+| Cut a piece out of the middle and delete it | ✂, ✂, select the middle, `Delete` |
+| Move that piece elsewhere | ✂, ✂, drag the middle clip to where it goes |
+| Edit only part of the video | ✂, ✂, select it, **This Clip**, then any tool |
+
+### 4.3a One drag vocabulary, on both rows: **the body moves, the edge trims**
+
+The author asked whether a sound entry's start and end could be dragged on the strip rather than only
+typed in the panel (2026-09-03). Yes — and it is the same two gestures the picture row already has,
+which is the reason to answer it here rather than in `audio/`:
+
+| Gesture | On a picture clip | On a sound entry |
 |---|---|---|
-| Adjust, Filters | a matrix and shaders the player already runs per frame | none |
-| Crop, Resize | a matrix, applied where the frame is drawn | none |
-| Markup | paints over the frame, as the subtitle layer already does | none |
-| Trim | a range the player opens into and stops at | none |
-| Mute | one boolean the audio path reads | none |
+| **Drag the body** | reorder it in the row (§4.3 rule 2 — no gaps) | move where it starts on the timeline |
+| **Drag an edge** | the outer handles trim the whole timeline; a join's grip moves the cut | trim that end of the sound, content staying where it is |
 
-**Every one of them becomes free**, the save stays instant, and the source file is never degraded —
-which for video, where a re-encode is both slow and lossy, matters more than it did for stills.
+**With the left button, not the right.** The author's first phrasing was *"ПКМ и тянуть"*, and it
+collides with a rule recorded the same day at the author's own request: §4.1b makes **right-click a
+reset** on every control the schema renders. Two meanings for one button, one panel apart, is exactly
+the class of bug §4.1b exists to remove — and every editor that does this uses a left-drag on the
+edge anyway. So the right button resets, everywhere, and dragging is the left one.
 
-**What it costs is honest and already precedented:** the file only looks edited *in Woka*. That is
-exactly true of an edited JPEG today, and 5a answered it twice — `Copy` hands over the drawn picture,
-and ME-118's HDR tool bakes when a real file is wanted. The video answer has the same shape: an
-`Output` tool whose second option runs ffmpeg and writes a new file, with a warning, once.
+**The panel and the strip are two views of the same numbers.** `Starts at` in the inspector is the
+number a body-drag writes; the entry's length is the number an edge-drag writes. Neither is
+authoritative — they read and write one `TimeWindow` ([`audio/`](audio/audio.md) §3.3a).
 
-**So the ordering inverts.** §2 treats stream copy as the foundation and pixels as out of scope; this
-reads the recipe as the foundation and the ffmpeg export as one `Output` tool at the end. ME-201 is
-then "a player that folds a document", not "a saver that runs a process".
+**Slip is out of scope**: dragging the body while holding a modifier, to change *which part of the
+source plays* without moving the placement, is a professional gesture nobody asked for and a third
+meaning for the same drag.
 
-**What has to be measured before believing any of it:** whether the fold survives at frame rate. The
-image canvas folds once per bitmap; a player would fold 24–60 times a second, and `RasterRecipe`'s
-shader chain has never been asked for that. This is a probe, and it is the real gate on the section —
-not the ffmpeg question §4a names.
+### 4.4 The second row appears when asked
 
-### `Done` offers both — the author's call, 2026-09-03
+Author's decision, 2026-09-03. The default is one row with the sound inside it; a second row exists
+only after **Detach audio** or **Add audio…**, and disappears again when it is emptied. Someone who
+never asks for it never sees it; someone who needs a reply to carry across a join gets it. Its own
+design is [`audio/`](audio/audio.md).
 
-Neither save is the right one, because both cases are real: a quick trim to watch later must not wait
-on a render, and a clip being sent to somebody must not depend on them having Woka. So `Done` becomes
-a split button and the user picks.
+### 4.5 `Done ▾`
 
 ```
 [ Done ▾ ]
-     Done             instant, lossless — the recipe goes in the file
+     Done             instant, lossless — the recipe goes into the file
      Render video…    a new file, with a progress bar
 ```
 
 The mockup has drawn `[Done ▾]` since 5a and the shipped control is a plain button, so this realises
-a shape the design already assumed rather than inventing one.
+a shape the design already assumed rather than inventing one. **The menu is capability-driven**: on a
+container with no carrier it collapses to `Render video…` alone and says why, in the notice strip the
+shell already has for a format that keeps no history.
 
-**On the naming.** The author's first phrasing was *"Save (visible only in Woka)"*. The meaning is
-right and the words are a disclaimer rather than a name — and a menu entry that needs a parenthetical
-is a tax on the "simple, like iOS Photos" goal this whole section rests on. `Done` stays the word 5a
-uses for the same act; `Render video…` says what the other one does, and the ellipsis is the
-convention for "this opens something" rather than "this happens now".
-
-**Render must mint a new file, never overwrite.** Not taste — arithmetic. A re-encode is lossy, so
-writing over the source means a second edit encodes an already-encoded picture and the losses
-compound with the pristine original gone. Stills never had this because the recipe always unfolds
-from an untouched source, which is exactly why ME-132 deleted `Save a Copy`. **For video that
-reasoning inverts**, and the copy comes back — for the render path alone, and because a lossy
-overwrite is irreversible.
-
-**The recipe half is not free yet, and it is the gate on the menu.** §4a found `carrierFor` routes
-only `heic`, `heif` and `avif` to `IsoBmffRecipe`; `mp4` and `mov` are not wired. The `uuid` box is
-structurally available in ISOBMFF, but what other players do when they meet an unknown box in a `moov`
-is a measurement nobody here has taken. **If that probe fails, `Done` has nowhere to write and the
-menu collapses to one entry** — which would make render the only save and change this section's
-conclusion, not just its detail.
-
-**Markup that appears, holds and fades** — the author's design, same session: pick the point on the
-timeline, say how many seconds it lasts, let it fade out. It belongs to the document rather than to
-either save: an op carrying a time range is read by the player's fold *and* by the render, and the
-two must agree or the exported file will not match the preview. Worth noting the asymmetry — the
-player gets the fade from Compose's own animation, while a render has to produce it frame by frame.
+On the naming: the author's first phrasing was *"Save (visible only in Woka)"*. The meaning is right
+and the words are a disclaimer rather than a name — and a menu entry that needs a parenthetical is a
+tax on the goal this whole feature rests on. `Done` stays the word 5a uses for the same act; the
+ellipsis on the other one is the convention for "this opens something" rather than "this happens
+now".
 
 ---
 
-### Where a recipe would live in a video file — checked 2026-09-03
+## 5. Read against the tree — 2026-09-03
 
-Asked directly: do video files have the same slot images do? **Two of the five formats Woka opens do,
-one is a different problem, and there is a blocker underneath all of them that matters more than
-either.**
+The image editor shipped in full that day, so the old document's claims were checked against the code
+rather than against the plan they came from. **Four were wrong**, and each one moved work between
+folders.
 
-`MediaKind` lists `mp4`, `mkv`, `avi`, `mov`, `webm`. They are three container families:
+- **"`EditRecipe` reads whole files, so `carries(file)` is an immediate OOM on a 4 GB video."**
+  **False for reading.** `RecipeSlices` was extracted at ME-126: a tail carrier reads the last 64 KB
+  with a `RandomAccessFile`, a head carrier the first 512 KB, and the whole-file read is a fallback
+  for a walk that actually ran out. The grid's per-tile question is therefore already cheap for an
+  `mp4`. **True for writing**, and worse than the old text stated: `EditRecipe.write` and `clear`
+  call `file.readBytes()` and hand the result to `writeAtomically`, which builds a second whole copy
+  and moves it over the target. For a 4 GB film that is an OOM *and* 4 GB of writes to change 300
+  bytes. The fix is shaped by the format — our box is the last thing in the file, so a write is
+  `setLength` back over the old box plus an append, O(payload) and touching nothing else. That is
+  `save/`'s first ticket, not a side note.
+- **"The saver runs the bundled ffmpeg as a background process."** ME-181 changed the precedent:
+  `FfmpegStillEncoder` drives `FFmpegFrameRecorder` **in-process** against the bundled build. So
+  `render/` has a working in-process precedent on one side and a real question on the other — and
+  ME-181's own KDoc carries the trap it cost to find, a converter freed under a `Frame` still being
+  read.
+- **"ME-204: the same save targets as images."** `SaveTarget` **does not exist** — ME-132 deleted it,
+  and a grep finds no reference anywhere. What is genuinely shared in `save/` is `AtomicWrite`,
+  `SaveEviction`, `SourceStamp` and `SaveFormat`. `Save a Copy`, in the same retired block, described
+  nothing in the app.
+- **"Enabling video is one line in the factory."** **Still true**, and the line is
+  `EditorEngineFactoryImpl.capability`, which answers `Unavailable` for anything that is not
+  `MediaKind.Image`. Both doors — the viewer's control pill and the grid's context menu — read that
+  one function.
 
-| Format | Container | The slot |
-|---|---|---|
-| `mp4`, `mov` | ISOBMFF | **The same one.** `IsoBmffRecipe` appends a top-level `uuid` box after the last box and never inserts; an unknown top-level box is skipped by its size. Wiring them into `carrierFor` is close to free |
-| `mkv`, `webm` | Matroska / EBML | **No `uuid` box at all.** A different mechanism and a second carrier to write |
-| `avi` | RIFF | Not ISOBMFF either — but the same family as WebP, so ME-108's unbuilt RIFF carrier would serve both |
+Two further findings, neither of them corrections:
 
-So the split-button `Done` above is only offerable where a carrier exists. **A library that is mostly
-`mkv` would see the menu collapse to one entry on most of its files**, which changes that section's
-conclusion rather than a detail of it.
+- **A timeline stage and a raster fold coexist with no branch.** `orderedStages` ends in
+  `tool.stage(op.params) as? RasterStage`, so a stage that is not a raster one is dropped silently
+  rather than crashing. A video-only tool can return its own `ToolStage`, be folded by a second
+  timeline fold, and the raster fold needs no knowledge of it.
+- **`ToolDomain` wants a `Time` case, first in the enum.** Its own KDoc warns against reordering the
+  enum to fix a rail layout, because the order is *also* application rank — but *prepending*
+  preserves every existing relative rank, so no image comes out differently. Time before Geometry is
+  also the only correct rank: a cut decides which frames exist before anything decides what they look
+  like.
 
-### …and the blocker: `EditRecipe` reads whole files
-
-`EditRecipe` calls `file.readBytes()` in four places — `read`, both writes and the scan. For a 4 MB
-photograph that is nothing. **For a 4 GB video it is an immediate OOM**, and not only on save: the
-cheap-sounding question `carries(file)` — asked once per visible grid tile — reads the entire file to
-answer it.
-
-The video recipe path therefore is **not** "add two extensions to `carrierFor`". It needs the carrier
-rewritten to work without holding the file: seek from the end with a `RandomAccessFile` and read the
-last few kilobytes.
-
-**The trailing box makes that easy rather than hard** — it is at a known end and its size prefix
-points backwards — so this is a real piece of work with a shape, not an unknown. But it must be
-costed into ME-201 rather than discovered inside it, and it is a prerequisite for the recipe half of
-`Done` on any format, ISOBMFF or not.
-
----
-
-### The two extras — **not in a release, and not equally far away**
-
-The author raised both as wanted-someday and unnecessary now, and was right to separate them from the
-list above. They are not the same size.
-
-- **Effects over a time range** — Adjust on seconds 10–20 rather than the whole clip. **The
-  architecture already has this shape.** ME-156 and ME-169 built exactly it for frame sets: an
-  `EditScope` switch, a shared base layer and a per-frame layer over it, with ME-175 and ME-176
-  settling how they compose and what Revert takes. A time range is the continuous form of a frame
-  index. Not free, but not new thinking.
-- **Cutting and splicing clips onto a timeline.** **This one breaks the data model.** An
-  `EditDocument` describes edits to *one* file and lives in *that* file's metadata; a sequence is a
-  document about several files and has nowhere to live. It needs a project, a library of clips and a
-  timeline UI — and that is the point at which this stops being iOS Photos and starts being iMovie.
-  Its cost is not the timeline widget; it is that every assumption in §3 and §5 stops holding.
-
-The first could arrive later without disturbing anything. The second should be declined outright the
-way the 600 track was, or it will quietly redefine the feature.
+**What is measured and what is not.** The frame-rate fold (§3.1) and the seamless join
+([`playback/`](playback/playback.md)) are unmeasured, and they are the two gates on the feature.
+Whether other players tolerate a `uuid` box appended to an `mp4`'s tail is a third, and it belongs to
+[`save/`](save/save.md). ME-181's probe took four wrong turns before it read correctly, so each of
+these wants a fresh head rather than an estimate.
 
 ---
 
-## 3. What this feature actually adds
-
-Three things, and no fourth:
-
-- **An `EditorEngine` for `MediaKind.Video`.** The existing player is the live surface; the fold
-  produces a timeline edit rather than a raster recipe; the saver runs the Bytedeco-bundled ffmpeg as
-  a background process. This is the seam §3.3 of the image editor's doc exists for — the shell
-  composes `engine.Surface(...)` and never branches on media kind.
-- **Two tools**, both on the ordinary contract: Trim is a `CanvasTool` (dual handles over the
-  timeline), Mute is a manifest and one `BoolParam` with no UI code at all.
-- **A saver** that reuses the image save targets, the atomic write, the cache invalidation and the
-  banner — sharing the implementation, not copying it.
-
-**Mute is the acceptance test of the whole design.** If adding it takes more than a file and a Koin
-line, §3.4 of the image editor's doc is wrong. Likewise the reverse: if any ticket here needs the
-shell changed, the foundation was wrong and the fix belongs in the foundation, not in a branch.
-
----
-
-## 4. Open questions — answered when a ticket is promoted, not before
-
-These are the things this document deliberately has no answer for. Each is a real fork, and guessing
-one now would put a wrong sentence into a doc that is supposed to be true.
-
-- **Does the recipe model reach video at all?** §5 of the image editor is "the `EditDocument` goes
-  into the file's private metadata slot and pixels are never rewritten". MP4 and MOV are ISOBMFF, so
-  the `uuid` box carrier ME-108 built for HEIC and AVIF is *structurally* available — but a recipe is
-  only worth writing if every reader folds it, and the reader here is a decoding player, not a
-  bitmap. A trim that is a recipe means the player skips a range on every open; a trim that is a save
-  means ffmpeg writes a new file. **The backlog blocks were written before §5 was rewritten
-  (2026-08-19) and still say `Save a Copy` is the default — that phrase no longer describes anything
-  in the app**, and ME-204 has to be re-read against §5 when it is promoted rather than implemented
-  as written.
-- **What a keyframe-snapped trim tells the user** when the cut they asked for is 400 ms from the cut
-  they get. Snapping to real keyframes is what keeps the preview honest; showing the snap is a UI
-  decision nobody has made.
-- **Whether the trim strip is the player's scrubber or a second timeline.** The viewer already has a
-  slider; the editor is a mode over the viewer, and two timelines stacked would be the submenu problem
-  in a different costume.
-- **What an overwrite invalidates.** For an image it is `ImageBitmapCache` plus the preview key
-  (2026-08-17). A video also has a poster frame and a watch record, both keyed on the file.
-- **Playback while editing.** `EditorEngine.togglePlayback()` already exists (ME-140, added for
-  animated stills on the image canvas) and the video engine is its obvious second implementation —
-  but "the canvas plays" and "the canvas plays *the trimmed range*" are not the same feature.
-
----
-
-## 4a. Reconciliation against the tree — 2026-09-03
-
-The image editor shipped in full that day, so this document was read line by line against the code
-rather than against the plan it was written from. **Nothing here is a decision** — it is what is
-true, so that whoever promotes a ticket starts from the tree instead of from a year-old sentence.
-
-### Still true
-
-- **The shell names no media kind.** `EditorScreen` asks `engine.kind`, `EditorBottomPanel` takes the
-  engine as an interface, and the only `MediaKind` under `shell/` is `EditorSkippedOps`' parameter.
-  §3's claim that the video engine plugs in without touching the shell holds.
-- **`togglePlayback()` is on `EditorEngineSurface`** with a `Unit` default, implemented by
-  `ImageEditorEngine` and driven from `EditorCanvasGestures`. The video engine is its second
-  implementation, exactly as §4 says.
-- **The factory is the single gate.** `EditorEngineFactoryImpl:43` answers `Unavailable` for anything
-  that is not `MediaKind.Image`, so enabling video is one line there and nothing else opens.
-
-### No longer true, and load-bearing
-
-- **ME-204 claims "the same save targets".** `SaveTarget` **does not exist** — ME-132 deleted it, and
-  a grep finds no reference anywhere. What is actually shared in `save/` is `AtomicWrite`,
-  `SaveEviction`, `SourceStamp` and `SaveFormat`; the block must be re-read against those.
-  `Save a Copy` in the same block describes nothing in the app, which §4 already flagged.
-- **ME-201 says the saver "runs the Bytedeco-bundled ffmpeg as a background process".** That was
-  written when nothing here wrote with ffmpeg at all. **ME-181 changed it**: `FfmpegStillEncoder`
-  drives `FFmpegFrameRecorder` in-process against the bundled build. Whether a trim wants the same
-  road or a real process is now a live question with a working precedent on one side — and ME-181's
-  own KDoc carries the trap it cost to find (a converter freed under a `Frame` still being read).
-
-### Two of §4's open questions are narrower than they read
-
-- **"What an overwrite invalidates."** Half answered in code: `SaveEviction`'s KDoc records that the
-  `.thumbnails` poster is keyed on path, length *and* mtime, so a write orphans it rather than
-  leaving it stale — that covers the video poster too. **The watch record is the real half**, and
-  worse than the block states: it holds `positionMs` against `durationMs`, and a trim changes the
-  duration, so a resume position can point past the end of the file it belongs to.
-- **"Does the recipe model reach video at all?"** The structural half is settled: `carrierFor` routes
-  `heic`, `heif` and `avif` to `IsoBmffRecipe` and **not** `mp4` or `mov`, so the carrier exists but
-  the extensions are not wired. The open half is unchanged and is the one that matters — whether a
-  player should fold a recipe on every open.
-
-### Unmeasured, and the gate on ME-201
-
-Whether a keyframe-snapped stream-copy trim can be driven from Java at all. `FfmpegFrameRecorder`
-writes a still today; a stream copy is a different API path and nothing here has exercised it. **This
-is a probe, not a judgement** — and ME-181's probe took four wrong turns before it was read
-correctly, so it wants a fresh head rather than an estimate.
-
----
-
-## 5. Decision log
+## 6. Decision log
 
 | Date | Question | Decision | Why |
 |---|---|---|---|
-| 2026-08-24 | Own folder, or stay under `media-editor/`? | **Own folder, `pending/video-editor/`** | A feature folder is a shipping unit; the image half is nearly done and the video half is unstarted, and one status table covering both said "backlog" for a quarter of its rows indefinitely |
-| 2026-08-24 | Renumber the tickets to a `VE-` prefix? | **No — ME-201…ME-204 stand** | IDs are stable and never reused (`feature-docs.md` §3). The foundation these depend on is ME-numbered and shared; a rename would break every citation to buy a nicer prefix |
-| 2026-08-16 | Does `stage()` return `RasterStage`? | No — a `ToolStage` marker | A trim stage is not a matrix; without this the video editor cannot reuse the tool contract *(carried from the image editor's log — it is the decision this feature rests on)* |
-| 2026-08-16 | How does video reuse the shell? | An `EditorEngine` per `MediaKind` | The shell composes `engine.Surface(...)` and never branches on media *(carried, same reason)* |
+| 2026-09-03 | One folder or several? | **Seven feature folders, one shared backlog under `tickets/`** | The brief is seven bodies of work that fail and ship independently. The backlog stays single because a block's track is a section heading, and one file is where "what is left" can be read in one go |
+| 2026-09-03 | Does cutting break the data model? | **No — clips are ranges of one source** | The old objection was about a sequence of *several files*. Re-ordering ranges of one file is one op on one file, so the recipe, the carrier and the history all keep working (§3.2) |
+| 2026-09-03 | How are effects scoped to part of the video? | **A clip is the scope. `EditScope` and `EditLayers` unchanged, keyed on clip index** | ME-156…ME-176 built exactly this for frame sets. A second, time-range notion of scope would be two answers to one question (§3.3) |
+| 2026-09-03 | Where does the strip live in the contract? | **A defaulted `Timeline` composable on `EditorEngineSurface`** | It follows `Thumbnail`'s precedent, keeps the shell free of `MediaKind`, and leaves undo granularity with the session (§3.4) |
+| 2026-09-03 | Is `Done` enough on its own? | **No — `Done ▾` offers `Render video…` too** | Both cases are real: a quick trim must not wait on a render, and a clip being sent to somebody must not need Woka to look edited |
+| 2026-09-03 | Does a render re-encode everything? | **No — copy every segment with no pixel work, encode only the rest** | It is what makes "few edits, no bigger than the source" true, and a copied segment is lossless as well as instant (§3.5) |
+| 2026-09-03 | Reverse playback? | **Declined** | Author's call. It needs a keyframe-to-keyframe frame buffer to exist at all, and buys one effect |
+| 2026-09-03 | A project across several files? | **Declined outright** | Every assumption in §3 and §5 stops holding, and this stops being iOS Photos. Cutting within one file (§3.2) already covers the brief |
+| 2026-09-03 | Does the video editor draw a top bar? | **No — it fills the shell's slots, exactly as the image editor does. `Back` is cancel and there is no `Cancel` button** | Read against `EditorTopBarSetup` after the first draft of this document invented one. The shipped arrangement is already right, and the bar is a themed surface rather than a scrim (§4.1a) |
+| 2026-09-03 | How is a control reset? | **Right-click, on every input, plus the header for the whole tool** | The schema renders eight row types and double-click-to-detent only ever meant something on the two with a track. One gesture everywhere is one thing to learn (§4.1b). It changes the image editor too, so it is a §300 ticket |
+| 2026-09-03 | What settings does a sound entry get? | **`TimeWindow` — markup's own group — plus volume and repeat** | The two ask the same three questions, and one envelope function read by the canvas *and* the renderer is what keeps an export matching the preview |
+| 2026-09-03 | Can a sound entry be dragged on the strip, with the right button? | **Dragged yes, with the **left** button: the body moves, an edge trims** | The right button was spent on reset the same day (§4.1b), and two meanings for one button one panel apart is the class of bug that rule removes. Left-drag on an edge is what every editor does anyway (§4.3a) |
+| 2026-09-03 | Is a GIF the main way out? | **No — a third `Done ▾` entry, only for a short result, saying what it costs** | A muted `mp4` of the same clip is smaller and looks better, so a GIF has to be the secondary offer rather than the headline (ME-296) |
+| 2026-09-03 | What frame is the cover? | **One the author picks, in timeline time, drawn through the fold** | Folding it is the whole point: a frozen first frame with a title on it is what should appear on the grid tile, and an unfolded poster would show the bare source frame (ME-287) |
+| 2026-09-03 | Split at silence or scene change? | **Declined** | Author's call, and the reason is the right one: too many clips where it cuts in the wrong place, and confirming every guess costs more than making the cuts |
+| 2026-09-03 | Prefix and numbering | **`ME-`, bands inside the 200s; ME-202…204 retired; §300 for the shared shell, §950 for proposals with no ids** | `ME` is *Media Editor* and spans Phase 5, so the shared foundation and the video work stay in one namespace. Bands give each folder room without a second prefix; a proposal gets no number until it is accepted |
+| 2026-08-24 | Own folder, or stay under `media-editor/`? | **Own folder** | A feature folder is a shipping unit *(carried)* |
+| 2026-08-16 | Does `stage()` return `RasterStage`? | No — a `ToolStage` marker | A trim stage is not a matrix; this is the decision the whole feature rests on *(carried from the image editor's log)* |
+| 2026-08-16 | How does video reuse the shell? | An `EditorEngine` per `MediaKind` | The shell composes `engine.Surface(...)` and never branches on media *(carried)* |

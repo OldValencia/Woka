@@ -78,10 +78,24 @@ of that pass; the rare formats are the one part still outstanding.
 
 ### Phase 5: Media Editor (Editing tools)
 Two folders since 2026-08-24, one per shipping half. **5a — the image editor — is complete and moved
-to `features/implemented/image-editor/` on 2026-09-03.** `features/pending/video-editor/` is **5b** —
-nothing built, ME-201…ME-204 in its backlog. The ticket IDs are shared and unchanged, because the
-foundation is shared: the video editor adds a tool set, an engine and a saver to the image editor's
-shell and changes none of it.
+to `features/implemented/image-editor/` on 2026-09-03.** `features/pending/video-editor/` is **5b**.
+
+**5b was re-scoped and restructured on 2026-09-03**, against a brief several times the size of the
+four blocks it held: as well as the trim, the author asked for cutting a piece out of the middle and
+moving it elsewhere, seamless playback across the joins, four audio behaviours, the image editor's
+five tools reused on a moving picture, and two ways out to a file. It is now **seven feature folders
+under one umbrella with one shared backlog** — `foundation/`, `timeline/`, `playback/`, `audio/`,
+`picture/`, `save/`, `render/` — and `video-editor.md` is the umbrella that holds the architecture and
+the decision log. **`foundation/` is fully specified — ME-201, ME-206, ME-207 and ME-205 — and
+nothing is built.** `save/` is the folder after it, by the author's choice, which is why ME-208 was
+dropped. The ticket IDs stay in the `ME-`
+namespace, banded one range per folder inside the 200s, because the prefix means *Media Editor* and
+spans the whole phase; ME-202…ME-204 are retired, their ids kept and never reused.
+
+The claim below that "the video editor adds a tool set, an engine and a saver and changes none of the
+shell" **survived being read against the code** and is still true of the shell: what it understated is
+the size of the tool set. The one seam the shell grows is a defaulted `Timeline` composable, following
+`Thumbnail`'s precedent.
 
 **5a is done: no open tickets, and its backlog holds only the things deliberately not built.** A
 shell, a rail, twelve tools, a recipe carrier per container family, a per-frame edit, an HDR path
@@ -90,8 +104,7 @@ is where the ticket-by-ticket record lives; this paragraph deliberately does not
 
 Two things are named there as gaps rather than tickets — what a save in flight does when the app
 closes, and localisation — and the 600 track (four further adjustments) was **declined by the author
-on 2026-09-03**, not deferred. The video editor is a tool set, an engine and a saver on top of the
-same shell.
+on 2026-09-03**, not deferred.
 
 **The foundation is built** — ME-001…ME-014 all done as of 2026-08-18: the document, history and
 session; the parameter schema and tool contract; the registry with settings-backed enablement; the
@@ -102,12 +115,17 @@ replaced the whole export path.
 
 - **UX:** `Edit` in the viewer's control pill and in the grid's context menu.
 - **Features:** Crop, resize, rotate/flip, adjustments, filters, HDR on/off, vector markup (arrows,
-  shapes, text), and lossless video trimming.
+  shapes, text) — all shipped in 5a and all reused on video. On video, additionally: trim, split,
+  delete and reorder within one file; per-clip speed and freeze-frame; per-clip and whole-file audio
+  with detach, an external track and extraction; markup that appears, holds and fades.
 - **Logic:** an immutable `EditDocument` of tool ops, folded into one draw recipe; the same recipe
   replayed at native resolution on save. **The recipe is written into the file itself** (ME-131…ME-135)
   and every reader replays it, so `Done` edits the picture in place — there is no copy, no export
   step and no hidden backup store. "Save a Copy is the default" was the 2026-08-16 decision and was
-  reversed on 2026-08-19.
+  reversed on 2026-08-19. **On video the same recipe carries the cuts as well**, and `Done` grows a
+  second entry — `Render video…`, which writes a real file anybody can play, copies every segment it
+  can and never overwrites the source. The copy comes back for that one path, because a lossy
+  overwrite is irreversible.
 
 ### Phase 6: OS Integration
 - Register Woka in Windows Registry to handle `.jpg`, `.png`, `.mp4` file extensions.
