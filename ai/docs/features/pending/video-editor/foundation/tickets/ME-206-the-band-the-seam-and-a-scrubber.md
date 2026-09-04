@@ -78,6 +78,35 @@ measurement here is [`video-editor.html`](../../../../../../mockups/design/video
 `shared/src/jvmMain/kotlin/com/woka/feature/editor/engine/video/VideoEditorEngine.kt` (edit) ·
 `shared/src/jvmTest/kotlin/com/woka/ui/EditorBandUiTest.kt` (new)
 
+## Done — 2026-09-03
+
+Every step as planned, and **two files were split rather than one**. `EditorBottomPanel` went to
+`EditorInspectorCard` as step 2 said (149 → 107 + 95); `VideoEditorBand` reached 164 the moment it
+was written, so its three pieces — the style, the transport and the readout — went to
+`VideoEditorBandParts`, which is the cut `MediaSlider` and `MediaSliderTrack` already make: the band
+is *a layout and a seek*, and those are what it lays out.
+
+**`FixtureEngine` grew a `timeline` lambda** rather than a boolean, so the shell test can tag what
+the engine returned and prove the panel placed *that* rather than something of its own. The absent
+case is asserted too: `Timeline` is defaulted to `Unit` so no photograph's layout moves, and a
+default nobody asserts is one that quietly stops holding.
+
+**What the tests do not cover, and why**: the scrub. A drag is a pointer gesture over a slider whose
+travel is in pixels, and asserting where a swipe landed tests the test's arithmetic rather than the
+band's. It went on the by-hand list instead.
+
+**The by-hand pass found two, both of them things no assertion here would have caught** — which is
+the argument for the pass rather than a mark against the tests:
+
+- **The transport glyph sat against the left edge, half clipped.** A `BasicText` given only a `size`
+  lays its text out at the box's top-left; it does not centre in it. Every other round control in the
+  app is a `Box` with `Alignment.Center` and a glyph inside, and this is now that.
+- **The unplayed track read as white.** `Theme.viewer.onScrimSecondary` is a *text* colour — #CDCDD2 —
+  and as a track it drew a solid pale line the played half was indistinguishable from: only the knob
+  said where the play head was. It is `onScrimHover` now, 8 % white, which is what the mockup's
+  `--on-scrim-hov` is and what the inspector's own `DetentSlider` track uses. `MediaSliderTrack`
+  lightens it under the pointer, so the affordance does the work rather than the resting state.
+
 ## Done when
 
 - A video in the editor draws a band between the inspector and the rail; a **photograph draws none**,

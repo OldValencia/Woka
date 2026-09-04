@@ -53,7 +53,15 @@ class FixtureEngine(
      * Held before [save] answers, so a test can drive the case ME-130 exists for: a
      * write still running after the editor that started it has left the tree.
      */
-    private val savingGate: CompletableDeferred<Unit>? = null
+    private val savingGate: CompletableDeferred<Unit>? = null,
+    /**
+     * What this engine puts in the shell's timeline slot, or **null for a medium with no
+     * band** — which is the default and is every still (ME-206).
+     *
+     * A lambda rather than a boolean, so a test can tag what it drew and prove the panel
+     * placed *this engine's* content rather than something of its own.
+     */
+    private val timeline: (@Composable () -> Unit)? = null
 ) : EditorEngine {
 
     override fun drawnSize(document: EditDocument): IntSize =
@@ -93,6 +101,11 @@ class FixtureEngine(
                 .background(colour)
                 .testTag(SURFACE_TAG)
         )
+    }
+
+    @Composable
+    override fun Timeline(document: EditDocument, modifier: Modifier) {
+        timeline?.invoke()
     }
 
     /** How many times the canvas asked for playback to start or stop. */

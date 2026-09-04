@@ -4,10 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,7 +24,7 @@ import com.woka.feature.editor.core.ToolOp
 
 /**
  * Everything the editor stacks along the bottom edge: the two notices, the open tool's
- * inspector, and the rail.
+ * inspector, the medium's own band, and the rail.
  *
  * Split from `EditorScreen` when ME-114's selection plumbing took that file past the size
  * mandate. The seam is the one the layout already had — a canvas that fills the window and
@@ -79,63 +76,24 @@ internal fun BoxScope.EditorBottomPanel(
             EditorSkippedNotice(skipped.size, skippedToolTitles(skipped, registry))
         }
         if (activeTool != null) {
-            // Only the screen may name the frame; a tool is handed it (ME-110).
-            val frame = engine.drawnSize(document)
-            // **No `weight` here, deliberately** (found by bisecting 2026-08-28). A
-            // `Row` holding a weighted child expands to the whole width offered to it,
-            // so the card stopped being centred by the column above and sat against the
-            // window's edge — which is what made half the inspector's UI tests report
-            // their rows as "not displayed". The narrowing is arithmetic instead.
-            val wide = activeTool.wideInspector && railWidth > 0.dp
-            // **`wideInspector` raises the ceiling, it never lowers it** (measured
-            // 2026-08-29). It was `railWidth` outright, which is a cap: with a narrow
-            // dock — one tool in it — Markup's card was squeezed to 212 dp and its
-            // swatches laid out at zero width, so every click on one went nowhere.
-            val room = maxOf(railWidth, EditorTokens.Inspector.maxWidth)
-            val ceiling = if (wide) room else EditorTokens.Inspector.maxWidth
-            val extra = accessory.content
-            // Springy rather than eased, which is what makes the panel read as pulled out
-            // of the card rather than faded in beside it. It overshoots a little and
-            // settles — the motion the `gooey examples` were sent for.
-            val progress by animateFloatAsState(
-                targetValue = if (extra == null) 0f else 1f,
-                animationSpec = spring(dampingRatio = 0.82f, stiffness = 300f)
+            EditorInspectorCard(
+                session = session,
+                engine = engine,
+                document = document,
+                activeTool = activeTool,
+                railWidth = railWidth,
+                accessory = accessory,
+                selectedId = selectedId
             )
-
-            val picture = PictureFacts(frame, engine.sourceSize, engine.stats)
-            CompositionLocalProvider(LocalInspectorAccessory provides accessory) {
-                GooeyPair(
-                    progress = progress,
-                    // Kept composed until the spring has finished retracting, so closing
-                    // is a movement rather than a disappearance.
-                    extra = if (extra != null || progress > 0.01f) extra else null
-                ) { plateAlpha ->
-                    EditorInspector(
-                        title = activeTool.manifest.title,
-                        footnote = activeTool.footnote(paramsOf(document, activeTool, engine.sourceSize), frame),
-                        // The dock is the ceiling: a card sizes to its content and stops
-                        // there, so Styles' fourteen squares reach the rail's width while
-                        // Transform's four buttons stay compact — the reason this was a
-                        // range and never a number.
-                        maxWidth = ceiling,
-                        plateAlpha = plateAlpha,
-                        // Beside the title, because these are about the card (ME-174).
-                        actions = { InspectorHeaderActions(activeTool, session, picture, selectedId) },
-                        content = {
-                            ParamRows(
-                                tool = activeTool,
-                                session = session,
-                                document = document,
-                                picture = picture,
-                                selectedId = selectedId
-                            ) { preview, modifier ->
-                                engine.Thumbnail(preview, modifier)
-                            }
-                        }
-                    )
-                }
-            }
         }
+        // **Between the inspector and the rail** (ME-206), so the band and the rail are
+        // the two fixed things at the bottom edge and the card opens *above* them. The
+        // strip is where a clip is selected, and a selection that jumped under the cursor
+        // whenever a tool was picked would be the opposite of the point.
+        //
+        // No new token: the column's own `spacedBy` gives the gap. No branch on media
+        // either — a still's engine does not override this and draws nothing.
+        engine.Timeline(document, Modifier)
         EditorRail(
             tools = tools,
             activeToolId = activeToolId,

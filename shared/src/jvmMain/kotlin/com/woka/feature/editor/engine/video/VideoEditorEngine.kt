@@ -84,6 +84,14 @@ internal class VideoEditorEngine(
         VideoEditorCanvas(file, playback, sourceSize, recipe, document.pending != null, modifier)
     }
 
+    /**
+     * The band the shell makes room for (ME-206). It reads the same holder the canvas
+     * fills, so there is one decoder behind the picture, the strip and every thumbnail.
+     */
+    @Composable
+    override fun Timeline(document: EditDocument, modifier: Modifier) =
+        VideoEditorBand(playback, modifier)
+
     @Composable
     override fun Thumbnail(document: EditDocument, modifier: Modifier) {
         val recipe = remember(document, sourceSize) { recipe(document) }

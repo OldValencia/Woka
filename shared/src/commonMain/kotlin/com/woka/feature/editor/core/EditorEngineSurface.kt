@@ -38,6 +38,21 @@ interface EditorEngineSurface {
     fun Thumbnail(document: EditDocument, modifier: Modifier) = Unit
 
     /**
+     * The band under the canvas: a scrubber, and later a strip of clips (ME-206).
+     *
+     * **Defaulted to nothing, exactly as [Thumbnail] is**, so a medium with no timeline
+     * draws none and no still's layout changes by a pixel. The shell places it in the
+     * column it already builds — between the inspector and the rail — and learns nothing
+     * about what it holds.
+     *
+     * **It names no player and no clip**, which is the constraint the whole seam exists
+     * for (§3.3): the moment the shell can name either, every file that touches one
+     * becomes a video ticket.
+     */
+    @Composable
+    fun Timeline(document: EditDocument, modifier: Modifier) = Unit
+
+    /**
      * "Start or stop whatever is moving on the canvas", raised by a click on it.
      *
      * Media-agnostic on purpose: an animated still runs a frame clock and the video
