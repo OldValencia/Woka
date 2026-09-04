@@ -44,6 +44,16 @@ private fun File.head(): ByteArray? = runCatching {
 }.getOrNull()
 
 /**
+ * The first [count] bytes, for a question that needs a handful of them (ME-280).
+ *
+ * `TailRecipeCarrier.accepts` reads four bytes to decide whether a container is one it can
+ * extend at all, and handing it [head]'s 512 KB to do that would be silly on a 4 GB file.
+ */
+internal fun File.leading(count: Int): ByteArray? = runCatching {
+    inputStream().use { stream -> stream.readNBytes(minOf(length(), count.toLong()).toInt()) }
+}.getOrNull()
+
+/**
  * The last [TAIL_WINDOW] bytes of the file, or all of it when it is smaller.
  *
  * A `RandomAccessFile` rather than a skip-and-read, because skipping is not a seek on

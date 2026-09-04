@@ -35,9 +35,13 @@ private const val OVERHEAD = HEADER + 16
  * anybody's data — Canon, Adobe and GoPro all write them — so a box is ours only when
  * its UUID is [IDENTIFIER], and one that is not is left exactly where it is.
  */
-internal object IsoBmffRecipe : RecipeCarrier {
+internal object IsoBmffRecipe : TailRecipeCarrier {
 
-    override val window = RecipeWindow.Tail
+    /** Ours, in tail coordinates — see [TailRecipeCarrier.boxIn] for why it is a range. */
+    override fun boxIn(tail: ByteArray): IntRange? =
+        tail.ourBox()?.let { it.at until it.end }
+
+    override fun accepts(head: ByteArray): Boolean = head.isIsoBmff()
 
     /**
      * **Never truncated**, unlike the head carriers.
@@ -61,24 +65,33 @@ internal object IsoBmffRecipe : RecipeCarrier {
         }
     }
 
-    override fun with(bytes: ByteArray, payload: String): ByteArray? {
-        if (!bytes.isIsoBmff()) return null
+    override fun box(payload: String): ByteArray? {
         val body = payload.toByteArray(Charsets.UTF_8)
         // Refused rather than written where a later read cannot see it — an edit that
         // is silently invisible is worse than one that says it will not fit.
         if (body.size + OVERHEAD > TAIL_WINDOW) return null
 
         val size = OVERHEAD + body.size
-        val box = ByteArray(size)
-        box[0] = ((size shr 24) and 0xFF).toByte()
-        box[1] = ((size shr 16) and 0xFF).toByte()
-        box[2] = ((size shr 8) and 0xFF).toByte()
-        box[3] = (size and 0xFF).toByte()
-        UUID_BOX.copyInto(box, 4)
-        IDENTIFIER.copyInto(box, HEADER)
-        body.copyInto(box, OVERHEAD)
+        return ByteArray(size).also { box ->
+            box[0] = ((size shr 24) and 0xFF).toByte()
+            box[1] = ((size shr 16) and 0xFF).toByte()
+            box[2] = ((size shr 8) and 0xFF).toByte()
+            box[3] = (size and 0xFF).toByte()
+            UUID_BOX.copyInto(box, 4)
+            IDENTIFIER.copyInto(box, HEADER)
+            body.copyInto(box, OVERHEAD)
+        }
+    }
 
-        return ByteArray(bytes.size + size).also { out ->
+    /**
+     * The byte path, kept for the head-carrier shape `EditRecipe` falls back to: a box
+     * already carrying somebody else's bytes after it cannot be truncated away (ME-280).
+     * It builds the box with [box], so the two roads cannot disagree.
+     */
+    override fun with(bytes: ByteArray, payload: String): ByteArray? {
+        if (!accepts(bytes)) return null
+        val box = box(payload) ?: return null
+        return ByteArray(bytes.size + box.size).also { out ->
             bytes.copyInto(out, 0)
             box.copyInto(out, bytes.size)
         }

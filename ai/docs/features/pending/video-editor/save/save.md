@@ -11,10 +11,17 @@ Umbrella: [`../video-editor.md`](../video-editor.md) §3.5 and §5. Ticket ids: 
 
 ## 1. Status
 
-No tickets written. Blocks in [the shared backlog](../tickets/backlog.md) §280.
+| Ticket | Title | State |
+|---|---|---|
+| [ME-280](tickets/ME-280-a-tail-carrier-writes-in-place.md) | A tail carrier writes in place | **done 2026-09-04** |
 
-Its first ticket also deletes `EditCapability.Preview`, the temporary case
-[`foundation/`](../../../implemented/video-editor/foundation/foundation.md) §3.5 introduces.
+Everything else is a block in [the shared backlog](../tickets/backlog.md) §280, where no state is
+recorded. `save/` is **folder 1** of the build order ([`../video-editor.md`](../video-editor.md) §1a).
+
+`EditCapability.Preview` — the temporary case
+[`foundation/`](../../../implemented/video-editor/foundation/foundation.md) §3.5 introduces — is
+deleted by **ME-288**, not by ME-280: promoting the first block split the write from the wiring, and
+the capability belongs with the wiring.
 
 ---
 

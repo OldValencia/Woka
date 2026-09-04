@@ -249,18 +249,31 @@ to manage and this is a clipboard.
 
 ## 280 — Save (`Done`)
 
-### ME-280 — An in-place write, and mp4/mov wired in
-Two extensions into `carrierFor`, and a tail-carrier write that seeks, `setLength`s back over the old
-box and appends — instead of reading 4 GB and writing 4 GB back. Safe **only** because a tail box
-sits after all media data, so a failed write cannot damage the picture; head carriers keep
-`writeAtomically` untouched. Deletes `EditCapability.Preview`.
-*Depends on ME-201.*
+### ME-280 — promoted 2026-09-04, and split in two on the way
+The block did the write *and* the wiring. The write left as
+[`save/tickets/ME-280-a-tail-carrier-writes-in-place.md`](../save/tickets/ME-280-a-tail-carrier-writes-in-place.md);
+the wiring stayed here as ME-288 below, because together they are thirteen files and a mandated split
+of a 150-line one.
+
+### ME-288 — mp4 and mov carry an edit, and `Preview` is deleted
+The other half. Two extensions into `carrierFor`; `EditorEngineFactoryImpl` asks a **video** the same
+carrier question an image is asked, so `MediaKind.Video -> EditCapability.Preview` goes and the enum
+case with it — including `writeByCapability`'s branch and `EditorEntry`'s KDoc. `VideoEditorEngine`
+then saves for real: `recordRecipe` with a `SourceStamp` and `evictCachesFor`, exactly as the image
+engine does, and it **must also read back** — `storedDocument` is the interface's empty default today,
+so a saved video would reopen blank and the next `Done` would prune the recipe it wrote.
+
+`VideoEditorEngine.kt` is at 150, and the split is `ImageEditorReads`' precedent: a
+`VideoEditorReads.kt` holding the private `codedFrameSize` it already has plus the stored-document
+read. Nothing folds the recipe on a read path yet — that is ME-284 — so a saved video shows its edit
+in the editor and nowhere else, which is the honest state until then.
+*Depends on ME-280.*
 
 ### ME-281 — Probe: does anything else tolerate the box?
 An `mp4` and a `mov` with our `uuid` box appended, opened in mpv, VLC, Windows Explorer's preview and
 a phone gallery. Print what each did, record it here with the date. If a common player refuses the
 file, `Done` has nowhere to write and the whole `Done ▾` menu collapses permanently.
-*Depends on ME-280.*
+*Depends on ME-288 — there is no box in an `mp4` to open in anything until the extensions are wired.*
 
 ### ME-282 — A Matroska carrier
 The library is mixed, so this is second and not later. Try an unknown top-level EBML element appended
@@ -278,7 +291,7 @@ and is the thing to read before writing this.
 The viewer's frame, the grid poster, PiP and the seek preview all decode the original and fold the
 recipe — **including the cuts**, by reusing ME-232's clip walk rather than growing a second one. A
 viewer that applied the crop and ignored the cut would be worse than one that ignored both.
-*Depends on ME-232, ME-280.*
+*Depends on ME-232, ME-288.*
 
 ### ME-285 — Duration, the slider and the watch record
 A trim changes how long the file is. The slider and the readout must show the edited length; the
@@ -289,7 +302,7 @@ are in source time and may have been re-ordered or cut away.
 ### ME-286 — Revert, and the menu the capability drives
 Revert removes the box and puts the file back as it was shot. `capability` then answers per container,
 and `Done ▾` shows one entry or two accordingly, saying why when it shows one.
-*Depends on ME-280, ME-290.*
+*Depends on ME-288, ME-290.*
 
 ### ME-287 — Choose the cover
 One field in the recipe holding a **timeline** position, and the tile draws that frame **through the
