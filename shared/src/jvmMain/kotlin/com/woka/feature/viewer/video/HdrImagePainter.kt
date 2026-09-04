@@ -11,22 +11,12 @@ import com.woka.core.data.TransferKind
 import org.jetbrains.skia.Data
 import org.jetbrains.skia.FilterTileMode
 import org.jetbrains.skia.Image
-import org.jetbrains.skia.RuntimeEffect
 import org.jetbrains.skia.SamplingMode
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
 /** `vec2 scale` then three floats — declaration order is the packing order. */
 private const val UNIFORM_BYTES = 20
-
-/**
- * Compiled once per process.
- *
- * It used to be a `by lazy` on the painter, and `MediaViewerFrame` mints a painter
- * per presented frame — so [HDR_SHADER] was parsed and compiled 24 times a second,
- * on the UI thread, inside `onDraw`.
- */
-private val HDR_EFFECT: RuntimeEffect by lazy { RuntimeEffect.makeForShader(HDR_SHADER) }
 
 /**
  * Draws a picture that cannot go straight to an sRGB display, doing the right
@@ -101,15 +91,8 @@ class HdrImagePainter(
         ByteBuffer.allocate(UNIFORM_BYTES).order(ByteOrder.LITTLE_ENDIAN)
             .putFloat(intrinsicSize.width / size.width)
             .putFloat(intrinsicSize.height / size.height)
-            .putFloat(transferCode())
+            .putFloat(transfer.shaderCode())
             .putFloat(if (isWideGamut) 1f else 0f)
             .putFloat(whitePoint)
             .array()
-
-    /** Floats rather than an int uniform: every Skia build takes these. */
-    private fun transferCode(): Float = when (transfer) {
-        TransferKind.SDR -> 0f
-        TransferKind.PQ -> 1f
-        TransferKind.HLG -> 2f
-    }
 }

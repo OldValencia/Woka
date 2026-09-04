@@ -34,6 +34,22 @@ import kotlin.math.roundToInt
 data class RasterRecipe(
     val matrix: Matrix,
     val outputSize: IntSize,
+    /**
+     * The signal the picture **arrives in**, converted before anything grades it
+     * (ME-205).
+     *
+     * Null for every still: a photograph is tone mapped where it is decoded (ME-177), so
+     * what reaches the fold is already ordinary sRGB and there is nothing to convert. A
+     * video frame is not — it is replaced too fast to be measured, which is what put it
+     * out of `displayable`'s reach — so the video engine puts its HDR pass here.
+     *
+     * **Its own field rather than a place in [shaders]**, because the chain attaches
+     * [colorFilter] to the image shader *first*: anything in [shaders] runs after the
+     * grade, and a tone map after a grade means every adjustment was applied to a PQ- or
+     * HLG-coded signal. That is not a subtle error — a brightness slider on an HDR clip
+     * would do something unrelated to brightness.
+     */
+    val source: RasterStage.Shader? = null,
     val colorFilter: ColorFilter?,
     val shaders: List<RasterStage.Shader> = emptyList(),
     val paints: List<RasterStage.Paint>,

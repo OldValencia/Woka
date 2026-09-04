@@ -14,6 +14,7 @@ import com.woka.feature.editor.core.EditorEngine
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.engine.image.RasterRecipe
 import com.woka.feature.editor.engine.image.fold
+import com.woka.feature.viewer.video.engine.probe.HdrInfo
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import java.io.File
 
@@ -71,13 +72,24 @@ internal class VideoEditorEngine(
     }
 
     /**
+     * The stream's colour, and **not the frame's** (ME-205). `streamHdrInfo` is written
+     * once per opened track and is stable by contract, which is what a memoised recipe
+     * needs; `currentFrameHdrInfo` is rewritten every frame, and keying a fold on it
+     * would re-fold sixty times a second.
+     */
+    private val streamColour: HdrInfo? @Composable get() = playback.state?.streamHdrInfo
+
+    /**
      * **Remembered on the document, not rebuilt per frame.** The frame is the only thing
      * that moves 60 times a second; re-folding a document that has not changed is the
      * one avoidable cost on this path.
      */
     @Composable
     override fun Surface(document: EditDocument, modifier: Modifier) {
-        val recipe = remember(document, sourceSize) { recipe(document) }
+        val colour = streamColour
+        val recipe = remember(document, sourceSize, colour) {
+            recipe(document).copy(source = hdrStageFor(colour))
+        }
         // **The document says when a drag is in flight** and the canvas only needs the
         // answer: `pending` is set by `preview` and cleared by `commit`, so one boolean
         // covers a slider and a canvas tool alike (ME-207).
@@ -94,7 +106,10 @@ internal class VideoEditorEngine(
 
     @Composable
     override fun Thumbnail(document: EditDocument, modifier: Modifier) {
-        val recipe = remember(document, sourceSize) { recipe(document) }
+        val colour = streamColour
+        val recipe = remember(document, sourceSize, colour) {
+            recipe(document).copy(source = hdrStageFor(colour))
+        }
         VideoEditorThumbnail(playback, sourceSize, recipe, modifier)
     }
 

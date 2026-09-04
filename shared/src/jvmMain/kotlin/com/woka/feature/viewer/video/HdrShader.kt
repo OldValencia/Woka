@@ -1,5 +1,8 @@
 package com.woka.feature.viewer.video
 
+import com.woka.core.data.TransferKind
+import org.jetbrains.skia.RuntimeEffect
+
 /**
  * The colour-management shader, in three branches because three physically
  * different signals reach it.
@@ -102,3 +105,20 @@ internal const val HDR_SHADER = """
         return half4(pow(mapped, vec3(1.0/2.2)), 1.0);
     }
 """
+
+/**
+ * Compiled **once per process**, and shared by everything that runs the chain.
+ *
+ * It began as a `by lazy` on `HdrImagePainter`, which `MediaViewerFrame` mints per
+ * presented frame — so the shader was parsed and compiled 24 times a second, on the UI
+ * thread, inside `onDraw`. ME-205 moved it here rather than giving the editor a second
+ * private copy, which would have given half of that back.
+ */
+internal val HDR_EFFECT: RuntimeEffect by lazy { RuntimeEffect.makeForShader(HDR_SHADER) }
+
+/** Floats rather than an int uniform: every Skia build takes these. */
+internal fun TransferKind.shaderCode(): Float = when (this) {
+    TransferKind.SDR -> 0f
+    TransferKind.PQ -> 1f
+    TransferKind.HLG -> 2f
+}

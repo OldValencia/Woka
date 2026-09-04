@@ -16,12 +16,17 @@ Umbrella and the architecture this implements: [`../video-editor.md`](../video-e
 | [ME-201](tickets/ME-201-a-video-canvas-that-folds.md) | A video canvas that folds | **done 2026-09-03** — confirmed by hand by the author, build green |
 | [ME-206](tickets/ME-206-the-band-the-seam-and-a-scrubber.md) | The band, the seam, and a scrubber | **done 2026-09-03** — build green; the by-hand pass is the author's |
 | [ME-207](tickets/ME-207-the-canvas-opens-paused.md) | The canvas opens paused, and a drag holds it | **done 2026-09-03** — build green; opens paused, space toggles, a drag holds, sound at the app's volume |
-| [ME-205](tickets/ME-205-hdr-on-the-video-canvas.md) | HDR on the video canvas | **written** — not started |
+| [ME-205](tickets/ME-205-hdr-on-the-video-canvas.md) | HDR on the video canvas | **done 2026-09-03** — build green; the by-hand pass on a PQ file is the author's |
 | ME-208 | Say up front that a video cannot be kept yet | **dropped 2026-09-03** — id retained, never reused |
 
-**The folder is fully specified and the backlog's §201 is empty.** All four are written against the
-tree of 2026-09-03; each names the file sizes it has to respect, because three of the files they
-touch are within a few lines of the 150-line mandate.
+**The folder is finished — 2026-09-03.** ME-201, ME-206, ME-207 and ME-205 are all shipped and
+`:shared:build` is green; ME-208 was dropped. A video opens in the editor, draws through the folded
+document, stands still until asked to move, carries a band, and tone maps correctly.
+
+Four splits were made along the way, every one of them because a step pushed a file past the
+150-line mandate rather than because a design changed: `EditorBottomPanel` → `EditorInspectorCard`,
+`VideoEditorCanvas` → `VideoPlayerHolder`, `VideoEditorBand` → `VideoEditorBandParts`, and
+`RasterImageDraw` → `RasterShaderChain`.
 
 **ME-208 was dropped rather than written**: the author chose [`save/`](../save/save.md) as the next
 folder, so `EditCapability.Preview` lives for the length of this phase and ME-280 deletes it. A
@@ -85,8 +90,19 @@ harmless — provided nothing measures the bitmap.
 `RasterSurface` does not go through `HdrImagePainter`, so an HDR video drawn naively arrives
 untone-mapped and blown out. The fix is not a second draw path: `HDR_SHADER`'s uniform block is
 already in the `RasterStage.Shader` convention (declaration order, little-endian, no
-`resolutionScale` — it samples one pixel), so the engine prepends one shader stage to the recipe when
-`currentFrameHdrInfo.needsColorManagement` says the frame needs it.
+`resolutionScale` — it samples one pixel), so the engine gives the recipe one shader stage when the
+stream needs colour management.
+
+**Built as `RasterRecipe.source`, not as an entry in `shaders`** (ME-205). "Prepend" was the word
+this section used, and reading the chain disproved it: `drawThroughShaders` attaches the colour
+filter to the image shader *first*, so anything in `shaders` runs **after** Adjust and Filters. A
+tone map there would mean every adjustment had been applied to a PQ- or HLG-coded signal — a
+brightness slider doing something unrelated to brightness. The slot is its own field, applied before
+the filter, and both draw paths get it because `drawRecipeImage` is shared.
+
+**The stream's colour, not the frame's.** `streamHdrInfo` is written once per opened track and is
+stable by contract; `currentFrameHdrInfo` is rewritten every frame, and keying a memoised fold on it
+would re-fold sixty times a second.
 
 **Its `scale` uniform means something different in the chain, and getting that wrong is a picture
 blown up from one corner.** In `HdrImagePainter` it is `intrinsicSize / drawSize`, because that

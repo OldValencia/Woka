@@ -95,8 +95,29 @@ saved file cannot disagree with the preview it was approved from (ME-165).
 `shared/src/jvmMain/kotlin/com/woka/feature/viewer/video/HdrShader.kt` (edit) ·
 `shared/src/jvmMain/kotlin/com/woka/feature/viewer/video/HdrImagePainter.kt` (edit) ·
 `shared/src/jvmMain/kotlin/com/woka/feature/editor/engine/video/VideoHdrStage.kt` (new) ·
-`shared/src/jvmMain/kotlin/com/woka/feature/editor/engine/video/VideoEditorCanvas.kt` (edit) ·
+`shared/src/jvmMain/kotlin/com/woka/feature/editor/engine/video/VideoEditorEngine.kt` (edit) ·
 `shared/src/jvmTest/kotlin/com/woka/unit/RasterSourceStageTest.kt` (new)
+
+## Done — 2026-09-03
+
+Every step as planned, and the finding above held: the slot had to be its own field, and the test
+that proves it needed **two operations that do not commute**. Which is where the one wrong turn was —
+the first draft used a `ColorMatrix` *offset* against a shader that scales, and both orders came back
+128. `ColorMatrix`'s translation column is in 0…255 while a shader works in 0…1, so the filter was
+adding a four-hundredth of what the test meant. It is a **scale** filter and an offsetting shader
+now, which is unambiguous in either convention, and the reasoning is in the file so the next person
+does not spend it again.
+
+**Step 7 landed in the engine, not the canvas.** The recipe is remembered in
+`VideoEditorEngine.Surface` and `Thumbnail` — that is where `recipe(document)` is memoised — so the
+stream's colour joins the `remember` keys there and both surfaces get it from one expression. The
+canvas draws what it is handed and never learns the picture was HDR.
+
+**`RasterShaderChain` took `imageShaderFor` and `pack` with it**, and both had to become `internal`:
+the draw is the only caller today, but a chain built in two files cannot keep them private to one.
+
+**Nothing about a still changed**, and that is asserted rather than assumed: `source` is null for
+every photograph, so the fast `drawImage` path is still the one they take.
 
 ## Done when
 
