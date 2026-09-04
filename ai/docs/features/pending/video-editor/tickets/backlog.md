@@ -16,7 +16,7 @@ The four blocks this file held until today are gone, and not one of them was dro
 wrong — the feature was re-scoped around a brief four times their size.
 
 - **ME-201 — Video engine** was promoted, rewritten against the tree, and is
-  [`foundation/tickets/ME-201-a-video-canvas-that-folds.md`](../foundation/tickets/ME-201-a-video-canvas-that-folds.md).
+  [`foundation/tickets/implemented/ME-201-a-video-canvas-that-folds.md`](../../../implemented/video-editor/foundation/tickets/ME-201-a-video-canvas-that-folds.md).
   Its shape changed: it draws the player's frame through the recipe rather than folding to "a
   timeline stage", because that is what makes the five reused tools work on day one.
 - **ME-202 — Trim tool**, **ME-203 — Mute tool** and **ME-204 — Video save** are **retired: the ids
@@ -30,7 +30,7 @@ wrong — the feature was re-scoped around a brief four times their size.
 ## 201 — Foundation — **empty: every block promoted or dropped, 2026-09-03**
 
 Four ticket files, all written against the tree of that day and all in
-[`foundation/`](../foundation/foundation.md)'s status table, which is the only place their state is
+[`foundation/`](../../../implemented/video-editor/foundation/foundation.md)'s status table, which is the only place their state is
 recorded:
 
 - **ME-201** — a video canvas that folds · **ME-206** — the band, the seam and a scrubber ·

@@ -4,7 +4,7 @@ The thing the other six folders stand on: an `EditorEngine` for `MediaKind.Video
 player's frame **through the folded document**, and the one seam the shell grows to make room for a
 timeline.
 
-Umbrella and the architecture this implements: [`../video-editor.md`](../video-editor.md) §3.1 and
+Umbrella and the architecture this implements: [`../video-editor.md`](../../../pending/video-editor/video-editor.md) §3.1 and
 §3.4. Ticket ids: **ME-201…ME-209**.
 
 ---
@@ -19,7 +19,18 @@ Umbrella and the architecture this implements: [`../video-editor.md`](../video-e
 | [ME-205](tickets/ME-205-hdr-on-the-video-canvas.md) | HDR on the video canvas | **done 2026-09-03** — build green; the by-hand pass on a PQ file is the author's |
 | ME-208 | Say up front that a video cannot be kept yet | **dropped 2026-09-03** — id retained, never reused |
 
-**The folder is finished — 2026-09-03.** ME-201, ME-206, ME-207 and ME-205 are all shipped and
+**The folder is finished — 2026-09-03**, confirmed on screen by the author, and its four tickets have
+moved to `tickets/implemented/` so a later session opening `tickets/` finds an empty folder rather
+than four files that read as work waiting to be picked up (`tickets.md` §7).
+
+**The folder itself stays here**, under `pending/video-editor/`. `feature-docs.md` moves a *feature*
+to `implemented/` when it ships, and the feature is the video editor — six of its seven folders have
+not started, and §3 below is the architecture every one of them reads. Half a feature in each tree
+would cost more than it says.
+
+**Next is [ME-302](../../../pending/video-editor/tickets/backlog.md) — the HDR controls that appear for an SDR picture** and can
+move nothing. Not in this folder: it is §300, the shared shell, because it changes the image editor
+too. ME-201, ME-206, ME-207 and ME-205 are all shipped and
 `:shared:build` is green; ME-208 was dropped. A video opens in the editor, draws through the folded
 document, stands still until asked to move, carries a band, and tone maps correctly.
 
@@ -28,7 +39,7 @@ Four splits were made along the way, every one of them because a step pushed a f
 `VideoEditorCanvas` → `VideoPlayerHolder`, `VideoEditorBand` → `VideoEditorBandParts`, and
 `RasterImageDraw` → `RasterShaderChain`.
 
-**ME-208 was dropped rather than written**: the author chose [`save/`](../save/save.md) as the next
+**ME-208 was dropped rather than written**: the author chose [`save/`](../../../pending/video-editor/save/save.md) as the next
 folder, so `EditCapability.Preview` lives for the length of this phase and ME-280 deletes it. A
 session-long notice for a state that ends with the following ticket is work spent on the interval
 rather than on the feature.
@@ -41,10 +52,10 @@ rather than on the feature.
 Crop, Resize, Adjust, Filters and Markup work live on a moving picture. The band under the canvas is
 a scrubber. Playback is togglable. HDR is correct. Frames are freed.
 
-**Out, and each has its own folder.** Cutting anything ([`timeline/`](../timeline/timeline.md)),
-seamless playback across a join ([`playback/`](../playback/playback.md)), audio beyond what the player
-already does ([`audio/`](../audio/audio.md)), and **both saves** ([`save/`](../save/save.md),
-[`render/`](../render/render.md)).
+**Out, and each has its own folder.** Cutting anything ([`timeline/`](../../../pending/video-editor/timeline/timeline.md)),
+seamless playback across a join ([`playback/`](../../../pending/video-editor/playback/playback.md)), audio beyond what the player
+already does ([`audio/`](../../../pending/video-editor/audio/audio.md)), and **both saves** ([`save/`](../../../pending/video-editor/save/save.md),
+[`render/`](../../../pending/video-editor/render/render.md)).
 
 **Phase 0 deliberately cannot save.** The author's call, 2026-09-03. It is the fastest route to the
 one measurement everything else is priced against — whether a document folds at frame rate — and a
@@ -148,7 +159,7 @@ answer is needed — a video *opens* and cannot be *kept*:
 EditCapability.Preview   the editor opens; neither save exists yet
 ```
 
-**A temporary case with a named removal.** It is deleted by [`save/`](../save/save.md)'s first
+**A temporary case with a named removal.** It is deleted by [`save/`](../../../pending/video-editor/save/save.md)'s first
 ticket, at which point `mp4` and `mov` answer `Recorded` and the rest answer whatever their carrier
 says. It exists rather than being faked with `Recorded` because a `Done` button that silently does
 nothing is the failure mode §4.5 of the image editor's design was written to prevent — the cost of a
@@ -160,7 +171,7 @@ exactly this shape of statement (`EditorNoHistoryNotice`), so the sentence costs
 ## 4. Open questions
 
 - **Does the fold survive at frame rate?** ME-201's first step, and the gate on
-  [`picture/`](../picture/picture.md). Two numbers are wanted, not one: a document with no shader
+  [`picture/`](../../../pending/video-editor/picture/picture.md). Two numbers are wanted, not one: a document with no shader
   (one `drawImage` plus a colour filter) and a document with the Adjust chain, both against a 4K
   file.
 - ~~Does the canvas play by default, or start paused?~~ **Answered by the author 2026-09-03: paused,

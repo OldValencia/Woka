@@ -4,17 +4,17 @@
 |---|---|
 | **Order** | second in the feature, straight after ME-201 |
 | **Depends on** | ME-201 |
-| **Feature** | [Foundation](../foundation.md) · umbrella [Video Editor](../../video-editor.md) |
+| **Feature** | [Foundation](../foundation.md) · umbrella [Video Editor](../../../../pending/video-editor/video-editor.md) |
 
 **Goal.** Give the shell a timeline slot the engine fills, and fill it with a scrubber, so a video in
 the editor can be moved through.
 
 **Why now.** ME-201 leaves a video that plays and cannot be positioned: every picture tool needs a
 particular frame on screen, and there is no way to reach one. It is also the slot **everything** in
-[`timeline/`](../../timeline/timeline.md) is drawn into, so nothing in that folder can start until
+[`timeline/`](../../../../pending/video-editor/timeline/timeline.md) is drawn into, so nothing in that folder can start until
 this exists.
 
-**Design:** [`../../video-editor.md`](../../video-editor.md) §3.4 and §4.1–4.2 · the spec for every
+**Design:** [`../../video-editor.md`](../../../../pending/video-editor/video-editor.md) §3.4 and §4.1–4.2 · the spec for every
 measurement here is [`video-editor.html`](../../../../../../mockups/design/video-editor.html), state 1.
 
 ---

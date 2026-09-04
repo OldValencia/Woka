@@ -17,9 +17,16 @@ video-editor/
                       grammar, and the decision log. It holds no ticket rows.
   tickets/
     backlog.md      THE backlog — every unpromoted block for every folder below, one section each
-  foundation/ timeline/ playback/ audio/ picture/ save/ render/
+  timeline/ playback/ audio/ picture/ save/ render/
                     one feature each: <name>/<name>.md plus tickets/ for promoted tickets only
 ```
+
+**A finished folder leaves this tree.** `foundation/` shipped on 2026-09-03 and moved to
+`ai/docs/features/implemented/video-editor/foundation/`, its tickets with it in a plain `tickets/`.
+That is the rule from here on, set by the author the same day: this feature ships in seven parts, and
+a part that is done belongs with the shipped work rather than among the six that are not.
+`feature-docs.md` moves a whole *feature* on shipping and has nothing to say about one whose halves
+ship separately — so it is written down here, where whoever finishes the next folder will read it.
 
 Conventions: `ai/docs/conventions/feature-docs.md` · `tickets.md` · `plans.md` · `code-style/README.md`.
 The shell this inherits unchanged, and the architecture it extends:
@@ -64,7 +71,7 @@ independently and ship independently.
 
 | Folder | What it owns | State |
 |---|---|---|
-| [`foundation/`](foundation/foundation.md) | An `EditorEngine` for `MediaKind.Video`: the player's frame drawn through the recipe, HDR in the chain, frame retention, playback on the canvas, the timeline seam | **fully specified** — ME-201, ME-206, ME-207, ME-205 written; nothing built |
+| [`foundation/`](../../implemented/video-editor/foundation/foundation.md) | An `EditorEngine` for `MediaKind.Video`: the player's frame drawn through the recipe, HDR in the chain, frame retention, playback on the canvas, the timeline seam | **shipped 2026-09-03** — ME-201, ME-206, ME-207, ME-205; confirmed on screen |
 | [`timeline/`](timeline/timeline.md) | The strip and the document behind it: trim, split, select, delete, reorder, per-clip scope, speed, freeze-frame | not started |
 | [`playback/`](playback/playback.md) | Playing an *edited* timeline seamlessly — the pre-rolling second decoder, and the audio that follows it | not started |
 | [`audio/`](audio/audio.md) | Mute, volume and fades per clip; detach; an external track; extract to a file | not started |

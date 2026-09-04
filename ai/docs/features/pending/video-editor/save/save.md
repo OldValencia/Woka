@@ -14,7 +14,7 @@ Umbrella: [`../video-editor.md`](../video-editor.md) §3.5 and §5. Ticket ids: 
 No tickets written. Blocks in [the shared backlog](../tickets/backlog.md) §280.
 
 Its first ticket also deletes `EditCapability.Preview`, the temporary case
-[`foundation/`](../foundation/foundation.md) §3.5 introduces.
+[`foundation/`](../../../implemented/video-editor/foundation/foundation.md) §3.5 introduces.
 
 ---
 

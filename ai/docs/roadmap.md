@@ -86,9 +86,14 @@ moving it elsewhere, seamless playback across the joins, four audio behaviours, 
 five tools reused on a moving picture, and two ways out to a file. It is now **seven feature folders
 under one umbrella with one shared backlog** — `foundation/`, `timeline/`, `playback/`, `audio/`,
 `picture/`, `save/`, `render/` — and `video-editor.md` is the umbrella that holds the architecture and
-the decision log. **`foundation/` is fully specified — ME-201, ME-206, ME-207 and ME-205 — and
-nothing is built.** `save/` is the folder after it, by the author's choice, which is why ME-208 was
-dropped. The ticket IDs stay in the `ME-`
+the decision log.
+
+**`foundation/` shipped on 2026-09-03** — ME-201, ME-206, ME-207 and ME-205, confirmed on screen —
+and moved to `features/implemented/video-editor/foundation/`. **A finished folder leaves the pending
+tree on its own**, which is this feature's own rule: it ships in seven parts, and a part that is done
+belongs with the shipped work. A video now opens in the editor, draws through the folded document,
+stands still until asked to move, carries a band and tone maps correctly; ME-208 was dropped because
+the author chose `save/` as the folder after it. The ticket IDs stay in the `ME-`
 namespace, banded one range per folder inside the 200s, because the prefix means *Media Editor* and
 spans the whole phase; ME-202…ME-204 are retired, their ids kept and never reused.
 

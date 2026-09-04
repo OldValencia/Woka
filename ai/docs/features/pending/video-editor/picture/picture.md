@@ -19,7 +19,7 @@ Everything else is in [the shared backlog](../tickets/backlog.md) §260. ME-264 
 on the author's word, because ME-201 made the rail visibly wrong and the fix was one manifest line.
 
 **Half the gate has been measured — 2026-09-03, `VideoFoldProbe`, recorded in
-[ME-201](../foundation/tickets/ME-201-a-video-canvas-that-folds.md).** The finding splits this folder
+[ME-201](../../../implemented/video-editor/foundation/tickets/ME-201-a-video-canvas-that-folds.md).** The finding splits this folder
 in two:
 
 - **A colour matrix costs 5× a plain draw**, at 1080p and at 2160p alike. So **Filters and the eight
@@ -58,7 +58,7 @@ Measured 2026-09-03, and it is the finding that made this folder small:
   and every param row work with no knowledge of the medium.
 
 So Crop, Transform, Adjust and Filters need **no tool code at all**. What they need is the canvas
-[`foundation/`](../foundation/foundation.md) builds, and the measurement it takes.
+[`foundation/`](../../../implemented/video-editor/foundation/foundation.md) builds, and the measurement it takes.
 
 ---
 

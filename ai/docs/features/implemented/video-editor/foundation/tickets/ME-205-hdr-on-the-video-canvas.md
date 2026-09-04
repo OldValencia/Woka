@@ -4,7 +4,7 @@
 |---|---|
 | **Order** | fourth in the feature, after ME-207. Last of the foundation, and the only one that touches the still draw path |
 | **Depends on** | ME-201 |
-| **Feature** | [Foundation](../foundation.md) · umbrella [Video Editor](../../video-editor.md) |
+| **Feature** | [Foundation](../foundation.md) · umbrella [Video Editor](../../../../pending/video-editor/video-editor.md) |
 
 **Goal.** Tone map an HDR video frame **inside** the recipe, before the colour work, so the editor
 draws HDR video correctly and every adjustment is applied to ordinary sRGB light.
@@ -118,6 +118,9 @@ the draw is the only caller today, but a chain built in two files cannot keep th
 
 **Nothing about a still changed**, and that is asserted rather than assumed: `source` is null for
 every photograph, so the fast `drawImage` path is still the one they take.
+
+**Confirmed on screen by the author, 2026-09-03** — *"всё работает"*. That closes the ticket and the
+`foundation/` folder with it.
 
 ## Done when
 

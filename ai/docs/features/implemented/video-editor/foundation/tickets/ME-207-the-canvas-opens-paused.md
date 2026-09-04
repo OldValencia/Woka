@@ -4,7 +4,7 @@
 |---|---|
 | **Order** | third in the feature, after ME-206 |
 | **Depends on** | ME-201 and **ME-206** — step 1 edits `VideoPlayerHolder`, which ME-206 introduces |
-| **Feature** | [Foundation](../foundation.md) · umbrella [Video Editor](../../video-editor.md) |
+| **Feature** | [Foundation](../foundation.md) · umbrella [Video Editor](../../../../pending/video-editor/video-editor.md) |
 
 **Goal.** Make the editing surface stand still by default, and hold still while a control is being
 dragged.

@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Order** | first in the feature; nothing in the other six folders can start without it |
-| **Depends on** | nothing unshipped. ME-001…ME-182 and ME-106 are all in [the image editor](../../../../implemented/image-editor/image-editor.md) |
-| **Feature** | [Foundation](../foundation.md) · umbrella [Video Editor](../../video-editor.md) |
+| **Depends on** | nothing unshipped. ME-001…ME-182 and ME-106 are all in [the image editor](../../../image-editor/image-editor.md) |
+| **Feature** | [Foundation](../foundation.md) · umbrella [Video Editor](../../../../pending/video-editor/video-editor.md) |
 
 **Goal.** Open a video in the existing editor, drawing the player's current frame through the folded
 `EditDocument`, so the five reused tools work on a moving picture.
@@ -15,7 +15,7 @@ ask one function whether a file is editable, and it answers no for every video.
 
 **Phase 0 deliberately cannot save.** The author's call, 2026-09-03. See
 [`foundation.md`](../foundation.md) §3.5 for the capability that says so and
-[`save/`](../../save/save.md) for the ticket that deletes it.
+[`save/`](../../../../pending/video-editor/save/save.md) for the ticket that deletes it.
 
 ---
 
@@ -74,7 +74,7 @@ ask one function whether a file is editable, and it answers no for every video.
    `.png` fixture is still `Recorded` and for `still.bmp` still `Unavailable`.
 9. **Then the gate, by hand, against the real canvas** — the measurement step 1 cannot make. It is
    last because it needs everything above it to exist, and it gates
-   [`picture/`](../../picture/picture.md) rather than this ticket. The conditions are in
+   [`picture/`](../../../../pending/video-editor/picture/picture.md) rather than this ticket. The conditions are in
    **Done when**.
 
 ---
@@ -143,7 +143,7 @@ open Adjust, move Exposure, Highlights, Shadows, Noise and Sharpness off their d
 chain is folded, and let it play. **The gate is that it plays at the rate the file declares** —
 `PlaybackHealth` already reports displayed rate against declared rate, which is the number to read
 rather than an impression. Record the result here with the date. Below the declared rate, ME-205 and
-[`picture/`](../../picture/picture.md) are re-planned; the rest of this ticket stands either way,
+[`picture/`](../../../../pending/video-editor/picture/picture.md) are re-planned; the rest of this ticket stands either way,
 which is why it is a gate on that folder and not on this one.
 
 ---
@@ -176,7 +176,7 @@ cost **443×**. The reason is the chain's own shape: each effect takes the previ
 colour filter, then the image. Nine taps over a three-deep chain is ≈ 9 × 43 ≈ 390, which is the
 number in the table. **A trailing convolution multiplies everything before it by its tap count.**
 
-Three readings follow, and they are for [`picture/`](../../picture/picture.md) rather than for this
+Three readings follow, and they are for [`picture/`](../../../../pending/video-editor/picture/picture.md) rather than for this
 ticket:
 
 - **A colour matrix is cheap and safe at 5×** — so Filters, and the eight Adjust sliders that fold to
@@ -208,7 +208,7 @@ ME-207's fixes. The ticket is done.
 the image editor does. It does not close the *shader* question, because the four sliders the probe
 found expensive — Highlights, Shadows, Noise, Sharpness — were never reported as having been moved
 together on a 2160p file, and no `PlaybackHealth` figure was read. That is
-[`picture/`](../../picture/picture.md)'s gate rather than this one's, it is recorded there, and the
+[`picture/`](../../../../pending/video-editor/picture/picture.md)'s gate rather than this one's, it is recorded there, and the
 first ticket in that folder is the natural place to answer it: ME-260 has to exercise those tools by
 hand anyway.
 

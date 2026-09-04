@@ -45,6 +45,35 @@ a folder listing is a readable table of contents. The status table lives in the 
 Shipped → **move** the folder to `ai/docs/features/implemented/`. Images go in the sibling
 `assets/`. `roadmap.md` is updated in the same change, never later.
 
+### A feature that ships in parts moves in parts
+
+A feature big enough to be several bodies of work that fail and ship independently gets a folder per
+part, under one umbrella:
+
+```
+ai/docs/features/pending/<feature>/
+  <feature>.md   the umbrella: the architecture every part rests on, and a roll-up of the
+                 parts with no ticket rows in it
+  tickets/
+    backlog.md   ONE backlog for every part, a section each
+  <part>/        <part>.md plus tickets/ for that part's promoted tickets
+```
+
+**A part that ships leaves this tree on its own**, to
+`ai/docs/features/implemented/<feature>/<part>/`, tickets and all — in a plain `tickets/`, **never a
+`tickets/implemented/`**: a shipped part has no open tickets for the done ones to drown, which is the
+only thing that folder is for. The umbrella, the shared backlog and the parts that have not started
+stay under `pending/`.
+
+Two consequences, and both are work in the same change: **every link across the move is repointed**
+— the umbrella's roll-up, the shared backlog, the sibling parts that name the shipped one, and the
+shipped tickets' own links back out — and `roadmap.md` says which part shipped rather than that the
+feature did.
+
+**Why not wait and move the feature whole.** A part is finished, and a `pending/` tree that holds
+finished work is a tree a later session has to read before it can tell what is left. Added
+2026-09-03, after `video-editor/foundation/` shipped and this file said nothing about the case.
+
 ## 3. Implementation-driven tickets
 
 Only the next slice is specified in full. Everything beyond it is a block of three to six lines that
