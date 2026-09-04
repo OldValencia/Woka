@@ -260,11 +260,10 @@ of a 150-line one.
 status in [`save/`](../save/save.md)'s table. It is where `EditCapability.Preview` dies, and where an
 `mkv` loses `Edit` until ME-282 gives it a carrier.
 
-### ME-281 — Probe: does anything else tolerate the box?
-An `mp4` and a `mov` with our `uuid` box appended, opened in mpv, VLC, Windows Explorer's preview and
-a phone gallery. Print what each did, record it here with the date. If a common player refuses the
-file, `Done` has nowhere to write and the whole `Done ▾` menu collapses permanently.
-*Depends on ME-288 — there is no box in an `mp4` to open in anything until the extensions are wired.*
+### ME-281 — promoted 2026-09-04
+[`save/tickets/ME-281-does-anything-else-tolerate-the-box.md`](../save/tickets/ME-281-does-anything-else-tolerate-the-box.md),
+status in [`save/`](../save/save.md)'s table. The probe writes the files; the four programs have to
+be opened by hand, so it stays open until its § *Measured* is filled in.
 
 ### ME-282 — A Matroska carrier
 The library is mixed, so this is second and not later. Try an unknown top-level EBML element appended
