@@ -49,13 +49,22 @@ class EditorEntryTest {
     }
 
     @Test
-    fun `a video is editable`() = withFactory { factory ->
+    fun `a video with a carrier is editable`() = withFactory { factory ->
         // **Reversed by ME-201**, and this is the assertion that says so. It read
         // `assertFalse` while the factory answered null for every video; the canvas now
-        // draws the player's frame through the folded document, so both doors offer
-        // `Edit` — and `EditCapability.Preview` is what says a save does not exist yet.
-        val video = SampleMedia.file("WokaSample.S01E02.2160p.HDR.TEST.mkv")
+        // draws the player's frame through the folded document, so both doors offer `Edit`.
+        val video = SampleMedia.file("livephoto.mov")
         assertTrue(isEditable(factory, video.absolutePath))
+    }
+
+    @Test
+    fun `and one without is not, until its carrier lands`() = withFactory { factory ->
+        // **Narrowed by ME-288.** Every video was editable while a capability existed
+        // whose whole meaning was "no save yet"; now the container is asked, and Matroska
+        // has no slot until ME-282 writes one. The refusal belongs at the menu rather than
+        // at `Done` — the line moved forward for eight image formats in 2026-08-19.
+        val video = SampleMedia.file("WokaSample.S01E02.2160p.HDR.TEST.mkv")
+        assertFalse(isEditable(factory, video.absolutePath))
     }
 
     @Test

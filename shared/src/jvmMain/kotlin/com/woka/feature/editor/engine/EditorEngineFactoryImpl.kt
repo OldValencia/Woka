@@ -18,11 +18,11 @@ import java.io.File
  * may: the one in `core/data/MediaKind.kt` exists because six copies of it
  * disagreed with each other.
  *
- * **A video now opens too** (ME-201), and answers `Preview`: the canvas draws the
- * player's frame through the folded document, so the picture tools work on it — and
- * neither save exists yet, which is what that capability says out loud. `save/`'s
- * first ticket asks a video the same carrier question an image is asked and deletes
- * the case.
+ * **A video is asked the same question an image is** (ME-288): a container with a
+ * carrier answers `Recorded` and one without answers `Unavailable`, which is what
+ * retired the temporary `Preview` case ME-201 shipped. So an `mp4` or a `mov` keeps its
+ * edit in a `uuid` box, and an `mkv`, `webm` or `avi` has no engine at all until ME-282
+ * and ME-283 give it a slot — greyed in both doors rather than refused at `Done`.
  *
  * `EditorEngineFactory` is a `commonMain` interface and this is its JVM half,
  * because a `commonMain` module cannot name `ImageEditorEngine` (`di.md`).
@@ -46,10 +46,7 @@ class EditorEngineFactoryImpl(
         if (!file.isFile) return EditCapability.Unavailable
         return when (file.mediaKind()) {
             MediaKind.Image -> imageCapability(file)
-            // One phase only, and the same answer for every container: the editor
-            // opens and neither save exists yet (ME-201). ME-280 asks a video the
-            // carrier question below and deletes the case.
-            MediaKind.Video -> EditCapability.Preview
+            MediaKind.Video -> videoCapability(file)
             null -> EditCapability.Unavailable
         }
     }
@@ -60,6 +57,15 @@ class EditorEngineFactoryImpl(
         formatFor(file) != null -> EditCapability.Destructive
         else -> EditCapability.Unavailable
     }
+
+    /**
+     * **One question wide, and `formatFor` is deliberately not the second** (ME-288).
+     * Bucket B means "no slot, but Skia can re-encode the file in place", and there is no
+     * such road for a video: re-encoding one produces a *new* file by decision, which is
+     * `render/` (§3.5). So a container with no carrier has nothing to offer and says so.
+     */
+    private fun videoCapability(file: File): EditCapability =
+        if (carrierFor(file) != null) EditCapability.Recorded else EditCapability.Unavailable
 
     /**
      * **Refusal moved forward, 2026-08-19.** This used to build an engine for all

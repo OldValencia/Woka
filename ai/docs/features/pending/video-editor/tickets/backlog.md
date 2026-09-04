@@ -255,19 +255,10 @@ The block did the write *and* the wiring. The write left as
 the wiring stayed here as ME-288 below, because together they are thirteen files and a mandated split
 of a 150-line one.
 
-### ME-288 — mp4 and mov carry an edit, and `Preview` is deleted
-The other half. Two extensions into `carrierFor`; `EditorEngineFactoryImpl` asks a **video** the same
-carrier question an image is asked, so `MediaKind.Video -> EditCapability.Preview` goes and the enum
-case with it — including `writeByCapability`'s branch and `EditorEntry`'s KDoc. `VideoEditorEngine`
-then saves for real: `recordRecipe` with a `SourceStamp` and `evictCachesFor`, exactly as the image
-engine does, and it **must also read back** — `storedDocument` is the interface's empty default today,
-so a saved video would reopen blank and the next `Done` would prune the recipe it wrote.
-
-`VideoEditorEngine.kt` is at 150, and the split is `ImageEditorReads`' precedent: a
-`VideoEditorReads.kt` holding the private `codedFrameSize` it already has plus the stored-document
-read. Nothing folds the recipe on a read path yet — that is ME-284 — so a saved video shows its edit
-in the editor and nowhere else, which is the honest state until then.
-*Depends on ME-280.*
+### ME-288 — promoted 2026-09-04
+[`save/tickets/ME-288-mp4-and-mov-carry-an-edit.md`](../save/tickets/ME-288-mp4-and-mov-carry-an-edit.md),
+status in [`save/`](../save/save.md)'s table. It is where `EditCapability.Preview` dies, and where an
+`mkv` loses `Edit` until ME-282 gives it a carrier.
 
 ### ME-281 — Probe: does anything else tolerate the box?
 An `mp4` and a `mov` with our `uuid` box appended, opened in mpv, VLC, Windows Explorer's preview and

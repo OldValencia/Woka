@@ -112,8 +112,9 @@ internal class RecipeScan(
  * the same reason it was extracted: six copies of an extension list disagreed with
  * each other. **Null is bucket B or C** (§5.1), never an error.
  *
- * `bmp` is now the only format with no slot at all — every other extension Woka lists
- * carries its own edit, so bucket C is one format wide.
+ * `bmp` is the only **still** with no slot at all — every other picture Woka lists carries
+ * its own edit. Since ME-288 bucket C also holds the three video containers that have no
+ * carrier yet: `mkv` and `webm` wait for ME-282, `avi` for ME-283.
  */
 internal fun carrierFor(file: File): RecipeCarrier? =
     when (file.extension.lowercase()) {
@@ -122,6 +123,11 @@ internal fun carrierFor(file: File): RecipeCarrier? =
         "png" -> PngRecipe
         // One container family, three brands in its `ftyp` (ME-108).
         "heic", "heif", "avif" -> IsoBmffRecipe
+        // **The same family, moving** (ME-288): an `mp4` and a `mov` are ISOBMFF, so the
+        // shipped carrier reads and writes them with no new byte surgery — measured on
+        // `livephoto.mov`, which opens `\0\0\0\x14ftypqt  `. An older QuickTime file with
+        // no `ftyp` at all is refused by `IsoBmffRecipe.accepts` rather than corrupted.
+        "mp4", "mov" -> IsoBmffRecipe
         // Extended by us when it arrives simple (ME-137) — the last of bucket B.
         "webp" -> WebpRecipe
         // A private tag in a rebuilt IFD0, both spellings, every page (ME-139).

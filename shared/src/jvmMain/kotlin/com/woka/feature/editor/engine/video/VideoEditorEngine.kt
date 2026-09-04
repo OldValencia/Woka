@@ -10,12 +10,14 @@ import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditLayers
 import com.woka.feature.editor.core.EditSaveResult
+import com.woka.feature.editor.core.EditScope
 import com.woka.feature.editor.core.EditorEngine
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.engine.image.RasterRecipe
 import com.woka.feature.editor.engine.image.fold
 import com.woka.feature.viewer.video.engine.probe.HdrInfo
-import org.bytedeco.javacv.FFmpegFrameGrabber
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
@@ -27,9 +29,9 @@ import java.io.File
  * source pixels — so the five reused tools arrive by wiring rather than by porting
  * (§3.1). What this class adds is a `MediaKind`, a size, and a player.
  *
- * **It cannot save, and says so** rather than failing quietly: [capability] is
- * `Preview` for the length of this phase and `save/`'s first ticket deletes both it and
- * the sentence below.
+ * **It saves since ME-288**, into the container's own `uuid` box and without rewriting a
+ * byte of the media data — the same road a `heic` takes, reached by two extensions in
+ * `carrierFor` and made affordable on a 4 GB file by ME-280's in-place write.
  *
  * [recipe] is `internal` and absent from [EditorEngine] for the same reason the image
  * engine's is (§3.3): the moment the shell can name a raster type, every file that
@@ -113,38 +115,22 @@ internal class VideoEditorEngine(
         VideoEditorThumbnail(playback, sourceSize, recipe, modifier)
     }
 
-    /**
-     * **There is nowhere to write yet**, and the sentence is the one the banner prints
-     * verbatim (§4.5). `revert` answers `NothingToDo` from the interface's own default,
-     * because a file that carries nothing has nothing to remove.
-     */
-    override suspend fun save(layers: EditLayers): EditSaveResult =
-        EditSaveResult.Failed("Video edits cannot be saved yet.")
-}
+    /** What the file carries, so a second sitting continues the first (ME-288). */
+    override fun storedDocument(): EditDocument = storedVideoDocument(file)
 
-/**
- * One grabber, opened and closed, for the two numbers the fold is addressed in.
- *
- * `probesize` and `analyzeduration` are `SeekPreviewSource`'s: the player's own grabber
- * enumerates the streams properly, and this one needs only enough of a probe to report a
- * size — 4 ms against 59. No audio stream is opened, because `Int.MAX_VALUE` matches
- * none.
- *
- * **Zero on any failure**, never an exception: `RasterSurface` already returns early on a
- * zero-sized source, so a file that cannot be probed draws nothing instead of taking the
- * window down. It is the line `RecipeCarrier` holds for the same reason.
- */
-private fun codedFrameSize(file: File): IntSize = runCatching {
-    val grabber = FFmpegFrameGrabber(file).apply {
-        setOption("probesize", "2000000")
-        setOption("analyzeduration", "1000000")
-        audioStream = Int.MAX_VALUE
-    }
-    try {
-        grabber.start()
-        IntSize(grabber.imageWidth, grabber.imageHeight)
-    } finally {
-        runCatching { grabber.stop() }
-        runCatching { grabber.release() }
-    }
-}.getOrDefault(IntSize.Zero)
+    /** What a write does to the file, and the stamp it carries — see `VideoEditorWrites`. */
+    private val writes = VideoEditorWrites(file, capability)
+
+    override suspend fun save(layers: EditLayers): EditSaveResult =
+        withContext(Dispatchers.IO) { writes.save(layers) }
+
+    /**
+     * **Both parameters are ignored, and the interface licenses it**: a video timeline has
+     * no frame to key on, so the scope switch never appears for one.
+     *
+     * The `Done ▾` menu this enables, and the reason it prints on a container with no
+     * carrier, are ME-286's. This is the red button telling the truth.
+     */
+    override suspend fun revert(scope: EditScope, frameIndex: Int): EditSaveResult =
+        withContext(Dispatchers.IO) { writes.revert() }
+}

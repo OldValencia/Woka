@@ -25,10 +25,10 @@ data class EditorTarget(
  *
  * **The factory is the decision** (§4.1). It routes on `File.mediaKind()`, which is the
  * app's single answer to what a file is, and returns null for anything it does not
- * recognise. **A video is recognised since ME-201** — it opens with the picture tools
- * live and cannot be saved yet, which is what `EditCapability.Preview` says. Neither
- * door may grow its own extension list; that is the mistake `MediaKind` was extracted
- * to end.
+ * recognise. **A video is recognised since ME-201**, and since ME-288 it is answered by
+ * the same carrier table a photograph is: an `mp4` or a `mov` is editable, a container
+ * with no slot yet is not. Neither door may grow its own extension list; that is the
+ * mistake `MediaKind` was extracted to end.
  *
  * Cheap enough to call while drawing a menu: the answer is a question about the
  * **container**, so it costs a stat and reads no pixel. A path that is not there, or
