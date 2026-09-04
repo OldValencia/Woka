@@ -71,20 +71,22 @@ brief above. Cutting, seamless playback, four audio behaviours, five reused tool
 carriers and a hybrid renderer are not four tickets; they are seven bodies of work that fail
 independently and ship independently.
 
-| Folder | What it owns | State |
-|---|---|---|
-| [`foundation/`](../../implemented/video-editor/foundation/foundation.md) | An `EditorEngine` for `MediaKind.Video`: the player's frame drawn through the recipe, HDR in the chain, frame retention, playback on the canvas, the timeline seam | **shipped 2026-09-03** — ME-201, ME-206, ME-207, ME-205; confirmed on screen |
-| [`timeline/`](timeline/timeline.md) | The strip and the document behind it: trim, split, select, delete, reorder, per-clip scope, speed, freeze-frame | not started |
-| [`playback/`](playback/playback.md) | Playing an *edited* timeline seamlessly — the pre-rolling second decoder, and the audio that follows it | not started |
-| [`audio/`](audio/audio.md) | Mute, volume and fades per clip; detach; an external track; extract to a file | not started |
-| [`picture/`](picture/picture.md) | Making Crop, Resize, Adjust, Filters and Markup *true* on a moving picture, and markup that appears, holds and fades | not started |
-| [`save/`](save/save.md) | `Done`: a recipe inside a video container, written without copying the file, folded by every reader | not started |
-| [`render/`](render/render.md) | `Render video…`: a new file, copying every segment it can and re-encoding only what it must | not started |
-| [`shell/`](shell/shell.md) | §300: the shell **both** editors compose — every one of it changes a still as well | ME-302 specified 2026-09-04 |
+| # | Folder | What it owns | State |
+|---|---|---|---|
+| — | [`foundation/`](../../implemented/video-editor/foundation/foundation.md) | An `EditorEngine` for `MediaKind.Video`: the player's frame drawn through the recipe, HDR in the chain, frame retention, playback on the canvas, the timeline seam | **shipped 2026-09-03** — ME-201, ME-206, ME-207, ME-205; confirmed on screen |
+| **1** | [`save/`](save/save.md) | `Done`: a recipe inside a video container, written without copying the file, folded by every reader | not started |
+| **2** | [`timeline/`](timeline/timeline.md) | The strip and the document behind it: trim, split, select, delete, reorder, per-clip scope, speed, freeze-frame | not started |
+| **3** | [`playback/`](playback/playback.md) | Playing an *edited* timeline seamlessly — the pre-rolling second decoder, and the audio that follows it | not started |
+| **4** | [`audio/`](audio/audio.md) | Mute, volume and fades per clip; detach; an external track; extract to a file | not started |
+| **5** | [`picture/`](picture/picture.md) | Making Crop, Resize, Adjust, Filters and Markup *true* on a moving picture, and markup that appears, holds and fades | not started |
+| **6** | [`render/`](render/render.md) | `Render video…`: a new file, copying every segment it can and re-encoding only what it must | not started |
+| any | [`shell/`](shell/shell.md) | §300: the shell **both** editors compose — every one of it changes a still as well | ME-302, ME-303 **done 2026-09-04** |
 
 **This table is a feature roll-up and deliberately carries no ticket rows.** Each folder's own
 document holds the only status table for its own tickets (`feature-docs.md` §4). A ticket state
-recorded in two files is a ticket state that will disagree with itself.
+recorded in two files is a ticket state that will disagree with itself. The `#` column is the
+exception and is not a ticket row: it is the order the folders are picked up in, fixed by §1a so that
+nobody works it out again.
 
 **Numbering.** The `ME-` prefix stands for **Media Editor** and covers all of Phase 5 — which is why
 the video work was numbered into it rather than given a prefix of its own (decision 2026-08-24, and
@@ -100,6 +102,38 @@ of their own ([`shell/`](shell/shell.md)) because a ticket needs a status table 
 none. **§950** holds what needs no work at all — two things that
 fall out of features already planned, recorded so nobody builds them twice. Everything proposed on
 2026-09-03 was ruled on the same day: eight accepted with ids, one declined into §900.
+
+---
+
+## 1a. The build order — fixed 2026-09-04
+
+**Walk this table down. Do not re-derive it.** It was derived once, from the dependency lines already
+written in every backlog block, and re-deriving it costs a session's worth of reading to arrive at an
+answer that does not change.
+
+`Start with` is a **rule, not a fact**, so it cannot go stale: the lowest-numbered block still left in
+that folder's section of [`tickets/backlog.md`](tickets/backlog.md). Promote it, and the rule points
+at the next one by itself.
+
+| # | Folder | Start with | Why it sits here | Cannot **finish** until |
+|---|---|---|---|---|
+| 1 | `save/` | **ME-280** | The author's choice, recorded the day the folders were drawn: ME-208 was dropped *because* `save/` was picked next, so `EditCapability.Preview` was only ever meant to last one phase and ME-280 deletes it. Today a video opens in the editor and cannot be saved at all | ME-232 — ME-284 makes every reader fold the cuts, and it reuses `playback/`'s clip walk rather than growing a second one |
+| 2 | `timeline/` | **ME-210** | The brief's actual ask (§0), and the folder the most other work hangs off: `audio/` needs its per-clip scope, `playback/` its clip list, `render/` its time mapping, `picture/` its selection | ME-242 — ME-220 snaps a dragged edge to a *sound* entry's bounds |
+| 3 | `playback/` | **ME-230** | Its build work needs ME-231 ← ME-210, but ME-230 is a **probe and the gate on the whole folder** — two decoders on one 4K file, or not. Run it early, out of order, whenever there is an hour: a "no" reshapes §3.5 and everything after it | — |
+| 4 | `audio/` | **ME-240** | Blocked on ME-215, the last of `timeline/`'s scope work. ME-241 (the waveform) needs only ME-206 and can be pulled forward if the strip wants filling | — |
+| 5 | `picture/` | **ME-260** | Ready today — ME-201 and ME-205 shipped — but it is mostly tests proving what already works, and its real content (ME-263's markup timing, per-clip looks) needs ME-215 | ME-291 — ME-262's Resize is read by the renderer and by nothing else |
+| 6 | `render/` | **ME-290** | ME-291 needs ME-231, so the folder follows `playback/`. ME-290 is again a **probe** — can JavaCV copy packets — and belongs early for ME-230's reason | — |
+| any | `shell/` | **ME-300** | Depends on nothing, at all, ever. Not last: it is the folder to reach for when something above is blocked, or when a sitting is short | — |
+
+**Three probes decide the shape of three folders and none of them builds anything: ME-230, ME-281,
+ME-290.** Run each as early as it is convenient rather than when its folder's turn comes, because a
+"no" from any of them re-plans a folder, and a "no" learned late re-plans work already done. ME-281 is
+the sharpest: if a common player refuses an `mp4` carrying our `uuid` box, `Done` has nowhere to write
+and the `Done ▾` menu collapses permanently.
+
+**The order is not a queue with one server.** Every folder's tail waits on another folder's middle —
+that is what the last column says — so a folder is *started* in this order and finished when its
+dependency lands. Nothing here licenses working two folders at once in one sitting.
 
 ---
 
@@ -471,6 +505,7 @@ these wants a fresh head rather than an estimate.
 
 | Date | Question | Decision | Why |
 |---|---|---|---|
+| 2026-09-04 | In what order are the seven folders built? | **`save/`, `timeline/`, `playback/`, `audio/`, `picture/`, `render/`, with `shell/` at any point — written into §1a with each folder's starting ticket** | It was being re-derived from the backlog's dependency lines at the start of every sitting, which is a session of reading to reach an answer that does not change. `save/` is first because the author picked it the day the folders were drawn, and the three probes are called out separately because they answer questions rather than build on them |
 | 2026-09-03 | One folder or several? | **Seven feature folders, one shared backlog under `tickets/`** | The brief is seven bodies of work that fail and ship independently. The backlog stays single because a block's track is a section heading, and one file is where "what is left" can be read in one go |
 | 2026-09-03 | Does cutting break the data model? | **No — clips are ranges of one source** | The old objection was about a sequence of *several files*. Re-ordering ranges of one file is one op on one file, so the recipe, the carrier and the history all keep working (§3.2) |
 | 2026-09-03 | How are effects scoped to part of the video? | **A clip is the scope. `EditScope` and `EditLayers` unchanged, keyed on clip index** | ME-156…ME-176 built exactly this for frame sets. A second, time-range notion of scope would be two answers to one question (§3.3) |
