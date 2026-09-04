@@ -26,6 +26,31 @@ enum class HdrViewMode {
 }
 
 /**
+ * Whether the `HDR ▾` control belongs in the top bar's pill for this picture (ME-303).
+ *
+ * **Hidden on an SDR file**, by the author's decision: `Auto`, `On` and `Off` are three
+ * names for leaving such a picture alone, and a control that moves nothing is worse than
+ * no control — the same line ME-180 held for video and ME-302 for the rail.
+ *
+ * **It reads the transfer and ignores [StillColorInfo.isWideGamut] deliberately**, which
+ * is why it takes the whole description rather than the one field: [needsToneCurve] and
+ * not [needsColorManagement] is the question, because `TransferKind`'s own KDoc records
+ * that BT.2020 primaries with an ordinary transfer are not HDR. The cost is real and
+ * accepted — such a file *is* gamut mapped, and `Force SDR` is no longer reachable to
+ * stop that.
+ *
+ * **The [HdrViewMode.ForceHdr] clause is not removable.** The pill *writes* this setting,
+ * and the mode outlives the file it was set on: `Force HDR` chosen on an HDR photograph is
+ * still in force when the user walks to an SDR one, where `colourToBelieve` then tone maps
+ * it as PQ. Hiding the control there would leave a picture visibly wrong with nothing on
+ * screen to put it back. So the rule is *shown while it is doing something, or while it
+ * could undo something* — and [HdrViewMode.ForceSdr] earns no clause of its own, because
+ * it changes nothing about a picture that was never going to be tone mapped.
+ */
+fun hdrControlApplies(color: StillColorInfo, mode: HdrViewMode): Boolean =
+    needsToneCurve(color.transfer) || mode == HdrViewMode.ForceHdr
+
+/**
  * The current [HdrViewMode], for the readers that cannot resolve a setting.
  *
  * The same shape `AppliedStillEdits` uses and for the same reason: `displayable` and

@@ -1,6 +1,7 @@
 package com.woka.feature.editor.core
 
 import androidx.compose.ui.unit.IntSize
+import com.woka.core.data.StillColorInfo
 
 /**
  * One editing element: what it is, what it edits, what it performs (§3.4).
@@ -28,6 +29,26 @@ interface EditorTool : EditorToolPanel {
     val params: List<ParamSpec<*>>
 
     fun stage(params: ParamSet): ToolStage?
+
+    /**
+     * Whether this tool has anything to say about **this file** (ME-302).
+     *
+     * The third of three questions about whether a tool belongs on screen, and the only
+     * one neither the manifest nor Settings can answer: `ToolManifest.supports` asks it
+     * of the medium and `editorDisabledTools` of the preference, while this asks it of
+     * the one picture that is open. False **hides** rather than greys — `EditorRail`'s
+     * `unavailable` map says "this tool cannot apply *here*", which is the wrong sentence
+     * for a control that has nothing to say about this file at all.
+     *
+     * Defaulted to true, which is every tool but HDR, and sitting beside [rows] and
+     * [resolve] because those are the other two hooks that ask a tool about the picture
+     * rather than about its parameters.
+     *
+     * **A colour, because colour is the only per-file question anything asks today.** It
+     * widens when a second one appears; what it must not become is the engine, which
+     * `commonMain` cannot name and which would let a tool read the pixels (§3.3).
+     */
+    fun appliesTo(color: StillColorInfo): Boolean = true
 
     /**
      * Which of [params] the inspector draws **right now**, given what they currently say.

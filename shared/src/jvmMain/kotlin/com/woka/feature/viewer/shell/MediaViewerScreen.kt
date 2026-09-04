@@ -148,9 +148,9 @@ fun MediaViewerScreen(
         onEdit = editAction,
         onInfo = infoAction,
         isInfoOpen = showInfoDialog,
-        // Hidden for video: the switch reaches the still decode and nothing else, and a
-        // control that moves nothing is worse than no control (ME-180).
-        showHdrMode = videoState == null,
+        // Hidden for video, whose decode the switch never reaches (ME-180), and for an
+        // SDR still, which has nothing for it to say — `hdrControlApplies` holds why not.
+        showHdrMode = videoState == null && hdrControlVisible(state.stillColor),
         playerContent = playerContent
     )
 }

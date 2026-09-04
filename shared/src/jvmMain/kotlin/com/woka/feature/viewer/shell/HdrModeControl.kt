@@ -17,6 +17,8 @@ import androidx.compose.ui.window.PopupProperties
 import com.woka.app.collectField
 import com.woka.core.data.HdrViewMode
 import com.woka.core.data.SettingsRepository
+import com.woka.core.data.StillColorInfo
+import com.woka.core.data.hdrControlApplies
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -79,6 +81,24 @@ fun HdrModeControl() {
             }
         }
     }
+}
+
+/**
+ * [hdrControlApplies], with the mode read for the caller (ME-303).
+ *
+ * Here rather than at the two call sites because [HdrModeDependencies] is this file's, and
+ * because whether to draw the control belongs beside the control. Both pills ask it: the
+ * viewer's own, which has the colour in `MediaViewerScreen`, and [CanvasZoomPill], which
+ * gets it from the engine through `CanvasOverrideState.sourceColor`.
+ *
+ * A live read, not a `remember` key: flipping the mode has to make the control reappear on
+ * the picture it was flipped from, which is the whole point of the `ForceHdr` clause.
+ */
+@Composable
+fun hdrControlVisible(color: StillColorInfo): Boolean {
+    val deps = remember { HdrModeDependencies() }
+    val mode by deps.settings.collectField { it.hdrViewMode }
+    return hdrControlApplies(color, mode)
 }
 
 /**

@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.IntSize
+import com.woka.core.data.StillColorInfo
 
 /**
  * Who currently owns the picture the top bar's controls address.
@@ -31,6 +32,16 @@ class CanvasOverrideState {
 
     /** Where the size control's reads and writes go. Null: the viewer's own. */
     var zoom by mutableStateOf<CanvasZoom?>(null)
+
+    /**
+     * What colour the owner's picture was written in, for the `HDR ▾` control (ME-303).
+     *
+     * The same name and the same type as `EditorEnginePicture.sourceColor`, which is where
+     * it comes from, and **SDR by default so an unpublished pill hides the control** rather
+     * than offering one that moves nothing. Only [CanvasZoomPill] reads it — the grid→editor
+     * path, where there is no viewer underneath to have answered already.
+     */
+    var sourceColor by mutableStateOf(StillColorInfo.Sdr)
 }
 
 /**

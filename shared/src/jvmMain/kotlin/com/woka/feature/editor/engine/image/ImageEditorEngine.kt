@@ -5,6 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.MediaKind
+import com.woka.core.data.StillColorInfo
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditLayers
@@ -14,9 +15,9 @@ import com.woka.feature.editor.core.EditorFrames
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.core.SourceStats
 import com.woka.feature.editor.core.EditScope
-import com.woka.feature.editor.save.ImageSaveJob
 import com.woka.feature.editor.save.SourceStamp
 import com.woka.feature.editor.save.evictCachesFor
+import com.woka.feature.viewer.image.readStillColor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -41,6 +42,9 @@ internal class ImageEditorEngine(
 
     /** Read lazily, and from the decoder — see [nativeFrameSize]. */
     override val sourceSize: IntSize by lazy { nativeFrameSize(file, frameIndex) }
+
+    /** Lazy for [sourceSize]'s reason, and from FFmpeg for `readStillColor`'s (ME-302). */
+    override val sourceColor: StillColorInfo by lazy { readStillColor(file) }
 
     /** Lazy for [sourceSize]'s reason: a menu item greys out from the format alone. */
     override val frames: EditorFrames by lazy { editorFramesOf(file, frameIndex) }
@@ -136,20 +140,7 @@ internal class ImageEditorEngine(
             result
         }
 
-    /**
-     * Bucket B: no slot to record in, so the picture itself is re-encoded in place.
-     *
-     * **It takes no [EditScope] and could not use one** (ME-126): there is no payload
-     * to key, the pixels themselves are rewritten, and what a frame set would mean
-     * under a re-encode is a question nothing has asked — bucket B is empty today
-     * (§5.1).
-     */
+    /** Bucket B, in `ImageEditWrites` since ME-302 — its whole reasoning is there. */
     private fun reEncode(document: EditDocument): EditSaveResult =
-        ImageSaveJob(
-            file = file,
-            frameIndex = frameIndex,
-            sourceSize = sourceSize,
-            stamp = stamp,
-            recipeOf = ::recipe
-        ).save(document)
+        reEncodeStill(file, frameIndex, sourceSize, stamp, ::recipe, document)
 }

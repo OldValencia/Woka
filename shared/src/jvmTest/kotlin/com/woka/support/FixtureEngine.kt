@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.MediaKind
+import com.woka.core.data.StillColorInfo
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditLayers
@@ -33,6 +34,7 @@ class FixtureEngine(
     override val sourceSize: IntSize = IntSize(640, 480),
     override val kind: MediaKind = MediaKind.Image,
     override val capability: EditCapability = EditCapability.Recorded,
+    override val sourceColor: StillColorInfo = StillColorInfo.Sdr,
     /** What is inside the file, for the scope switch and the editor's strip (ME-156). */
     override val frames: EditorFrames = EditorFrames(),
     private val result: EditSaveResult = EditSaveResult.NothingToDo,

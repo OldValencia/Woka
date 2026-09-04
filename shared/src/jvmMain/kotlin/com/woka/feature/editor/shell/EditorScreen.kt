@@ -55,7 +55,7 @@ internal fun EditorScreen(
     val document by session.document.collectAsState()
     val canUndo by session.canUndo.collectAsState()
     val canRedo by session.canRedo.collectAsState()
-    val tools by registry.tools(engine.kind).collectAsState()
+    val tools = toolsForPicture(registry, engine)
 
     var activeToolId by remember { mutableStateOf<String?>(null) }
     val peek = remember { PeekState() }

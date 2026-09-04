@@ -1,5 +1,6 @@
 package com.woka.feature.editor.engine.image
 
+import androidx.compose.ui.unit.IntSize
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.tools.hdr.bakesToSdr
@@ -8,6 +9,7 @@ import com.woka.feature.editor.core.EditPayload
 import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditScope
 import com.woka.feature.editor.recipe.EditRecipe
+import com.woka.feature.editor.save.ImageSaveJob
 import com.woka.feature.editor.save.SourceStamp
 import java.io.File
 
@@ -118,6 +120,28 @@ internal fun recordRecipe(
         onFailure = { writeFailed(file) }
     )
 }
+
+/**
+ * Bucket B: no slot to record in, so the picture itself is re-encoded in place.
+ *
+ * **It takes no [EditScope] and could not use one** (ME-126): there is no payload
+ * to key, the pixels themselves are rewritten, and what a frame set would mean
+ * under a re-encode is a question nothing has asked — bucket B is empty today
+ * (§5.1).
+ *
+ * Moved off `ImageEditorEngine` by ME-302, which needed room in that file for one
+ * property. The engine still decides *when* to re-encode and still owns [recipeOf],
+ * which is `internal` to it by design (§3.3); this owns nothing but the call.
+ */
+internal fun reEncodeStill(
+    file: File,
+    frameIndex: Int,
+    sourceSize: IntSize,
+    stamp: SourceStamp,
+    recipeOf: (EditDocument) -> RasterRecipe,
+    document: EditDocument
+): EditSaveResult =
+    ImageSaveJob(file, frameIndex, sourceSize, stamp, recipeOf).save(document)
 
 /** Shared with `ImageRevertWrites`: one message for every refused write. */
 internal fun writeFailed(file: File) =

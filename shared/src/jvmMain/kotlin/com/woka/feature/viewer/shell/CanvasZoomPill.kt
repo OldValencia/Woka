@@ -36,12 +36,23 @@ internal fun CanvasZoomControl(zoom: CanvasZoom) {
  */
 @Composable
 fun CanvasZoomPill(modifier: Modifier = Modifier) {
-    val zoom = LocalCanvasOverride.current.zoom ?: return
+    val override = LocalCanvasOverride.current
+    val zoom = override.zoom ?: return
     MediaViewerControlsContainer(modifier) {
         CanvasZoomControl(zoom)
-        PillGap()
-        PillDivider()
-        PillGap()
-        HdrModeControl()
+
+        // **Only for a picture it can say something about** (ME-303). The colour arrives
+        // from the engine through `PublishCanvasColor`; SDR is also what an unpublished
+        // pill sees, so the control is absent rather than inert either way.
+        //
+        // The gaps and the divider are **inside** the branch: a child that measures to
+        // nothing still leaves its neighbours' spacing behind, which is the reason
+        // `MediaViewerControlsContainer` documents for these pills spacing themselves.
+        if (hdrControlVisible(override.sourceColor)) {
+            PillGap()
+            PillDivider()
+            PillGap()
+            HdrModeControl()
+        }
     }
 }

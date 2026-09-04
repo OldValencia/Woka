@@ -68,6 +68,9 @@ internal fun EditorCanvasHost(
         EditorCanvasGeometry(drawnSize, canvasSize, zoom, pan)
     }
 
+    // The other half of what the pill needs from whoever owns the canvas (ME-303).
+    PublishCanvasColor(engine.sourceColor)
+
     // The wheel is not the only way in: the top bar's pill drives the same two values.
     PublishCanvasZoom(
         geometry = geometry,

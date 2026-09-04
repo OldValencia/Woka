@@ -19,6 +19,8 @@ video-editor/
     backlog.md      THE backlog — every unpromoted block for every folder below, one section each
   timeline/ playback/ audio/ picture/ save/ render/
                     one feature each: <name>/<name>.md plus tickets/ for promoted tickets only
+  shell/            §300's own folder, added 2026-09-04 when its first block was promoted and
+                    had nowhere to be recorded — the same shape, outside the bands
 ```
 
 **A finished folder leaves this tree.** `foundation/` shipped on 2026-09-03 and moved to
@@ -78,6 +80,7 @@ independently and ship independently.
 | [`picture/`](picture/picture.md) | Making Crop, Resize, Adjust, Filters and Markup *true* on a moving picture, and markup that appears, holds and fades | not started |
 | [`save/`](save/save.md) | `Done`: a recipe inside a video container, written without copying the file, folded by every reader | not started |
 | [`render/`](render/render.md) | `Render video…`: a new file, copying every segment it can and re-encoding only what it must | not started |
+| [`shell/`](shell/shell.md) | §300: the shell **both** editors compose — every one of it changes a still as well | ME-302 specified 2026-09-04 |
 
 **This table is a feature roll-up and deliberately carries no ticket rows.** Each folder's own
 document holds the only status table for its own tickets (`feature-docs.md` §4). A ticket state
@@ -92,7 +95,9 @@ the work they named is redistributed across four folders whose blocks are writte
 
 Two sections of the backlog sit **outside** those bands, and deliberately. **§300 — the shared
 shell** holds work that changes the shell *both* editors use, so a still is affected by every one of
-it; §4.1b's right-click reset is the first. **§950** holds what needs no work at all — two things that
+it; §4.1b's right-click reset is the first, and since 2026-09-04 its promoted tickets have a folder
+of their own ([`shell/`](shell/shell.md)) because a ticket needs a status table and this file has
+none. **§950** holds what needs no work at all — two things that
 fall out of features already planned, recorded so nobody builds them twice. Everything proposed on
 2026-09-03 was ruled on the same day: eight accepted with ids, one declined into §900.
 

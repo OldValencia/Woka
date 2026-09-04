@@ -1,6 +1,8 @@
 package com.woka.feature.editor.tools.hdr
 
 import com.woka.core.data.MediaKind
+import com.woka.core.data.StillColorInfo
+import com.woka.core.data.needsToneCurve
 import com.woka.core.ui.icons.Icons
 import com.woka.feature.editor.core.ChoiceParam
 import com.woka.feature.editor.core.EditDocument
@@ -81,6 +83,19 @@ object HdrTool : EditorTool {
     )
 
     override val params: List<ParamSpec<*>> = listOf(Output)
+
+    /**
+     * **Not offered to a picture that has no high dynamic range** (ME-302).
+     *
+     * The same sentence `supports` above holds, asked of the file instead of the medium:
+     * `Keep HDR` and `Convert to SDR` are two names for leaving an SDR photograph alone,
+     * and a control that cannot move what it names is worse than no control.
+     *
+     * [needsToneCurve] rather than `needsColorManagement`, so **wide-gamut SDR hides
+     * too**: `TransferKind`'s own KDoc records that BT.2020 primaries with an ordinary
+     * transfer are not HDR — they want the gamut matrix and nothing this tool decides.
+     */
+    override fun appliesTo(color: StillColorInfo): Boolean = needsToneCurve(color.transfer)
 
     /** Nothing to draw — see the class KDoc. The choice is read at save, not at fold. */
     override fun stage(params: ParamSet): ToolStage? = null
