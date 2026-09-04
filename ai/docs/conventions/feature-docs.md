@@ -81,7 +81,11 @@ states the goal and the shape, and **no file list** — because the files it wou
 yet, and a list written today is a lie by the time it is read.
 
 A ticket is promoted from `backlog.md` into its own file when it becomes the next thing to build, and
-it is written **against the tree as it then is**. That is the whole rule.
+it is written **against the tree as it then is**.
+
+**A block's edges are not the ticket's.** Promoting one means re-cutting it so that what lands is
+something the author can see — merging two blocks as readily as splitting one, because a block was
+drawn before the tree was known. `tickets.md` §4 is that rule and the case that forced it.
 
 Ticket format:
 

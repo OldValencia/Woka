@@ -50,11 +50,47 @@ ticket keeps its id and says so; the id does not go back into the pool.
   `setEditorToolEnabled(id, enabled)` to `SettingsMutations.kt` returning a `.copy()`."
 - **Bad:** "Let the user turn tools off in Settings."
 
-## 4. Size
+## 4. Cut by what the author sees, never by where the code is layered
+
+**A ticket is a slice of behaviour, not of architecture.** One test decides whether a cut is
+legitimate: when it lands, is there something the author can *do* or *see* that they could not
+before? If the honest answer is "the state is written, and nothing shows it", the slice is wrong —
+however clean the seam in the code was.
+
+**The case that produced this rule, 2026-09-04.** ME-288 taught an `mp4` to keep its edit; the author
+put Markup and Adjust on a video, `Done` reported success, and the change was visible **in the editor
+and nowhere else** — not in Woka's own player, not on the grid tile. Two tickets had been drawn along
+the code's layers: one for the engine that writes the recipe, one (ME-284) for the readers that fold
+it. That boundary is real in the source tree and absurd on screen. In the author's words: *«Вот как
+можно было разделить editor view и player view на две разных части? Если мы отредактировали видео в
+editor, то мы должны её увидеть и в player.»*
+
+Four rules follow, and they gate a promotion the way §2's format does:
+
+- **The write and its readers are one ticket.** A tool that saves what nothing displays, a setting
+  nothing honours, a field nothing draws — none of those is a shippable slice. Where an edit is
+  *kept* and where it is *shown* are one behaviour with two halves, and a reviewer cannot check
+  either half alone.
+- **A backlog block is not a ticket boundary.** Blocks are written before the tree is known
+  (`feature-docs.md` §3), so promoting one means **re-cutting it** against what the author will see —
+  merging two blocks as readily as splitting one. Inheriting a block's edges unexamined is how this
+  rule came to be needed.
+- **Splitting for size splits the work, never the visible outcome.** §4a's limits are real, and the
+  legitimate cuts are *narrower scope* — one container family, one tool, one surface, each complete
+  end to end. "It works internally" plus "it becomes visible" is never the cut.
+- **When a result genuinely cannot be shown yet, say so where state is read.** A probe answers a
+  question and displays nothing; a foundation ticket may have no surface at all. Those are honest,
+  and they say it in **`Why now`** *and* in the feature doc's status row — so nobody, the author
+  included, reads **done** as **usable**.
+
+## 4a. Size
 
 One ticket = one sitting = one green build. More than ~8 steps or ~8 files → split, and say in each
 half what the other half assumes. If a step pushes a file past 150 lines, the split is its own
 numbered step.
+
+**§4 outranks this.** If the smallest slice the author can see is nine files, it is nine files, and
+the ticket says why; a size limit is not a licence to ship half a behaviour.
 
 ## 5. Verification is part of the ticket
 
