@@ -1,6 +1,6 @@
 # Video Editor — Backlog
 
-**The single backlog for all seven folders** ([`../video-editor.md`](../video-editor.md) §1). One
+**The single backlog for all seven folders** ([`../video-editor.md`](video-editor.md) §1). One
 section per folder, in dependency order; each block says what it is for and what shape it takes, and
 **names no files** — those are written when a block is promoted into its own ticket, against the tree
 as it is then (`ai/docs/conventions/tickets.md`).
@@ -16,21 +16,21 @@ The four blocks this file held until today are gone, and not one of them was dro
 wrong — the feature was re-scoped around a brief four times their size.
 
 - **ME-201 — Video engine** was promoted, rewritten against the tree, and is
-  [`foundation/tickets/implemented/ME-201-a-video-canvas-that-folds.md`](../../../implemented/video-editor/foundation/tickets/ME-201-a-video-canvas-that-folds.md).
+  [`foundation/tickets/implemented/ME-201-a-video-canvas-that-folds.md`](../../implemented/video-editor/foundation/tickets/ME-201-a-video-canvas-that-folds.md).
   Its shape changed: it draws the player's frame through the recipe rather than folding to "a
   timeline stage", because that is what makes the five reused tools work on day one.
 - **ME-202 — Trim tool**, **ME-203 — Mute tool** and **ME-204 — Video save** are **retired: the ids
   are kept and never reused** (`feature-docs.md` §3). ME-202's keyframe-snapped cuts are reversed by
-  [`timeline/`](../timeline/timeline.md) §3.3; ME-203's mute is one of four audio behaviours now;
+  [`timeline/`](timeline/timeline.md) §3.3; ME-203's mute is one of four audio behaviours now;
   ME-204 named `SaveTarget` and `Save a Copy`, neither of which exists, and its work is split across
-  [`save/`](../save/save.md) and [`render/`](../render/render.md).
+  [`save/`](save/save.md) and [`render/`](render/render.md).
 
 ---
 
 ## 201 — Foundation — **empty: every block promoted or dropped, 2026-09-03**
 
 Four ticket files, all written against the tree of that day and all in
-[`foundation/`](../../../implemented/video-editor/foundation/foundation.md)'s status table, which is the only place their state is
+[`foundation/`](../../implemented/video-editor/foundation/foundation.md)'s status table, which is the only place their state is
 recorded:
 
 - **ME-201** — a video canvas that folds · **ME-206** — the band, the seam and a scrubber ·
@@ -93,7 +93,7 @@ nothing to it. `EditorFrames.allowsPerFrame` answers true for a video with more 
 ### ME-216 — Speed per clip
 A field on the clip entry, ¼×–4×, with a detent at 1×. It changes the clip's length on the strip and
 therefore where every clip after it sits. The pacer and the audio tempo are
-[`playback/`](../playback/playback.md)'s halves of it.
+[`playback/`](playback/playback.md)'s halves of it.
 *Depends on ME-215.*
 
 ### ME-217 — Freeze-frame
@@ -251,26 +251,26 @@ to manage and this is a clipboard.
 
 ### ME-280 — promoted 2026-09-04, and split in two on the way
 The block did the write *and* the wiring. The write left as
-[`save/tickets/ME-280-a-tail-carrier-writes-in-place.md`](../save/tickets/ME-280-a-tail-carrier-writes-in-place.md);
+[`save/tickets/ME-280-a-tail-carrier-writes-in-place.md`](save/tickets/ME-280-a-tail-carrier-writes-in-place.md);
 the wiring stayed here as ME-288 below, because together they are thirteen files and a mandated split
 of a 150-line one.
 
 ### ME-288 — promoted 2026-09-04
-[`save/tickets/ME-288-mp4-and-mov-carry-an-edit.md`](../save/tickets/ME-288-mp4-and-mov-carry-an-edit.md),
-status in [`save/`](../save/save.md)'s table. It is where `EditCapability.Preview` dies, and where an
+[`save/tickets/ME-288-mp4-and-mov-carry-an-edit.md`](save/tickets/ME-288-mp4-and-mov-carry-an-edit.md),
+status in [`save/`](save/save.md)'s table. It is where `EditCapability.Preview` dies, and where an
 `mkv` loses `Edit` until ME-282 gives it a carrier.
 
 ### ME-281 — promoted 2026-09-04
-[`save/tickets/ME-281-does-anything-else-tolerate-the-box.md`](../save/tickets/ME-281-does-anything-else-tolerate-the-box.md),
-status in [`save/`](../save/save.md)'s table. The probe writes the files; the four programs have to
+[`save/tickets/ME-281-does-anything-else-tolerate-the-box.md`](save/tickets/ME-281-does-anything-else-tolerate-the-box.md),
+status in [`save/`](save/save.md)'s table. The probe writes the files; the four programs have to
 be opened by hand, so it stays open until its § *Measured* is filled in.
 
-### ME-282 — A Matroska carrier
-The library is mixed, so this is second and not later. Try an unknown top-level EBML element appended
-after the `Segment` first — nothing moves and no size field is rewritten — then a `Tags`/`SimpleTag`
-inside it, then existing `Void` padding. The probe that matters is what other players do afterwards,
-not whether it round-trips through our own reader.
-*Depends on ME-281.*
+### ME-282 — promoted 2026-09-04, and it is **next**
+[`save/tickets/ME-282-a-matroska-carrier.md`](save/tickets/ME-282-a-matroska-carrier.md), status
+in [`save/`](save/save.md)'s table. Written and not started. The corpus was measured while writing
+it: the `Segment` declares a known size and ends exactly at EOF, so candidate 1 — an unknown
+top-level element appended after it — holds, and candidates 2 and 3 stay fallbacks nobody has to
+write.
 
 ### ME-283 — A RIFF carrier for avi
 A trailing chunk plus the four-byte `RIFF` size at offset 4. `WebpRecipe` already does RIFF surgery
@@ -362,17 +362,17 @@ Right-click on a control the schema renders returns it to its default; right-cli
 header resets the whole tool. Every `ParamSpec` type, in the one place rows are rendered — not eight
 places. The double-click-to-detent on a slider stays, because a detent is not always a default. The
 gesture is free: the canvas owns the context menu and no inspector row has one.
-*Depends on nothing. Design: [`../video-editor.md`](../video-editor.md) §4.1b.*
+*Depends on nothing. Design: [`../video-editor.md`](video-editor.md) §4.1b.*
 
 ### ME-302 — promoted 2026-09-04, and split in two on the way
 The block named three surfaces. The **rail** left as
-[`shell/tickets/ME-302-the-hdr-tool-leaves-an-sdr-rail.md`](../shell/tickets/ME-302-the-hdr-tool-leaves-an-sdr-rail.md),
-whose status is in [`shell/`](../shell/shell.md)'s table — the part folder §300 grew when it needed
+[`shell/tickets/ME-302-the-hdr-tool-leaves-an-sdr-rail.md`](shell/tickets/ME-302-the-hdr-tool-leaves-an-sdr-rail.md),
+whose status is in [`shell/`](shell/shell.md)'s table — the part folder §300 grew when it needed
 one. The **two pills** stayed here as ME-303 below.
 
 ### ME-303 — promoted 2026-09-04
-[`shell/tickets/ME-303-the-hdr-dropdown-leaves-an-sdr-pill.md`](../shell/tickets/ME-303-the-hdr-dropdown-leaves-an-sdr-pill.md),
-status in [`shell/`](../shell/shell.md)'s table. With it, the whole of the report of 2026-09-03 is
+[`shell/tickets/ME-303-the-hdr-dropdown-leaves-an-sdr-pill.md`](shell/tickets/ME-303-the-hdr-dropdown-leaves-an-sdr-pill.md),
+status in [`shell/`](shell/shell.md)'s table. With it, the whole of the report of 2026-09-03 is
 either shipped or specified, and §300 keeps only ME-300 and ME-301.
 
 ### ME-301 — The HDR control reaches a video frame
@@ -395,7 +395,7 @@ the two things that need no work at all.
   clip (ME-263). That *is* a title card, and it is also what the cover picker (ME-287) points at when
   the author wants the grid tile to show it. Nobody should build a Titles tool.
 - **A watermark.** A markup shape with no timing entry is on for the whole video
-  ([`../picture/picture.md`](../picture/picture.md) §3.3). That is the whole feature.
+  ([`../picture/picture.md`](picture/picture.md) §3.3). That is the whole feature.
 
 ---
 
@@ -405,7 +405,7 @@ Recorded so none of it is re-proposed:
 
 - **Reverse playback** — refused by the author 2026-09-03.
 - **A project holding several files**, a clip library, tracks. Cutting within one file
-  ([`../video-editor.md`](../video-editor.md) §3.2) covers the brief; a sequence across files has
+  ([`../video-editor.md`](video-editor.md) §3.2) covers the brief; a sequence across files has
   nowhere to live and every assumption in §3 stops holding.
 - **Transitions, keyframed parameter animation, layers, masks, chroma key, stabilisation.**
 - **Subtitle editing.** The viewer owns subtitles and the editor does not touch them.

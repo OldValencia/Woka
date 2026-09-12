@@ -11,7 +11,7 @@ tree as it is then (`ai/docs/conventions/tickets.md`).
 Design behind all of it: [the feature doc](../image-editor.md).
 
 The **200 track — the video editor** — left this file on 2026-08-24 for
-[`../../../pending/video-editor/tickets/backlog.md`](../../../pending/video-editor/tickets/backlog.md). Its blocks still
+[`../../../pending/video-editor/tickets/backlog.md`](../../../pending/video-editor/backlog.md). Its blocks still
 depend on ME-001…ME-014 and on ME-106, which are here; the numbers did not change.
 
 **The 100 track emptied on 2026-09-02.** Its six remaining blocks were promoted into eight ticket

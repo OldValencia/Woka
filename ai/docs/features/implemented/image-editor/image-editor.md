@@ -126,7 +126,7 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 | [ME-6xx](tickets/backlog.md)                                               | The four adjustments ME-162 did not take | backlog |
 
 ME-201…ME-204, the video editor's own tickets, moved to
-[`../../pending/video-editor/tickets/backlog.md`](../../pending/video-editor/tickets/backlog.md) on 2026-08-24 and are
+[`../../pending/video-editor/tickets/backlog.md`](../../pending/video-editor/backlog.md) on 2026-08-24 and are
 tracked by that feature's status table. The fourteen foundation tickets above are shared, and stay
 here.
 

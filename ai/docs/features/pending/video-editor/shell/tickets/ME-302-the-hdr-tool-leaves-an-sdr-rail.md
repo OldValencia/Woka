@@ -17,7 +17,7 @@ the registry has not got it. Every later per-file hide reuses whatever this buil
 
 **Split from the backlog block on promotion.** That block named three surfaces; this ticket is the
 rail alone. The pill's dropdown — the viewer's and the editor's own — became **ME-303** in
-[`../../tickets/backlog.md`](../../tickets/backlog.md) §300 and depends on step 2 below.
+[`../../tickets/backlog.md`](../../backlog.md) §300 and depends on step 2 below.
 
 ---
 

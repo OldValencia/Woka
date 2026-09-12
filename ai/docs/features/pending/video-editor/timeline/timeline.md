@@ -11,7 +11,7 @@ Umbrella, and the data-model argument this rests on: [`../video-editor.md`](../v
 
 ## 1. Status
 
-No tickets written. Every block is in [the shared backlog](../tickets/backlog.md) §210.
+No tickets written. Every block is in [the shared backlog](../backlog.md) §210.
 
 Blocked on [`foundation/`](../../../implemented/video-editor/foundation/foundation.md) — there is no band to draw in until ME-201
 lands, and no engine to fold a timeline stage.

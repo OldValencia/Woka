@@ -16,8 +16,9 @@ Umbrella: [`../video-editor.md`](../video-editor.md) §3.5 and §5. Ticket ids: 
 | [ME-280](tickets/ME-280-a-tail-carrier-writes-in-place.md) | A tail carrier writes in place | **done 2026-09-04** |
 | [ME-288](tickets/ME-288-mp4-and-mov-carry-an-edit.md) | mp4 and mov carry an edit, and `Preview` is deleted | **done 2026-09-04** — and **invisible outside the editor until ME-284**: reported by the author the same day, who edited an `mp4`, saw `Done` succeed, and found the change in the editor and in no other part of Woka |
 | [ME-281](tickets/ME-281-does-anything-else-tolerate-the-box.md) | Probe: does anything else tolerate the box? | **done 2026-09-04** — the gate opened: VLC, Windows Photos and Woka all play an edited `mp4` and `mov` unchanged |
+| [ME-282](tickets/ME-282-a-matroska-carrier.md) | A Matroska carrier | **← NEXT.** Specified 2026-09-04, not started. It is what gives an `mkv` its `Edit` entry back |
 
-Everything else is a block in [the shared backlog](../tickets/backlog.md) §280, where no state is
+Everything else is a block in [the shared backlog](../backlog.md) §280, where no state is
 recorded. `save/` is **folder 1** of the build order ([`../video-editor.md`](../video-editor.md) §1a).
 
 `EditCapability.Preview` — the temporary case

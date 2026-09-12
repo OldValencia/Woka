@@ -48,7 +48,7 @@ reported against an SDR **photograph**.
 | [ME-303](tickets/ME-303-the-hdr-dropdown-leaves-an-sdr-pill.md) | The HDR dropdown leaves an SDR picture's pill | **done 2026-09-04** — the viewer's pill is one `&&` over a unit-tested predicate and wants a by-hand look |
 
 Unpromoted blocks — ME-300 and ME-301 — are in the shared backlog
-([`../tickets/backlog.md`](../tickets/backlog.md) §300), which is where their state is *not* recorded:
+([`../tickets/backlog.md`](../backlog.md) §300), which is where their state is *not* recorded:
 nothing there is a row, and a block gets one only when it is promoted into this table.
 
 ---

@@ -11,7 +11,7 @@ offered on 2026-09-03 and turned down.
 
 ## 1. Status
 
-No tickets written. Blocks in [the shared backlog](../tickets/backlog.md) §230.
+No tickets written. Blocks in [the shared backlog](../backlog.md) §230.
 
 Depends on [`timeline/`](../timeline/timeline.md) for a document with more than one clip in it, and
 on [`foundation/`](../../../implemented/video-editor/foundation/foundation.md) for a canvas to present into.

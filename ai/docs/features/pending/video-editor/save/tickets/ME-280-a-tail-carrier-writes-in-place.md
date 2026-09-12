@@ -18,7 +18,7 @@ video can carry an edit until this is O(payload).
 **Split from the backlog block on promotion.** That block also wired `mp4`/`mov` into `carrierFor`,
 made the factory ask a video the carrier question, deleted `EditCapability.Preview` and taught
 `VideoEditorEngine` to save — thirteen files and a mandated split of a 150-line file. That half is
-**ME-288** in [`../../tickets/backlog.md`](../../tickets/backlog.md) §280 and depends on this one.
+**ME-288** in [`../../tickets/backlog.md`](../../backlog.md) §280 and depends on this one.
 **This ticket adds no extension and changes no capability**, so nothing about a video moves yet; what
 moves is how a `heic`, `heif` or `avif` is written, which is where the mechanism can be proved on
 files that already exist.

@@ -15,7 +15,7 @@ Umbrella: [`../video-editor.md`](../video-editor.md) §3.1. Ticket ids: **ME-260
 |---|---|---|
 | [ME-264](tickets/ME-264-the-hdr-tool-stops-claiming-video.md) | The HDR tool stops claiming video | **done 2026-09-03** — build green |
 
-Everything else is in [the shared backlog](../tickets/backlog.md) §260. ME-264 was taken out of band,
+Everything else is in [the shared backlog](../backlog.md) §260. ME-264 was taken out of band,
 on the author's word, because ME-201 made the rail visibly wrong and the fix was one manifest line.
 
 **Half the gate has been measured — 2026-09-03, `VideoFoldProbe`, recorded in

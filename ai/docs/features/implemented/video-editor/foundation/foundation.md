@@ -28,7 +28,7 @@ to `implemented/` when it ships, and the feature is the video editor — six of 
 not started, and §3 below is the architecture every one of them reads. Half a feature in each tree
 would cost more than it says.
 
-**Next is [ME-302](../../../pending/video-editor/tickets/backlog.md) — the HDR controls that appear for an SDR picture** and can
+**Next is [ME-302](../../../pending/video-editor/backlog.md) — the HDR controls that appear for an SDR picture** and can
 move nothing. Not in this folder: it is §300, the shared shell, because it changes the image editor
 too. ME-201, ME-206, ME-207 and ME-205 are all shipped and
 `:shared:build` is green; ME-208 was dropped. A video opens in the editor, draws through the folded

@@ -10,7 +10,7 @@ Umbrella: [`../video-editor.md`](../video-editor.md) §4.4. Ticket ids: **ME-240
 
 ## 1. Status
 
-No tickets written. Blocks in [the shared backlog](../tickets/backlog.md) §240.
+No tickets written. Blocks in [the shared backlog](../backlog.md) §240.
 
 The first two blocks depend only on [`timeline/`](../timeline/timeline.md). The second row depends on
 [`playback/`](../playback/playback.md), because two sound sources at once is a change to the same

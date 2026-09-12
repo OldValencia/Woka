@@ -112,7 +112,7 @@ written in every backlog block, and re-deriving it costs a session's worth of re
 answer that does not change.
 
 `Start with` is a **rule, not a fact**, so it cannot go stale: the lowest-numbered block still left in
-that folder's section of [`tickets/backlog.md`](tickets/backlog.md). Promote it, and the rule points
+that folder's section of [`tickets/backlog.md`](backlog.md). Promote it, and the rule points
 at the next one by itself.
 
 | # | Folder | Start with | Why it sits here | Cannot **finish** until |
@@ -360,7 +360,7 @@ on a slider stays — it is a *detent*, which is not always the default.
 
 The gesture is free: the canvas owns the right-click context menu, and no inspector row has one.
 Applies to the **image** editor identically, so it is a shared-shell ticket
-([backlog](tickets/backlog.md) §300) rather than a video one.
+([backlog](backlog.md) §300) rather than a video one.
 
 ### 4.2 The strip, in two states
 

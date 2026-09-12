@@ -10,7 +10,7 @@ Umbrella: [`../video-editor.md`](../video-editor.md) §3.5 and §4.5. Ticket ids
 
 ## 1. Status
 
-No tickets written. Blocks in [the shared backlog](../tickets/backlog.md) §290.
+No tickets written. Blocks in [the shared backlog](../backlog.md) §290.
 
 ---
 
