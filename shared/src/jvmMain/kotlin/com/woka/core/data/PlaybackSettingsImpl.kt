@@ -47,6 +47,8 @@ internal class PlaybackSettingsImpl(private val mutator: SettingsMutator) : Play
     override fun setResumeMinDuration(minutes: Int) =
         mutator.update { it.copy(resumeMinDurationMinutes = minutes.coerceIn(1, 240)) }
 
+    override fun setWatchedWhen(mode: WatchedWhen) = mutator.update { it.copy(watchedWhen = mode) }
+
     override fun setWatchPosition(filePath: String, positionMs: Long, durationMs: Long) =
         mutator.update { it.withWatchPosition(filePath, positionMs, durationMs) }
 

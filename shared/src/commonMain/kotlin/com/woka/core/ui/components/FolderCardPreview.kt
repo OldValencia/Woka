@@ -88,18 +88,17 @@ fun FolderCardPreview(
             Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = restDim)))
         }
 
-        // Above the rest-state dimming on purpose: the glyph and the progress bar
-        // are chrome, and a card the cursor is not on still has to be readable.
+        // Above the rest-state dimming on purpose: the glyph and the play badge are
+        // chrome, and a card the cursor is not on still has to be readable. The
+        // watched bar is chrome too and went one level further out, to
+        // [FolderCardBody] — inside this Box it was painted over by the caption.
         //
         // **The folder glyph belongs here too**, and used to be drawn with the cover
         // instead — so an empty folder's only mark sat at 0.5 alpha *under* another
         // 18 % of black, on a dark elevated surface. Reported by hand 2026-08-30 as
         // a linked folder drawing "a black tile with nothing on it" (§ folder cover).
         if (isDir && cover == null) FolderGlyph(modifier = Modifier.align(Alignment.Center))
-        if (isVideo) {
-            PlayBadge(modifier = Modifier.align(Alignment.Center))
-            FolderCardProgress(watch)
-        }
+        if (isVideo) PlayBadge(modifier = Modifier.align(Alignment.Center))
     }
 }
 

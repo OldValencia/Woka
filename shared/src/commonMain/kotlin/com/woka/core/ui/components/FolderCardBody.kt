@@ -68,6 +68,14 @@ internal fun FolderCardBody(
                 )
             }
 
+            // After the caption, not inside the preview where the rest of the card's
+            // chrome lives: the caption's scrim is a sibling of the preview that ends
+            // at 86 % black along this exact edge, so a 3 dp bar drawn in there was
+            // buried by it — a finished video and a barely-started one both showed
+            // nothing at all. Only a video ever has a record, so no kind check is
+            // needed here (`WatchMarks.forVideo`).
+            FolderCardProgress(watch)
+
             if (onRemove != null && isHovered) {
                 FolderCardRemoveButton(
                     onRemove = onRemove,

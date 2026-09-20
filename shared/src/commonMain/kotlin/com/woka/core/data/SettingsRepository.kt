@@ -70,6 +70,9 @@ interface PlaybackSettings {
     fun setResumeMode(mode: ResumeMode)
     fun setResumeMinDuration(minutes: Int)
 
+    /** How much of a file has to play before it is marked watched (§4). */
+    fun setWatchedWhen(mode: WatchedWhen)
+
     /** The play head; leaves [WatchRecord.finished] alone — see `withWatchPosition`. */
     fun setWatchPosition(filePath: String, positionMs: Long, durationMs: Long)
 

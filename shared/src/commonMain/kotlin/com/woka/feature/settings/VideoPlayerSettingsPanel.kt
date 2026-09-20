@@ -12,8 +12,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.woka.app.AppDependencies
-import com.woka.core.data.ResumeMode
-import com.woka.core.ui.components.SegmentedControl
 
 /**
  * Video-player settings: playback resume (§4) and the folder track heuristic (§2.6).
@@ -29,59 +27,7 @@ fun VideoPlayerSettingsPanel() {
     val settings by repository.settings.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        SectionLabel("Resume playback")
-        Spacer(modifier = Modifier.height(6.dp))
-        PanelHint("Continue a video where you left off instead of starting over")
-        Spacer(modifier = Modifier.height(10.dp))
-        SegmentedControl(
-            options = listOf(OFF, LONG_ONLY, ALWAYS),
-            selected = when (settings.resumeMode) {
-                ResumeMode.Off -> OFF
-                ResumeMode.LongOnly -> LONG_ONLY
-                ResumeMode.Always -> ALWAYS
-            },
-            onSelect = { selected ->
-                repository.setResumeMode(
-                    when (selected) {
-                        LONG_ONLY -> ResumeMode.LongOnly
-                        ALWAYS -> ResumeMode.Always
-                        else -> ResumeMode.Off
-                    }
-                )
-            }
-        )
-        // The threshold only means anything in the mode that uses it — shown the
-        // same way the zoom stepper appears only under the Zoom default.
-        if (settings.resumeMode == ResumeMode.LongOnly) {
-            Spacer(modifier = Modifier.height(14.dp))
-            PanelHint("Only for videos longer than")
-            Spacer(modifier = Modifier.height(6.dp))
-            MinutesStepper(
-                minutes = settings.resumeMinDurationMinutes,
-                onChange = { repository.setResumeMinDuration(it) }
-            )
-        }
-
-        // Under Resume playback because it is fed by it: the marks are drawn from
-        // the records that setting writes, so with resume off there is nothing to
-        // dim and the rows below would be controlling nothing.
-        if (settings.resumeMode != ResumeMode.Off) {
-            Spacer(modifier = Modifier.height(14.dp))
-            SettingsToggleRow(
-                title = "Dim watched videos",
-                subtitle = "Fade the thumbnail of any video you have already started",
-                checked = settings.dimWatchedVideos,
-                onCheckedChange = { repository.setDimWatchedVideos(it) }
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            SettingsDangerRow(
-                label = "Forget watched marks for all videos",
-                confirmLabel = "Forget them",
-                hint = "Every video goes back to looking unwatched",
-                enabled = settings.watchRecords.isNotEmpty(),
-                onConfirm = { repository.clearAllWatchRecords() }
-            )
-        }
+        ResumeSettingsSection(settings = settings, repo = repository)
 
         Spacer(modifier = Modifier.height(20.dp))
         SectionLabel("System")
@@ -119,7 +65,3 @@ fun VideoPlayerSettingsPanel() {
         )
     }
 }
-
-private const val OFF = "Off"
-private const val LONG_ONLY = "Long videos"
-private const val ALWAYS = "Always"
