@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.woka.app.AppDependencies
+import com.woka.core.ui.components.SegmentedControl
 
 /**
  * Video-player settings: playback resume (§4) and the folder track heuristic (§2.6).
@@ -28,6 +29,19 @@ fun VideoPlayerSettingsPanel() {
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         ResumeSettingsSection(settings = settings, repo = repository)
+
+        Spacer(modifier = Modifier.height(20.dp))
+        SectionLabel("Time")
+        Spacer(modifier = Modifier.height(6.dp))
+        // The same flag the label writes when clicked, offered here for anyone who
+        // never discovers that it is clickable at all.
+        PanelHint("What the right-hand number beside the seek bar shows")
+        Spacer(modifier = Modifier.height(10.dp))
+        SegmentedControl(
+            options = listOf(TOTAL, REMAINING),
+            selected = if (settings.showRemainingTime) REMAINING else TOTAL,
+            onSelect = { repository.setShowRemainingTime(it == REMAINING) }
+        )
 
         Spacer(modifier = Modifier.height(20.dp))
         SectionLabel("System")
@@ -65,3 +79,6 @@ fun VideoPlayerSettingsPanel() {
         )
     }
 }
+
+private const val TOTAL = "Total"
+private const val REMAINING = "Remaining"

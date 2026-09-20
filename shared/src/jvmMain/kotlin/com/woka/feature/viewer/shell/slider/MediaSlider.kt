@@ -86,6 +86,7 @@ fun MediaSlider(
         modifier = modifier
             .height(style.hitAreaHeight)
             .onSizeChanged { width = it.width.toFloat() }
+            .sliderCursor()
             .sliderHover { hoverX = it }
             .pointerInput(Unit) {
                 detectDragGestures(

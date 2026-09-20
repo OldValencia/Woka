@@ -12,7 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
 import com.woka.core.ui.icons.Icons
 import com.woka.core.ui.theme.Theme
@@ -48,6 +50,7 @@ fun SubtitleControl(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(RoundedCornerShape(6.dp))
+                    .pointerHoverIcon(PointerIcon.Hand)
                     .onPointerEvent(PointerEventType.Enter) { onHoverChange(true) }
                     .onPointerEvent(PointerEventType.Exit) { onHoverChange(false) }
                     .clickable {

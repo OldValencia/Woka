@@ -78,6 +78,7 @@ fun MediaVerticalSlider(
     Box(
         modifier = modifier
             .onSizeChanged { height = it.height.toFloat() }
+            .sliderCursor()
             .pointerInput(Unit) {
                 detectDragGestures(
                     onDragStart = { offset ->

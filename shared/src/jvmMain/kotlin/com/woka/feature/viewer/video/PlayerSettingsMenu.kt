@@ -56,8 +56,10 @@ internal fun PlayerSettingsMenuList(videoState: VideoPlayerState) {
         PlaybackModeRows(
             repeat = settings.repeatMode,
             shuffle = settings.shuffle,
+            showRemainingTime = settings.showRemainingTime,
             onRepeatCycle = { repo.setRepeatMode(settings.repeatMode.next()) },
-            onShuffleToggle = { repo.setShuffle(!settings.shuffle) }
+            onShuffleToggle = { repo.setShuffle(!settings.shuffle) },
+            onTimeLabelToggle = { repo.setShowRemainingTime(!settings.showRemainingTime) }
         )
         PlayerSpeedSlider(
             speed = settings.playbackSpeed,

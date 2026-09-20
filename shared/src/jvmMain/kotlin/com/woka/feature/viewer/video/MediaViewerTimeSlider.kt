@@ -1,15 +1,11 @@
 package com.woka.feature.viewer.video
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.woka.core.ui.icons.Icons
-import com.woka.core.ui.theme.Theme
 import com.woka.feature.viewer.shell.slider.MediaSlider
 import com.woka.feature.viewer.shell.slider.SliderPreview
 import com.woka.feature.viewer.shell.slider.defaultMediaSliderStyle
@@ -43,6 +39,9 @@ fun MediaViewerTimeSlider(
     val previewAspect = videoState?.previewAspect()
     // Tone-mapped when the stream is HDR, exactly as the played frame is.
     val previewPainter = rememberPreviewPainter(videoState, preview?.shown)
+    // One shape for both labels and the tooltip, taken from the file rather than
+    // from each value — see `MediaViewerTimeLabel`.
+    val withHours = usesHours(durationMs)
 
     Row(
         modifier = modifier,
@@ -51,7 +50,7 @@ fun MediaViewerTimeSlider(
     ) {
         // Deliberately the player's own position, not the drag target: while
         // scrubbing the label holds and the tooltip shows where the release lands.
-        TimeLabel(position)
+        TimeLabel(withHours = withHours, position = position)
 
         if (durationMs >= 6000L) {
             SkipButton(
@@ -89,7 +88,7 @@ fun MediaViewerTimeSlider(
                     isDragging = false
                 }
             },
-            tooltipText = { formatTime((it * durationMs).toLong()) },
+            tooltipText = { formatTime((it * durationMs).toLong(), withHours) },
             // The aspect is supplied only once something has been shown, so a file
             // that never produces a still keeps a plain pill rather than a permanent
             // empty hole — that field is what turns the pill into a frame window.
@@ -115,7 +114,7 @@ fun MediaViewerTimeSlider(
             )
         }
 
-        TimeLabel { durationMs }
+        TrailingTimeLabel(withHours = withHours, durationMs = durationMs, position = position)
     }
 }
 
@@ -129,21 +128,4 @@ private fun VideoPlayerState.previewAspect(): Float? {
     val width = track?.width ?: return null
     val height = track.height ?: return null
     return if (width > 0 && height > 0) width.toFloat() / height else null
-}
-
-/** Calls [position] in its own scope, so a moving play head recomposes only this. */
-@Composable
-private fun TimeLabel(position: () -> Long) {
-    BasicText(
-        formatTime(position()),
-        // 15sp against the row's 16–20dp icons; at 13 it read as a caption beside them.
-        style = TextStyle(fontSize = 15.sp, color = Theme.colors.textPrimary)
-    )
-}
-
-internal fun formatTime(ms: Long): String {
-    val totalSeconds = ms / 1000
-    val minutes = totalSeconds / 60
-    val seconds = totalSeconds % 60
-    return "${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}"
 }

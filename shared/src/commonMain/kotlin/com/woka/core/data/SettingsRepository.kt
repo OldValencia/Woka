@@ -73,6 +73,9 @@ interface PlaybackSettings {
     /** How much of a file has to play before it is marked watched (§4). */
     fun setWatchedWhen(mode: WatchedWhen)
 
+    /** Total or remaining in the seek bar's right-hand label. Written by the label itself. */
+    fun setShowRemainingTime(enabled: Boolean)
+
     /** The play head; leaves [WatchRecord.finished] alone — see `withWatchPosition`. */
     fun setWatchPosition(filePath: String, positionMs: Long, durationMs: Long)
 

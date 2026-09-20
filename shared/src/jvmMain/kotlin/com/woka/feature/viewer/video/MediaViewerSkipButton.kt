@@ -12,6 +12,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.woka.core.ui.theme.Theme
@@ -44,6 +46,7 @@ internal fun SkipButton(
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(6.dp))
+            .pointerHoverIcon(PointerIcon.Hand)
             .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center
     ) {

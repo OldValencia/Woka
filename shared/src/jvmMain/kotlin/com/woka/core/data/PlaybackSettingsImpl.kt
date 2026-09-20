@@ -49,6 +49,9 @@ internal class PlaybackSettingsImpl(private val mutator: SettingsMutator) : Play
 
     override fun setWatchedWhen(mode: WatchedWhen) = mutator.update { it.copy(watchedWhen = mode) }
 
+    override fun setShowRemainingTime(enabled: Boolean) =
+        mutator.update { it.copy(showRemainingTime = enabled) }
+
     override fun setWatchPosition(filePath: String, positionMs: Long, durationMs: Long) =
         mutator.update { it.withWatchPosition(filePath, positionMs, durationMs) }
 

@@ -104,6 +104,11 @@ data class WokaSettings(
     // bare position, because the grid's marker needs a duration to divide by and a
     // "finished" that survives — see [WatchRecord].
     val watchRecords: Map<String, WatchRecord> = emptyMap(),
+    // What the right-hand label beside the seek bar shows: the file's length, or
+    // what is left of it. A Boolean rather than a two-value enum because the label
+    // itself is a toggle — an enum would turn every read into "if it is Total then
+    // Remaining else Total". Off by default: the total is what it has always said.
+    val showRemainingTime: Boolean = false,
     // Fades the thumbnail of any video already started, so an untouched one stands
     // out. On by default: the marks are the feature, and a library where everything
     // looks identical is the state this exists to fix. Videos only — a photograph

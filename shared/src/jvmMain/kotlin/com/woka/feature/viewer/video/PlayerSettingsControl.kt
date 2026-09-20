@@ -11,7 +11,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
 import com.woka.core.ui.icons.Icons
 import com.woka.core.ui.theme.Theme
@@ -36,6 +38,9 @@ fun PlayerSettingsControl(
             modifier = modifier
                 .size(32.dp)
                 .clip(RoundedCornerShape(6.dp))
+                // Opened by hover rather than by a click, but it reads as a button
+                // and has to feel like the rest of the pill.
+                .pointerHoverIcon(PointerIcon.Hand)
                 .onPointerEvent(PointerEventType.Enter) { onHoverChange(true) }
                 .onPointerEvent(PointerEventType.Exit) { onHoverChange(false) },
             contentAlignment = Alignment.Center

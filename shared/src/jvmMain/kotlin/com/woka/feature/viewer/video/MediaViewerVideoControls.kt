@@ -16,6 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
 import com.woka.core.ui.icons.Icons
 import com.woka.core.ui.theme.Theme
@@ -66,6 +68,7 @@ fun MediaViewerVideoControls(
         Box(
             modifier = Modifier
                 .size(32.dp)
+                .pointerHoverIcon(PointerIcon.Hand)
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null
@@ -122,6 +125,7 @@ fun MediaViewerVideoControls(
                     modifier = Modifier
                         .size(32.dp)
                         .clip(RoundedCornerShape(6.dp))
+                        .pointerHoverIcon(PointerIcon.Hand)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null

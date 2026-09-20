@@ -34,8 +34,10 @@ import com.woka.feature.viewer.shell.PopoverSectionLabel
 internal fun PlaybackModeRows(
     repeat: RepeatMode,
     shuffle: Boolean,
+    showRemainingTime: Boolean,
     onRepeatCycle: () -> Unit,
-    onShuffleToggle: () -> Unit
+    onShuffleToggle: () -> Unit,
+    onTimeLabelToggle: () -> Unit
 ) {
     PopoverSectionLabel("Playback")
     ValueRow(
@@ -49,6 +51,14 @@ internal fun PlaybackModeRows(
         value = if (shuffle) "On" else "Off",
         active = shuffle,
         onClick = onShuffleToggle
+    )
+    // The same flag the label itself writes when clicked, and the same one the
+    // Settings panel offers — one state, three ways in.
+    ValueRow(
+        label = "Time left",
+        value = if (showRemainingTime) "Remaining" else "Total",
+        active = showRemainingTime,
+        onClick = onTimeLabelToggle
     )
 }
 
