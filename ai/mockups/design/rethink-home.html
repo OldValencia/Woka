@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Woka — Home as a library</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root{
+  --bg-canvas:#0E1015;
+  --bg-island:rgba(22,26,34,.8);
+  --bg-card:#161920;
+  --color-home:#0A84FF;
+  --color-folders:#FF9F0A;
+  --color-search:#30D158;
+  --color-danger:#FF453A;
+  --text-main:#F4F4F6;
+  --text-muted:#515764;
+  --text-second:#8A909D;
+  --border:rgba(255,255,255,.04);
+  --border-glow:rgba(255,255,255,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',sans-serif}
+body{background:var(--bg-canvas);color:var(--text-main);padding:40px;line-height:1.55}
+.wrap{max-width:1240px;margin:0 auto}
+
+h1{font-size:26px;font-weight:800;letter-spacing:-.5px}
+h2{font-size:17px;font-weight:700;margin:44px 0 6px;letter-spacing:-.2px}
+.lede{color:var(--text-second);font-size:14px;max-width:78ch;margin-top:8px}
+.note{color:var(--text-muted);font-size:12.5px;margin-top:6px;max-width:86ch}
+code{background:rgba(255,255,255,.05);padding:1px 5px;border-radius:4px;font-size:12px;
+     font-family:ui-monospace,Menlo,Consolas,monospace;color:#CDCDD2}
+hr{border:0;border-top:1px solid var(--border);margin:34px 0}
+
+.findings{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:18px}
+.finding{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px 18px}
+.finding .n{font-size:11px;font-weight:800;color:var(--color-folders);letter-spacing:.08em}
+.finding.good .n{color:var(--color-search)}
+.finding h3{font-size:14px;font-weight:700;margin:6px 0 6px}
+.finding p{font-size:13px;color:var(--text-second)}
+.finding .fix{font-size:12.5px;color:#9FB4D8;margin-top:9px;border-top:1px solid var(--border);padding-top:9px}
+
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 20px;align-items:center}
+.tg{display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--border);
+    border-radius:11px;padding:8px 14px;font-size:12.5px;font-weight:600;color:var(--text-second);cursor:pointer;
+    user-select:none;transition:.15s}
+.tg:hover{border-color:var(--border-glow);color:var(--text-main)}
+.tg .dot{width:9px;height:9px;border-radius:50%;background:#3A3F4B;transition:.15s}
+.tg.on{color:#fff}
+.tg.on .dot{background:var(--color-search);box-shadow:0 0 10px rgba(48,209,88,.5)}
+.seg{display:flex;background:var(--bg-card);border:1px solid var(--border);border-radius:9px;padding:2px}
+.seg span{padding:4px 11px;border-radius:7px;font-size:12px;font-weight:600;color:var(--text-muted);cursor:pointer;
+  user-select:none;transition:.15s}
+.seg span.sel{background:rgba(255,255,255,.08);color:#fff}
+.hint{font-size:12px;color:var(--text-muted);max-width:68ch}
+
+/* ---------- the app frame ---------- */
+.app{position:relative;height:700px;border-radius:14px;overflow:hidden;background:var(--bg-canvas);
+     border:1px solid var(--border-glow);box-shadow:0 30px 70px rgba(0,0,0,.55)}
+header{height:60px;display:flex;align-items:center;gap:12px;padding:0 22px;position:relative;z-index:20}
+.title-block{display:flex;align-items:baseline;gap:10px}
+.scr-title{font-size:19px;font-weight:800;letter-spacing:-.4px}
+.scr-count{font-size:12.5px;color:var(--text-muted);font-weight:600}
+.spacer{flex:1}
+.win{display:flex;gap:2px;margin-left:6px}
+.win i{width:30px;height:28px;display:grid;place-items:center;font-style:normal;font-size:11px;
+       color:var(--text-muted);border-radius:6px}
+
+.view{position:absolute;inset:60px 0 0 0;overflow-y:auto;padding:10px 34px 150px 34px;
+  display:flex;flex-direction:column}
+.view::-webkit-scrollbar{width:10px}
+.view::-webkit-scrollbar-thumb{background:rgba(255,255,255,.09);border-radius:8px;border:3px solid transparent;background-clip:content-box}
+
+/* PROPOSAL: while everything fits one screen the content is optically centred
+   instead of pinned into the top-left corner of an empty window.               */
+.app.few .view{justify-content:center;padding-bottom:170px}
+
+.sec-label{font-size:10.5px;font-weight:800;letter-spacing:.09em;color:var(--text-muted);
+  margin:0 4px 12px;display:flex;align-items:center;gap:8px}
+.sec-label .c{color:#3A3F4B;font-weight:700;letter-spacing:0}
+.app.today .sec-label{display:none}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:26px}
+.app.few .grid{display:flex;justify-content:center;flex-wrap:wrap}
+.app.few .grid > *{width:250px}
+.app.today.few .view{justify-content:flex-start;padding-bottom:150px}
+.app.today.few .grid{display:grid;justify-content:start}
+.app.today.few .grid > *{width:auto}
+
+.card{position:relative;cursor:pointer;display:flex;flex-direction:column;
+  transition:transform .2s cubic-bezier(.2,.8,.2,1)}
+.card:hover{transform:translateY(-2px)}
+.stack{position:relative}
+.stack::before,.stack::after{content:'';position:absolute;left:8px;right:8px;bottom:-4px;height:14px;
+  border-radius:0 0 11px 11px;background:#1A1E27;border:1px solid var(--border);border-top:0;z-index:-1}
+.stack::after{left:15px;right:15px;bottom:-8px;background:#141821;z-index:-2}
+.thumb{position:relative;width:100%;aspect-ratio:16/10;border-radius:11px;overflow:hidden;
+  background:var(--bg-card);border:1px solid var(--border);box-shadow:0 6px 18px rgba(0,0,0,.28);
+  transition:border-color .2s,box-shadow .2s}
+.card:hover .thumb{border-color:var(--border-glow);box-shadow:0 18px 34px rgba(0,0,0,.4)}
+.cover{position:absolute;inset:0;filter:saturate(.62) brightness(.78);transition:filter .25s ease,transform .35s ease}
+.card:hover .cover{filter:saturate(1) brightness(1);transform:scale(1.02)}
+.scrim{position:absolute;left:0;right:0;bottom:0;height:52%;pointer-events:none;
+  background:linear-gradient(to top,rgba(0,0,0,.86) 0%,rgba(0,0,0,.62) 28%,rgba(0,0,0,.22) 66%,rgba(0,0,0,0) 100%)}
+.label{position:absolute;left:12px;right:12px;bottom:9px;z-index:2}
+.label .t{font-size:13.5px;font-weight:650;color:#fff;letter-spacing:-.1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.label .m{font-size:11.5px;font-weight:550;color:rgba(255,255,255,.62);margin-top:1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.card:hover .label .m{color:rgba(255,255,255,.82)}
+
+/* ---------- 1. open at launch: a flag on the card, never a position ---------- */
+.card.start .thumb{border-color:rgba(10,132,255,.55);box-shadow:0 0 0 1px rgba(10,132,255,.25),0 10px 26px rgba(0,0,0,.4)}
+.pill{position:absolute;left:10px;top:10px;z-index:3;display:flex;align-items:center;gap:5px;
+  background:rgba(10,132,255,.92);color:#fff;font-size:9.5px;font-weight:800;letter-spacing:.06em;
+  padding:4px 8px;border-radius:7px;box-shadow:0 6px 16px rgba(0,0,0,.45)}
+.pill svg{width:9px;height:9px;fill:currentColor}
+.app.today .pill{display:none}
+.app.today .card.start .thumb{border-color:var(--border);box-shadow:0 6px 18px rgba(0,0,0,.28)}
+
+/* the same badge, hollow, as the hover control on a card that does not have it */
+.ghost{position:absolute;left:10px;top:10px;z-index:3;width:24px;height:24px;border-radius:7px;
+  display:grid;place-items:center;background:rgba(14,16,21,.72);border:1px solid rgba(255,255,255,.14);
+  opacity:0;transition:opacity .15s}
+.ghost svg{width:10px;height:10px;fill:rgba(255,255,255,.75)}
+.card:hover .ghost{opacity:1}
+.card:hover .ghost:hover{background:rgba(10,132,255,.9);border-color:transparent}
+.app.today .ghost{display:none}
+
+/* ---------- 2. the add tile ---------- */
+.add .thumb{border:1.5px dashed rgba(255,255,255,.14);background:rgba(255,255,255,.015);
+  display:grid;place-items:center;box-shadow:none}
+.add:hover .thumb{border-color:rgba(10,132,255,.5);background:rgba(10,132,255,.05)}
+.add .inner{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--text-muted)}
+.add:hover .inner{color:var(--color-home)}
+.add .plusglyph{font-size:26px;font-weight:300;line-height:1}
+.add .cap{font-size:12.5px;font-weight:650}
+.add .stack::before,.add .stack::after{display:none}
+.app.today .add{display:none}
+
+/* first run: the tile is the whole screen, with one line under it */
+.firstline{text-align:center;font-size:12.5px;color:var(--text-muted);margin-top:16px}
+.app:not(.empty) .firstline{display:none}
+.app.today .firstline{display:none}
+.app.today.empty .view::before{content:'No linked folders';margin:auto;color:var(--text-second);font-size:13px}
+.app.today.empty .grid,.app.today.empty .sec-label{display:none}
+
+/* ---------- 3. the pinned strip ---------- */
+.pins{margin-top:34px}
+.app.today .pins,.app.nopins .pins,.app.empty .pins{display:none}
+.pinrow{display:grid;grid-template-columns:repeat(auto-fill,minmax(172px,1fr));gap:18px}
+.app.few .pinrow{display:flex;justify-content:center;flex-wrap:wrap}
+.app.few .pinrow > *{width:172px}
+.pin{position:relative;cursor:pointer;transition:transform .2s cubic-bezier(.2,.8,.2,1)}
+.pin:hover{transform:translateY(-2px)}
+.pin .thumb{aspect-ratio:16/10;border-radius:9px}
+.pin .label{left:9px;right:9px;bottom:7px}
+.pin .label .t{font-size:12px}
+.pin .label .m{font-size:10px;color:rgba(255,255,255,.5)}
+.pin .scrim{height:58%}
+
+/* ---------- dock ---------- */
+.dock{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg-island);
+  backdrop-filter:blur(30px);border:1px solid rgba(255,255,255,.05);padding:6px;border-radius:20px;
+  display:flex;align-items:center;gap:4px;box-shadow:0 24px 48px rgba(0,0,0,.5);z-index:30}
+.di{height:38px;padding:0 15px;border-radius:14px;display:flex;align-items:center;gap:8px;color:#838893;
+    font-size:13px;font-weight:650;cursor:pointer}
+.di.act{color:#fff;background:rgba(255,255,255,.04)}
+.di.act .ic{color:var(--color-home)}
+.ic{width:15px;height:15px;fill:currentColor}
+.dsep{width:1px;height:20px;background:rgba(255,255,255,.06);margin:0 4px}
+.dsq{width:38px;padding:0;justify-content:center}
+.di.lib{display:none}
+.app.today .di.lib{display:flex}
+.bar-scrim{position:absolute;left:0;right:0;bottom:0;height:110px;z-index:25;pointer-events:none;
+  background:linear-gradient(to top,rgba(14,16,21,.92),rgba(14,16,21,0))}
+
+/* ---------- drop-to-link overlay ---------- */
+.dropzone{position:relative;height:210px;border-radius:14px;overflow:hidden;border:1px solid var(--border-glow);
+  background:var(--bg-canvas);display:grid;place-items:center}
+.dropzone .veil{position:absolute;inset:14px;border-radius:12px;border:2px dashed rgba(10,132,255,.6);
+  background:rgba(10,132,255,.07)}
+.dropzone .msg{position:relative;text-align:center}
+.dropzone .msg .big{font-size:15px;font-weight:700;color:#fff}
+.dropzone .msg .sm{font-size:12px;color:var(--text-second);margin-top:4px}
+.dropzone .cursor{position:absolute;right:56px;bottom:34px;font-size:22px;opacity:.75}
+
+/* ---------- undo banner ---------- */
+.undo{display:inline-flex;align-items:center;gap:14px;background:var(--bg-island);backdrop-filter:blur(30px);
+  border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:10px 14px;
+  box-shadow:0 20px 44px rgba(0,0,0,.5);font-size:13px}
+.undo .t{color:var(--text-main);font-weight:600}
+.undo .t b{font-weight:800}
+.undo .act{color:var(--color-home);font-weight:700;cursor:pointer}
+.undo .bar{position:absolute;left:14px;right:14px;bottom:6px;height:2px;border-radius:2px;
+  background:rgba(255,255,255,.08);overflow:hidden}
+.undo .bar i{display:block;height:100%;width:62%;background:rgba(10,132,255,.7)}
+
+/* ---------- context menu ---------- */
+.menu{width:210px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:6px;
+  box-shadow:0 16px 34px rgba(0,0,0,.45)}
+.mi{display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:6px;font-size:13px;color:var(--text-main)}
+.mi.hot{background:rgba(255,255,255,.05)}
+.mi.blue{color:var(--color-home)}
+.mi.folders{color:var(--color-folders)}
+.mi.danger{color:var(--color-danger)}
+.mi .chk{width:12px;text-align:center;color:var(--color-home);font-size:12px}
+.msep{height:1px;background:var(--border);margin:6px 4px}
+
+.side{display:flex;gap:34px;flex-wrap:wrap;margin-top:18px;align-items:flex-start}
+.side .cap{font-size:12px;color:var(--text-muted);margin-bottom:10px}
+.dockdemo{background:#0B0D12;border:1px solid var(--border);border-radius:16px;padding:22px 26px;
+  display:grid;place-items:center}
+.dockdemo .dock{position:static;transform:none;box-shadow:none}
+
+.anat{display:grid;grid-template-columns:270px 1fr;gap:26px;margin-top:18px;align-items:start}
+.anat ul{list-style:none;font-size:13px;color:var(--text-second);display:grid;gap:9px}
+.anat li b{color:var(--text-main);font-weight:650}
+.anat li span{display:inline-block;min-width:22px;color:var(--color-folders);font-weight:800;font-size:11px}
+
+.p1{background:linear-gradient(135deg,#5B4B8A,#2B2140)}
+.p2{background:linear-gradient(135deg,#1B4D3E,#0E2A22)}
+.p3{background:linear-gradient(135deg,#8A5B2B,#3A2413)}
+.p4{background:linear-gradient(135deg,#1F4068,#12233A)}
+.p5{background:linear-gradient(135deg,#7A2E4E,#33121F)}
+.p6{background:linear-gradient(160deg,#2C3440,#171B22)}
+.p7{background:linear-gradient(135deg,#2E6E8A,#12333F)}
+.p8{background:linear-gradient(135deg,#6E7A2E,#2B300F)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Home as a library</h1>
+<p class="lede">
+  Home is a grid built for many linked folders. In practice a person links one or two, once, and
+  never opens the list again — so the screen costs a click at every launch and says nothing that
+  changed. This is the answer: keep the grid, keep Home, shrink the dock, and change what Home
+  <i>holds</i>.
+</p>
+
+<h2>What is wrong now</h2>
+<div class="findings">
+  <div class="finding"><div class="n">01</div>
+    <h3>The grid is composed for a gallery</h3>
+    <p><code>GridCells.Adaptive</code> with <code>padding(top 20, start 40, end 40, bottom 120)</code>.
+    Two folders land as two tiles in the corner of an empty window — not minimal, unresolved.</p>
+    <div class="fix">Compose for what the screen holds: one row is centred, many rows fill.</div>
+  </div>
+  <div class="finding"><div class="n">02</div>
+    <h3>Linking has no affordance on the screen</h3>
+    <p>A <code>+</code> injected into the dock and a right-click on the background. Nothing on Home
+    says a folder can be added; the empty state is the words “No linked folders”.</p>
+    <div class="fix">A tile in the grid, and a folder dropped in from Explorer.</div>
+  </div>
+  <div class="finding"><div class="n">03</div>
+    <h3>Pinned exists and is invisible</h3>
+    <p><code>PinnedSession</code> already holds a folder <i>inside</i> a root plus the scroll position
+    you left it at. It is offered only in a hover popup in the dock, and never on Home.</p>
+    <div class="fix">Pinned is the other half of the library. It belongs on the screen.</div>
+  </div>
+  <div class="finding"><div class="n">04</div>
+    <h3>The dock has a destination that is not one</h3>
+    <p>“Library” lights up while you are in a folder, carries a badge, opens a hover popup of a
+    different set of folders — and clicking it does nothing at all.</p>
+    <div class="fix">Remove it. You are in a folder, never “in the library”.</div>
+  </div>
+</div>
+
+<h2>The proposal</h2>
+<div class="findings">
+  <div class="finding good"><div class="n">A</div>
+    <h3>Home is the library, not a list of shortcuts</h3>
+    <p>Two zones on one screen: the roots you linked, and the places you pinned inside them. Roots
+    are stable and few; pins change every week. The screen is worth opening because half of it
+    moves. Both zones reorder by drag.</p>
+  </div>
+  <div class="finding good"><div class="n">B</div>
+    <h3>“Open at launch” is a flag, not a position</h3>
+    <p>Set from the card's own menu and from a control on the card, shown as a badge, stored in
+    <code>settings.json</code>. Position means nothing anywhere, so dragging for looks can never
+    change what opens tomorrow.</p>
+  </div>
+  <div class="finding good"><div class="n">C</div>
+    <h3>Launch stays predictable</h3>
+    <p>Home opens unless a folder carries the flag. Either way the user set it and can see it.
+    Nothing is inferred from history.</p>
+  </div>
+  <div class="finding good"><div class="n">D</div>
+    <h3>The dock shrinks to four</h3>
+    <p>Link, Home, Search, Settings. Library goes; the folder list lives on Home, which is one
+    click away in the same dock. A small dock that tells the truth beats a full one that does not.</p>
+  </div>
+</div>
+
+<h2>The screen</h2>
+<div class="controls">
+  <div class="tg on" id="tgProp"><span class="dot"></span>Proposal</div>
+  <div class="seg" id="segN">
+    <span data-n="0">first run</span><span data-n="1">1</span><span class="sel" data-n="2">2</span><span data-n="7">7 folders</span>
+  </div>
+  <div class="tg on" id="tgPins"><span class="dot"></span>Has pins</div>
+  <span class="hint">The first toggle drops back to what the screen looks like today. The counts are
+  the point — watch the composition at first run, at one folder and at two.</span>
+</div>
+
+<div class="app few" id="app">
+  <header>
+    <div class="title-block">
+      <div class="scr-title">Home</div>
+      <div class="scr-count" id="count">2 linked folders</div>
+    </div>
+    <div class="spacer"></div>
+    <div class="win"><i>─</i><i>❑</i><i>✕</i></div>
+  </header>
+
+  <div class="view">
+    <div>
+      <div class="sec-label" id="rootsLabel">LINKED FOLDERS <span class="c" id="dragHint">· drag to reorder</span></div>
+      <div class="grid" id="grid">
+
+        <div class="card start" data-i="1">
+          <div class="stack"><div class="thumb">
+            <div class="cover p5"></div>
+            <div class="pill"><svg viewBox="0 0 10 10"><path d="M5 0l1.5 3.3L10 3.8l-2.6 2.4.7 3.6L5 8l-3.1 1.8.7-3.6L0 3.8l3.5-.5z"/></svg>OPENS ON LAUNCH</div>
+            <div class="scrim"></div>
+            <div class="label"><div class="t">Movies</div><div class="m">Folder · 128 items</div></div>
+          </div></div>
+        </div>
+
+        <div class="card" data-i="2">
+          <div class="stack"><div class="thumb">
+            <div class="cover p3"></div>
+            <div class="ghost" title="Open at launch"><svg viewBox="0 0 10 10"><path d="M5 0l1.5 3.3L10 3.8l-2.6 2.4.7 3.6L5 8l-3.1 1.8.7-3.6L0 3.8l3.5-.5z"/></svg></div>
+            <div class="scrim"></div>
+            <div class="label"><div class="t">Screenshots</div><div class="m">Folder · 549 items</div></div>
+          </div></div>
+        </div>
+
+        <div class="card" data-i="3">
+          <div class="stack"><div class="thumb">
+            <div class="cover p1"></div>
+            <div class="ghost"><svg viewBox="0 0 10 10"><path d="M5 0l1.5 3.3L10 3.8l-2.6 2.4.7 3.6L5 8l-3.1 1.8.7-3.6L0 3.8l3.5-.5z"/></svg></div>
+            <div class="scrim"></div>
+            <div class="label"><div class="t">Pictures</div><div class="m">Folder · 2 140 items</div></div>
+          </div></div>
+        </div>
+
+        <div class="card" data-i="4">
+          <div class="stack"><div class="thumb">
+            <div class="cover p7"></div>
+            <div class="ghost"><svg viewBox="0 0 10 10"><path d="M5 0l1.5 3.3L10 3.8l-2.6 2.4.7 3.6L5 8l-3.1 1.8.7-3.6L0 3.8l3.5-.5z"/></svg></div>
+            <div class="scrim"></div>
+            <div class="label"><div class="t">Heic</div><div class="m">Folder · 4 items</div></div>
+          </div></div>
+        </div>
+
+        <div class="card" data-i="5">
+          <div class="stack"><div class="thumb">
+            <div class="cover p2"></div>
+            <div class="ghost"><svg viewBox="0 0 10 10"><path d="M5 0l1.5 3.3L10 3.8l-2.6 2.4.7 3.6L5 8l-3.1 1.8.7-3.6L0 3.8l3.5-.5z"/></svg></div>
+            <div class="scrim"></div>
+            <div class="label"><div class="t">Videos</div><div class="m">Folder · 31 items</div></div>
+          </div></div>
+        </div>
+
+        <div class="card" data-i="6">
+          <div class="stack"><div class="thumb">
+            <div class="cover p8"></div>
+            <div class="ghost"><svg viewBox="0 0 10 10"><path d="M5 0l1.5 3.3L10 3.8l-2.6 2.4.7 3.6L5 8l-3.1 1.8.7-3.6L0 3.8l3.5-.5z"/></svg></div>
+            <div class="scrim"></div>
+            <div class="label"><div class="t">hdr-probe</div><div class="m">Folder · 6 items</div></div>
+          </div></div>
+        </div>
+
+        <div class="card" data-i="7">
+          <div class="stack"><div class="thumb">
+            <div class="cover p4"></div>
+            <div class="ghost"><svg viewBox="0 0 10 10"><path d="M5 0l1.5 3.3L10 3.8l-2.6 2.4.7 3.6L5 8l-3.1 1.8.7-3.6L0 3.8l3.5-.5z"/></svg></div>
+            <div class="scrim"></div>
+            <div class="label"><div class="t">References</div><div class="m">Folder · 88 items</div></div>
+          </div></div>
+        </div>
+
+        <div class="card add">
+          <div class="stack"><div class="thumb">
+            <div class="inner">
+              <div class="plusglyph">+</div>
+              <div class="cap">Link a folder</div>
+            </div>
+          </div></div>
+        </div>
+
+      </div>
+      <div class="firstline">…or drop one in from Explorer</div>
+
+      <div class="pins">
+        <div class="sec-label">PINNED <span class="c">· drag to reorder</span></div>
+        <div class="pinrow">
+          <div class="pin"><div class="thumb">
+            <div class="cover p6"></div><div class="scrim"></div>
+            <div class="label"><div class="t">Breaking Bad S03</div><div class="m">Movies / Series</div></div>
+          </div></div>
+          <div class="pin"><div class="thumb">
+            <div class="cover p2"></div><div class="scrim"></div>
+            <div class="label"><div class="t">Season 1</div><div class="m">Movies / Series / Andor</div></div>
+          </div></div>
+          <div class="pin"><div class="thumb">
+            <div class="cover p3"></div><div class="scrim"></div>
+            <div class="label"><div class="t">2026-09</div><div class="m">Screenshots</div></div>
+          </div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bar-scrim"></div>
+  <div class="dock">
+    <div class="di dsq" title="Link a folder"><span style="font-size:19px;font-weight:300">+</span></div>
+    <div class="dsep"></div>
+    <div class="di act">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z"/></svg>Home
+    </div>
+    <div class="di lib">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M3 6h6l2 2h10v11H3z"/></svg>Library
+    </div>
+    <div class="dsep"></div>
+    <div class="di dsq"><svg class="ic" viewBox="0 0 24 24"><path d="M10 2a8 8 0 105 14.3l5 5 1.4-1.4-5-5A8 8 0 0010 2zm0 2a6 6 0 110 12 6 6 0 010-12z"/></svg></div>
+    <div class="di dsq"><svg class="ic" viewBox="0 0 24 24"><path d="M12 8a4 4 0 100 8 4 4 0 000-8zm9 4l-2 1.7.5 2.6-2.5.9-1 2.5-2.6-.6L11 21l-1.7-2-2.6.6-1-2.5-2.5-.9.5-2.6L2 12l1.7-1.7-.5-2.6 2.5-.9 1-2.5 2.6.6L11 3l1.7 2 2.6-.6 1 2.5 2.5.9-.5 2.6z"/></svg></div>
+  </div>
+</div>
+<p class="note">
+  At first run the screen is one tile and one line. At one and two folders the library is centred and
+  finished-looking; at seven the same grid packs as it does today. The card itself did not change —
+  this is the screen around it.
+</p>
+
+<h2>Open at launch</h2>
+<div class="anat">
+  <div>
+    <div class="menu">
+      <div class="mi">Open</div>
+      <div class="mi blue hot"><span class="chk">✓</span>Open at launch</div>
+      <div class="mi folders">Pin to Home</div>
+      <div class="msep"></div>
+      <div class="mi danger">Unlink folder</div>
+    </div>
+    <div style="height:18px"></div>
+    <div class="card start" style="width:100%">
+      <div class="stack"><div class="thumb">
+        <div class="cover p5"></div>
+        <div class="pill"><svg viewBox="0 0 10 10"><path d="M5 0l1.5 3.3L10 3.8l-2.6 2.4.7 3.6L5 8l-3.1 1.8.7-3.6L0 3.8l3.5-.5z"/></svg>OPENS ON LAUNCH</div>
+        <div class="scrim"></div>
+        <div class="label"><div class="t">Movies</div><div class="m">Folder · 128 items</div></div>
+      </div></div>
+    </div>
+  </div>
+  <ul>
+    <li><span>1</span><b>A flag on the card, never a position.</b> An earlier draft made the first
+      grid cell mean “opens on launch”. It does not survive one folder — the only card is always
+      first — and it would make ordering for looks change tomorrow's launch silently.</li>
+    <li><span>2</span><b>Two ways in, one state.</b> The card's context menu carries a checked
+      <b>Open at launch</b>; the same badge, hollow, is the hover control in the card's corner.
+      Setting it on one card clears it everywhere else.</li>
+    <li><span>3</span><b>The badge is the receipt.</b> The screen says what will happen before it
+      happens, on the object it happens to.</li>
+    <li><span>4</span><b>It is a stored setting.</b> One path in <code>settings.json</code>, empty
+      by default. Empty means Home — no third state and no “remember last”.</li>
+    <li><span>5</span><b>Back still works.</b> Launching into a folder keeps Home beneath it in the
+      stack, exactly as <code>Woka.exe &lt;path&gt;</code> already does.</li>
+    <li><span>6</span><b>A folder that moved or died is ignored.</b> The path is checked at launch;
+      if it is gone, Home opens and the flag is dropped rather than nagging.</li>
+  </ul>
+</div>
+
+<h2>The dock shrinks</h2>
+<div class="side">
+  <div>
+    <div class="cap">Proposed — four items, all of them true</div>
+    <div class="dockdemo">
+      <div class="dock">
+        <div class="di dsq"><span style="font-size:19px;font-weight:300">+</span></div>
+        <div class="dsep"></div>
+        <div class="di act"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z"/></svg>Home</div>
+        <div class="dsep"></div>
+        <div class="di dsq"><svg class="ic" viewBox="0 0 24 24"><path d="M10 2a8 8 0 105 14.3l5 5 1.4-1.4-5-5A8 8 0 0010 2zm0 2a6 6 0 110 12 6 6 0 010-12z"/></svg></div>
+        <div class="di dsq"><svg class="ic" viewBox="0 0 24 24"><path d="M12 8a4 4 0 100 8 4 4 0 000-8zm9 4l-2 1.7.5 2.6-2.5.9-1 2.5-2.6-.6L11 21l-1.7-2-2.6.6-1-2.5-2.5-.9.5-2.6L2 12l1.7-1.7-.5-2.6 2.5-.9 1-2.5 2.6.6L11 3l1.7 2 2.6-.6 1 2.5 2.5.9-.5 2.6z"/></svg></div>
+      </div>
+    </div>
+  </div>
+  <div style="max-width:40ch">
+    <div class="cap">Why Library goes rather than gets fixed</div>
+    <p class="note" style="margin-top:0">
+      It lit up while you were in a folder, which said you were somewhere you cannot be. Its popup
+      listed a set of folders Home does not show. Its click did nothing. Once pinned folders are on
+      Home, the popup has nothing left that Home does not say better — and Home is one click away in
+      the same dock.
+    </p>
+    <p class="note">
+      What remains is deliberately small: the action that builds the library, the library, and the
+      two things that are not navigation at all. If the dock later earns a fifth item, it will be
+      because something needed a home — not because a row looked empty.
+    </p>
+  </div>
+</div>
+
+<h2>Linking a folder</h2>
+<div class="side">
+  <div style="flex:1;min-width:360px">
+    <div class="cap">Dropped in from Explorer — the gesture the paradigm is named after</div>
+    <div class="dropzone">
+      <div class="veil"></div>
+      <div class="msg">
+        <div class="big">Drop to link</div>
+        <div class="sm">D:\Movies</div>
+      </div>
+      <div class="cursor">🗀</div>
+    </div>
+  </div>
+  <div style="max-width:38ch">
+    <div class="cap">Three ways, one action</div>
+    <p class="note" style="margin-top:0">
+      <b>The tile</b> in the grid, last, always visible. <b>The dock's <code>+</code></b>, which is
+      where it already lives. <b>A folder dragged from Explorer</b> onto the window — accepted on
+      Home and inside a folder view alike.
+    </p>
+    <p class="note">
+      The third does not exist anywhere in the app today: there is no OS drag-and-drop in the code
+      at all, though <code>general_idea.md</code> names drag-and-drop a desktop pillar. Linking is
+      the one action where dragging is the obvious gesture, and it is the only one that works for a
+      person who never opens a context menu.
+    </p>
+    <p class="note">
+      Dropping a <i>file</i> rather than a folder is the quick-preview case and is not this: it
+      opens the viewer, and the folder is offered afterwards as it already is on launch.
+    </p>
+  </div>
+</div>
+
+<h2>Unlinking has to be undoable</h2>
+<div class="side">
+  <div>
+    <div class="cap">After the click — a few seconds, above the dock</div>
+    <div class="dockdemo" style="padding:34px 26px">
+      <div class="undo" style="position:relative">
+        <div class="t">Unlinked <b>Screenshots</b></div>
+        <div class="act">Undo</div>
+        <div class="bar"><i></i></div>
+      </div>
+    </div>
+  </div>
+  <div style="max-width:40ch">
+    <div class="cap">Why this is not cosmetic</div>
+    <p class="note" style="margin-top:0">
+      Unlink fires immediately from the card menu and from the <code>×</code> on hover, with no
+      confirmation. <code>withoutFolder</code> then sweeps everything under that path prefix:
+      <code>watchRecords</code>, <code>trackPrefsPerFile</code>, <code>trackPrefsPerFolder</code>.
+      One mis-click erases the watch history and the chosen audio and subtitle tracks for a whole
+      tree.
+    </p>
+    <p class="note">
+      A confirm dialog on every unlink punishes the common case to guard the rare one. A banner that
+      holds the removed records for a few seconds costs nothing when you meant it, and costs nothing
+      when you did not.
+    </p>
+  </div>
+</div>
+
+<h2>What this does not add</h2>
+<div class="findings">
+  <div class="finding"><div class="n">—</div>
+    <h3>No third list</h3>
+    <p>No recents. Linked folders and pinned places are the two lists that already exist; this
+    shows them, it does not invent another.</p>
+  </div>
+  <div class="finding"><div class="n">—</div>
+    <h3>No launch dropdown</h3>
+    <p>The flag lives on the card it affects and is stored like any other preference. A setting
+    three screens away from the object would be the same answer, further from the question.</p>
+  </div>
+  <div class="finding"><div class="n">—</div>
+    <h3>No inference</h3>
+    <p>Nothing opens because of what you did yesterday. Every launch is something the user placed
+    there on purpose.</p>
+  </div>
+</div>
+
+<hr>
+<p class="note">
+  Still open: whether Pinned sits above or below the roots once both are full, and whether a pinned
+  card needs more than the breadcrumb line to separate two folders both called
+  <code>Season 1</code>.
+</p>
+
+</div>
+
+<script>
+const app = document.getElementById('app');
+const grid = document.getElementById('grid');
+const count = document.getElementById('count');
+const dragHint = document.getElementById('dragHint');
+let n = 2, proposal = true, pins = true;
+
+function render(){
+  app.classList.toggle('today', !proposal);
+  app.classList.toggle('nopins', !pins);
+  app.classList.toggle('few', n <= 2);
+  app.classList.toggle('empty', n === 0);
+  grid.querySelectorAll('.card[data-i]').forEach(c => {
+    c.style.display = (+c.dataset.i <= n) ? '' : 'none';
+  });
+  count.textContent = n === 0 ? 'nothing linked yet'
+    : n + (n === 1 ? ' linked folder' : ' linked folders');
+  dragHint.style.display = n > 1 ? '' : 'none';
+  document.getElementById('rootsLabel').style.display = n === 0 ? 'none' : '';
+}
+
+document.getElementById('tgProp').addEventListener('click', e => {
+  proposal = !proposal;
+  e.currentTarget.classList.toggle('on', proposal);
+  e.currentTarget.lastChild.textContent = proposal ? 'Proposal' : 'Today';
+  render();
+});
+document.getElementById('tgPins').addEventListener('click', e => {
+  pins = !pins;
+  e.currentTarget.classList.toggle('on', pins);
+  e.currentTarget.lastChild.textContent = pins ? 'Has pins' : 'No pins yet';
+  render();
+});
+document.getElementById('segN').addEventListener('click', e => {
+  const t = e.target.closest('span[data-n]');
+  if (!t) return;
+  document.querySelectorAll('#segN span').forEach(s => s.classList.remove('sel'));
+  t.classList.add('sel');
+  n = +t.dataset.n;
+  render();
+});
+render();
+</script>
+</body>
+</html>
