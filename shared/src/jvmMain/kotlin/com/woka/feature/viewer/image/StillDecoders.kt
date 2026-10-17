@@ -51,8 +51,12 @@ internal interface StillDecoder {
     fun frame(file: File, frameIndex: Int): ImageBitmap
 }
 
-/** HEIF is an item collection in a `meta` box; only FFmpeg 7.1+ walks one. */
-private val FFMPEG_EXTENSIONS = setOf("heic", "heif", "avif")
+/**
+ * HEIF is an item collection in a `meta` box; only FFmpeg 7.1+ walks one. The rest
+ * are formats neither skia nor `ImageIO` reads, measured readable through FFmpeg by
+ * `FormatUnlockProbe` (2026-10-17).
+ */
+private val FFMPEG_EXTENSIONS = setOf("heic", "heif", "avif", "tga", "qoi", "jp2", "pcx", "ppm")
 
 /** skia has no TIFF codec, and FFmpeg's `tiff_pipe` reports 1 page for 3. */
 private val IMAGE_IO_EXTENSIONS = setOf("tif", "tiff")
@@ -75,6 +79,8 @@ internal fun stillDecoderFor(file: File): StillDecoder =
     when (file.extension.lowercase()) {
         in FFMPEG_EXTENSIONS -> FfmpegStillDecoder
         in IMAGE_IO_EXTENSIONS -> ImageIoStillDecoder
+        // A vector: skia's `SVGDOM` draws it, its `Codec` cannot (2026-10-17).
+        "svg" -> SvgStillDecoder
         else -> SkiaFrameDecoder
     }
 

@@ -14,10 +14,22 @@ import java.io.File
 enum class MediaKind { Image, Video }
 
 private val IMAGE_EXTENSIONS = setOf(
-    "jpg", "jpeg", "png", "webp", "bmp", "gif", "heic", "heif", "avif", "tif", "tiff"
+    "jpg", "jpeg", "png", "webp", "bmp", "gif", "heic", "heif", "avif", "tif", "tiff", "svg",
+    "tga", "qoi", "jp2", "pcx", "ppm"
 )
 
-private val VIDEO_EXTENSIONS = setOf("mp4", "mkv", "avi", "mov", "webm")
+/**
+ * The second half of each list was added on 2026-10-17, from `FormatUnlockProbe`:
+ * the bundled FFmpeg wrote a sample of each and read it back. `ogv` stayed out because
+ * the bundle has no Theora encoder to make a sample with, so it went unmeasured;
+ * `ts` stayed out because it is also TypeScript's extension, and a folder of code
+ * would fill with broken video tiles. `mpeg` and `mts` are `mpg`'s and `m2ts`'s
+ * containers under another name.
+ */
+private val VIDEO_EXTENSIONS = setOf(
+    "mp4", "mkv", "avi", "mov", "webm",
+    "m4v", "3gp", "mpg", "mpeg", "m2ts", "mts", "wmv", "flv"
+)
 
 /**
  * Formats **Coil** cannot read, and the grid draws with `AsyncImage`.
@@ -30,7 +42,8 @@ private val VIDEO_EXTENSIONS = setOf("mp4", "mkv", "avi", "mov", "webm")
  *
  * `.gif` and `.webp` are absent because Coil reads both, animation included.
  */
-private val COIL_BLIND_EXTENSIONS = setOf("heic", "heif", "avif", "tif", "tiff")
+private val COIL_BLIND_EXTENSIONS =
+    setOf("heic", "heif", "avif", "tif", "tiff", "svg", "tga", "qoi", "jp2", "pcx", "ppm")
 
 fun File.mediaKind(): MediaKind? = when (extension.lowercase()) {
     in IMAGE_EXTENSIONS -> MediaKind.Image

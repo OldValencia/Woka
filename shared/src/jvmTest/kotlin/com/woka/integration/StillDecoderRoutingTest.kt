@@ -6,6 +6,7 @@ import com.woka.core.data.mediaKind
 import com.woka.feature.viewer.image.FfmpegStillDecoder
 import com.woka.feature.viewer.image.ImageIoStillDecoder
 import com.woka.feature.viewer.image.SkiaFrameDecoder
+import com.woka.feature.viewer.image.SvgStillDecoder
 import com.woka.feature.viewer.image.StillDecoder
 import com.woka.feature.viewer.image.stillDecoderFor
 import java.io.File
@@ -38,7 +39,13 @@ class StillDecoderRoutingTest {
         "png" to SkiaFrameDecoder,
         "bmp" to SkiaFrameDecoder,
         "gif" to SkiaFrameDecoder,
-        "webp" to SkiaFrameDecoder
+        "webp" to SkiaFrameDecoder,
+        "svg" to SvgStillDecoder,
+        "tga" to FfmpegStillDecoder,
+        "qoi" to FfmpegStillDecoder,
+        "jp2" to FfmpegStillDecoder,
+        "pcx" to FfmpegStillDecoder,
+        "ppm" to FfmpegStillDecoder
     )
 
     @Test
