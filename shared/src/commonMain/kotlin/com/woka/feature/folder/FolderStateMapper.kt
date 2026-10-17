@@ -13,7 +13,14 @@ data class FolderState(
     val showFolders: Boolean = true,
     val mediaFilter: String = "All",
     val isSelectMode: Boolean = false,
-    val selectedPaths: Set<String> = emptySet()
+    val selectedPaths: Set<String> = emptySet(),
+    /**
+     * Whether the media draws as the photo mosaic (SIDE-004). Decided on the folder
+     * **before** the Photos/Videos filter: filtering a photo folder down to its two
+     * clips used to flip it to cards, the layout changing under a control that only
+     * meant to narrow what is shown (2026-10-17).
+     */
+    val isMosaic: Boolean = false
 )
 
 /**
@@ -87,6 +94,7 @@ internal fun buildFolderState(
         showFolders = settings.showFolders,
         mediaFilter = settings.mediaFilter,
         isSelectMode = isSelectMode,
-        selectedPaths = selectedPaths
+        selectedPaths = selectedPaths,
+        isMosaic = visibleItems.isMostlyPhotos()
     )
 }

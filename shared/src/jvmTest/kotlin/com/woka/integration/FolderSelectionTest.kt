@@ -44,6 +44,20 @@ class FolderSelectionTest {
         }
     }
 
+    /** The "0 selected" bar left behind after unticking the only tile (2026-10-17). */
+    @Test
+    fun `deselecting the last item leaves select mode`() {
+        onFolder { viewModel, dir ->
+            val file = dir.media("a.jpg")
+            viewModel.refresh()
+            viewModel.awaitNames(listOf("a.jpg"))
+            viewModel.toggleSelection(file.absolutePath)
+            awaitTrue("select mode to come on") { viewModel.state.value.isSelectMode }
+            viewModel.toggleSelection(file.absolutePath)
+            awaitTrue("select mode to go off") { !viewModel.state.value.isSelectMode }
+        }
+    }
+
     @Test
     fun `leaving select mode clears the selection`() {
         onFolder { viewModel, dir ->

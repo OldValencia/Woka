@@ -94,6 +94,11 @@ class FolderViewModel(
             lastSelectedPath = path
         }
         _selectedPaths.value = current
+        // Deselecting the last item leaves select mode (2026-10-17). It used to stay on,
+        // which made sense while a Select button entered it; since the tile's check
+        // circle and a modifier-click are the ways in, an empty selection is the way
+        // out, and a "0 selected" bar left behind is a mode nobody asked to be in.
+        if (current.isEmpty()) _isSelectMode.value = false
     }
 
     fun selectRange(toPath: String) {

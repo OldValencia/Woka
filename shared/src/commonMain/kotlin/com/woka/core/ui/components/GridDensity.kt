@@ -21,6 +21,18 @@ val ViewLayout.gridColumnSize: Dp
         ViewLayout.BigGrid -> 400.dp
     }
 
+/**
+ * How wide a mosaic tile is at each density (SIDE-004): a photo folder's square
+ * tiles, smaller than a card at the same step because a tile carries no caption.
+ * The mockup's size slider ran 90–260; these sit inside it.
+ */
+val ViewLayout.tileSize: Dp
+    get() = when (this) {
+        ViewLayout.SmallGrid -> 96.dp
+        ViewLayout.Grid -> 150.dp
+        ViewLayout.BigGrid -> 240.dp
+    }
+
 /** One step bigger, and one step smaller. Both ends of the ladder are stops. */
 fun ViewLayout.zoomedIn(): ViewLayout = when (this) {
     ViewLayout.SmallGrid -> ViewLayout.Grid

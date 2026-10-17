@@ -6,10 +6,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import com.woka.core.ui.components.tileSize
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -42,7 +42,7 @@ fun FolderGrid(
         if (highlightFile != null && state.items.isNotEmpty()) {
             val index = state.items.indexOfFirst { it.file.name == highlightFile }
             if (index != -1) {
-                gridState.animateScrollToItem(index)
+                gridState.animateScrollToItem(state.items.gridIndexOf(index))
             }
         }
     }
@@ -94,15 +94,19 @@ fun FolderGrid(
                 } else false
             }
     ) {
+        // The mosaic packs tiles 3.dp apart; cards keep their 28.dp. The bottom inset
+        // is the selection bar's, now that no dock sits there (SIDE-004).
+        val mosaic = state.isMosaic
+        val gap = if (mosaic) 3.dp else 28.dp
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(zoom.columnSize),
+            columns = GridCells.Adaptive(if (mosaic) zoom.layout.tileSize else zoom.columnSize),
             state = gridState,
             modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.spacedBy(28.dp),
-            verticalArrangement = Arrangement.spacedBy(28.dp),
-            contentPadding = PaddingValues(top = 20.dp, start = 40.dp, end = 40.dp, bottom = 120.dp)
+            horizontalArrangement = Arrangement.spacedBy(gap),
+            verticalArrangement = Arrangement.spacedBy(gap),
+            contentPadding = PaddingValues(top = 20.dp, start = 40.dp, end = 40.dp, bottom = 80.dp)
         ) {
-            items(state.items, key = { it.file.absolutePath }) { item ->
+            folderGridItems(state.items, mosaic, zoom.layout) { item, tile ->
                 FolderGridItem(
                     item = item,
                     state = state,
@@ -113,14 +117,15 @@ fun FolderGrid(
                     onNavigateToFolder = onNavigateToFolder,
                     onOpenMedia = onOpenMedia,
                     onEditMedia = onEditMedia,
-                    highlightFile = highlightFile
+                    highlightFile = highlightFile,
+                    tile = tile
                 )
             }
         }
 
         VerticalScrollbar(
             modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight()
-                .padding(end = 4.dp, top = 20.dp, bottom = 120.dp),
+                .padding(end = 4.dp, top = 20.dp, bottom = 80.dp),
             adapter = rememberScrollbarAdapter(gridState)
         )
 

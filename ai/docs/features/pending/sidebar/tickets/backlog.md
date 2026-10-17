@@ -4,18 +4,6 @@ Four blocks, each one sitting that ends with something on screen. A block is pro
 `tickets/<ID>-<slug>.md` when it is next, and re-cut against the tree as it is then (`tickets.md` §4).
 There are no file paths here on purpose.
 
-### SIDE-004 — Two grids, and search in the content
-
-A folder whose items are mostly video draws 16:9 titled cards, with the duration and the watched
-bar. Anything else draws a square mosaic with 3 px gaps and no captions, with the title and an
-item's details on hover. Sub-folders draw first, as the mockup's small mosaic cards.
-
-Search results replace the grid instead of opening an overlay. They come with a This Folder / All
-Folders scope, the match highlighted and the parent path under each result; Esc returns to the
-folder.
-
-**Depends on.** SIDE-003.
-
 ### SIDE-005 — The keyboard drives the grid
 
 One focused item in the grid, ringed in `accent`:
@@ -63,3 +51,14 @@ pattern.
 It gets an undo banner for a few seconds that restores all of it, not only the link.
 
 **Depends on.** SIDE-001; it is independent of 002–006.
+
+### SIDE-008 — Search in the content
+
+The toolbar's search box takes text. Results replace the grid rather than opening an overlay: a
+This Folder / All Folders scope, the match highlighted in each name, the parent path under each
+result. Esc, or clearing the box, returns to the folder. The overlay and its files are deleted
+once nothing opens them. Split out of SIDE-004 on 2026-10-17, because the photo mosaic and search
+are two outcomes, each a sitting.
+
+**Depends on.** SIDE-004 — results draw as its tiles.
+

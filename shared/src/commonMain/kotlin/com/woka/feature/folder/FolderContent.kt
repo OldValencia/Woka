@@ -57,7 +57,7 @@ fun FolderContent(
         if (scrollToMediaId != null && state.items.isNotEmpty()) {
             val index = state.items.indexOfFirst { it.file.absolutePath == scrollToMediaId }
             if (index >= 0) {
-                gridState.scrollToItem(index)
+                gridState.scrollToItem(state.items.gridIndexOf(index))
             }
             onScrollToMediaIdConsumed()
         }

@@ -113,7 +113,7 @@ viewer, as a double-click from Explorer already does.
 
 ## Status
 
-Seven tickets, each one sitting and one green build that ends with something on screen. Only the
+Eight tickets, each one sitting and one green build that ends with something on screen. Only the
 next one is specified. The rest are blocks in `tickets/backlog.md`.
 
 | ID | Ticket | Status |
@@ -121,10 +121,11 @@ next one is specified. The rest are blocks in `tickets/backlog.md`.
 | [SIDE-001](tickets/SIDE-001-the-sidebar.md) | The sidebar: the folder tree, Pinned, Link Folder, and the dock's Library item gone | **done 2026-10-17** |
 | [SIDE-002](tickets/SIDE-002-no-home.md) | No Home: launch restores the last folder, Welcome for a first run, Back and Forward | **done 2026-10-17** |
 | [SIDE-003](tickets/SIDE-003-the-toolbar.md) | The toolbar replaces the dock and history goes: filter, sort, size, search, settings, selection bar | **done 2026-10-17** |
-| SIDE-004 | Two grids, chosen by content, a continuous size, and search results in the content | backlog |
-| SIDE-005 | The keyboard drives the grid: focus, Quick Look, Info | backlog |
+| [SIDE-004](tickets/SIDE-004-the-photo-mosaic.md) | The photo mosaic: a photo folder as square tiles, sub-folders first, a check circle on every tile | **done 2026-10-17** |
+| SIDE-005 | The keyboard drives the grid: focus, Quick Look, Info | **← NEXT** |
 | SIDE-006 | Hovering a video plays five excerpts | backlog |
 | SIDE-007 | The disk: the open folder updates itself, a folder dropped in links, an unlink can be undone | backlog |
+| SIDE-008 | Search in the content: the toolbar box takes text, results replace the grid | backlog |
 
 ## Decisions
 

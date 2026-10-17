@@ -23,7 +23,8 @@ internal fun FolderGridItem(
     onNavigateToFolder: (String) -> Unit,
     onOpenMedia: (String) -> Unit,
     onEditMedia: (String) -> Unit,
-    highlightFile: String?
+    highlightFile: String?,
+    tile: Boolean = false
 ) {
     val target = item.file.absolutePath
     val isDir = item is MediaItem.Folder
@@ -58,6 +59,8 @@ internal fun FolderGridItem(
             )
         },
         watch = watch,
-        dimWatched = marks.dimStarted
+        dimWatched = marks.dimStarted,
+        tile = tile,
+        onCheck = { viewModel.toggleSelection(target) }
     )
 }

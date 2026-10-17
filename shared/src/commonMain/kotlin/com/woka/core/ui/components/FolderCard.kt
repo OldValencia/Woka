@@ -13,6 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerIcon
@@ -31,6 +32,10 @@ import kotlinx.coroutines.delay
  * hover, modifier-clicks, the right-click menu and the post-navigation highlight;
  * what it draws is [FolderCardBody] and what it draws *from* is
  * [rememberFolderCardData].
+ *
+ * [tile] draws the photo mosaic's square instead of the card (SIDE-004): the same
+ * interaction around a different body, so a tile opens, selects and offers its menu
+ * exactly as a card does. [onCheck] adds the corner circle that selects on its own.
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -48,7 +53,9 @@ fun FolderCard(
     // itself would recompose every tile in the folder on any settings change at
     // all. The grid reads the map once and hands each card its own row.
     watch: WatchRecord? = null,
-    dimWatched: Boolean = false
+    dimWatched: Boolean = false,
+    tile: Boolean = false,
+    onCheck: (() -> Unit)? = null
 ) {
     val data = rememberFolderCardData(path)
 
@@ -78,7 +85,8 @@ fun FolderCard(
 
     Box(
         modifier = modifier
-            .graphicsLayer { translationY = style.translateY }
+            // A tile does not lift: in a 3.dp mosaic it would overlap its neighbours.
+            .graphicsLayer { translationY = if (tile) 0f else style.translateY }
             .pointerHoverIcon(PointerIcon.Hand)
             .hoverable(interactionSource)
             .onPointerEvent(PointerEventType.Press) { event ->
@@ -101,15 +109,22 @@ fun FolderCard(
                 }
             }
     ) {
-        FolderCardBody(
-            data = data,
-            style = style,
-            showTitle = showTitle,
-            isHovered = isHovered,
-            onRemove = onRemove,
-            watch = watch,
-            dimWatched = dimWatched
-        )
+        if (tile) {
+            FolderCardTileBody(data, isHovered, isSelected, watch, dimWatched)
+        } else {
+            FolderCardBody(
+                data = data,
+                style = style,
+                showTitle = showTitle,
+                isHovered = isHovered,
+                onRemove = onRemove,
+                watch = watch,
+                dimWatched = dimWatched
+            )
+        }
+        if (onCheck != null && (isHovered || isSelected)) {
+            FolderCardCheck(isSelected, onCheck, Modifier.align(Alignment.TopEnd))
+        }
 
         if (showContextMenu && contextMenuContent != null) {
             FolderCardContextMenu(

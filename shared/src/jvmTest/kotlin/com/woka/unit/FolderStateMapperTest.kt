@@ -105,6 +105,12 @@ class FolderStateMapperTest {
     }
 
     @Test
+    fun `the layout is decided before the filter narrows the folder`() {
+        val state = buildFolderState(items, settings(mediaFilter = "Videos"), false, emptySet())
+        assertTrue(state.isMosaic, "two photos and a clip stay an album with only the clip shown")
+    }
+
+    @Test
     fun `the settings values are carried into the state verbatim`() {
         val state = buildFolderState(items, settings(SortType.NameDesc, "Videos"), true, setOf("x"))
         assertEquals(SortType.NameDesc, state.sort)
