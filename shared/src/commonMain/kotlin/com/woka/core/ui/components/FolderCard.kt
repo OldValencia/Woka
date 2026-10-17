@@ -13,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -78,6 +79,9 @@ fun FolderCard(
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
     LaunchedEffect(isHovered) { onHoverChange?.invoke(isHovered) }
+    // A card scrolled away under a still pointer gets no exit event, so it says so
+    // on its way out of composition rather than staying "hovered" forever.
+    DisposableEffect(Unit) { onDispose { onHoverChange?.invoke(false) } }
 
     val style = rememberFolderCardStyle(
         isHovered = isHovered,

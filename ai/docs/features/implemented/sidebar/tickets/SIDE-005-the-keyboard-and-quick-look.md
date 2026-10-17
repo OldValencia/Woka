@@ -119,3 +119,12 @@ something half-built here.
   caller had been the bar's own Select All. It enters select mode now, and `FolderSelectionTest`
   asserts it. The build is green.
 - 2026-10-17: the author confirmed the fix and asked for the commit.
+- 2026-10-17, after shipping, reported from the running app: "selected a picture, pressed Space,
+  the preview showed a different one". Three faults could each cause that, and all three are fixed:
+  - Space preferred the hovered tile, which in a dense mosaic is nearly always another tile than
+    the one selected. It now previews the focused item, and the hovered one only when nothing in
+    the list is focused.
+  - Selecting by the check circle or a modifier-click did not move the focus. It does now.
+  - A tile scrolled away under a still pointer stayed "hovered". It clears itself on leaving
+    composition.
+

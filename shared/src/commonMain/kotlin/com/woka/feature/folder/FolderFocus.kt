@@ -14,8 +14,8 @@ import androidx.compose.runtime.setValue
  *
  * - [focused] is the keyboard's item: what Enter opens and the arrows move from.
  *   A click on a tile sets it, and so does the viewer's last file on its way out.
- * - [hovered] is the pointer's item, so Space previews what is under the cursor —
- *   the gesture Quick Look is named for — before it falls back to [focused].
+ * - [hovered] is the pointer's item, which Space previews only when nothing is
+ *   focused. A click, a selection and the arrows all set [focused].
  * - [quickLook] is whether the preview is up; it shows [focused].
  */
 @Stable

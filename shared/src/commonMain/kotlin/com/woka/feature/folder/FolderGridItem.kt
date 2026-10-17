@@ -47,7 +47,11 @@ internal fun FolderGridItem(
         showTitle = state.showTitles,
         isSelected = state.selectedPaths.contains(target),
         isHighlighted = highlightFile == item.file.name,
+        // Selecting an item focuses it too (2026-10-17): Space previews the focused
+        // item, and a selection made by the circle or a modifier-click left the focus
+        // on whatever was clicked before, so Quick Look showed some other picture.
         onModifierClick = { isAlt, isShift ->
+            focus.focused = target
             if (isShift) viewModel.selectRange(target) else if (isAlt) viewModel.toggleSelection(target)
         },
         contextMenuContent = { dismiss ->
@@ -66,7 +70,10 @@ internal fun FolderGridItem(
         watch = watch,
         dimWatched = marks.dimStarted,
         tile = tile,
-        onCheck = { viewModel.toggleSelection(target) },
+        onCheck = {
+            focus.focused = target
+            viewModel.toggleSelection(target)
+        },
         isFocused = focus.focused == target,
         onHoverChange = { over ->
             if (over) focus.hovered = target else if (focus.hovered == target) focus.hovered = null

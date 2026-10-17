@@ -90,8 +90,12 @@ internal fun folderKey(event: KeyEvent, ctx: FolderKeyContext): Boolean {
             if (ctx.focus.quickLook) {
                 ctx.focus.quickLook = false
             } else {
-                val target = ctx.focus.hovered
-                    ?: ctx.focus.focused
+                // The focused item first, the pointer's only when nothing is focused
+                // (2026-10-17). Pointer-first previewed whatever tile the cursor
+                // happened to rest on — in a dense mosaic, nearly always one other
+                // than the picture just selected.
+                val target = items.getOrNull(current)?.file?.absolutePath
+                    ?: ctx.focus.hovered
                     ?: items.firstOrNull()?.file?.absolutePath
                     ?: return false
                 ctx.focus.focused = target
