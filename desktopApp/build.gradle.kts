@@ -33,7 +33,7 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Woka"
             packageVersion = "1.0.0"
-            description = "Minimalist desktop media viewer & editor"
+            description = "Woka"
             copyright = "Copyright 2026 OldValencia"
             vendor = "OldValencia"
             licenseFile.set(project.file("../LICENSE"))
