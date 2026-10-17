@@ -10,6 +10,10 @@ import androidx.compose.ui.focus.FocusRequester
 import com.woka.app.AppDependencies
 import com.woka.core.data.PinnedSession
 import com.woka.core.data.ViewLayout
+import com.woka.app.shell.sidebar.samePath
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun FolderContent(
@@ -29,7 +33,10 @@ fun FolderContent(
     val settingsRepo = remember { AppDependencies.settingsRepository }
     val settings by settingsRepo.settings.collectAsState()
     val isPinned = settings.pinnedSessions.any { it.path == path }
+    // A pin keeps its own scroll; otherwise the place the last session left off, when
+    // this is that folder — which is what a launch restores (SIDE-002).
     val currentSession = settings.pinnedSessions.find { it.path == path }
+        ?: settings.lastSession?.takeIf { samePath(it.path, path) }
 
     val gridState = rememberLazyGridState(
         initialFirstVisibleItemIndex = currentSession?.scrollIndex ?: 0,
@@ -48,6 +55,18 @@ fun FolderContent(
                 )
             }
         }
+    }
+
+    LaunchedEffect(path) {
+        // Written as the scroll settles, never at exit: closing is not a moment the
+        // app can rely on, and `SettingsStore` flushes the last pending write on close.
+        // The first emission writes the arrival itself. Cancelled when this folder
+        // leaves composition, so an outgoing folder never overwrites the incoming one.
+        snapshotFlow { gridState.firstVisibleItemIndex to gridState.firstVisibleItemScrollOffset }
+            .collectLatest { (index, offset) ->
+                delay(500.milliseconds)
+                settingsRepo.setLastSession(PinnedSession(path, index, offset))
+            }
     }
 
     val zoom = rememberFolderZoom(
@@ -81,8 +100,8 @@ fun FolderContent(
             gridScrollOffset = gridState.firstVisibleItemScrollOffset,
             viewModel = viewModel,
             settingsRepo = settingsRepo,
-            // `linkedFolders` is what Home lists; `pinnedSessions` above is the
-            // Library's own concept and does not answer this question.
+            // `linkedFolders` is what the sidebar's Folders lists; `pinnedSessions`
+            // above is the Pinned section and does not answer this question.
             showPinOffer = offerPin && path !in settings.linkedFolders,
             onPinOfferResolved = onPinOfferResolved
         )

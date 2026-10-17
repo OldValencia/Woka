@@ -1,27 +1,8 @@
 # Sidebar — backlog
 
-Six blocks, each one sitting that ends with something on screen. A block is promoted to
+Five blocks, each one sitting that ends with something on screen. A block is promoted to
 `tickets/<ID>-<slug>.md` when it is next, and re-cut against the tree as it is then (`tickets.md` §4).
 There are no file paths here on purpose.
-
-### SIDE-002 — No Home
-
-Delete `Screen.Home`, the home feature and its view model, and the dock's Home item.
-
-**Launch.** The stack's root becomes the folder open at quit, at its scroll. That is one stored
-session record, written as the top folder changes and as its scroll settles, never at exit. A record
-that no longer resolves falls back to the first linked folder, then to a new `Screen.Welcome`.
-
-**Welcome.** The first-run drop target from the mockup, with `Link Folder…` lit in the sidebar.
-
-**Back and Forward.** The router gains Forward: Back pushes what it pops, and any new navigation
-clears it.
-
-**Re-pointed and re-asserted.** Unlinking the open root goes to the next root or to Welcome. The
-launch-route tests are re-asserted row by row against the new root. The pin offer for a folder
-launched from Explorer says "Link", not "Pin to Home".
-
-**Depends on.** SIDE-001.
 
 ### SIDE-003 — The toolbar replaces the dock
 

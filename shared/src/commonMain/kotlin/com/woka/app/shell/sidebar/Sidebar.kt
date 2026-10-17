@@ -30,6 +30,7 @@ import com.woka.core.data.PinnedSession
 import com.woka.core.ui.theme.Theme
 import com.woka.core.utils.openDirectoryPicker
 import kotlinx.coroutines.launch
+import java.io.File
 
 /**
  * The window's left column: the linked folders as a tree, the pinned folders under
@@ -66,12 +67,17 @@ fun Sidebar(
             pin = { path -> settingsRepo.addPinnedSession(PinnedSession(path)) },
             unpin = { path -> settingsRepo.removePinnedSession(path) },
             unlink = { root ->
-                // What Home's card did (`HomeViewModel.removeLinkedFolder`), plus the
-                // one thing Home never had to: the folder on screen may be inside it.
+                // What Home's card did, plus the one thing Home never had to: the
+                // folder on screen may be inside it, and then the window moves to
+                // the next root that still exists, or to Welcome (SIDE-002).
                 settingsRepo.removeLinkedFolder(root)
                 settingsRepo.removePinnedSession(root)
                 val open = current
-                if (open != null && isWithin(root, open)) router.start(listOf(Screen.Home))
+                if (open != null && isWithin(root, open)) {
+                    val next = settingsRepo.settings.value.linkedFolders
+                        .firstOrNull { File(it).isDirectory }
+                    router.start(listOf(next?.let { Screen.Folder(it) } ?: Screen.Welcome))
+                }
             },
             menu = { request -> menu = request }
         )
@@ -90,7 +96,7 @@ fun Sidebar(
                 SidebarFolders(linked, tree, current, menu, pinned, actions)
                 SidebarPinned(pinned, linked, current, menu, actions)
             }
-            SidebarFoot(onLink = {
+            SidebarFoot(prominent = linked.isEmpty(), onLink = {
                 val path = openDirectoryPicker("Link folder")
                 if (path != null) {
                     settingsRepo.addLinkedFolder(path)

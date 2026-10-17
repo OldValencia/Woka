@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -43,6 +44,10 @@ internal fun SidebarFolders(
     val children by tree.children.collectAsState()
 
     SectionLabel("Folders")
+    if (linked.isEmpty()) {
+        RowLabel("Nothing linked yet", Modifier.padding(SidebarTokens.RowPadding), Theme.colors.textTertiary)
+        return
+    }
     val level = TreeLevel(expanded, children, current, menu, pinned, actions)
     level.Rows(roots, depth = 0)
 }
@@ -117,15 +122,25 @@ internal fun SidebarPinned(
     }
 }
 
-/** `.side-foot`: the one way in that is always visible, behind a hairline. */
+/**
+ * `.side-foot`: the one way in that is always visible, behind a hairline. While
+ * nothing is linked it is [prominent] — filled with the accent, as the mockup's
+ * first run draws it — so the sidebar and the Welcome card point at the same act.
+ */
 @Composable
-internal fun SidebarFoot(onLink: () -> Unit) {
+internal fun SidebarFoot(prominent: Boolean, onLink: () -> Unit) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Theme.colors.border))
         Box(modifier = Modifier.padding(SidebarTokens.ListInset)) {
-            SidebarRowFrame(false, SidebarTokens.RowHeight, true, onLink, onSecondaryClick = {}) {
-                RowIcon(selected = false, tint = Theme.colors.textSecondary, icon = Icons.Static.Add)
-                RowLabel("Link Folder…", Modifier.weight(1f), Theme.colors.textSecondary)
+            val tone = if (prominent) Theme.colors.onAccent else Theme.colors.textSecondary
+            val fill = if (!prominent) Modifier else Modifier.background(
+                Theme.colors.accent, RoundedCornerShape(SidebarTokens.RowRadius)
+            )
+            Box(modifier = fill) {
+                SidebarRowFrame(false, SidebarTokens.RowHeight, true, onLink, onSecondaryClick = {}) {
+                    RowIcon(selected = false, tint = tone, icon = Icons.Static.Add)
+                    RowLabel("Link Folder…", Modifier.weight(1f), tone)
+                }
             }
         }
     }

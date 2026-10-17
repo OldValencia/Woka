@@ -36,6 +36,7 @@ class WokaSettingsTest {
             theme = "Dark",
             mediaViewerCarouselMode = CarouselVisibility.ALWAYS_ON,
             pinnedSessions = listOf(PinnedSession("D:/Films", 12, 40)),
+            lastSession = PinnedSession("D:/Films/Series", 3, 8),
             scalePreset = ScalePreset.Fill,
             defaultZoomPercent = 175,
             mediaVolume = 0.42f,

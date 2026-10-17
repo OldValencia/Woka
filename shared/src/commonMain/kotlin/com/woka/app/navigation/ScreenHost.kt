@@ -13,7 +13,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.IntOffset
 import com.woka.feature.folder.FolderScreen
-import com.woka.feature.home.HomeScreen
+import com.woka.feature.welcome.WelcomeScreen
 
 private const val TRANSITION_MS = 220
 
@@ -53,7 +53,7 @@ fun ScreenHost(
         }
     ) { screen ->
         when (screen) {
-            is Screen.Home -> HomeScreen(onNavigateToFolder = onNavigateToFolder)
+            is Screen.Welcome -> WelcomeScreen()
             is Screen.Folder -> FolderScreen(
                 path = screen.path,
                 highlightFile = screen.highlightFile,

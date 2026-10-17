@@ -14,7 +14,6 @@ import com.woka.core.data.SettingsRepository
 import com.woka.app.navigation.Router
 import com.woka.app.navigation.Screen
 import com.woka.app.navigation.ScreenHost
-import com.woka.app.shell.DockTab
 import com.woka.app.shell.MainShell
 import com.woka.app.shell.StatusBanners
 import com.woka.feature.search.SearchOverlay
@@ -53,7 +52,8 @@ fun App(
 
     var isSettingsOpen by remember { mutableStateOf(false) }
     val stack by router.stack.collectAsState()
-    val currentScreen = stack.lastOrNull() ?: Screen.Home
+    val forward by router.forward.collectAsState()
+    val currentScreen = stack.lastOrNull() ?: Screen.Welcome
 
     ThumbnailHousekeeping()
 
@@ -66,19 +66,12 @@ fun App(
                 .border(1.dp, Theme.colors.border, RoundedCornerShape(12.dp))
         ) {
             val currentPath = (currentScreen as? Screen.Folder)?.path
-            val activeTab = if (currentScreen is Screen.Home) DockTab.Home else null
 
             var isSearchOpen by remember { mutableStateOf(false) }
 
             MainShell(
                 topBarArea = topBarArea,
                 currentPath = currentPath,
-                activeTab = activeTab,
-                onTabSelected = { tab -> 
-                    if (tab == DockTab.Home) {
-                        router.popTo(Screen.Home)
-                    }
-                },
                 onCloseWindow = onCloseWindow,
                 onMinimizeWindow = onMinimizeWindow,
                 onMaximizeWindow = onMaximizeWindow,
@@ -86,6 +79,7 @@ fun App(
                 onOpenSettings = { isSettingsOpen = true },
                 onOpenSearch = { isSearchOpen = true },
                 onNavigateBack = if (stack.size > 1) { { router.pop() } } else null,
+                onNavigateForward = if (forward.isNotEmpty()) { { router.goForward() } } else null,
                 onBreadcrumbClick = { path -> router.navigateTo(Screen.Folder(path)) },
                 linkedFolders = linkedFolders
             ) {

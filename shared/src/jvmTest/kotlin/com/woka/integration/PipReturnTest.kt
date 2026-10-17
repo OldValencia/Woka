@@ -42,7 +42,7 @@ class PipReturnTest {
     fun after() {
         drainPresence()
         PipManager.closePip()
-        router.popTo(Screen.Home)
+        router.start(listOf(Screen.Welcome))
     }
 
     private fun drainPresence() {

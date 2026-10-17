@@ -17,7 +17,7 @@ import com.woka.feature.library.AccessoryPill
 
 /**
  * The offer the roadmap's "Direct OS Launch Behavior" asks for: a folder reached by
- * launching `Woka.exe <path>` is not on Home, so once the viewer is closed there is
+ * launching `Woka.exe <path>` is not in the sidebar, so once the viewer is closed there is
  * nothing pointing back to it.
  *
  * It takes the dock's top accessory slot rather than a banner over the grid — the
@@ -36,7 +36,7 @@ fun FolderPinPrompt(
         verticalAlignment = Alignment.CenterVertically
     ) {
         BasicText(
-            text = "Pin \"$folderName\" to Home?",
+            text = "Link \"$folderName\"?",
             style = TextStyle(
                 color = Theme.colors.textSecondary,
                 fontSize = 13.sp,
@@ -44,7 +44,7 @@ fun FolderPinPrompt(
             ),
             modifier = Modifier.padding(horizontal = 12.dp)
         )
-        AccessoryPill("Pin", isActive = true, onClick = onPin, isSmall = true)
+        AccessoryPill("Link", isActive = true, onClick = onPin, isSmall = true)
         AccessoryPill("Not now", onClick = onDismiss, isSmall = true)
     }
 }

@@ -12,8 +12,6 @@ import com.woka.core.ui.theme.Theme
 fun MainShell(
     topBarArea: @Composable (content: @Composable () -> Unit) -> Unit,
     currentPath: String?,
-    activeTab: DockTab?,
-    onTabSelected: (DockTab) -> Unit,
     onCloseWindow: () -> Unit,
     onMinimizeWindow: () -> Unit,
     onMaximizeWindow: () -> Unit,
@@ -21,6 +19,7 @@ fun MainShell(
     onOpenSettings: () -> Unit,
     onOpenSearch: () -> Unit,
     onNavigateBack: (() -> Unit)?,
+    onNavigateForward: (() -> Unit)?,
     onBreadcrumbClick: ((String) -> Unit)?,
     linkedFolders: List<String> = emptyList(),
     content: @Composable () -> Unit
@@ -58,6 +57,7 @@ fun MainShell(
                             onMinimize = onMinimizeWindow,
                             onMaximize = onMaximizeWindow,
                             onNavigateBack = onNavigateBack,
+                            onNavigateForward = onNavigateForward,
                             onBreadcrumbClick = onBreadcrumbClick,
                             linkedFolders = linkedFolders,
                             isMaximized = isMaximized
@@ -71,8 +71,6 @@ fun MainShell(
 
                         DockLayer(
                             dockAccessories = dockAccessories,
-                            activeTab = activeTab,
-                            onTabSelected = onTabSelected,
                             onOpenSearch = onOpenSearch,
                             onOpenSettings = onOpenSettings
                         )

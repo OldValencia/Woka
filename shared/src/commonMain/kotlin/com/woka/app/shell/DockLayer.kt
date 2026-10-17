@@ -40,8 +40,6 @@ import com.woka.core.ui.theme.Theme
 @Composable
 fun BoxScope.DockLayer(
     dockAccessories: DockAccessoriesState,
-    activeTab: DockTab?,
-    onTabSelected: (DockTab) -> Unit,
     onOpenSearch: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
@@ -81,8 +79,6 @@ fun BoxScope.DockLayer(
             ) {
                 AnimatedAccessory(dockAccessories.leftAccessory)
                 FloatingDock(
-                    activeTab = activeTab,
-                    onTabSelected = onTabSelected,
                     onSearchClick = onOpenSearch,
                     onSettingsClick = onOpenSettings
                 )

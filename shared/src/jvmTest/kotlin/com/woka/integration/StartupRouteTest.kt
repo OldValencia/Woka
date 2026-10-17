@@ -13,6 +13,9 @@ import kotlin.test.assertTrue
  * `Woka.exe [path]` — the routing table in `roadmap.md` § Architecture & CLI
  * Routing, exercised as TC-SYS-01 walks it.
  *
+ * The remembered folder a bare launch reopens has its own rows in
+ * `StartupRestoreTest` (SIDE-002).
+ *
  * Integration rather than unit: [startupStack] stats the argument, so every case
  * needs something real on disk. The dot in `File.exists()` is the whole point —
  * a pure version of this function would answer for paths that are not there.
@@ -34,20 +37,20 @@ class StartupRouteTest {
     private fun folderOf(stack: List<Screen>): Screen.Folder = stack.last() as Screen.Folder
 
     @Test
-    fun `no argument opens Home`() {
-        assertEquals(listOf(Screen.Home), startupStack(emptyList()))
+    fun `nothing linked and no argument opens Welcome`() {
+        assertEquals(listOf(Screen.Welcome), startupStack(emptyList()))
     }
 
     @Test
-    fun `a blank argument opens Home`() {
-        assertEquals(listOf(Screen.Home), startupStack(listOf("   ")))
+    fun `a blank argument is no argument`() {
+        assertEquals(listOf(Screen.Welcome), startupStack(listOf("   ")))
     }
 
     @Test
-    fun `a path that is not there opens Home`() {
+    fun `a path that is not there is no argument`() {
         inDir { dir ->
             val gone = File(dir, "never-created.jpg").absolutePath
-            assertEquals(listOf(Screen.Home), startupStack(listOf(gone)))
+            assertEquals(listOf(Screen.Welcome), startupStack(listOf(gone)))
         }
     }
 
@@ -101,11 +104,9 @@ class StartupRouteTest {
     }
 
     @Test
-    fun `Home stays underneath, so Back and the Home tab still work`() {
+    fun `a launched folder stands alone, with no history under it`() {
         inDir { dir ->
-            val stack = startupStack(listOf(dir.absolutePath))
-            assertEquals(2, stack.size)
-            assertEquals(Screen.Home, stack.first())
+            assertEquals(1, startupStack(listOf(dir.absolutePath)).size)
         }
     }
 }

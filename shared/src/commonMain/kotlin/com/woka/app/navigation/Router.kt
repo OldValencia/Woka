@@ -6,11 +6,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 sealed class Screen {
-    data object Home : Screen()
+    /**
+     * The first run: nothing is linked, so there is no folder to show. Replaced Home
+     * in SIDE-002 — the window always shows a folder once one exists, and the folders
+     * themselves live in the sidebar.
+     */
+    data object Welcome : Screen()
 
     /**
      * [offerPin] marks a folder the app was *launched* into rather than navigated
-     * to, so Folder View can offer to put it on Home — see `startupStack`.
+     * to, so Folder View can offer to link it — see `startupStack`.
      */
     data class Folder(
         val path: String,
@@ -21,33 +26,40 @@ sealed class Screen {
     ) : Screen()
 }
 
+/**
+ * The navigation history: [stack] is Back's side, [forward] is what Back has popped
+ * and Forward can replay — a browser's two lists, cleared the way a browser clears
+ * them (SIDE-002). Forward was added with the sidebar: a click there is an ordinary
+ * navigation, and without Forward a mistaken Back lost the place for good.
+ */
 class Router {
-    private val _stack = MutableStateFlow<List<Screen>>(listOf(Screen.Home))
+    private val _stack = MutableStateFlow<List<Screen>>(listOf(Screen.Welcome))
     val stack: StateFlow<List<Screen>> = _stack.asStateFlow()
 
+    private val _forward = MutableStateFlow<List<Screen>>(emptyList())
+    val forward: StateFlow<List<Screen>> = _forward.asStateFlow()
+
     /**
-     * Replaces the whole stack with the launch route. Called once, before the
-     * first composition; an empty list is ignored so a bad argument cannot leave
-     * the app with no screen at all.
+     * Replaces the whole history with [screens]. Called with the launch route before
+     * the first composition, and when the folder on screen stops existing (unlink).
+     * An empty list is ignored so a bad argument cannot leave the app with no screen.
      */
     fun start(screens: List<Screen>) {
-        if (screens.isNotEmpty()) _stack.value = screens
+        if (screens.isEmpty()) return
+        _stack.value = screens
+        _forward.value = emptyList()
     }
 
     /**
      * Pushes [screen], and disarms the screen it is pushed on top of.
      *
      * See [withoutArrivalCommand]: without this, returning to that entry re-runs a
-     * command that was carried out long ago.
+     * command that was carried out long ago. A new branch of history makes the old
+     * Forward list meaningless, so it is cleared.
      */
     fun navigateTo(screen: Screen) {
-        _stack.update { current ->
-            if (current.isEmpty()) {
-                listOf(screen)
-            } else {
-                current.dropLast(1) + current.last().withoutArrivalCommand() + screen
-            }
-        }
+        _stack.update { current -> current.disarmTop() + screen }
+        _forward.value = emptyList()
     }
 
     fun replaceTop(screen: Screen) {
@@ -55,16 +67,22 @@ class Router {
     }
 
     fun pop() {
-        _stack.update { if (it.size > 1) it.dropLast(1) else it }
+        val current = _stack.value
+        if (current.size < 2) return
+        _forward.update { it + current.last().withoutArrivalCommand() }
+        _stack.value = current.dropLast(1)
     }
 
-    fun popTo(screen: Screen) {
-        _stack.update { current ->
-            val index = current.indexOf(screen)
-            if (index != -1) current.take(index + 1) else current
-        }
+    /** Replays the screen the last Back left, if there is one. */
+    fun goForward() {
+        val next = _forward.value.lastOrNull() ?: return
+        _forward.update { it.dropLast(1) }
+        _stack.update { current -> current.disarmTop() + next }
     }
 }
+
+private fun List<Screen>.disarmTop(): List<Screen> =
+    if (isEmpty()) this else dropLast(1) + last().withoutArrivalCommand()
 
 /**
  * The same folder, with nothing left to do on arrival.

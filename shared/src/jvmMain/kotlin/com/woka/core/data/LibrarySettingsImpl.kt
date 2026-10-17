@@ -79,4 +79,7 @@ internal class LibrarySettingsImpl(private val mutator: SettingsMutator) : Libra
     override fun removePinnedSession(path: String) = mutator.update { current ->
         current.copy(pinnedSessions = current.pinnedSessions.filter { it.path != path })
     }
+
+    override fun setLastSession(session: PinnedSession) =
+        mutator.update { it.copy(lastSession = session) }
 }

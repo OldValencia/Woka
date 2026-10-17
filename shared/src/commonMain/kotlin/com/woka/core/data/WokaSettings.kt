@@ -51,6 +51,10 @@ data class WokaSettings(
     // changes every fullscreen video.
     val ambientFill: Boolean = false,
     val pinnedSessions: List<PinnedSession> = emptyList(),
+    // The folder on screen and its scroll, which is what launch reopens (SIDE-002).
+    // Written as the folder changes and as its scroll settles, never at exit. Null
+    // until a folder has been shown; honoured only while inside a linked root.
+    val lastSession: PinnedSession? = null,
     val scalePreset: ScalePreset = ScalePreset.Fit,
     /** Overrides HDR *detection*, never the output — see [HdrViewMode] (ME-119). */
     val hdrViewMode: HdrViewMode = HdrViewMode.Auto,

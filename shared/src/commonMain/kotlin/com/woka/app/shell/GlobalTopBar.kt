@@ -32,6 +32,7 @@ fun GlobalTopBar(
     onMinimize: () -> Unit,
     onMaximize: () -> Unit,
     onNavigateBack: (() -> Unit)? = null,
+    onNavigateForward: (() -> Unit)? = null,
     onBreadcrumbClick: ((String) -> Unit)? = null,
     linkedFolders: List<String> = emptyList(),
     isMaximized: Boolean = false,
@@ -53,8 +54,14 @@ fun GlobalTopBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            if (onNavigateBack != null) {
-                BackButton(onClick = topBarAccessories.backActionOverride ?: onNavigateBack)
+            // An overlay's own Back counts as history: a file launched from Explorer
+            // opens the viewer over a one-screen stack, and it still needs a way out.
+            // Forward hides while an overlay owns Back — it would move the folder
+            // underneath the viewer, not the viewer (SIDE-002).
+            val back = topBarAccessories.backActionOverride ?: onNavigateBack
+            if (back != null) NavButton("<", onClick = back)
+            if (onNavigateForward != null && topBarAccessories.backActionOverride == null) {
+                NavButton(">", onClick = onNavigateForward)
             }
 
             // The path and a screen's leading accessory are one slot, not two: both
@@ -108,7 +115,7 @@ fun GlobalTopBar(
 }
 
 @Composable
-private fun BackButton(onClick: () -> Unit) {
+private fun NavButton(glyph: String, onClick: () -> Unit) {
     val src = remember { MutableInteractionSource() }
     val isHovered by src.collectIsHoveredAsState()
     val bg by animateColorAsState(if (isHovered) Theme.colors.surfaceHover else Color.Transparent, tween(150))
@@ -120,7 +127,7 @@ private fun BackButton(onClick: () -> Unit) {
         contentAlignment = Alignment.Center
     ) {
         BasicText(
-            "<",
+            glyph,
             style = TextStyle(color = Theme.colors.textPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         )
     }

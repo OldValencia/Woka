@@ -37,6 +37,7 @@ interface LibrarySettings {
     fun resetSubtitleAppearance()
     fun addPinnedSession(session: PinnedSession)
     fun removePinnedSession(path: String)
+    fun setLastSession(session: PinnedSession)
 }
 
 /** How media plays, which tracks it picks, and what has been watched. */
