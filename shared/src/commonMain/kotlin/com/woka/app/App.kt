@@ -17,7 +17,8 @@ import com.woka.app.navigation.ScreenHost
 import com.woka.app.shell.MainShell
 import com.woka.app.shell.StatusBanners
 import com.woka.feature.folder.FolderScrollMemory
-import com.woka.feature.search.SearchOverlay
+import com.woka.feature.search.SearchResults
+import com.woka.feature.search.SearchState
 import com.woka.feature.settings.SettingsOverlay
 import com.woka.core.ui.theme.Theme
 import org.koin.core.component.KoinComponent
@@ -68,8 +69,6 @@ fun App(
         ) {
             val currentPath = (currentScreen as? Screen.Folder)?.path
 
-            var isSearchOpen by remember { mutableStateOf(false) }
-
             MainShell(
                 topBarArea = topBarArea,
                 currentPath = currentPath,
@@ -78,12 +77,17 @@ fun App(
                 onMaximizeWindow = onMaximizeWindow,
                 isMaximized = isMaximized,
                 onOpenSettings = { isSettingsOpen = true },
-                onOpenSearch = { isSearchOpen = true }
+                onOpenSearch = { SearchState.focus.requestFocus() }
             ) {
-            ScreenHost(
-                currentScreen = currentScreen,
-                onNavigateToFolder = { path -> router.navigateTo(Screen.Folder(path)) }
-            )
+                ScreenHost(
+                    currentScreen = currentScreen,
+                    onNavigateToFolder = { path -> router.navigateTo(Screen.Folder(path)) }
+                )
+                // Over the screen, not instead of it (SIDE-008): the folder stays
+                // composed underneath, so clearing the box returns to it exactly.
+                if (SearchState.query.isNotBlank()) {
+                    SearchResults(currentPath, linkedFolders, onOpen = { file -> openHit(router, file) })
+                }
             }
 
             // Above every screen, because the work being reported outlives the screen
@@ -98,29 +102,30 @@ fun App(
                 repo = settingsRepo
             )
 
-            // Search Overlay
-            SearchOverlay(
-                isOpen = isSearchOpen,
-                onClose = { isSearchOpen = false },
-                linkedFolders = linkedFolders,
-                onResultClick = { path ->
-                    val file = File(path)
-                    val parent = file.parent
-                    if (parent != null) {
-                        val targetScreen = Screen.Folder(parent, highlightFile = file.name)
-                        val current = router.stack.value.lastOrNull() as? Screen.Folder
-                        if (current != null && current.path == parent) {
-                            router.replaceTop(targetScreen)
-                        } else {
-                            router.navigateTo(targetScreen)
-                        }
-                    } else {
-                        router.navigateTo(Screen.Folder(path))
-                    }
-                }
-            )
             // Global PIP Player Window
             GlobalPipWindow(settingsRepo = settingsRepo)
         }
     }
+}
+
+/**
+ * A search hit opened: a folder is gone into, a file opens in the viewer over its
+ * folder with its tile marked. The query is cleared either way — the result was
+ * the question's answer, and the folder is where the user now wants to be.
+ */
+private fun openHit(router: Router, file: File) {
+    SearchState.query = ""
+    val parent = file.parent
+    if (file.isDirectory || parent == null) {
+        router.navigateTo(Screen.Folder(file.absolutePath))
+        return
+    }
+    router.navigateTo(
+        Screen.Folder(
+            path = parent,
+            highlightFile = file.name,
+            openViewerForId = file.absolutePath,
+            nonce = System.nanoTime()
+        )
+    )
 }

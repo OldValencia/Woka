@@ -83,6 +83,25 @@ fun ToolbarSidebarButton(description: String, onClick: () -> Unit) {
     }
 }
 
+/**
+ * Info, drawn for the same reason as the sidebar toggle: the `info_circle` SVG's
+ * hairlines broke up at 15.dp and, filled for the active state, read as a ring with
+ * a smudge in it (2026-10-17). A 1.5.dp circle, a stem and a dot.
+ */
+@Composable
+fun ToolbarInfoButton(active: Boolean, onClick: () -> Unit) {
+    ToolbarButtonFrame("Info  Ctrl+I", onClick, Modifier, active) { tint ->
+        Canvas(Modifier.size(15.dp)) {
+            val stroke = 1.5.dp.toPx()
+            val r = size.minDimension / 2 - stroke / 2
+            drawCircle(tint, r, center, style = Stroke(stroke))
+            val x = center.x
+            drawLine(tint, Offset(x, size.height * 0.45f), Offset(x, size.height * 0.72f), stroke)
+            drawCircle(tint, stroke * 0.7f, Offset(x, size.height * 0.3f))
+        }
+    }
+}
+
 @Composable
 private fun ToolbarButtonFrame(
     description: String,

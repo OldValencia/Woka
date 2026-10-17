@@ -1,18 +1,15 @@
 package com.woka.feature.folder
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.unit.dp
 import com.woka.app.AppDependencies
 import androidx.compose.ui.input.key.KeyEvent
 import com.woka.core.data.MediaItem
-import com.woka.core.ui.components.rememberWatchMarks
-import java.io.File
 
 /**
  * A folder's grid and what sits on it: the toolbar's folder controls, the link offer
@@ -82,51 +79,38 @@ fun FolderContent(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        FolderGrid(
-            state = state,
-            viewModel = viewModel,
-            gridState = gridState,
-            zoom = zoom,
-            path = path,
-            highlightFile = highlightFile,
-            focusRequester = focusRequester,
-            onNavigateToFolder = onNavigateToFolder,
-            overlays = overlays,
-            onOpenMedia = onOpenMedia,
-            onEditMedia = onEditMedia,
-            focus = focus,
-            onKey = onKey,
-            modifier = Modifier.fillMaxSize()
-        )
-
-        // `linkedFolders` is what the sidebar's Folders lists; `pinnedSessions` is
-        // the Pinned section and does not answer this question.
-        if (offerPin && path !in settings.linkedFolders) {
-            FolderPinPrompt(
-                folderName = File(path).name,
-                onPin = {
+    Row(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+            FolderGrid(
+                state = state,
+                viewModel = viewModel,
+                gridState = gridState,
+                zoom = zoom,
+                path = path,
+                highlightFile = highlightFile,
+                focusRequester = focusRequester,
+                onNavigateToFolder = onNavigateToFolder,
+                overlays = overlays,
+                onOpenMedia = onOpenMedia,
+                onEditMedia = onEditMedia,
+                focus = focus,
+                onKey = onKey,
+                modifier = Modifier.fillMaxSize()
+            )
+            // `linkedFolders` is what the sidebar's Folders lists; `pinnedSessions` is
+            // the Pinned section and does not answer this question.
+            FolderFloating(
+                path, state, viewModel, focus,
+                showLinkOffer = offerPin && path !in settings.linkedFolders,
+                onLink = {
                     settingsRepo.addLinkedFolder(path)
                     onPinOfferResolved()
                 },
-                onDismiss = onPinOfferResolved,
-                modifier = Modifier.align(Alignment.TopCenter).padding(top = 12.dp)
+                onDismissOffer = onPinOfferResolved
             )
         }
-
-        if (state.isSelectMode) {
-            FolderSelectionBar(
-                path = path,
-                state = state,
-                viewModel = viewModel,
-                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 20.dp)
-            )
-        }
-
-        val looked = state.items.firstOrNull { it.file.absolutePath == focus.focused }
-        if (focus.quickLook && looked != null && looked !is MediaItem.Folder) {
-            val marks = rememberWatchMarks(viewModel.settingsRepository)
-            QuickLook(looked, marks.forVideo(looked), onClose = { focus.quickLook = false })
+        if (InfoPanel.open) {
+            FolderInfoSide(state.items.firstOrNull { it.file.absolutePath == focus.focused })
         }
     }
 

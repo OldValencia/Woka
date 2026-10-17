@@ -61,6 +61,11 @@ internal fun folderKey(event: KeyEvent, ctx: FolderKeyContext): Boolean {
             ctx.navigate(parent)
             true
         }
+        Key.I -> {
+            if (!event.isCtrlPressed) return false
+            InfoPanel.open = !InfoPanel.open
+            true
+        }
         Key.A -> {
             if (!event.isCtrlPressed) return false
             ctx.viewModel.selectAll()

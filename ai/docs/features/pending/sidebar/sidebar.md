@@ -1,6 +1,6 @@
 # Sidebar
 
-**Status: designed, nothing built.** The visual spec is `ai/mockups/design/sidebar-redesign.html`.
+**Status: all ten tickets done 2026-10-17.** The visual spec is `ai/mockups/design/sidebar-redesign.html`.
 Once a UI ticket is written, disagreements are settled by changing the mockup first. Replaces
 `home-rethink`, archived in `archive/` beside this file with the reason it lost.
 
@@ -125,9 +125,9 @@ next one is specified. The rest are blocks in `tickets/backlog.md`.
 | [SIDE-005](tickets/SIDE-005-the-keyboard-and-quick-look.md) | The keyboard drives the grid: focus, Enter, Backspace, Quick Look | **done 2026-10-17** |
 | [SIDE-006](tickets/SIDE-006-video-hover-excerpts.md) | Hovering a video plays five excerpts | **done 2026-10-17** |
 | [SIDE-007](tickets/SIDE-007-live-folders.md) | Live folders: the open folder and its sidebar rows follow the disk | **done 2026-10-17** |
-| SIDE-008 | Search in the content: the toolbar box takes text, results replace the grid | backlog |
-| SIDE-009 | The Info panel: Ctrl+I, the focused item's details | backlog |
-| SIDE-010 | Linking in and out: drop a folder from Explorer to link it, undo an unlink | backlog |
+| [SIDE-008](tickets/SIDE-008-search-in-the-content.md) | Search in the content: the toolbar box takes text, results replace the grid | **done 2026-10-17** |
+| [SIDE-009](tickets/SIDE-009-the-info-panel.md) | The Info panel: Ctrl+I, the focused item's details | **done 2026-10-17** |
+| [SIDE-010](tickets/SIDE-010-linking-in-and-out.md) | Linking in and out: drop a folder from Explorer to link it, undo an unlink | **done 2026-10-17** |
 
 ## Decisions
 

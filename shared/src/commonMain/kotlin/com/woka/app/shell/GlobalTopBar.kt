@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import com.woka.app.AppDependencies
 import com.woka.app.collectField
 import com.woka.core.ui.icons.Icons
+import com.woka.feature.folder.InfoPanel
 
 /** Under this width the search box shrinks to its icon (SIDE-003). */
 private val COMPACT_BELOW = 620.dp
@@ -46,7 +47,6 @@ fun GlobalTopBar(
     onClose: () -> Unit,
     onMinimize: () -> Unit,
     onMaximize: () -> Unit,
-    onOpenSearch: () -> Unit,
     onOpenSettings: () -> Unit,
     isMaximized: Boolean = false,
     modifier: Modifier = Modifier
@@ -99,7 +99,10 @@ fun GlobalTopBar(
                 ) {
                     topBarAccessories.rightAccessory?.invoke()
                     if (!overlay) {
-                        ToolbarSearchField(onOpen = onOpenSearch)
+                        ToolbarSearchField()
+                        if (currentPath != null) {
+                            ToolbarInfoButton(InfoPanel.open, onClick = { InfoPanel.open = !InfoPanel.open })
+                        }
                         ToolbarIconButton(Icons.Static.Settings, "Settings", onClick = onOpenSettings)
                     }
                     Spacer(Modifier.width(4.dp))

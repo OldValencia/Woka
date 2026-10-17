@@ -27,6 +27,36 @@ internal fun WokaSettings.withoutFolder(path: String, separator: Char): WokaSett
 }
 
 /**
+ * Undoes [withoutFolder] for [path] from [before], the record as it stood just ahead
+ * of the unlink (SIDE-010). Only what the unlink swept comes back — the link at its
+ * old place in the list, the pin on the root, and the records under its prefix — and
+ * nothing written since is overwritten: a key the current record already holds keeps
+ * its current value. Undo within seconds of a volume change must not undo the volume.
+ */
+internal fun WokaSettings.withFolderRestored(
+    before: WokaSettings,
+    path: String,
+    separator: Char
+): WokaSettings {
+    val prefix = path.trimEnd(separator) + separator
+    val under = { key: String -> key == path || key.startsWith(prefix) }
+    val links = if (path in linkedFolders) linkedFolders else {
+        val at = before.linkedFolders.indexOf(path).coerceIn(0, linkedFolders.size)
+        linkedFolders.take(at) + path + linkedFolders.drop(at)
+    }
+    val pins = pinnedSessions + before.pinnedSessions.filter { pin ->
+        pin.path == path && pinnedSessions.none { it.path == path }
+    }
+    return copy(
+        linkedFolders = links,
+        pinnedSessions = pins,
+        trackPrefsPerFile = before.trackPrefsPerFile.filterKeys(under) + trackPrefsPerFile,
+        trackPrefsPerFolder = before.trackPrefsPerFolder.filterKeys(under) + trackPrefsPerFolder,
+        watchRecords = before.watchRecords.filterKeys(under) + watchRecords
+    )
+}
+
+/**
  * Writes the play head without disturbing [WatchRecord.finished].
  *
  * Rewinding to the start clears the position and **keeps** the watched mark: after

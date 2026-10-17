@@ -49,6 +49,7 @@ fun MainShell(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Theme.colors.background)
+                .fileDrops()
                 // Runs in the preview (tunneling) phase from the root, so a
                 // registered screen shortcut sees keys before any focused button
                 // and can consume them (see GlobalShortcutState). The shell's own
@@ -67,7 +68,6 @@ fun MainShell(
                             onClose = onCloseWindow,
                             onMinimize = onMinimizeWindow,
                             onMaximize = onMaximizeWindow,
-                            onOpenSearch = onOpenSearch,
                             onOpenSettings = onOpenSettings,
                             isMaximized = isMaximized
                         )
@@ -78,6 +78,7 @@ fun MainShell(
                     }
                 }
             }
+            DropOverlay()
         }
     }
 }

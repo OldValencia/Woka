@@ -1,5 +1,6 @@
 package com.woka.app.shell
 
+import com.woka.app.shell.sidebar.UnlinkUndoBanner
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +35,7 @@ fun StatusBanners() {
         ) {
             FrameExportBanner()
             EditorSaveBanner()
+            UnlinkUndoBanner()
         }
     }
 }

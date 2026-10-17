@@ -88,4 +88,7 @@ internal class LibrarySettingsImpl(private val mutator: SettingsMutator) : Libra
 
     override fun setMediaFilter(filter: String) =
         mutator.update { it.copy(mediaFilter = filter) }
+
+    override fun restoreUnlinkedFolder(before: WokaSettings, path: String) =
+        mutator.update { it.withFolderRestored(before, path, File.separatorChar) }
 }

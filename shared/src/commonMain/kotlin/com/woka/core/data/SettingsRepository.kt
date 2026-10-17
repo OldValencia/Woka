@@ -40,6 +40,7 @@ interface LibrarySettings {
     fun setLastSession(session: PinnedSession)
     fun setSidebarVisible(visible: Boolean)
     fun setMediaFilter(filter: String)
+    fun restoreUnlinkedFolder(before: WokaSettings, path: String)
 }
 
 /** How media plays, which tracks it picks, and what has been watched. */

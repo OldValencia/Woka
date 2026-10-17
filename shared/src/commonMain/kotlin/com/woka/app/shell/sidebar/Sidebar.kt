@@ -81,6 +81,7 @@ fun Sidebar(
                 // What Home's card did, plus the one thing Home never had to: the
                 // folder on screen may be inside it, and then the window moves to
                 // the next root that still exists, or to Welcome (SIDE-002).
+                UnlinkUndo.offer(root, settingsRepo.settings.value)
                 settingsRepo.removeLinkedFolder(root)
                 settingsRepo.removePinnedSession(root)
                 val open = current

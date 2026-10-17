@@ -41,10 +41,9 @@ import org.jetbrains.compose.resources.painterResource
  * The first run: nothing is linked, so the window has no folder to show (SIDE-002).
  * The mockup's `.empty .drop` card, with one sentence and one button.
  *
- * **It says "link", not "drop".** Dropping a folder from Explorer arrives in
- * SIDE-007; until then a dashed card that asks for a drop would be asking for a
- * gesture that does nothing. The dashed outline stays — it is where that gesture
- * will land.
+ * **It asks for a drop** since SIDE-010 made one work: a folder dragged from Explorer
+ * anywhere on the window links it (`WindowDrops`). The button is the same act for a
+ * person who would rather pick than drag.
  */
 @Composable
 fun WelcomeScreen() {
@@ -72,7 +71,7 @@ fun WelcomeScreen() {
             )
             Spacer(Modifier.height(14.dp))
             BasicText(
-                "Link a folder",
+                "Drop a folder here",
                 style = TextStyle(
                     color = Theme.colors.textPrimary,
                     fontSize = 17.sp,
