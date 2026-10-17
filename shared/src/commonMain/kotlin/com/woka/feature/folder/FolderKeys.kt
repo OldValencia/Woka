@@ -41,10 +41,7 @@ internal fun folderKey(event: KeyEvent, ctx: FolderKeyContext): Boolean {
             val next = if (current < 0) 0 else when (event.key) {
                 Key.DirectionLeft -> stepAcross(current, right = false, items.size)
                 Key.DirectionRight -> stepAcross(current, right = true, items.size)
-                else -> {
-                    val down = event.key == Key.DirectionDown
-                    stepVertically(current, ctx.boxes(), down, items.size)
-                }
+                else -> stepVertically(current, ctx.boxes(), event.key == Key.DirectionDown, items.size)
             }
             if (event.isShiftPressed && current >= 0) ctx.extendSelection(current, next)
             ctx.moveTo(next)
@@ -81,7 +78,11 @@ internal fun folderKey(event: KeyEvent, ctx: FolderKeyContext): Boolean {
         Key.Escape -> {
             when {
                 ctx.focus.quickLook -> ctx.focus.quickLook = false
-                ctx.state.isSelectMode -> ctx.viewModel.toggleSelectMode()
+                ctx.state.isSelectMode -> {
+                    ctx.viewModel.toggleSelectMode()
+                    ctx.focus.focused = null
+                }
+                ctx.focus.focused != null -> ctx.focus.focused = null
                 else -> return false
             }
             true
