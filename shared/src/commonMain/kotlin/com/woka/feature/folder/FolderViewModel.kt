@@ -59,10 +59,14 @@ class FolderViewModel(
         loadItems()
     }
 
-    private fun loadItems() {
+    private fun loadItems(quiet: Boolean = false) {
         scope.launch {
-            _isLoading.value = true
-            _rawItems.value = repository.getItems(path)
+            if (!quiet) _isLoading.value = true
+            val items = repository.getItems(path)
+            _rawItems.value = items
+            // A selected file that has gone from disk leaves the selection (SIDE-007).
+            val present = items.mapTo(HashSet()) { it.file.absolutePath }
+            _selectedPaths.value = _selectedPaths.value.filterTo(LinkedHashSet()) { it in present }
             _isLoading.value = false
         }
     }
@@ -134,9 +138,8 @@ class FolderViewModel(
         if (currentItems.isNotEmpty()) _isSelectMode.value = true
     }
 
-    fun refresh() {
-        loadItems()
-    }
+    /** [quiet] keeps the grid on screen: the disk changed under it (SIDE-007). */
+    fun refresh(quiet: Boolean = false) = loadItems(quiet)
 
     fun pinFolder(path: String) {
         val file = File(path)

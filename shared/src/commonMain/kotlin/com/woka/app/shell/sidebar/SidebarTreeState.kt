@@ -14,9 +14,9 @@ import kotlinx.coroutines.withContext
  * scope of its own: every verb suspends and runs in the sidebar's effect or click
  * scope, so nothing here outlives the composition that asked for it.
  *
- * [children] is a cache that is never invalidated in this ticket. A folder created
- * while the app runs shows after a restart; SIDE-007 re-lists open rows on the disk
- * watcher's signal. Collapsing keeps the cache, so re-opening a row costs nothing.
+ * [children] is a cache. The open folder's row and its parent's are re-listed when
+ * the disk changes under them ([relist], SIDE-007); other rows refresh when they are
+ * next opened after a restart. Collapsing keeps the cache, so re-opening costs nothing.
  */
 class SidebarTreeState {
     private val _expanded = MutableStateFlow<Set<String>>(emptySet())
@@ -24,6 +24,10 @@ class SidebarTreeState {
 
     private val _children = MutableStateFlow<Map<String, List<SidebarNode>>>(emptyMap())
     val children: StateFlow<Map<String, List<SidebarNode>>> = _children.asStateFlow()
+
+    /** Bumped on every disk change seen, so rows not in the cache — the roots — recount. */
+    private val _version = MutableStateFlow(0)
+    val version: StateFlow<Int> = _version.asStateFlow()
 
     /** Opens [path], listing it off the main thread the first time. */
     suspend fun expand(path: String) {
@@ -36,6 +40,18 @@ class SidebarTreeState {
 
     fun collapse(path: String) {
         _expanded.update { it - path }
+    }
+
+    /**
+     * Re-reads a row already listed, because the disk under it changed (SIDE-007).
+     * Matched by `samePath`, since the folder on screen and the cached row can spell
+     * the same folder differently.
+     */
+    suspend fun relist(path: String) {
+        _version.update { it + 1 }
+        val key = _children.value.keys.firstOrNull { samePath(it, path) } ?: return
+        val listed = withContext(Dispatchers.IO) { listSubfolders(key) }
+        _children.update { it + (key to listed) }
     }
 
     suspend fun toggle(path: String) {

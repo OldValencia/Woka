@@ -15,7 +15,11 @@ import com.woka.core.ui.theme.Theme
 import com.woka.feature.editor.EditorTarget
 import com.woka.feature.editor.NativeMediaEditor
 import com.woka.feature.viewer.NativeMediaViewer
+import com.woka.core.utils.directoryChanges
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.debounce
 import org.koin.core.component.KoinComponent
+import kotlin.time.Duration.Companion.milliseconds
 import org.koin.core.component.inject
 import org.koin.core.parameter.parametersOf
 
@@ -23,6 +27,7 @@ class FolderDependencies(val path: String) : KoinComponent {
     val viewModel: FolderViewModel by inject { parametersOf(path) }
 }
 
+@OptIn(FlowPreview::class)
 @Composable
 fun FolderScreen(
     path: String,
@@ -49,6 +54,16 @@ fun FolderScreen(
         if (openViewerForId != null) {
             viewerMediaId = openViewerForId
         }
+    }
+
+    // The folder follows the disk while it is on screen (SIDE-007). Here, not in the
+    // ViewModel, whose scope outlives the screen: started there, every folder ever
+    // opened would stay watched. Debounced, because one file written is a creation
+    // and a run of modifications, and one quiet re-read answers all of them.
+    LaunchedEffect(path) {
+        directoryChanges(path)
+            .debounce(300.milliseconds)
+            .collect { viewModel.refresh(quiet = true) }
     }
 
     Column(modifier = Modifier.fillMaxSize().background(Theme.colors.background)) {

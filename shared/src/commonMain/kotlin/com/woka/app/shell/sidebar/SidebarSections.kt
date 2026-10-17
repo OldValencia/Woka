@@ -37,7 +37,8 @@ internal fun SidebarFolders(
 ) {
     val placeholders = linked.sortedBy { File(it).name.lowercase() }
         .map { SidebarNode(it, File(it).name, mediaCount = 0, hasChildren = true) }
-    val roots by produceState(placeholders, linked) {
+    val version by tree.version.collectAsState()
+    val roots by produceState(placeholders, linked, version) {
         value = withContext(Dispatchers.IO) { placeholders.map { nodeOf(it.path) } }
     }
     val expanded by tree.expanded.collectAsState()

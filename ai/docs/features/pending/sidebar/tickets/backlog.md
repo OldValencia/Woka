@@ -4,22 +4,6 @@ Four blocks, each one sitting that ends with something on screen. A block is pro
 `tickets/<ID>-<slug>.md` when it is next, and re-cut against the tree as it is then (`tickets.md` §4).
 There are no file paths here on purpose.
 
-### SIDE-007 — The disk: live folders, linking in, undoing the way out
-
-**Live folders.** The open folder is watched on disk through `expect`/`actual`, with `WatchService`
-on the JVM side, and the listing re-reads on a debounced change. A new screenshot appears and a
-deleted file leaves, without an announcement. The sidebar's expanded rows re-list on the same
-signal.
-
-**Linking in.** A folder dragged in from Explorer lights the window and links it. A dropped file
-opens the viewer. Nothing in the codebase does OS drag-and-drop yet, so this ticket also sets the
-pattern.
-
-**Undoing an unlink.** Unlinking sweeps the watch history and remembered tracks for the whole tree.
-It gets an undo banner for a few seconds that restores all of it, not only the link.
-
-**Depends on.** SIDE-001; it is independent of 002–006.
-
 ### SIDE-008 — Search in the content
 
 The toolbar's search box takes text. Results replace the grid rather than opening an overlay: a
@@ -45,4 +29,18 @@ the poster. Playing needs a player instance of its own and its lifetime, so it w
 asked for.
 
 **Depends on.** SIDE-005.
+
+### SIDE-010 — Linking in, and undoing the way out
+
+**Linking in.** A folder dragged in from Explorer lights the window and links it. A dropped file
+opens the viewer. Nothing in the codebase does OS drag-and-drop yet, so this ticket also sets the
+pattern.
+
+**Undoing an unlink.** Unlinking sweeps the watch history and remembered tracks for the whole tree.
+It gets an undo banner for a few seconds that restores all of it, not only the link.
+
+Split out of SIDE-007 on 2026-10-17: the pair of ways a folder enters and leaves the library, one
+sitting, apart from the live folder.
+
+**Depends on.** SIDE-001.
 

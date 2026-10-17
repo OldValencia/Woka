@@ -113,7 +113,7 @@ viewer, as a double-click from Explorer already does.
 
 ## Status
 
-Nine tickets, each one sitting and one green build that ends with something on screen. Only the
+Ten tickets, each one sitting and one green build that ends with something on screen. Only the
 next one is specified. The rest are blocks in `tickets/backlog.md`.
 
 | ID | Ticket | Status |
@@ -124,9 +124,10 @@ next one is specified. The rest are blocks in `tickets/backlog.md`.
 | [SIDE-004](tickets/SIDE-004-the-photo-mosaic.md) | The photo mosaic: a photo folder as square tiles, sub-folders first, a check circle on every tile | **done 2026-10-17** |
 | [SIDE-005](tickets/SIDE-005-the-keyboard-and-quick-look.md) | The keyboard drives the grid: focus, Enter, Backspace, Quick Look | **done 2026-10-17** |
 | [SIDE-006](tickets/SIDE-006-video-hover-excerpts.md) | Hovering a video plays five excerpts | **done 2026-10-17** |
-| SIDE-007 | The disk: the open folder updates itself, a folder dropped in links, an unlink can be undone | **← NEXT** |
+| [SIDE-007](tickets/SIDE-007-live-folders.md) | Live folders: the open folder and its sidebar rows follow the disk | **done 2026-10-17** |
 | SIDE-008 | Search in the content: the toolbar box takes text, results replace the grid | backlog |
 | SIDE-009 | The Info panel: Ctrl+I, the focused item's details | backlog |
+| SIDE-010 | Linking in and out: drop a folder from Explorer to link it, undo an unlink | backlog |
 
 ## Decisions
 

@@ -25,7 +25,11 @@ import com.woka.app.navigation.Screen
 import com.woka.core.data.PinnedSession
 import com.woka.core.ui.theme.Theme
 import com.woka.core.utils.openDirectoryPicker
+import com.woka.core.utils.directoryChanges
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 import java.io.File
 
 /**
@@ -40,6 +44,7 @@ import java.io.File
  * Spans the full height of the window, so its header sits in the title bar's row and
  * is wrapped in [topBarArea] to drag the window the same way.
  */
+@OptIn(FlowPreview::class)
 @Composable
 fun Sidebar(
     currentPath: String?,
@@ -55,6 +60,16 @@ fun Sidebar(
     val current by rememberUpdatedState(currentPath)
 
     LaunchedEffect(currentPath, linked) { tree.reveal(currentPath, linked) }
+
+    // The open folder's row and its parent's follow the disk (SIDE-007): a new
+    // sub-folder changes this row's children, and its count sits on the parent's.
+    LaunchedEffect(currentPath) {
+        val open = currentPath ?: return@LaunchedEffect
+        directoryChanges(open).debounce(300.milliseconds).collect {
+            tree.relist(open)
+            File(open).parentFile?.path?.let { tree.relist(it) }
+        }
+    }
 
     val actions = remember(router, settingsRepo, tree) {
         SidebarActions(
