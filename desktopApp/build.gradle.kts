@@ -41,7 +41,7 @@ compose.desktop {
             modules("java.instrument", "java.management", "jdk.unsupported")
 
             val ico = project.file("src/main/resources/icons/woka.ico")
-            val icns = project.file("src/main/resources/icons/woka.icns")
+            val icns = project.file("src/main/resources/icons/Woka.icns")
             val png = project.file("src/main/resources/icons/woka.png")
 
             windows {
@@ -108,7 +108,7 @@ compose.desktop {
                     description = desc,
                     linuxIconFile = png,
                     windowsIconFile = ico,
-                    macOSIconFile = icns
+                    macOSIconFile = null
                 )
             }
         }

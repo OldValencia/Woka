@@ -9,7 +9,7 @@
 1. **Icons Generation:**
    - Generate multi-resolution icons from `logo/woka-icon.svg`:
      - Windows `.ico` (16, 32, 48, 64, 128, 256 px) in `desktopApp/src/main/resources/icons/woka.ico`.
-     - macOS `.icns` in `desktopApp/src/main/resources/icons/woka.icns`.
+     - macOS `.icns` in `desktopApp/src/main/resources/icons/Woka.icns`.
      - Linux `.png` (512x512) in `desktopApp/src/main/resources/icons/woka.png`.
 2. **Native Distributions DSL (`desktopApp/build.gradle.kts`):**
    - Package name: `"Woka"`, version: `"1.0.0"`.

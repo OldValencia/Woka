@@ -65,7 +65,7 @@ jobs:
         run: ./gradlew ${{ matrix.gradle-task }}
 
       - name: Print jpackage error log on failure
-        if: failure() && runner.os == 'Linux'
+        if: failure() && runner.os != 'Windows'
         run: |
           find desktopApp/build/compose/logs/ -name "jpackage-*-err.txt" -exec cat {} + || true
 
