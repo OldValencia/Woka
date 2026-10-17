@@ -125,6 +125,7 @@ class FolderSelectionTest {
             viewModel.awaitNames(names)
             viewModel.selectAll()
             awaitTrue("everything to be selected") { viewModel.state.value.selectedPaths.size == 3 }
+            awaitTrue("select mode to come on, so the bar shows") { viewModel.state.value.isSelectMode }
             viewModel.clearSelection()
             awaitTrue("the selection to clear") { viewModel.state.value.selectedPaths.isEmpty() }
         }

@@ -36,6 +36,8 @@ fun FolderGrid(
     onOpenMedia: (String) -> Unit,
     onEditMedia: (String) -> Unit,
     highlightFile: String? = null,
+    focus: FolderFocus = FolderFocus(),
+    onKey: (KeyEvent) -> Boolean = { false },
     modifier: Modifier = Modifier
 ) {
     LaunchedEffect(highlightFile, state.items) {
@@ -89,9 +91,9 @@ fun FolderGrid(
                             true
                         }
 
-                        else -> false
+                        else -> onKey(event)
                     }
-                } else false
+                } else onKey(event)
             }
     ) {
         // The mosaic packs tiles 3.dp apart; cards keep their 28.dp. The bottom inset
@@ -118,6 +120,7 @@ fun FolderGrid(
                     onOpenMedia = onOpenMedia,
                     onEditMedia = onEditMedia,
                     highlightFile = highlightFile,
+                    focus = focus,
                     tile = tile
                 )
             }

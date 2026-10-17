@@ -127,9 +127,11 @@ class FolderViewModel(
         _selectedPaths.value = emptySet()
     }
 
+    /** Enters select mode too: Ctrl+A used to select with no bar to act on it (2026-10-17). */
     fun selectAll() {
         val currentItems = state.value.items
         _selectedPaths.value = currentItems.map { it.file.absolutePath }.toSet()
+        if (currentItems.isNotEmpty()) _isSelectMode.value = true
     }
 
     fun refresh() {

@@ -4,24 +4,6 @@ Four blocks, each one sitting that ends with something on screen. A block is pro
 `tickets/<ID>-<slug>.md` when it is next, and re-cut against the tree as it is then (`tickets.md` §4).
 There are no file paths here on purpose.
 
-### SIDE-005 — The keyboard drives the grid
-
-One focused item in the grid, ringed in `accent`:
-
-- arrows move the focus, Shift+arrows extend the selection;
-- Enter opens the viewer;
-- Backspace goes up a level, but no further than the linked root;
-- Ctrl+A selects all and Delete deletes.
-
-**Quick Look.** Space shows the focused or hovered item above the grid. Arrows move through the
-folder, Enter hands over to the full viewer, and Space or Esc closes. A video plays muted from its
-watch position.
-
-**Info.** `Ctrl+I` or the toolbar's ⓘ opens a right-hand panel for the focused item, fed by what the
-viewer's file-info popover already reads. It follows the focus.
-
-**Depends on.** SIDE-004.
-
 ### SIDE-006 — Hovering a video plays five excerpts
 
 Hovering a video card plays five excerpts of about 2.5 s each, spread evenly across the runtime and
@@ -61,4 +43,20 @@ once nothing opens them. Split out of SIDE-004 on 2026-10-17, because the photo 
 are two outcomes, each a sitting.
 
 **Depends on.** SIDE-004 — results draw as its tiles.
+
+### SIDE-009 — The Info panel
+
+`Ctrl+I` or the toolbar's ⓘ opens a right-hand panel for the focused item, fed by what the
+viewer's file-info popover already reads:
+- a photo shows its kind, size, dimensions, dates, camera and exposure;
+- a video shows its codec, HDR, frame rate, and audio and subtitle tracks.
+
+The panel follows the focus SIDE-005 introduced, and stays open as it moves. Split out of
+SIDE-005 on 2026-10-17.
+
+**Not yet decided:** playing a video inside Quick Look, muted from its watch position. SIDE-005 shows
+the poster. Playing needs a player instance of its own and its lifetime, so it waits until it is
+asked for.
+
+**Depends on.** SIDE-005.
 

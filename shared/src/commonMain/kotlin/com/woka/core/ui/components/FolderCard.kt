@@ -13,7 +13,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerIcon
@@ -55,7 +54,11 @@ fun FolderCard(
     watch: WatchRecord? = null,
     dimWatched: Boolean = false,
     tile: Boolean = false,
-    onCheck: (() -> Unit)? = null
+    onCheck: (() -> Unit)? = null,
+    // The keyboard's item (SIDE-005): ringed in the accent, and told where the
+    // pointer is so Space can preview what is under it.
+    isFocused: Boolean = false,
+    onHoverChange: ((Boolean) -> Unit)? = null
 ) {
     val data = rememberFolderCardData(path)
 
@@ -70,6 +73,7 @@ fun FolderCard(
 
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
+    LaunchedEffect(isHovered) { onHoverChange?.invoke(isHovered) }
 
     val style = rememberFolderCardStyle(
         isHovered = isHovered,
@@ -122,9 +126,7 @@ fun FolderCard(
                 dimWatched = dimWatched
             )
         }
-        if (onCheck != null && (isHovered || isSelected)) {
-            FolderCardCheck(isSelected, onCheck, Modifier.align(Alignment.TopEnd))
-        }
+        FolderCardMarks(tile, isFocused, isHovered, isSelected, onCheck)
 
         if (showContextMenu && contextMenuContent != null) {
             FolderCardContextMenu(

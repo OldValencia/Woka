@@ -58,7 +58,9 @@ fun StillCoverImage(
      * bare tile is right for a photograph in a grid of photographs, and wrong for the
      * one card that has something else to say.
      */
-    placeholder: (@Composable () -> Unit)? = null
+    placeholder: (@Composable () -> Unit)? = null,
+    /** `Fit` for a whole picture, as Quick Look shows one (SIDE-005); a cover crops. */
+    contentScale: ContentScale = ContentScale.Crop
 ) {
     var bitmap by remember(file.absolutePath) { mutableStateOf<ImageBitmap?>(null) }
     // Null while the answer is unknown. **Coil draws in the meantime rather than the
@@ -94,7 +96,7 @@ fun StillCoverImage(
             bitmap = drawn,
             contentDescription = null,
             modifier = modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop,
+            contentScale = contentScale,
             colorFilter = colorFilter
         )
         return
@@ -112,7 +114,7 @@ fun StillCoverImage(
             model = file,
             contentDescription = null,
             modifier = modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop,
+            contentScale = contentScale,
             colorFilter = colorFilter
         )
     }

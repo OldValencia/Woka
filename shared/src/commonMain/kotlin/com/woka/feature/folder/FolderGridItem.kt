@@ -24,6 +24,7 @@ internal fun FolderGridItem(
     onOpenMedia: (String) -> Unit,
     onEditMedia: (String) -> Unit,
     highlightFile: String?,
+    focus: FolderFocus,
     tile: Boolean = false
 ) {
     val target = item.file.absolutePath
@@ -33,6 +34,7 @@ internal fun FolderGridItem(
     FolderCard(
         path = target,
         onClick = {
+            focus.focused = target
             if (state.isSelectMode) {
                 viewModel.toggleSelection(target)
             } else {
@@ -61,6 +63,10 @@ internal fun FolderGridItem(
         watch = watch,
         dimWatched = marks.dimStarted,
         tile = tile,
-        onCheck = { viewModel.toggleSelection(target) }
+        onCheck = { viewModel.toggleSelection(target) },
+        isFocused = focus.focused == target,
+        onHoverChange = { over ->
+            if (over) focus.hovered = target else if (focus.hovered == target) focus.hovered = null
+        }
     )
 }

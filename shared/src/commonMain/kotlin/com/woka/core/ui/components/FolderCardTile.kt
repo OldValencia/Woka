@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -81,6 +82,29 @@ internal fun FolderCardTileBody(
             if (isHovered) FolderCardCaption(name = data.name, meta = data.meta, isHovered = true)
             FolderCardProgress(watch)
         }
+    }
+}
+
+/**
+ * What sits on top of a card or tile, whichever body it has: the keyboard's focus
+ * ring (SIDE-005) and the check circle (SIDE-004), shown on hover and while selected.
+ */
+@Composable
+internal fun BoxScope.FolderCardMarks(
+    tile: Boolean,
+    isFocused: Boolean,
+    isHovered: Boolean,
+    isSelected: Boolean,
+    onCheck: (() -> Unit)?
+) {
+    if (isFocused) {
+        Box(
+            Modifier.matchParentSize()
+                .border(2.dp, Theme.colors.accent, RoundedCornerShape(if (tile) 3.dp else 10.dp))
+        )
+    }
+    if (onCheck != null && (isHovered || isSelected)) {
+        FolderCardCheck(isSelected, onCheck, Modifier.align(Alignment.TopEnd))
     }
 }
 

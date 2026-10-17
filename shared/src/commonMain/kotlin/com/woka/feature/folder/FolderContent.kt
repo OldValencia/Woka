@@ -9,7 +9,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.unit.dp
 import com.woka.app.AppDependencies
-import com.woka.core.data.ViewLayout
+import androidx.compose.ui.input.key.KeyEvent
+import com.woka.core.data.MediaItem
+import com.woka.core.ui.components.rememberWatchMarks
 import java.io.File
 
 /**
@@ -52,6 +54,19 @@ fun FolderContent(
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
     }
+    val focus = remember(path) { FolderFocus() }
+    val scope = rememberCoroutineScope()
+    val open = { item: MediaItem ->
+        val target = item.file.absolutePath
+        if (item is MediaItem.Folder) onNavigateToFolder(target) else onOpenMedia(target)
+    }
+    val onKey = { event: KeyEvent ->
+        val roots = settings.linkedFolders
+        val context = FolderKeyContext(
+            state, focus, gridState, scope, viewModel, roots, path, open, onNavigateToFolder
+        )
+        folderKey(event, context)
+    }
 
     LaunchedEffect(scrollToMediaId, state.items) {
         if (scrollToMediaId != null && state.items.isNotEmpty()) {
@@ -59,6 +74,10 @@ fun FolderContent(
             if (index >= 0) {
                 gridState.scrollToItem(state.items.gridIndexOf(index))
             }
+            // The viewer has just closed: its last file is the keyboard's item, and the
+            // grid takes focus back so the arrows work without a click first (SIDE-005).
+            focus.focused = scrollToMediaId
+            focusRequester.requestFocus()
             onScrollToMediaIdConsumed()
         }
     }
@@ -76,6 +95,8 @@ fun FolderContent(
             overlays = overlays,
             onOpenMedia = onOpenMedia,
             onEditMedia = onEditMedia,
+            focus = focus,
+            onKey = onKey,
             modifier = Modifier.fillMaxSize()
         )
 
@@ -100,6 +121,12 @@ fun FolderContent(
                 viewModel = viewModel,
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 20.dp)
             )
+        }
+
+        val looked = state.items.firstOrNull { it.file.absolutePath == focus.focused }
+        if (focus.quickLook && looked != null && looked !is MediaItem.Folder) {
+            val marks = rememberWatchMarks(viewModel.settingsRepository)
+            QuickLook(looked, marks.forVideo(looked), onClose = { focus.quickLook = false })
         }
     }
 
