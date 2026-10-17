@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Woka — Sidebar</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ---------- tokens ---------- */
+:root{
+  --page:#08090C;
+  --win:#0E1015;
+  --side:#13161C;
+  --raise:#1A1E26;
+  --hover:rgba(255,255,255,.05);
+  --sep:rgba(255,255,255,.07);
+  --text:#F2F2F5;
+  --text2:#9A9FAA;
+  --text3:#5E6370;
+  --accent:#0A84FF;
+  --accent-soft:rgba(10,132,255,.16);
+  --folder:#FF9F0A;
+  --danger:#FF453A;
+  --glass:rgba(22,25,32,.72);
+  --shadow:0 30px 80px rgba(0,0,0,.6);
+  --tile-ring:rgba(255,255,255,.06);
+}
+.light{
+  --page:#D9DBE0;
+  --win:#FFFFFF;
+  --side:#F2F2F7;
+  --raise:#FFFFFF;
+  --hover:rgba(0,0,0,.045);
+  --sep:rgba(60,60,67,.13);
+  --text:#1C1C1E;
+  --text2:#6C6C72;
+  --text3:#A1A1A8;
+  --accent:#007AFF;
+  --accent-soft:rgba(0,122,255,.13);
+  --glass:rgba(255,255,255,.78);
+  --shadow:0 30px 70px rgba(0,0,0,.18);
+  --tile-ring:rgba(0,0,0,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--page);color:var(--text);
+  padding:28px 16px 60px;transition:background .25s}
+.wrap{max-width:1360px;margin:0 auto}
+svg{display:block}
+
+/* ---------- demo controls (not part of the app) ---------- */
+.demo{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+.demo h1{font-size:15px;font-weight:700;margin-right:10px;color:var(--text)}
+.dseg{display:flex;background:var(--raise);border:1px solid var(--sep);border-radius:9px;padding:2px}
+.dseg button{border:0;background:none;color:var(--text2);font:600 12px Inter,sans-serif;
+  padding:5px 11px;border-radius:7px;cursor:pointer}
+.dseg button.on{background:var(--accent);color:#fff}
+
+/* ---------- window ---------- */
+.app{display:flex;height:780px;border-radius:12px;overflow:hidden;background:var(--win);
+  border:1px solid var(--sep);box-shadow:var(--shadow);position:relative;transition:background .25s}
+
+/* ---------- sidebar ---------- */
+.side{width:236px;flex:none;background:var(--side);border-right:1px solid var(--sep);
+  display:flex;flex-direction:column;transition:margin .3s cubic-bezier(.2,.8,.2,1),background .25s}
+.app.collapsed .side{margin-left:-236px}
+.side-top{height:52px;display:flex;align-items:center;gap:8px;padding:0 12px 0 18px}
+.logo{width:20px;height:20px;border-radius:6px;background:linear-gradient(135deg,#0A84FF,#5E5CE6);
+  display:grid;place-items:center;color:#fff;font-size:11px;font-weight:700}
+.side-top .name{font-size:13px;font-weight:650;flex:1}
+.side-scroll{flex:1;overflow-y:auto;padding:4px 10px 10px}
+.sec{font-size:11px;font-weight:650;color:var(--text3);padding:14px 8px 5px;display:flex;align-items:center}
+.sec span{flex:1}
+.row{height:30px;display:flex;align-items:center;gap:8px;padding:0 8px;border-radius:7px;cursor:pointer;
+  font-size:13px;color:var(--text);position:relative}
+.row:hover{background:var(--hover)}
+.row.sel{background:var(--accent-soft)}
+.row.sel .ico{color:var(--accent)}
+.row .ico{width:16px;height:16px;color:var(--folder);flex:none}
+.row .ico.pin{color:var(--text2)}
+.row .lbl{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .sub{font-size:11px;color:var(--text3)}
+.row .cnt{font-size:11px;color:var(--text3);font-variant-numeric:tabular-nums}
+.row .chev{width:12px;height:12px;color:var(--text3);flex:none;transition:transform .2s;margin-left:-4px}
+.row .chev.open{transform:rotate(90deg)}
+.row .chev.none{visibility:hidden}
+.row.l1{padding-left:24px}
+.row.l2{padding-left:40px}
+.side-foot{border-top:1px solid var(--sep);padding:8px 10px;display:flex;gap:4px}
+.side-foot .row{flex:1;color:var(--text2)}
+.side-foot .row .ico{color:var(--text2)}
+.side-foot .sq{flex:none;width:30px;justify-content:center;padding:0}
+.app.first .side-foot .link{background:var(--accent);color:#fff}
+.app.first .side-foot .link .ico{color:#fff}
+
+/* ---------- main ---------- */
+.main{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
+.bar{height:52px;flex:none;display:flex;align-items:center;gap:6px;padding:0 0 0 10px;
+  border-bottom:1px solid transparent;position:relative;z-index:5;transition:border-color .2s,background .2s}
+.bar.scrolled{border-bottom-color:var(--sep);background:var(--glass);backdrop-filter:blur(24px)}
+.ib{width:30px;height:28px;border-radius:7px;display:grid;place-items:center;color:var(--text2);cursor:pointer;flex:none}
+.ib:hover{background:var(--hover);color:var(--text)}
+.ib.off{opacity:.35;pointer-events:none}
+.ib svg{width:15px;height:15px}
+.title{display:flex;align-items:baseline;gap:6px;margin-left:6px;min-width:0;flex:1}
+.crumb{font-size:13px;color:var(--text3);cursor:pointer;white-space:nowrap}
+.crumb:hover{color:var(--text)}
+.crumb-sep{font-size:12px;color:var(--text3)}
+.title h2{font-size:15px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg{display:flex;background:var(--hover);border-radius:8px;padding:2px;flex:none}
+.seg span{font-size:12px;font-weight:550;color:var(--text2);padding:4px 10px;border-radius:6px;cursor:pointer}
+.seg span.on{background:var(--raise);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.size{display:flex;align-items:center;gap:6px;color:var(--text3);flex:none;margin:0 4px}
+.size input{width:84px;accent-color:var(--accent)}
+.search{display:flex;align-items:center;gap:6px;height:28px;width:190px;padding:0 9px;border-radius:8px;
+  background:var(--hover);color:var(--text3);font-size:12.5px;flex:none;transition:width .25s,box-shadow .2s}
+.search input{background:none;border:0;outline:0;color:var(--text);font:inherit;width:100%}
+.search.focus{box-shadow:0 0 0 2px var(--accent);width:240px}
+.winc{display:flex;margin-left:6px;flex:none}
+.winc i{width:44px;height:52px;display:grid;place-items:center;color:var(--text2);font-style:normal;font-size:12px}
+.winc i:last-child:hover{background:#E81123;color:#fff}
+
+.content{flex:1;overflow-y:auto;padding:6px 22px 90px}
+.content::-webkit-scrollbar{width:10px}
+.content::-webkit-scrollbar-thumb{background:var(--sep);border-radius:8px;border:3px solid transparent;background-clip:content-box}
+.h3{font-size:12px;font-weight:650;color:var(--text2);margin:10px 2px 10px;display:flex;align-items:baseline;gap:8px}
+.h3 em{font-style:normal;color:var(--text3);font-weight:500}
+
+/* sub-folders */
+.folders{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-bottom:22px}
+.fcard{cursor:pointer}
+.mos{aspect-ratio:4/3;border-radius:10px;overflow:hidden;display:grid;grid-template-columns:1fr 1fr;
+  grid-template-rows:1fr 1fr;gap:2px;background:var(--raise);box-shadow:0 0 0 1px var(--tile-ring);
+  transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s}
+.fcard:hover .mos{transform:translateY(-2px);box-shadow:0 0 0 1px var(--tile-ring),0 12px 24px rgba(0,0,0,.25)}
+.fname{font-size:12.5px;font-weight:600;margin:7px 2px 0;display:flex;gap:6px;align-items:center}
+.fname svg{width:13px;height:13px;color:var(--folder);flex:none}
+.fmeta{font-size:11px;color:var(--text3);margin:1px 2px 0 21px}
+
+/* photo grid: tight, square, Photos-like */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--cell,150px),1fr));gap:3px}
+.tile{position:relative;aspect-ratio:1;cursor:pointer;overflow:hidden;border-radius:3px}
+.ph{position:absolute;inset:0;transition:transform .35s ease,filter .2s}
+.tile:hover .ph{filter:brightness(1.08)}
+.dur{position:absolute;right:6px;bottom:5px;font-size:11px;font-weight:600;color:#fff;
+  text-shadow:0 1px 3px rgba(0,0,0,.7);display:flex;align-items:center;gap:3px}
+.dur svg{width:9px;height:9px}
+.chk{position:absolute;right:6px;top:6px;width:20px;height:20px;border-radius:50%;
+  border:1.5px solid rgba(255,255,255,.9);background:rgba(0,0,0,.18);opacity:0;transition:opacity .15s;
+  display:grid;place-items:center}
+.chk svg{width:11px;height:11px;color:#fff;opacity:0}
+.tile:hover .chk,.selecting .chk{opacity:1}
+.tile.picked .chk{background:var(--accent);border-color:#fff}
+.tile.picked .chk svg{opacity:1}
+.tile.picked .ph{transform:scale(.9);border-radius:6px}
+.tile.picked{background:var(--accent-soft)}
+
+/* video grid: 16:9 with titles, because an episode needs its name */
+.vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(calc(var(--cell,150px) * 1.6),1fr));gap:20px 14px}
+.vt{cursor:pointer}
+.vthumb{position:relative;aspect-ratio:16/9;border-radius:9px;overflow:hidden;box-shadow:0 0 0 1px var(--tile-ring);
+  transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s}
+.vt:hover .vthumb{transform:translateY(-2px);box-shadow:0 0 0 1px var(--tile-ring),0 12px 24px rgba(0,0,0,.28)}
+.prog{position:absolute;left:0;bottom:0;height:3px;background:var(--accent)}
+.prog-bg{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.18)}
+.seen{position:absolute;left:7px;top:7px;font-size:10px;font-weight:650;color:#fff;background:rgba(0,0,0,.55);
+  backdrop-filter:blur(8px);padding:2px 7px;border-radius:6px}
+.vt.watched .ph{filter:saturate(.45) brightness(.7)}
+.vname{font-size:12.5px;font-weight:600;margin:8px 2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vmeta{font-size:11px;color:var(--text3);margin:1px 2px 0}
+.footer{text-align:center;font-size:11.5px;color:var(--text3);margin-top:26px}
+
+/* selection bar: the only floating thing, and only while selecting */
+.selbar{position:absolute;left:50%;bottom:20px;transform:translate(-50%,20px);opacity:0;pointer-events:none;
+  display:flex;align-items:center;gap:2px;padding:5px;border-radius:13px;background:var(--glass);
+  backdrop-filter:blur(28px);border:1px solid var(--sep);box-shadow:0 16px 40px rgba(0,0,0,.35);
+  transition:opacity .2s,transform .25s cubic-bezier(.2,.8,.2,1);z-index:10}
+.selbar.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.selbar .n{font-size:12.5px;font-weight:650;padding:0 10px 0 8px}
+.selbar .b{font-size:12.5px;font-weight:550;color:var(--text);padding:6px 11px;border-radius:8px;cursor:pointer}
+.selbar .b:hover{background:var(--hover)}
+.selbar .b.d{color:var(--danger)}
+.selbar .vs{width:1px;height:18px;background:var(--sep);margin:0 3px}
+
+/* first run */
+.empty{height:100%;display:grid;place-items:center}
+.drop{width:min(460px,100%);padding:44px 30px;border-radius:16px;border:1.5px dashed var(--sep);text-align:center;
+  transition:border-color .2s,background .2s}
+.drop:hover{border-color:var(--accent);background:var(--accent-soft)}
+.drop svg{width:46px;height:46px;color:var(--folder);margin:0 auto 14px}
+.drop h3{font-size:17px;font-weight:650}
+.drop p{font-size:13px;color:var(--text2);margin:6px auto 18px;max-width:34ch;line-height:1.5}
+.btn{display:inline-block;background:var(--accent);color:#fff;font-size:13px;font-weight:600;padding:7px 16px;border-radius:8px;cursor:pointer}
+
+/* search */
+.scope{display:flex;align-items:center;gap:10px;margin:8px 2px 14px}
+.scope .h{font-size:13px;color:var(--text2)}
+.scope .h b{color:var(--text);font-weight:650}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px 12px}
+.rt .tile{border-radius:8px}
+.rn{font-size:12px;font-weight:600;margin:6px 2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rn mark{background:rgba(255,214,10,.35);color:inherit;border-radius:2px}
+.rp{font-size:11px;color:var(--text3);margin:1px 2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- notes ---------- */
+.notes{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-top:26px}
+.note{background:var(--raise);border:1px solid var(--sep);border-radius:12px;padding:15px 17px}
+.note h4{font-size:13.5px;font-weight:650;margin-bottom:5px}
+.note p{font-size:12.5px;color:var(--text2);line-height:1.55}
+.note.ask{border-color:rgba(255,159,10,.4)}
+.note.ask h4{color:var(--folder)}
+/* toolbar toggle that is on */
+.ib.on{color:var(--accent);background:var(--accent-soft)}
+
+/* keyboard focus */
+.tile.focus{outline:2px solid var(--accent);outline-offset:1px;z-index:1}
+.vt.focus .vthumb{box-shadow:0 0 0 2px var(--accent)}
+
+/* hover preview: five short excerpts, stories-style progress */
+.segs{position:absolute;left:8px;right:8px;top:7px;display:flex;gap:3px;opacity:0;transition:opacity .15s;z-index:2}
+.vt.playing .segs{opacity:1}
+.vt.playing .seen{opacity:0}
+.segs i{flex:1;height:2.5px;border-radius:2px;background:rgba(255,255,255,.3);overflow:hidden}
+.segs i b{display:block;height:100%;width:0;background:#fff}
+.vt.playing .ph{filter:none}
+
+/* Quick Look */
+.ql{position:absolute;inset:0;z-index:20;display:grid;place-items:center;background:rgba(0,0,0,.5);
+  backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity .18s}
+.ql.show{opacity:1;pointer-events:auto}
+.ql .qc{width:min(74%,860px);border-radius:14px;overflow:hidden;background:var(--raise);
+  box-shadow:0 40px 90px rgba(0,0,0,.6);transform:scale(.95);transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+.ql.show .qc{transform:none}
+.ql .pic{aspect-ratio:3/2;position:relative}
+.ql .pic .dur{font-size:12.5px;right:12px;bottom:10px}
+.ql .cap{display:flex;align-items:center;gap:12px;padding:10px 14px;font-size:12.5px}
+.ql .cap b{font-weight:650;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ql .cap span{color:var(--text3)}
+.kbd{display:inline-block;font-size:10.5px;font-weight:600;color:var(--text2);border:1px solid var(--sep);
+  border-bottom-width:2px;border-radius:5px;padding:0 5px;margin:0 2px}
+
+/* Info panel */
+.info{width:0;flex:none;overflow:hidden;background:var(--side);border-left:1px solid transparent;
+  transition:width .3s cubic-bezier(.2,.8,.2,1)}
+.app.info-open .info{width:272px;border-left-color:var(--sep)}
+.info-in{width:272px;height:100%;overflow-y:auto;padding:16px}
+.info .pv{aspect-ratio:3/2;border-radius:9px;margin-bottom:12px;box-shadow:0 0 0 1px var(--tile-ring)}
+.info h5{font-size:13.5px;font-weight:650;word-break:break-all}
+.info .k{font-size:11.5px;color:var(--text3);margin-top:2px}
+.info .grp{font-size:11px;font-weight:650;color:var(--text3);margin:16px 0 6px}
+.info dl{display:grid;grid-template-columns:86px 1fr;gap:5px 8px;font-size:12px}
+.info dt{color:var(--text3)}
+.info dd{color:var(--text)}
+.info .act{margin-top:16px;font-size:12px;color:var(--accent);cursor:pointer}
+
+/* drop a folder from Explorer */
+.dropov{position:absolute;inset:0;z-index:30;border:2px solid var(--accent);border-radius:12px;
+  background:rgba(10,132,255,.10);display:grid;place-items:center;opacity:0;pointer-events:none;transition:opacity .15s}
+.dropov.show{opacity:1}
+.dropov .m{background:var(--glass);backdrop-filter:blur(24px);border:1px solid var(--sep);border-radius:14px;
+  padding:16px 22px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.4)}
+.dropov .m svg{width:34px;height:34px;color:var(--folder);margin:0 auto 8px}
+.dropov .m b{font-size:15px;font-weight:650;display:block}
+.dropov .m span{font-size:12px;color:var(--text2)}
+.dropov .ghost{position:absolute;right:30%;bottom:30%;font-size:12px;font-weight:600;color:#fff;
+  background:var(--accent);padding:4px 9px;border-radius:7px;box-shadow:0 8px 20px rgba(0,0,0,.4);transform:rotate(-3deg)}
+
+@media (max-width:820px){.side{display:none}.size,.seg{display:none}.search{width:130px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="demo">
+  <h1>Woka — sidebar</h1>
+  <div class="dseg" id="dState">
+    <button class="on" data-s="lib">Library</button>
+    <button data-s="video">Video folder</button>
+    <button data-s="select">Selecting</button>
+    <button data-s="search">Search</button>
+    <button data-s="first">First run</button>
+    <button data-s="ql">Quick Look</button>
+    <button data-s="info">Info</button>
+    <button data-s="drop">Drop folder</button>
+  </div>
+</div>
+
+<div class="app" id="app">
+  <aside class="side">
+    <div class="side-top">
+      <div class="logo">W</div>
+      <div class="name">Woka</div>
+      <div class="ib" id="hideSide" title="Hide sidebar">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1.5" y="2.5" width="13" height="11" rx="2.5"/><path d="M6 2.5v11"/></svg>
+      </div>
+    </div>
+    <div class="side-scroll" id="sideList"></div>
+    <div class="side-foot">
+      <div class="row link" title="Link Folder… — or drop a folder anywhere on the window">
+        <svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 3v10M3 8h10"/></svg>
+        <span class="lbl">Link Folder…</span>
+      </div>
+    </div>
+  </aside>
+
+  <section class="main">
+    <div class="bar" id="bar">
+      <div class="ib" id="showSide" title="Show sidebar" hidden>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1.5" y="2.5" width="13" height="11" rx="2.5"/><path d="M6 2.5v11"/></svg>
+      </div>
+      <div class="ib" id="back"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 3L5 8l5 5"/></svg></div>
+      <div class="ib off"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3l5 5-5 5"/></svg></div>
+      <div class="title" id="title"></div>
+      <div class="seg" id="filter"><span class="on">All</span><span>Photos</span><span>Videos</span></div>
+      <div class="size" title="Thumbnail size">
+        <svg width="10" height="10" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" rx="1.5" fill="currentColor"/></svg>
+        <input type="range" min="90" max="260" value="150" id="size">
+        <svg width="15" height="15" viewBox="0 0 10 10"><rect x=".5" y=".5" width="9" height="9" rx="1.5" fill="currentColor"/></svg>
+      </div>
+      <div class="search" id="search">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="7" cy="7" r="4.8"/><path d="M10.5 10.5L14 14"/></svg>
+        <input id="q" placeholder="Search  Ctrl+F">
+      </div>
+      <div class="ib" id="infoBtn" title="Info  Ctrl+I"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.3"/><path d="M8 7.2v4"/><circle cx="8" cy="4.9" r=".5" fill="currentColor"/></svg></div>
+      <div class="ib" id="settings" title="Settings  Ctrl+,">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M10.3 2.6h3.4l.5 2.6 1.6.9 2.5-.9 1.7 2.9-2 1.7v1.9l2 1.7-1.7 2.9-2.5-.9-1.6.9-.5 2.6h-3.4l-.5-2.6-1.6-.9-2.5.9-1.7-2.9 2-1.7v-1.9l-2-1.7 1.7-2.9 2.5.9 1.6-.9z"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+      <div class="winc"><i>─</i><i>▢</i><i>✕</i></div>
+    </div>
+    <div class="content" id="content"></div>
+    <div class="selbar" id="selbar">
+      <span class="n" id="selN">3 selected</span>
+      <span class="vs"></span>
+      <span class="b">Copy</span><span class="b">Move…</span><span class="b">Duplicate…</span>
+      <span class="vs"></span>
+      <span class="b d">Delete</span>
+      <span class="vs"></span>
+      <span class="b" id="selDone">Done</span>
+    </div>
+    <div class="ql" id="ql"><div class="qc">
+      <div class="pic" id="qlPic"></div>
+      <div class="cap"><b id="qlName"></b>
+        <span><span class="kbd">←</span><span class="kbd">→</span> next · <span class="kbd">Enter</span> open · <span class="kbd">Space</span> close</span></div>
+    </div></div>
+  </section>
+  <aside class="info"><div class="info-in" id="infoIn"></div></aside>
+  <div class="dropov" id="dropov"><div class="m">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 4.2c0-.9.7-1.7 1.7-1.7h3l1.4 1.5h5.2c.9 0 1.7.7 1.7 1.7v6.1c0 .9-.8 1.7-1.7 1.7H3.2c-1 0-1.7-.8-1.7-1.7z"/></svg>
+    <b>Drop to link “Wallpapers”</b><span>D:\Media\Wallpapers · 212 items</span></div>
+    <div class="ghost">Wallpapers</div></div>
+</div>
+
+<div class="notes">
+  <div class="note"><h4>No Home screen</h4>
+    <p>With one or two linked folders a Home page is a click between you and your files. The linked folders
+    become the sidebar's first section, and the window always shows a folder. That is Finder, Photos and
+    Music — the pattern HIG uses for exactly this shape of app.</p></div>
+  <div class="note"><h4>No dock</h4>
+    <p>Every dock item finds a place it already has on Windows and macOS: Link at the foot of the sidebar,
+    Search and Settings at the right of the toolbar. The bottom of the window goes back to the content, and the
+    grid stops scrolling under a floating bar.</p></div>
+  <div class="note"><h4>Pinned is the second section</h4>
+    <p><code>PinnedSession</code> already exists — a folder deep inside a root plus its scroll position. It
+    finally gets a permanent place: one click from anywhere, with its parent named under it so two
+    “Season 1” rows can be told apart.</p></div>
+  <div class="note"><h4>The tree replaces breadcrumbs as navigation</h4>
+    <p>Roots expand in place. The toolbar keeps a short path — parent crumbs muted, current folder bold —
+    with Back/Forward beside it. Backspace still goes up.</p></div>
+  <div class="note"><h4>Two grids, chosen by what is in the folder</h4>
+    <p>Photos: a tight square mosaic, 3 px gaps, no captions — the picture is the label. A folder that is
+    mostly video switches to 16:9 cards with a title, duration and the watched bar, because an episode
+    needs its name. One size slider drives both.</p></div>
+  <div class="note"><h4>Selection is contextual</h4>
+    <p>The only floating element appears only while something is selected: count, Copy, Move,
+    Duplicate, Delete, Done. Hover a tile for its check circle; Ctrl/Shift-click as in Explorer.</p></div>
+  <div class="note"><h4>Search lives in the toolbar</h4>
+    <p>Ctrl+F focuses it. Results replace the grid with a scope switch — this folder or all linked
+    folders — and Esc returns to the folder you were in.</p></div>
+  <div class="note"><h4>First run is one sentence</h4>
+    <p>An empty window says what to do: drop a folder, or Link Folder…. The sidebar's Link row is lit
+    the same blue so both doors are visible. Dropping a folder anywhere on the window links it.</p></div>
+  <div class="note"><h4>Quick Look on Space</h4>
+    <p>Space over a tile shows it above the grid; arrows move through the folder, Enter opens the full
+    viewer, Space or Esc closes. Video plays muted from where the watch record left it.</p></div>
+  <div class="note"><h4>Hover a video, see the film</h4>
+    <p>Hovering a video card plays five short excerpts — about 2.5 s each, spread across the runtime —
+    with a stories-style bar on top. No dragging. Leaving the card stops it and shows the poster again.</p></div>
+  <div class="note"><h4>Info panel, Ctrl+I</h4>
+    <p>A right-hand inspector for the focused file: kind, size, dimensions, dates, camera and exposure
+    for a photo; codec, HDR, frame rate, audio and subtitle tracks for a video. Stays open as focus moves.</p></div>
+  <div class="note"><h4>The keyboard drives the grid</h4>
+    <p>Arrows move focus, Shift+arrows extend the selection, Enter opens, Space previews, Backspace goes
+    up a level, Ctrl+A selects all, Delete deletes. Try the arrows on this page.</p></div>
+  <div class="note"><h4>Drop a folder to link it</h4>
+    <p>A folder dragged in from Explorer lights the whole window; dropping links it and selects it in
+    the sidebar. A dropped <i>file</i> opens the viewer, as a double-click from Explorer does today.</p></div>
+  <div class="note"><h4>Folders update themselves</h4>
+    <p>The open folder is watched on disk: a new screenshot appears in the grid as it is written, a
+    deleted file leaves. Today the grid re-reads only after Woka's own Copy, Move or Delete. Nothing
+    announces the change — one person at one computer moved the file and expects to see it.</p></div>
+  <div class="note"><h4>Launch restores where you were</h4>
+    <p>The folder that was open when you quit, with its scroll — standard window restoration. Replaces
+    home-rethink's per-card launch flag; without a Home screen there is nothing else to land on.</p></div>
+  <div class="note"><h4>All · Photos · Videos</h4>
+    <p>A filter on the open folder. Cheap: the grid already knows each item's <code>MediaKind</code>.</p></div>
+</div>
+</div>
+
+<script>
+/* ---------- data ---------- */
+const TREE = [
+  {id:'movies', name:'Movies', count:'128', kind:'video', open:true, kids:[
+    {id:'series', name:'Series', count:'4', kind:'video', open:true, kids:[
+      {id:'andor', name:'Andor', count:'24', kind:'video', kids:[]},
+      {id:'bb', name:'Breaking Bad', count:'62', kind:'video', kids:[]}]},
+    {id:'films', name:'Films', count:'41', kind:'video', kids:[]}]},
+  {id:'pictures', name:'Pictures', count:'2 140', kind:'photo', kids:[
+    {id:'iceland', name:'Iceland 2025', count:'318', kind:'photo', kids:[]},
+    {id:'family', name:'Family', count:'1 204', kind:'photo', kids:[]}]},
+  {id:'shots', name:'Screenshots', count:'549', kind:'photo', kids:[]}
+];
+const PINS = [
+  {id:'andor-s1', name:'Andor · Season 1', parent:'Series › Andor', kind:'video'},
+  {id:'iceland', name:'Iceland 2025', parent:'Pictures', kind:'photo'},
+  {id:'oct', name:'2026-10', parent:'Screenshots', kind:'photo'}
+];
+const PATHS = {
+  pictures:[], iceland:['Pictures'], family:['Pictures'], shots:[], oct:['Screenshots'],
+  movies:[], series:['Movies'], films:['Movies'], andor:['Movies','Series'], bb:['Movies','Series'],
+  'andor-s1':['Movies','Series','Andor']
+};
+const SUBS = {
+  pictures:['Iceland 2025','Family','Wallpapers','Scans','Phone 2024'],
+  movies:['Series','Films','Cartoons'], series:['Andor','Breaking Bad','Severance','The Bear'],
+  andor:['Season 1','Season 2']
+};
+const EPISODES = ['Kassa','That Would Be Me','Reckoning','Aldhani','The Axe Forgets','The Eye',
+  'Announcement','Narkina 5','Nobody’s Listening!','One Way Out','Daughter of Ferrix','Rix Road'];
+
+let state = 'lib', selected = 'pictures', theme = 'dark', size = 150, picked = new Set();
+
+/* ---------- helpers ---------- */
+function rng(seed){ let s = 0; for (const c of seed) s = (s * 31 + c.charCodeAt(0)) >>> 0;
+  return () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function paint(r, base){
+  const h = (base + r() * 70) % 360, h2 = (h + 30 + r() * 40) % 360;
+  const x = 20 + r() * 60, y = 20 + r() * 50, horizon = 45 + r() * 25;
+  return `radial-gradient(circle at ${x}% ${y}%, hsla(${h2},70%,72%,.85), transparent 38%),
+    linear-gradient(180deg, hsl(${h},42%,${48 + r() * 14}%) 0%, hsl(${h},38%,34%) ${horizon}%,
+    hsl(${h2},30%,${14 + r() * 10}%) ${horizon + .5}%, hsl(${h2},35%,8%) 100%)`;
+}
+function find(id, list = TREE){ for (const n of list){ if (n.id === id) return n;
+  const k = find(id, n.kids); if (k) return k; } return PINS.find(p => p.id === id); }
+const icFolder = '<svg class="ico" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 4.2c0-.9.7-1.7 1.7-1.7h3l1.4 1.5h5.2c.9 0 1.7.7 1.7 1.7v6.1c0 .9-.8 1.7-1.7 1.7H3.2c-1 0-1.7-.8-1.7-1.7z"/></svg>';
+const icPin = '<svg class="ico pin" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M10 1.8l4.2 4.2-2.4.9-2.6 2.6.4 3-1.2 1.2-6.1-6.1 1.2-1.2 3 .4 2.6-2.6z"/><path d="M5.2 10.8L1.8 14.2"/></svg>';
+const chev = c => `<svg class="chev ${c}" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg>`;
+
+/* ---------- sidebar ---------- */
+function rows(list, depth){
+  return list.map(n => `
+    <div class="row l${depth} ${n.id === selected ? 'sel' : ''}" data-go="${n.id}">
+      ${chev(n.kids.length ? (n.open ? 'open' : '') : 'none')}
+      ${icFolder}<span class="lbl">${n.name}</span><span class="cnt">${n.count}</span>
+    </div>${n.open ? rows(n.kids, depth + 1) : ''}`).join('');
+}
+function renderSide(){
+  const el = document.getElementById('sideList');
+  if (state === 'first'){
+    el.innerHTML = `<div class="sec"><span>Folders</span></div>
+      <div class="row" style="color:var(--text3);cursor:default">Nothing linked yet</div>`;
+    return;
+  }
+  el.innerHTML = `<div class="sec"><span>Folders</span></div>${rows(TREE, 0)}
+    <div class="sec"><span>Pinned</span></div>
+    ${PINS.map(p => `<div class="row ${p.id === selected ? 'sel' : ''}" data-go="${p.id}" style="height:40px">
+      ${icPin}<div style="flex:1;min-width:0"><div class="lbl">${p.name}</div><div class="sub">${p.parent}</div></div>
+    </div>`).join('')}`;
+}
+
+/* ---------- toolbar ---------- */
+function renderTitle(){
+  const t = document.getElementById('title');
+  if (state === 'first'){ t.innerHTML = '<h2>Woka</h2>'; return; }
+  if (state === 'search'){ t.innerHTML = '<h2>Search</h2>'; return; }
+  const n = find(selected);
+  t.innerHTML = (PATHS[selected] || []).map(p => `<span class="crumb">${p}</span><span class="crumb-sep">›</span>`).join('')
+    + `<h2>${n.name.replace(' · ', ' · ')}</h2>`;
+}
+
+/* ---------- content ---------- */
+function folderCards(id){
+  const subs = SUBS[id]; if (!subs) return '';
+  return `<div class="h3">Folders <em>${subs.length}</em></div><div class="folders">${subs.map(s => {
+    const r = rng(s); const base = r() * 360;
+    return `<div class="fcard"><div class="mos">${[0,1,2,3].map(() => `<div style="background:${paint(r, base)}"></div>`).join('')}</div>
+      <div class="fname">${icFolder.replace('class="ico"', '')}${s}</div><div class="fmeta">${Math.floor(r() * 300 + 8)} items</div></div>`;
+  }).join('')}</div>`;
+}
+function photoGrid(id){
+  const r = rng(id); const base = r() * 360; const n = 72;
+  let html = '';
+  for (let i = 0; i < n; i++){
+    const video = r() < .12; const sec = Math.floor(r() * 300 + 4);
+    html += `<div class="tile ${picked.has(i) ? 'picked' : ''}" data-i="${i}">
+      <div class="ph" style="background:${paint(r, base)}"></div>
+      ${video ? `<span class="dur"><svg viewBox="0 0 10 10" fill="currentColor"><path d="M2 1l7 4-7 4z"/></svg>${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}</span>` : ''}
+      <span class="chk"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2.5 6.2l2.3 2.3 4.7-4.9"/></svg></span>
+    </div>`;
+  }
+  return `<div class="h3">${state === 'select' ? '' : 'Media'} <em>${n} of 318</em></div><div class="grid">${html}</div>
+    <div class="footer">318 photos, 41 videos</div>`;
+}
+function videoGrid(id){
+  const r = rng(id); const base = 200 + r() * 40;
+  return `<div class="h3">Episodes <em>12</em></div><div class="vgrid">${EPISODES.map((e, i) => {
+    const seen = i < 4, mid = i === 4; const len = 38 + Math.floor(r() * 18);
+    return `<div class="vt ${seen ? 'watched' : ''}" data-v="${i}"><div class="vthumb">
+        <div class="ph" style="background:${paint(r, base)}"></div>
+        <div class="segs">${'<i><b></b></i>'.repeat(5)}</div>
+        ${seen ? '<span class="seen">Watched</span>' : ''}
+        <span class="dur">${len}:${String(Math.floor(r() * 60)).padStart(2, '0')}</span>
+        ${mid ? '<span class="prog-bg"></span><span class="prog" style="width:37%"></span>' : ''}
+      </div><div class="vname">${String(i + 1).padStart(2, '0')} · ${e}</div>
+      <div class="vmeta">${seen ? 'Watched' : mid ? '24 min left' : len + ' min'}</div></div>`;
+  }).join('')}</div><div class="footer">12 videos · 9 h 41 min</div>`;
+}
+function searchView(){
+  const r = rng('search'); const names = ['Iceland 2025','iceberg_lagoon.jpg','ice_cave_02.jpg','ice_cave_03.heic',
+    'jokulsarlon_sunset.jpg','Nice trip notes.png','ice_hike.mp4','price_list_ice.png'];
+  const paths = ['Pictures','Pictures › Iceland 2025','Pictures › Iceland 2025','Pictures › Iceland 2025',
+    'Pictures › Iceland 2025','Screenshots','Pictures › Iceland 2025','Screenshots › 2026-10'];
+  return `<div class="scope"><div class="seg"><span>This Folder</span><span class="on">All Folders</span></div>
+    <div class="h"><b>8 results</b> for “ice”</div></div><div class="rgrid">${names.map((n, i) => `
+      <div class="rt"><div class="tile"><div class="ph" style="background:${paint(r, 190)}"></div></div>
+      <div class="rn">${i === 0 ? icFolder.replace('class="ico"', 'style="width:12px;height:12px;display:inline;color:var(--folder);vertical-align:-1px;margin-right:4px"') : ''}${n.replace(/ice/i, m => `<mark>${m}</mark>`)}</div>
+      <div class="rp">${paths[i]}</div></div>`).join('')}</div>`;
+}
+function firstRun(){
+  return `<div class="empty"><div class="drop">${icFolder.replace('class="ico"', '')}
+    <h3>Drop a folder here</h3>
+    <p>Woka shows what is inside and keeps the folder in the sidebar. Nothing is copied or moved.</p>
+    <span class="btn">Link Folder…</span></div></div>`;
+}
+function renderContent(){
+  const c = document.getElementById('content');
+  const n = find(selected);
+  if (state === 'first') c.innerHTML = firstRun();
+  else if (state === 'search') c.innerHTML = searchView();
+  else if (n.kind === 'video') c.innerHTML = folderCards(selected) + videoGrid(selected);
+  else c.innerHTML = folderCards(selected) + photoGrid(selected);
+  c.classList.toggle('selecting', state === 'select');
+  const bar = document.getElementById('selbar');
+  bar.classList.toggle('show', picked.size > 0);
+  document.getElementById('selN').textContent = picked.size + ' selected';
+}
+
+function render(){
+  const app = document.getElementById('app');
+  app.classList.toggle('first', state === 'first');
+  document.body.classList.toggle('light', theme === 'light');
+  document.getElementById('search').classList.toggle('focus', state === 'search');
+  document.getElementById('q').value = state === 'search' ? 'ice' : '';
+  ['filter', 'search'].forEach(id => document.getElementById(id).style.visibility = state === 'first' ? 'hidden' : '');
+  document.querySelector('.size').style.visibility = state === 'first' || state === 'search' ? 'hidden' : '';
+  renderSide(); renderTitle(); renderContent();
+}
+
+/* ---------- interaction ---------- */
+document.getElementById('dState').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('#dState button').forEach(x => x.classList.toggle('on', x === b));
+  state = b.dataset.s;
+  const extra = state;
+  if (['ql', 'info', 'drop'].includes(state)) state = 'lib';
+  selected = state === 'video' ? 'andor-s1' : 'pictures';
+  picked = state === 'select' ? new Set([2, 3, 7]) : new Set();
+  if (state === 'video') state = 'lib';
+  render(); setFocus(4);
+  setQl(extra === 'ql'); setInfo(extra === 'info');
+  document.getElementById('dropov').classList.toggle('show', extra === 'drop');
+});
+document.getElementById('sideList').addEventListener('click', e => {
+  const row = e.target.closest('[data-go]'); if (!row) return;
+  const n = find(row.dataset.go);
+  if (e.target.closest('.chev') && n.kids && n.kids.length){ n.open = !n.open; renderSide(); return; }
+  selected = n.id; picked.clear(); if (state === 'search' || state === 'select') state = 'lib';
+  document.querySelectorAll('#dState button').forEach(x => x.classList.toggle('on', x.dataset.s === 'lib'));
+  render(); document.getElementById('content').scrollTop = 0;
+});
+document.getElementById('content').addEventListener('click', e => {
+  const t = e.target.closest('.tile[data-i]'); if (!t) return;
+  if (!e.target.closest('.chk') && picked.size === 0) return;
+  const i = +t.dataset.i; picked.has(i) ? picked.delete(i) : picked.add(i);
+  t.classList.toggle('picked', picked.has(i));
+  const bar = document.getElementById('selbar');
+  bar.classList.toggle('show', picked.size > 0);
+  document.getElementById('selN').textContent = picked.size + ' selected';
+});
+document.getElementById('selDone').addEventListener('click', () => { picked.clear(); state = 'lib'; renderContent(); });
+document.getElementById('content').addEventListener('scroll', e =>
+  document.getElementById('bar').classList.toggle('scrolled', e.target.scrollTop > 4));
+document.getElementById('size').addEventListener('input', e =>
+  document.getElementById('content').style.setProperty('--cell', e.target.value + 'px'));
+document.getElementById('filter').addEventListener('click', e => {
+  if (e.target.tagName !== 'SPAN') return;
+  document.querySelectorAll('#filter span').forEach(s => s.classList.toggle('on', s === e.target));
+});
+document.getElementById('hideSide').addEventListener('click', () => {
+  document.getElementById('app').classList.add('collapsed'); document.getElementById('showSide').hidden = false; });
+document.getElementById('showSide').addEventListener('click', () => {
+  document.getElementById('app').classList.remove('collapsed'); document.getElementById('showSide').hidden = true; });
+document.getElementById('q').addEventListener('focus', () => {
+  if (state === 'first') return; state = 'search';
+  document.querySelectorAll('#dState button').forEach(x => x.classList.toggle('on', x.dataset.s === 'search'));
+  render(); });
+document.getElementById('q').addEventListener('keydown', e => { if (e.key === 'Escape'){ state = 'lib';
+  document.querySelectorAll('#dState button').forEach(x => x.classList.toggle('on', x.dataset.s === 'lib'));
+  e.target.blur(); render(); } });
+/* ---------- focus, Quick Look, Info ---------- */
+let focus = 0, hovered = null, qlOpen = false, infoOpen = false;
+const items = () => [...document.querySelectorAll('#content .tile[data-i], #content .vt')];
+function itemName(el){
+  if (!el) return '';
+  if (el.classList.contains('vt')) return 'Andor S01E' + el.querySelector('.vname').textContent.replace(' · ', ' - ') + '.mkv';
+  return 'DSC0' + (4200 + +el.dataset.i) + '.jpg';
+}
+function setFocus(i){
+  const list = items(); if (!list.length) return;
+  focus = Math.max(0, Math.min(list.length - 1, i));
+  list.forEach((el, k) => el.classList.toggle('focus', k === focus));
+  list[focus].scrollIntoView({block:'nearest'});
+  if (qlOpen) fillQl(); if (infoOpen) fillInfo();
+}
+function columns(){
+  const list = items(); if (list.length < 2) return 1;
+  const top = list[0].offsetTop; let n = 0;
+  for (const el of list){ if (el.offsetTop !== top) break; n++; } return n;
+}
+function current(){ return items()[focus]; }
+function fillQl(){
+  const el = current(); if (!el) return;
+  const ph = el.querySelector('.ph'); const dur = el.querySelector('.dur');
+  document.getElementById('qlPic').innerHTML = `<div class="ph" style="background:${ph.style.background}"></div>${dur ? dur.outerHTML : ''}`;
+  document.getElementById('qlName').textContent = itemName(el);
+}
+function setQl(on){ qlOpen = on && !!current(); if (qlOpen) fillQl();
+  document.getElementById('ql').classList.toggle('show', qlOpen); }
+function fillInfo(){
+  const el = current(); if (!el) return;
+  const bg = el.querySelector('.ph').style.background; const video = el.classList.contains('vt');
+  const rows = video
+    ? [['Kind','Matroska video'],['Size','4.21 GB'],['Duration','42:17'],['Modified','3 Oct 2026, 22:14']]
+    : [['Kind','JPEG image'],['Size','8.4 MB'],['Dimensions','6000 × 4000'],['Taken','14 Jul 2025, 21:47']];
+  const extra = video
+    ? [['Video',[['Codec','HEVC Main 10'],['Picture','3840 × 2160 · 23.976'],['HDR','HDR10 · PQ']]],
+       ['Audio',[['1','English · 5.1'],['2','Russian · 5.1']]],
+       ['Subtitles',[['1','English · SRT'],['2','Russian · ASS']]]]
+    : [['Camera',[['Model','Sony α7 IV'],['Lens','24–70 mm f/2.8'],['Exposure','1/250 · f/8 · ISO 100']]]];
+  const dl = list => `<dl>${list.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
+  document.getElementById('infoIn').innerHTML = `<div class="pv" style="background:${bg}"></div>
+    <h5>${itemName(el)}</h5><div class="k">${(PATHS[selected] || []).concat(find(selected).name).join(' › ')}</div>
+    <div class="grp">General</div>${dl(rows)}
+    ${extra.map(([g, l]) => `<div class="grp">${g}</div>${dl(l)}`).join('')}
+    <div class="act">Show in Explorer</div>`;
+}
+function setInfo(on){ infoOpen = on; document.getElementById('app').classList.toggle('info-open', on);
+  document.getElementById('infoBtn').classList.toggle('on', on); if (on) fillInfo(); }
+document.getElementById('infoBtn').addEventListener('click', () => setInfo(!infoOpen));
+document.getElementById('ql').addEventListener('click', e => { if (e.target.id === 'ql') setQl(false); });
+document.getElementById('content').addEventListener('mouseover', e => {
+  const el = e.target.closest('.tile[data-i], .vt'); hovered = el ? items().indexOf(el) : null; });
+document.getElementById('content').addEventListener('mousedown', e => {
+  const el = e.target.closest('.tile[data-i], .vt'); if (el && !e.target.closest('.chk')) setFocus(items().indexOf(el)); });
+document.addEventListener('keydown', e => {
+  if (e.target.id === 'q') return;
+  if (e.ctrlKey && e.key.toLowerCase() === 'i'){ e.preventDefault(); setInfo(!infoOpen); return; }
+  if (e.ctrlKey && e.key.toLowerCase() === 'f'){ e.preventDefault(); document.getElementById('q').focus(); return; }
+  if (state === 'first' || state === 'search') return;
+  const step = {ArrowLeft:-1, ArrowRight:1, ArrowUp:-columns(), ArrowDown:columns()}[e.key];
+  if (step){ e.preventDefault(); setFocus(focus + step); return; }
+  if (e.key === ' '){ e.preventDefault(); if (!qlOpen && hovered !== null) setFocus(hovered); setQl(!qlOpen); return; }
+  if (e.key === 'Escape') setQl(false);
+});
+
+/* ---------- hover preview: five excerpts ---------- */
+const SEG_MS = 1400; // ~2.5 s in the app; faster here so the demo reads
+let hoverTimer = null;
+document.getElementById('content').addEventListener('mouseover', e => {
+  const vt = e.target.closest('.vt'); if (!vt || vt.classList.contains('playing')) return;
+  stopHover(); vt.classList.add('playing');
+  const ph = vt.querySelector('.ph'); vt.dataset.poster = ph.style.background;
+  const bars = [...vt.querySelectorAll('.segs b')]; const r = rng('seg' + vt.dataset.v); let k = 0;
+  const step = () => {
+    if (k === 5){ bars.forEach(b => { b.style.transition = 'none'; b.style.width = '0'; }); k = 0; }
+    ph.style.background = paint(r, 200 + k * 25);
+    const b = bars[k]; b.style.transition = 'none'; b.style.width = '0';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      b.style.transition = `width ${SEG_MS}ms linear`; b.style.width = '100%'; }));
+    k++;
+  };
+  step(); hoverTimer = setInterval(step, SEG_MS);
+  vt.addEventListener('mouseleave', stopHover, {once:true});
+});
+function stopHover(){
+  clearInterval(hoverTimer); hoverTimer = null;
+  document.querySelectorAll('.vt.playing').forEach(vt => {
+    vt.classList.remove('playing'); vt.querySelector('.ph').style.background = vt.dataset.poster;
+    vt.querySelectorAll('.segs b').forEach(b => { b.style.transition = 'none'; b.style.width = '0'; });
+  });
+}
+
+render();
+setFocus(0);
+</script>
+</body>
+</html>

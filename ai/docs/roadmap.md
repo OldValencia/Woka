@@ -35,6 +35,10 @@ and asserted row by row by `StartupRouteTest`:
 - **Grid & Cards:** Refine folder and media cards with proper corner radii, smooth hover animations, selection states, and glassmorphism elements.
 - **Typography & Spacing:** Adjust fonts (weight, size, color hierarchy) and padding to ensure a clean, uncluttered, professional aesthetic.
 - **Empty States & Settings:** Polish the Settings overlay and empty folder views with engaging graphics or subtle instructions.
+- **Sidebar (pending):** `features/pending/sidebar/` — Home and the dock are replaced by a window
+  with a sidebar (linked folders as a tree, Pinned) and a toolbar. Launch restores the last folder.
+  It also adds Quick Look, an Info panel, keyboard navigation, video hover excerpts and live folders.
+  Seven tickets; `home-rethink` lost to it on 2026-10-17 and is archived inside it.
 - **Package restructure (done):** moved from layer-first to feature-first (`app/`, `core/`,
   `feature/<name>/`) per `features/implemented/package-restructure-feature-first.md`.
 - **Code-quality refactor (done):** `features/implemented/code-quality-refactor.md` — a media domain
