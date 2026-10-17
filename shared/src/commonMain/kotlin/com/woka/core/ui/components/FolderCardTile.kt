@@ -46,7 +46,8 @@ internal fun FolderCardTileBody(
     isHovered: Boolean,
     isSelected: Boolean,
     watch: WatchRecord?,
-    dimWatched: Boolean
+    dimWatched: Boolean,
+    coverOverlay: (@Composable BoxScope.(hovered: Boolean) -> Unit)? = null
 ) {
     val scale by animateFloatAsState(if (isSelected) 0.9f else 1f, tween(180))
     Box(
@@ -79,6 +80,7 @@ internal fun FolderCardTileBody(
                 watch = watch,
                 dimWatched = dimWatched
             )
+            coverOverlay?.invoke(this, isHovered)
             if (isHovered) FolderCardCaption(name = data.name, meta = data.meta, isHovered = true)
             FolderCardProgress(watch)
         }

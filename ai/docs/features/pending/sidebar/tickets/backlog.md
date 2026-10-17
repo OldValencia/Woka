@@ -4,20 +4,6 @@ Four blocks, each one sitting that ends with something on screen. A block is pro
 `tickets/<ID>-<slug>.md` when it is next, and re-cut against the tree as it is then (`tickets.md` §4).
 There are no file paths here on purpose.
 
-### SIDE-006 — Hovering a video plays five excerpts
-
-Hovering a video card plays five excerpts of about 2.5 s each, spread evenly across the runtime and
-muted. A five-segment progress bar runs across the top. Leaving the card stops playback and restores
-the poster.
-
-The excerpts decode from the existing seek-preview path, not a second player. One card plays at a
-time.
-
-Measure the decode cost on a 4K HEVC file before the excerpt length is fixed, and record the result
-with its date in the ticket.
-
-**Depends on.** SIDE-004.
-
 ### SIDE-007 — The disk: live folders, linking in, undoing the way out
 
 **Live folders.** The open folder is watched on disk through `expect`/`actual`, with `WatchService`

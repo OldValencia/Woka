@@ -123,8 +123,8 @@ next one is specified. The rest are blocks in `tickets/backlog.md`.
 | [SIDE-003](tickets/SIDE-003-the-toolbar.md) | The toolbar replaces the dock and history goes: filter, sort, size, search, settings, selection bar | **done 2026-10-17** |
 | [SIDE-004](tickets/SIDE-004-the-photo-mosaic.md) | The photo mosaic: a photo folder as square tiles, sub-folders first, a check circle on every tile | **done 2026-10-17** |
 | [SIDE-005](tickets/SIDE-005-the-keyboard-and-quick-look.md) | The keyboard drives the grid: focus, Enter, Backspace, Quick Look | **done 2026-10-17** |
-| SIDE-006 | Hovering a video plays five excerpts | **← NEXT** |
-| SIDE-007 | The disk: the open folder updates itself, a folder dropped in links, an unlink can be undone | backlog |
+| [SIDE-006](tickets/SIDE-006-video-hover-excerpts.md) | Hovering a video plays five excerpts | **done 2026-10-17** |
+| SIDE-007 | The disk: the open folder updates itself, a folder dropped in links, an unlink can be undone | **← NEXT** |
 | SIDE-008 | Search in the content: the toolbar box takes text, results replace the grid | backlog |
 | SIDE-009 | The Info panel: Ctrl+I, the focused item's details | backlog |
 
@@ -144,4 +144,5 @@ next one is specified. The rest are blocks in `tickets/backlog.md`.
 | 2026-10-17 | What does the toolbar carry? | **The folder's name, View, Pin, Search and Settings.** Filter, size and sort share the View button. The first cut put them in the bar, and from the running app it was crowded at the default window. A breadcrumb path is gone too: it ate the bar in a deep folder, and the tree already shows where you are. |
 | 2026-10-17 | Thumbnail size: per folder, continuous? | **One size for every folder, S · M · L.** The three-detent slider could not get back to its middle once left. Per-folder sizes opened every unvisited folder at M, so the size chosen never followed the user. This supersedes the continuous size planned for SIDE-004. |
 | 2026-10-17 | Default window size? | **80 % of the screen, at most 1440×900.** The old 1100×720 left the toolbar and grid cramped beside a 236.dp sidebar. |
+| 2026-10-17 | Hover excerpts: moving clips or stills? | **Moving clips, 2.5 s each, decoded on two threads, the next one decoded ahead.** Measured with `HoverExcerptProbe` on two 2160p HEVC files: 38–65 fps sustained at two threads against a 24 fps film; the seek, at up to 0.8 s, is the real cost, hence the excerpt held ready. |
 | 2026-10-17 | How many tickets? | **Seven, each a sitting.** One person builds this. A ticket is the smallest slice that changes the screen, not a layer of the code. |

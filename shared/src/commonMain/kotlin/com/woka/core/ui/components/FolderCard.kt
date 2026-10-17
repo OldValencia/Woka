@@ -7,6 +7,7 @@ import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -58,7 +59,10 @@ fun FolderCard(
     // The keyboard's item (SIDE-005): ringed in the accent, and told where the
     // pointer is so Space can preview what is under it.
     isFocused: Boolean = false,
-    onHoverChange: ((Boolean) -> Unit)? = null
+    onHoverChange: ((Boolean) -> Unit)? = null,
+    // Drawn over the cover, under the caption: the hover excerpts (SIDE-006). A slot,
+    // so `core` draws what the folder feature hands it without knowing the player.
+    coverOverlay: (@Composable BoxScope.(hovered: Boolean) -> Unit)? = null
 ) {
     val data = rememberFolderCardData(path)
 
@@ -114,7 +118,7 @@ fun FolderCard(
             }
     ) {
         if (tile) {
-            FolderCardTileBody(data, isHovered, isSelected, watch, dimWatched)
+            FolderCardTileBody(data, isHovered, isSelected, watch, dimWatched, coverOverlay)
         } else {
             FolderCardBody(
                 data = data,
@@ -123,7 +127,8 @@ fun FolderCard(
                 isHovered = isHovered,
                 onRemove = onRemove,
                 watch = watch,
-                dimWatched = dimWatched
+                dimWatched = dimWatched,
+                coverOverlay = coverOverlay
             )
         }
         FolderCardMarks(tile, isFocused, isHovered, isSelected, onCheck)

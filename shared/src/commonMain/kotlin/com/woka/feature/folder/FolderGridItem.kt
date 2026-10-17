@@ -1,7 +1,10 @@
 package com.woka.feature.folder
 
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
 import com.woka.core.data.MediaItem
+import com.woka.feature.viewer.VideoHoverExcerpts
 import com.woka.core.ui.components.FolderCard
 import com.woka.core.ui.components.WatchMarks
 
@@ -67,6 +70,9 @@ internal fun FolderGridItem(
         isFocused = focus.focused == target,
         onHoverChange = { over ->
             if (over) focus.hovered = target else if (focus.hovered == target) focus.hovered = null
-        }
+        },
+        coverOverlay = if (item is MediaItem.Video) {
+            { hovered -> if (hovered) VideoHoverExcerpts(item.file, Modifier.fillMaxSize()) }
+        } else null
     )
 }

@@ -3,6 +3,7 @@ package com.woka.core.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,7 +34,8 @@ internal fun FolderCardBody(
     isHovered: Boolean,
     onRemove: (() -> Unit)?,
     watch: WatchRecord?,
-    dimWatched: Boolean
+    dimWatched: Boolean,
+    coverOverlay: (@Composable BoxScope.(hovered: Boolean) -> Unit)? = null
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Box(
@@ -59,6 +61,7 @@ internal fun FolderCardBody(
                 watch = watch,
                 dimWatched = dimWatched
             )
+            coverOverlay?.invoke(this, isHovered)
 
             if (showTitle) {
                 FolderCardCaption(
