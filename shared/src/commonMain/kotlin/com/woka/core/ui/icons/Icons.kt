@@ -131,5 +131,7 @@ object Icons {
         // Stream selection (subtitles)
         val Subtitles = Res.drawable.captions_bubble
         val SubtitlesOff = Res.drawable.captions_bubble_slash
+
+        val Logo = Res.drawable.woka_logo
     }
 }
