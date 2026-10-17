@@ -102,7 +102,14 @@ compose.desktop {
                 Triple("video/x-flv", "flv", "Flash Video")
             )
             for ((mime, ext, desc) in mediaAssociations) {
-                fileAssociation(mime, ext, desc, ico, icns, png)
+                fileAssociation(
+                    mimeType = mime,
+                    extension = ext,
+                    description = desc,
+                    linuxIconFile = png,
+                    windowsIconFile = ico,
+                    macOSIconFile = icns
+                )
             }
         }
     }
