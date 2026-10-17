@@ -37,3 +37,12 @@ data class EditorTarget(
  */
 fun isEditable(factory: EditorEngineFactory, path: String): Boolean =
     runCatching { factory.capability(path) != EditCapability.Unavailable }.getOrDefault(false)
+
+/**
+ * **The video editor is switched off, 2026-10-17** — paused by the author with
+ * `foundation/` and part of `save/` shipped and the rest not started. The code and the
+ * tickets stay; only the doors close. False removes Edit from a video in the grid's menu,
+ * the viewer's pill and the viewer's right-click. The factory still answers for video, so
+ * the engine's own tests keep running. Turning it back on is this line.
+ */
+const val VIDEO_EDITING_ENABLED = false

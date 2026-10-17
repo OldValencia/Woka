@@ -16,7 +16,7 @@ fun MediaViewerLayoutWrapper(
     settingsRepo: SettingsRepository,
     currentId: String,
     onClose: (String) -> Unit,
-    onEdit: () -> Unit,
+    onEdit: (() -> Unit)?,
     onInfo: () -> Unit,
     isInfoOpen: Boolean,
     /** See `MediaViewerNormalControls.showHdrMode`. */

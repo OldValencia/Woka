@@ -50,7 +50,8 @@ fun MediaViewerNormalControls(
     onOffsetReset: () -> Unit,
     carouselMode: CarouselVisibility,
     onToggleCarousel: () -> Unit,
-    onEdit: () -> Unit,
+    /** Null hides Edit — a video, while `VIDEO_EDITING_ENABLED` is false. */
+    onEdit: (() -> Unit)?,
     onInfo: () -> Unit,
     isInfoOpen: Boolean,
     /**
@@ -107,10 +108,7 @@ fun MediaViewerNormalControls(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 PillGap()
                 ToggleCarouselButton(carouselMode, onToggleCarousel)
-                PillGap()
-                PillDivider()
-                PillGap()
-                EditButton(onEdit)
+                if (onEdit != null) EditGroup(onEdit)
             }
         }
     }

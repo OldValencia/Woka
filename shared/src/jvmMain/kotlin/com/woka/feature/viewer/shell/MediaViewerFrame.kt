@@ -49,8 +49,8 @@ fun MediaViewerFrame(
     // (§10.6).
     val menuItems = remember(actions) {
         val fileActions = if (actions.showFileActions) {
-            listOf(
-                ContextMenuItem("Edit") { actions.onEdit() },
+            listOfNotNull(
+                actions.onEdit?.let { edit -> ContextMenuItem("Edit") { edit() } },
                 ContextMenuItem("Copy") { actions.onCopy() },
                 ContextMenuItem("Info") { actions.onInfo() }
             )

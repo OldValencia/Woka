@@ -10,6 +10,7 @@ import com.woka.core.ui.theme.Theme
 import com.woka.core.utils.copyFilesToClipboard
 import com.woka.core.utils.copyImageToClipboard
 import com.woka.core.utils.openDirectoryPicker
+import com.woka.feature.editor.VIDEO_EDITING_ENABLED
 import com.woka.feature.editor.core.EditorEngineFactory
 import com.woka.feature.editor.isEditable
 import kotlinx.coroutines.launch
@@ -77,7 +78,7 @@ internal fun FolderItemContextMenu(
     // Beside Rename/Copy/Delete, where §4.1 puts it. Greyed for anything the engine
     // factory refuses — video until ME-201, and every format Skia cannot encode — so
     // the entry is honest rather than absent.
-    if (item !is MediaItem.Folder) {
+    if (item !is MediaItem.Folder && (item !is MediaItem.Video || VIDEO_EDITING_ENABLED)) {
         DropdownItem("Edit", enabled = isEditable(engineFactory, target)) {
             dismiss()
             onEditMedia(target)

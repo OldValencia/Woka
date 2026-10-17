@@ -109,6 +109,15 @@ fun PipWindowButton(isPipWindow: Boolean, onToggle: () -> Unit) {
     }
 }
 
+/** Edit with the divider before it, so a pill without Edit ends flush on the carousel toggle. */
+@Composable
+internal fun EditGroup(onEdit: () -> Unit) {
+    PillGap()
+    PillDivider()
+    PillGap()
+    EditButton(onEdit)
+}
+
 @Composable
 fun EditButton(onEdit: () -> Unit) {
     Row(

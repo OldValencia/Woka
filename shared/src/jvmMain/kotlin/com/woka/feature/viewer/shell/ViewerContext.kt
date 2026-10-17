@@ -2,6 +2,7 @@ package com.woka.feature.viewer.shell
 
 import androidx.compose.runtime.Immutable
 import com.woka.core.data.CarouselVisibility
+import com.woka.feature.editor.VIDEO_EDITING_ENABLED
 
 /**
  * The three context values the viewer shell threads through its layers.
@@ -22,11 +23,11 @@ data class ViewerMenuEntry(val label: String, val onClick: () -> Unit)
  *
  * [showFileActions] exists because the fullscreen/PiP window has no file open in
  * the sense the three below mean: it used to be handed three no-op lambdas, and
- * rendered a menu in which every item did nothing.
+ * rendered a menu in which every item did nothing. A null [onEdit] drops Edit alone.
  */
 @Immutable
 data class ViewerActions(
-    val onEdit: () -> Unit,
+    val onEdit: (() -> Unit)?,
     val onCopy: () -> Unit,
     val onInfo: () -> Unit,
     val showFileActions: Boolean = true,
@@ -36,6 +37,13 @@ data class ViewerActions(
 /** For surfaces with no file actions of their own, such as the fullscreen window. */
 val NO_VIEWER_ACTIONS =
     ViewerActions(onEdit = {}, onCopy = {}, onInfo = {}, showFileActions = false)
+
+/**
+ * The viewer's Edit, or null where none is offered: a video while
+ * [VIDEO_EDITING_ENABLED] is false. Null hides the pill's button and the right-click entry.
+ */
+internal fun editActionOf(isVideo: Boolean, edit: () -> Unit): (() -> Unit)? =
+    edit.takeIf { !isVideo || VIDEO_EDITING_ENABLED }
 
 /**
  * Where the media sits: the semantic size mode plus the pan offset. Read by the

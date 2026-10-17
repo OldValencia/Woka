@@ -20,7 +20,7 @@ fun MediaViewerTopBarSetup(
     settingsRepo: SettingsRepository,
     currentId: String,
     onClose: (String) -> Unit,
-    onEdit: () -> Unit,
+    onEdit: (() -> Unit)?,
     onInfo: () -> Unit,
     isInfoOpen: Boolean,
     /** See `MediaViewerNormalControls.showHdrMode` — false while a video is open. */
@@ -70,7 +70,7 @@ fun MediaViewerTopBarSetup(
                     }
                     settingsRepo.setCarouselMode(newMode)
                 },
-                onEdit = { curOnEdit() },
+                onEdit = curOnEdit,
                 onInfo = { curOnInfo() },
                 isInfoOpen = curIsInfoOpen,
                 showHdrMode = curShowHdr
