@@ -74,6 +74,7 @@ internal fun SettingsOverlayContent(
                 // Short label: the column is 140.dp and "Picture in Picture"
                 // clips. The panel carries the full name as its section heading.
                 CategoryItem("PiP", Icons.Static.Collapse, selectedCategory, onSelectCategory)
+                CategoryItem("OS Integration", Icons.Static.Settings, selectedCategory, onSelectCategory)
                 CategoryItem("About", Icons.Static.InfoCircle, selectedCategory, onSelectCategory)
             }
             Spacer(modifier = Modifier.width(28.dp))
@@ -95,6 +96,7 @@ internal fun SettingsOverlayContent(
                             // and this file is not.
                             "Editor" -> EditorSettingsPanel()
                             "PiP" -> PipSettingsPanel(settings, repo)
+                            "OS Integration" -> OsIntegrationSettingsPanel(settings, repo)
                             "About" -> AboutSettingsPanel()
                         }
                     }

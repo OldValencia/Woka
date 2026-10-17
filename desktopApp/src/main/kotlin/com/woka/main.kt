@@ -23,6 +23,8 @@ import com.woka.app.di.initKoin
 import com.woka.app.shell.AppExitRequest
 import com.woka.app.shell.ExitWhenQuiet
 import com.woka.app.shell.WindowKeys
+import com.woka.core.data.WokaStorage
+import com.woka.core.system.FolderContextMenu
 import java.awt.Point
 import com.woka.app.App
 import java.awt.Dimension
@@ -34,9 +36,7 @@ fun main(args: Array<String>) {
     }
 
     if (FolderContextMenu.isSupported() && FolderContextMenu.executablePath() != null) {
-        if (!FolderContextMenu.isRegistered()) {
-            FolderContextMenu.register()
-        }
+        FolderContextMenu.firstRunRegisterIfNeeded(WokaStorage.root)
     }
 
     // Resolves the launch route too, before the first composition: the router

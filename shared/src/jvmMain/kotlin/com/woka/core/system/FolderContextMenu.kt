@@ -1,4 +1,4 @@
-package com.woka
+package com.woka.core.system
 
 import java.io.File
 
@@ -10,7 +10,7 @@ import java.io.File
  * the current user's registry hive (`HKCU`), it requires no administrator elevation
  * or UAC prompts.
  */
-internal object FolderContextMenu {
+object FolderContextMenu {
 
     private val isWindows = System.getProperty("os.name").lowercase().contains("windows")
 
@@ -38,6 +38,23 @@ internal object FolderContextMenu {
         } catch (_: Exception) {
             false
         }
+    }
+
+    /**
+     * Registers the context menu on the first launch of an installed package.
+     * Subsequent launches respect the user's manual toggle from Settings.
+     */
+    fun firstRunRegisterIfNeeded(storageRoot: File): Boolean {
+        if (!isSupported() || executablePath() == null) return false
+        val marker = File(storageRoot, ".context_menu_initialized")
+        if (marker.exists()) return false
+        try {
+            storageRoot.mkdirs()
+            marker.createNewFile()
+        } catch (_: Exception) {
+            // Marker could not be created
+        }
+        return register()
     }
 
     /**
