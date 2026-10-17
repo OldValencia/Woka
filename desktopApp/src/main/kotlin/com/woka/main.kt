@@ -29,6 +29,16 @@ import java.awt.Dimension
 import java.awt.GraphicsEnvironment
 
 fun main(args: Array<String>) {
+    if (!SingleInstance.startOrForward(args)) {
+        return
+    }
+
+    if (FolderContextMenu.isSupported() && FolderContextMenu.executablePath() != null) {
+        if (!FolderContextMenu.isRegistered()) {
+            FolderContextMenu.register()
+        }
+    }
+
     // Resolves the launch route too, before the first composition: the router
     // publishes its stack as a StateFlow, and a screen changed underneath a live
     // composition would animate as a navigation the user did not make.
@@ -49,6 +59,10 @@ fun main(args: Array<String>) {
             state = windowState,
             onPreviewKeyEvent = { WindowKeys.handle(it) }
         ) {
+            LaunchedEffect(window) {
+                SingleInstance.bindWindow(window)
+            }
+
             window.minimumSize = Dimension(800, 580)
             val density = LocalDensity.current.density
 
@@ -104,7 +118,10 @@ fun main(args: Array<String>) {
                     isMaximized = windowState.placement == WindowPlacement.Maximized
                 )
             }
-            ExitWhenQuiet(AppExitRequest.requested) { exitApplication() }
+            ExitWhenQuiet(AppExitRequest.requested) {
+                SingleInstance.stop()
+                exitApplication()
+            }
         }
     }
 }

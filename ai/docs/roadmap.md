@@ -145,7 +145,10 @@ replaced the whole export path.
   can and never overwrites the source. The copy comes back for that one path, because a lossy
   overwrite is irreversible.
 
-### Phase 6: OS Integration
-- Register Woka in Windows Registry to handle `.jpg`, `.png`, `.mp4` file extensions.
-- Add context menu entry for directories: `Open with Woka`.
+### Phase 6: OS Integration & Packaging (done 2026-10-17)
+- Standalone installers configured (`packageMsi`, `Dmg`, `Deb`) with bundled runtime and icon assets (`.ico`, `.icns`, `.png`).
+- File associations declared for all 30 image and video formats (`MediaKind.kt`), with CLI launch routing directly to viewer/folder.
+- Single-instance coordination with ephemeral port socket, `lock.port` storage file, handshake verification (`"WOKA-INSTANCE"`), and CLI path forwarding.
+- Windows Explorer context menu integration (`FolderContextMenu.kt`) for folders and directory backgrounds under `HKCU\Software\Classes\Directory\shell\Woka`.
 - (Future) IPC/Integration with the Echo clipboard manager.
+

@@ -30,9 +30,78 @@ compose.desktop {
         jvmArgs += listOf("-Xmx1536m", "-XX:MaxNewSize=256m")
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi)
-            packageName = "com.woka"
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            packageName = "Woka"
             packageVersion = "1.0.0"
+            description = "Minimalist desktop media viewer & editor"
+            copyright = "Copyright 2026 OldValencia"
+            vendor = "OldValencia"
+            licenseFile.set(project.file("../LICENSE"))
+
+            modules("java.instrument", "java.management", "jdk.unsupported")
+
+            val ico = project.file("src/main/resources/icons/woka.ico")
+            val icns = project.file("src/main/resources/icons/woka.icns")
+            val png = project.file("src/main/resources/icons/woka.png")
+
+            windows {
+                menu = true
+                menuGroup = "Woka"
+                shortcut = true
+                upgradeUuid = "d7e98a3e-43f1-4c17-91a5-8d5a2307ef01"
+                iconFile.set(ico)
+                dirChooser = true
+                perUserInstall = true
+            }
+
+            macOS {
+                bundleID = "com.woka.app"
+                dockName = "Woka"
+                packageBuildVersion = "1.0.0"
+                iconFile.set(icns)
+            }
+
+            linux {
+                shortcut = true
+                menuGroup = "Graphics;AudioVideo;"
+                iconFile.set(png)
+            }
+
+            val mediaAssociations = listOf(
+                Triple("image/jpeg", "jpg", "JPEG Image"),
+                Triple("image/jpeg", "jpeg", "JPEG Image"),
+                Triple("image/png", "png", "PNG Image"),
+                Triple("image/webp", "webp", "WebP Image"),
+                Triple("image/bmp", "bmp", "Bitmap Image"),
+                Triple("image/gif", "gif", "GIF Image"),
+                Triple("image/heic", "heic", "High Efficiency Image"),
+                Triple("image/heif", "heif", "High Efficiency Image"),
+                Triple("image/avif", "avif", "AVIF Image"),
+                Triple("image/tiff", "tif", "TIFF Image"),
+                Triple("image/tiff", "tiff", "TIFF Image"),
+                Triple("image/svg+xml", "svg", "SVG Vector Image"),
+                Triple("image/x-tga", "tga", "Targa Image"),
+                Triple("image/qoi", "qoi", "Quite OK Image"),
+                Triple("image/jp2", "jp2", "JPEG 2000 Image"),
+                Triple("image/x-pcx", "pcx", "PCX Image"),
+                Triple("image/x-portable-pixmap", "ppm", "PPM Image"),
+                Triple("video/mp4", "mp4", "MP4 Video"),
+                Triple("video/x-matroska", "mkv", "Matroska Video"),
+                Triple("video/x-msvideo", "avi", "AVI Video"),
+                Triple("video/quicktime", "mov", "QuickTime Video"),
+                Triple("video/webm", "webm", "WebM Video"),
+                Triple("video/x-m4v", "m4v", "M4V Video"),
+                Triple("video/3gpp", "3gp", "3GP Video"),
+                Triple("video/mpeg", "mpg", "MPEG Video"),
+                Triple("video/mpeg", "mpeg", "MPEG Video"),
+                Triple("video/mp2t", "m2ts", "MPEG-2 Transport Stream"),
+                Triple("video/mp2t", "mts", "MPEG-2 Transport Stream"),
+                Triple("video/x-ms-wmv", "wmv", "Windows Media Video"),
+                Triple("video/x-flv", "flv", "Flash Video")
+            )
+            for ((mime, ext, desc) in mediaAssociations) {
+                fileAssociation(mime, ext, desc, ico, icns, png)
+            }
         }
     }
 }

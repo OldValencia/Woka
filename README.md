@@ -4,11 +4,10 @@
 
 <p align="center">
   <b>A minimalist, lightning-fast, and aesthetic desktop media viewer & editor.</b><br/>
-  Built with Kotlin Multiplatform, Compose for Desktop, Skia, and JavaCV / FFmpeg.
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue?style=flat-square" alt="Platforms"/>
+  <img src="https://img.shields.io/badge/Platform-Windows%20(Tested)%20%7C%20macOS%20(Untested)%20%7C%20Linux%20(Untested)-blue?style=flat-square" alt="Platforms"/>
   <img src="https://img.shields.io/badge/Kotlin-Multiplatform-7F52FF?style=flat-square&logo=kotlin&logoColor=white" alt="Kotlin Multiplatform"/>
   <img src="https://img.shields.io/badge/UI-Compose%20for%20Desktop-4285F4?style=flat-square" alt="Compose Desktop"/>
   <img src="https://img.shields.io/badge/Engine-Skia%20%26%20FFmpeg-FF9F0A?style=flat-square" alt="Skia & FFmpeg"/>
@@ -85,7 +84,10 @@ FFmpeg-powered playback engine with frame-accurate scrubbing, multi-track audio,
 ### Prerequisites
 
 - **JDK 17** or higher (OpenJDK, Temurin, or Corretto recommended)
-- Windows 10/11, macOS 12+, or modern Linux distribution
+- **Windows 10/11** (officially tested and supported)
+
+> [!NOTE]
+> macOS and Linux support is currently experimental and untested. While the project is built on Compose Multiplatform and should theoretically run on other desktop OSes, daily development and testing are conducted primarily on Windows.
 
 ### Running from Source
 

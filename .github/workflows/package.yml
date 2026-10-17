@@ -1,0 +1,91 @@
+name: Package Woka
+
+on:
+  push:
+    branches: [ "master", "main" ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    name: Package (${{ matrix.os-name }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            os-name: Windows
+            gradle-task: :desktopApp:packageMsi
+            artifact-name: Woka-Windows-MSI
+            artifact-path: desktopApp/build/compose/binaries/main/msi/*.msi
+
+          - os: macos-latest
+            os-name: macOS
+            gradle-task: :desktopApp:packageDmg
+            artifact-name: Woka-macOS-DMG
+            artifact-path: desktopApp/build/compose/binaries/main/dmg/*.dmg
+
+          - os: ubuntu-latest
+            os-name: Linux
+            gradle-task: :desktopApp:packageDeb
+            artifact-name: Woka-Linux-DEB
+            artifact-path: desktopApp/build/compose/binaries/main/deb/*.deb
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Grant execute permission for gradlew
+        if: runner.os != 'Windows'
+        run: chmod +x gradlew
+
+      - name: Install Linux packaging tools
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fakeroot
+
+      - name: Build native installer
+        run: ./gradlew ${{ matrix.gradle-task }}
+
+      - name: Upload ${{ matrix.os-name }} installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: ${{ matrix.artifact-path }}
+          if-no-files-found: error
+
+  bundle:
+    name: Bundle All Installers
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Download all installers
+        uses: actions/download-artifact@v4
+        with:
+          path: all-installers
+          merge-multiple: true
+
+      - name: Upload all installers bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: Woka-All-Installers
+          path: all-installers/*

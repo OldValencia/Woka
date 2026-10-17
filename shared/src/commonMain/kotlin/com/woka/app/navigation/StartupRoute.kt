@@ -1,5 +1,6 @@
 package com.woka.app.navigation
 
+import com.woka.app.AppDependencies
 import com.woka.app.shell.sidebar.isWithin
 import com.woka.core.data.PinnedSession
 import com.woka.core.data.isMedia
@@ -68,4 +69,19 @@ private fun launchTarget(args: List<String>): File? {
     if (args.size < 2) return null
     val joined = File(args.joinToString(" ").trim())
     return if (joined.exists()) joined else null
+}
+
+/**
+ * Routes an external path (from CLI arguments or IPC forwarding) into the running
+ * application's router, generating a fresh nonce so the target folder or viewer
+ * command is re-executed even if already selected.
+ */
+fun openExternalPath(path: String) {
+    val screens = startupStack(listOf(path))
+    val target = screens.firstOrNull() ?: return
+    val screen = when (target) {
+        is Screen.Folder -> target.copy(nonce = System.currentTimeMillis())
+        else -> target
+    }
+    AppDependencies.router.navigateTo(screen)
 }
