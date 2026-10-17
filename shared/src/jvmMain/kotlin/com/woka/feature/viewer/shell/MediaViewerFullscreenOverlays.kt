@@ -1,12 +1,9 @@
 package com.woka.feature.viewer.shell
 
 import androidx.compose.animation.*
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -16,7 +13,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.woka.core.data.CarouselVisibility
 import com.woka.core.data.SettingsRepository
-import com.woka.core.ui.theme.Theme
 import com.woka.feature.viewer.pip.PipManager
 import com.woka.feature.viewer.video.MediaViewerVideoControls
 import com.woka.feature.viewer.video.PlayerSettingsOverlay
@@ -115,25 +111,21 @@ fun BoxScope.MediaViewerFullscreenTopControls(
         exit = fadeOut() + slideOutVertically { -it },
         modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .background(Theme.viewer.hudScrim, shape = RoundedCornerShape(8.dp))
-                .padding(4.dp)
-        ) {
-            MediaViewerFullscreenControls(
-                sizeMode = PipManager.sizeMode,
-                containerSize = PipManager.containerSize,
-                nativeSize = PipManager.nativeSize,
-                onSizeModeChange = onSizeModeChange,
-                onOffsetReset = {
-                    PipManager.offsetX = 0f
-                    PipManager.offsetY = 0f
-                },
-                carouselMode = CarouselVisibility.HIDDEN,
-                onToggleCarousel = { },
-                isPipWindow = isPipWindow,
-                onTogglePipWindow = onTogglePipWindow
-            )
-        }
+        // The controls container styles its own pill surface and border;
+        // an outer scrim behind it produced a duplicate translucent background.
+        MediaViewerFullscreenControls(
+            sizeMode = PipManager.sizeMode,
+            containerSize = PipManager.containerSize,
+            nativeSize = PipManager.nativeSize,
+            onSizeModeChange = onSizeModeChange,
+            onOffsetReset = {
+                PipManager.offsetX = 0f
+                PipManager.offsetY = 0f
+            },
+            carouselMode = CarouselVisibility.HIDDEN,
+            onToggleCarousel = { },
+            isPipWindow = isPipWindow,
+            onTogglePipWindow = onTogglePipWindow
+        )
     }
 }
