@@ -35,7 +35,22 @@ const val STORAGE_ROOT_PROPERTY = "woka.storageRoot"
  */
 object WokaStorage {
 
-    private val defaultRoot = File(System.getProperty("user.home"), "Documents/OldValencia/Woka")
+    private val defaultRoot: File
+        get() {
+            val userHome = System.getProperty("user.home")
+            val legacy = File(userHome, "Documents/OldValencia/Woka")
+            if (legacy.exists()) return legacy
+            val os = System.getProperty("os.name").lowercase()
+            return when {
+                os.contains("mac") -> File(userHome, "Library/Application Support/OldValencia/Woka")
+                os.contains("linux") -> {
+                    val xdg = System.getenv("XDG_DATA_HOME")?.takeIf { it.isNotBlank() }
+                    if (xdg != null) File(xdg, "OldValencia/Woka")
+                    else File(userHome, ".local/share/OldValencia/Woka")
+                }
+                else -> legacy
+            }
+        }
 
     /**
      * Read through a getter rather than captured once, so a test can point the

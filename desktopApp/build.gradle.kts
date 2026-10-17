@@ -62,6 +62,8 @@ compose.desktop {
             }
 
             linux {
+                packageName = "woka"
+                debMaintainer = "OldValencia <noreply@github.com>"
                 shortcut = true
                 menuGroup = "Graphics;AudioVideo;"
                 iconFile.set(png)
