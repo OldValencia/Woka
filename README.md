@@ -58,6 +58,8 @@ FFmpeg-powered playback engine with frame-accurate scrubbing, multi-track audio,
 - **Built-in Precision Image Editing:** Crop, rotate, color adjustments (brightness, contrast, saturation).
 - **Keyboard-Driven Workflow:**
   - `Space` — Quick Look preview
+  - `Esc` — To deselect item
+  - `Arrow keys` — To select items
   - `Enter` / Double Click — Open in full viewer
   - `Ctrl + F` — Quick library search
   - `Ctrl + I` — Detailed EXIF & video stream metadata
