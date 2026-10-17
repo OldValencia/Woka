@@ -77,7 +77,7 @@ fun FolderOverlays(
             }
             ViewDensityMenu(
                 layout = zoom.layout,
-                onSelect = { next -> if (next != zoom.layout) settingsRepo.setFolderLayout(path, next) },
+                onSelect = { next -> if (next != zoom.layout) settingsRepo.setGridLayout(next) },
                 onDismiss = { overlays.dismissBgContextMenu() }
             )
         }

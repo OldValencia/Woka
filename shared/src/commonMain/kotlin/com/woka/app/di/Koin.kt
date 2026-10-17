@@ -1,5 +1,6 @@
 package com.woka.app.di
 
+import com.woka.feature.folder.FolderScrollMemory
 import com.woka.feature.folder.FolderViewModel
 import com.woka.app.navigation.Router
 import com.woka.app.navigation.startupStack
@@ -26,6 +27,7 @@ fun initKoin(launchArgs: List<String> = emptyList()) {
 val appModule = module {
     single { Router() }
     single { LocalMediaRepository() }
+    single { FolderScrollMemory() }
     factory { (path: String) -> FolderViewModel(path, get(), get()) }
 }
 

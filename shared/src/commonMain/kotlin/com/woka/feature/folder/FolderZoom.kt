@@ -39,11 +39,11 @@ internal fun rememberFolderZoom(
         layout = layout,
         zoomIn = {
             val next = layout.zoomedIn()
-            if (next != layout) settingsRepo.setFolderLayout(path, next)
+            if (next != layout) settingsRepo.setGridLayout(next)
         },
         zoomOut = {
             val next = layout.zoomedOut()
-            if (next != layout) settingsRepo.setFolderLayout(path, next)
+            if (next != layout) settingsRepo.setGridLayout(next)
         }
     )
 }

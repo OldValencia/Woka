@@ -19,8 +19,8 @@ internal class LibrarySettingsImpl(private val mutator: SettingsMutator) : Libra
     override fun removeLinkedFolder(path: String) =
         mutator.update { it.withoutFolder(path, File.separatorChar) }
 
-    override fun setFolderLayout(path: String, layout: ViewLayout) =
-        mutator.update { it.copy(folderLayouts = it.folderLayouts + (path to layout)) }
+    override fun setGridLayout(layout: ViewLayout) =
+        mutator.update { it.copy(gridLayout = layout) }
 
     override fun setFolderSort(path: String, sort: SortType) =
         mutator.update { it.copy(folderSorts = it.folderSorts + (path to sort)) }
@@ -82,4 +82,10 @@ internal class LibrarySettingsImpl(private val mutator: SettingsMutator) : Libra
 
     override fun setLastSession(session: PinnedSession) =
         mutator.update { it.copy(lastSession = session) }
+
+    override fun setSidebarVisible(visible: Boolean) =
+        mutator.update { it.copy(sidebarVisible = visible) }
+
+    override fun setMediaFilter(filter: String) =
+        mutator.update { it.copy(mediaFilter = filter) }
 }

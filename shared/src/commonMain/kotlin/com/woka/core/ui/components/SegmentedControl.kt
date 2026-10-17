@@ -21,6 +21,8 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.woka.core.ui.theme.Theme
@@ -69,12 +71,15 @@ fun SegmentedControl(
     options: List<String>,
     selected: String,
     onSelect: (String) -> Unit,
-    colors: SegmentedControlColors = SegmentedControlDefaults.onSurface
+    colors: SegmentedControlColors = SegmentedControlDefaults.onSurface,
+    /** Taller and larger where the control is the whole point, as in a View panel. */
+    height: Dp = 24.dp,
+    textSize: TextUnit = 12.sp
 ) {
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
-            .height(24.dp)
+            .height(height)
             .clip(RoundedCornerShape(11.dp))
             .background(colors.track)
             .padding(3.dp)
@@ -119,7 +124,7 @@ fun SegmentedControl(
                         text = option,
                         style = TextStyle(
                             color = textColor,
-                            fontSize = 12.sp,
+                            fontSize = textSize,
                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
                         )
                     )

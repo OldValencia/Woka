@@ -1,20 +1,22 @@
 package com.woka.feature.folder
 
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.unit.dp
 import com.woka.app.AppDependencies
-import com.woka.core.data.PinnedSession
 import com.woka.core.data.ViewLayout
-import com.woka.app.shell.sidebar.samePath
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
-import kotlin.time.Duration.Companion.milliseconds
+import java.io.File
 
+/**
+ * A folder's grid and what sits on it: the toolbar's folder controls, the link offer
+ * at the top and the selection bar at the bottom (SIDE-003). The scroll it opens at,
+ * and the record of where it was left, are `rememberFolderGridState`'s.
+ */
 @Composable
 fun FolderContent(
     path: String,
@@ -33,47 +35,18 @@ fun FolderContent(
     val settingsRepo = remember { AppDependencies.settingsRepository }
     val settings by settingsRepo.settings.collectAsState()
     val isPinned = settings.pinnedSessions.any { it.path == path }
-    // A pin keeps its own scroll; otherwise the place the last session left off, when
-    // this is that folder — which is what a launch restores (SIDE-002).
-    val currentSession = settings.pinnedSessions.find { it.path == path }
-        ?: settings.lastSession?.takeIf { samePath(it.path, path) }
-
-    val gridState = rememberLazyGridState(
-        initialFirstVisibleItemIndex = currentSession?.scrollIndex ?: 0,
-        initialFirstVisibleItemScrollOffset = currentSession?.scrollOffset ?: 0
-    )
-
-    DisposableEffect(path) {
-        onDispose {
-            if (settingsRepo.settings.value.pinnedSessions.any { it.path == path }) {
-                settingsRepo.addPinnedSession(
-                    PinnedSession(
-                        path,
-                        gridState.firstVisibleItemIndex,
-                        gridState.firstVisibleItemScrollOffset
-                    )
-                )
-            }
-        }
-    }
-
-    LaunchedEffect(path) {
-        // Written as the scroll settles, never at exit: closing is not a moment the
-        // app can rely on, and `SettingsStore` flushes the last pending write on close.
-        // The first emission writes the arrival itself. Cancelled when this folder
-        // leaves composition, so an outgoing folder never overwrites the incoming one.
-        snapshotFlow { gridState.firstVisibleItemIndex to gridState.firstVisibleItemScrollOffset }
-            .collectLatest { (index, offset) ->
-                delay(500.milliseconds)
-                settingsRepo.setLastSession(PinnedSession(path, index, offset))
-            }
-    }
+    val gridState = rememberFolderGridState(path)
 
     val zoom = rememberFolderZoom(
-        layout = settings.folderLayouts[path] ?: ViewLayout.Grid,
+        layout = settings.gridLayout,
         path = path,
         settingsRepo = settingsRepo
     )
+
+    FolderToolbarSetup(path, state, isPinned, onTogglePin = {
+        if (isPinned) settingsRepo.removePinnedSession(path)
+        else settingsRepo.addPinnedSession(gridState.placeIn(path))
+    })
 
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
@@ -90,22 +63,7 @@ fun FolderContent(
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        FolderDockSetup(
-            path = path,
-            state = state,
-            isPinned = isPinned,
-            zoom = zoom,
-            gridScrollIndex = gridState.firstVisibleItemIndex,
-            gridScrollOffset = gridState.firstVisibleItemScrollOffset,
-            viewModel = viewModel,
-            settingsRepo = settingsRepo,
-            // `linkedFolders` is what the sidebar's Folders lists; `pinnedSessions`
-            // above is the Pinned section and does not answer this question.
-            showPinOffer = offerPin && path !in settings.linkedFolders,
-            onPinOfferResolved = onPinOfferResolved
-        )
-
+    Box(modifier = Modifier.fillMaxSize()) {
         FolderGrid(
             state = state,
             viewModel = viewModel,
@@ -118,8 +76,31 @@ fun FolderContent(
             overlays = overlays,
             onOpenMedia = onOpenMedia,
             onEditMedia = onEditMedia,
-            modifier = Modifier.fillMaxWidth().weight(1f)
+            modifier = Modifier.fillMaxSize()
         )
+
+        // `linkedFolders` is what the sidebar's Folders lists; `pinnedSessions` is
+        // the Pinned section and does not answer this question.
+        if (offerPin && path !in settings.linkedFolders) {
+            FolderPinPrompt(
+                folderName = File(path).name,
+                onPin = {
+                    settingsRepo.addLinkedFolder(path)
+                    onPinOfferResolved()
+                },
+                onDismiss = onPinOfferResolved,
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = 12.dp)
+            )
+        }
+
+        if (state.isSelectMode) {
+            FolderSelectionBar(
+                path = path,
+                state = state,
+                viewModel = viewModel,
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 20.dp)
+            )
+        }
     }
 
     FolderOverlays(

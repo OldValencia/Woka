@@ -30,13 +30,15 @@ class WokaSettingsTest {
     fun `a fully populated record survives the round trip`() {
         val settings = WokaSettings(
             linkedFolders = listOf("D:/Photos", "D:/Films"),
-            folderLayouts = mapOf("D:/Photos" to ViewLayout.BigGrid),
+            gridLayout = ViewLayout.BigGrid,
             folderSorts = mapOf("D:/Films" to SortType.DateDesc),
             folderShowTitles = mapOf("D:/Photos" to false),
             theme = "Dark",
             mediaViewerCarouselMode = CarouselVisibility.ALWAYS_ON,
             pinnedSessions = listOf(PinnedSession("D:/Films", 12, 40)),
             lastSession = PinnedSession("D:/Films/Series", 3, 8),
+            sidebarVisible = false,
+            mediaFilter = "Videos",
             scalePreset = ScalePreset.Fill,
             defaultZoomPercent = 175,
             mediaVolume = 0.42f,

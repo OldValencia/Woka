@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 interface LibrarySettings {
     fun addLinkedFolder(path: String)
     fun removeLinkedFolder(path: String)
-    fun setFolderLayout(path: String, layout: ViewLayout)
+    fun setGridLayout(layout: ViewLayout)
     fun setFolderSort(path: String, sort: SortType)
     fun setFolderShowTitles(path: String, show: Boolean)
     fun setShowTitles(show: Boolean)
@@ -38,6 +38,8 @@ interface LibrarySettings {
     fun addPinnedSession(session: PinnedSession)
     fun removePinnedSession(path: String)
     fun setLastSession(session: PinnedSession)
+    fun setSidebarVisible(visible: Boolean)
+    fun setMediaFilter(filter: String)
 }
 
 /** How media plays, which tracks it picks, and what has been watched. */

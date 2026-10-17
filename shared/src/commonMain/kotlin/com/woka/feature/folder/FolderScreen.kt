@@ -10,7 +10,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
-import com.woka.app.shell.LocalDockAccessories
 import com.woka.core.data.MediaItem
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.editor.EditorTarget
@@ -50,11 +49,6 @@ fun FolderScreen(
         if (openViewerForId != null) {
             viewerMediaId = openViewerForId
         }
-    }
-
-    val dockAccessories = LocalDockAccessories.current
-    LaunchedEffect(viewerMediaId, editorTarget) {
-        dockAccessories.isVisible = viewerMediaId == null && editorTarget == null
     }
 
     Column(modifier = Modifier.fillMaxSize().background(Theme.colors.background)) {

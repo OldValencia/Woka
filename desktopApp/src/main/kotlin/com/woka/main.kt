@@ -22,9 +22,11 @@ import androidx.compose.ui.window.rememberWindowState
 import com.woka.app.di.initKoin
 import com.woka.app.shell.AppExitRequest
 import com.woka.app.shell.ExitWhenQuiet
+import com.woka.app.shell.WindowKeys
 import java.awt.Point
 import com.woka.app.App
 import java.awt.Dimension
+import java.awt.GraphicsEnvironment
 
 fun main(args: Array<String>) {
     // Resolves the launch route too, before the first composition: the router
@@ -33,7 +35,7 @@ fun main(args: Array<String>) {
     initKoin(args.toList())
     application {
         val windowState = rememberWindowState(
-            size = DpSize(1100.dp, 720.dp),
+            size = defaultWindowSize(),
             position = WindowPosition(Alignment.Center)
         )
         // Neither door closes anything itself: both raise the request, and the gate
@@ -44,7 +46,8 @@ fun main(args: Array<String>) {
             title = "Woka",
             undecorated = true,
             transparent = true,
-            state = windowState
+            state = windowState,
+            onPreviewKeyEvent = { WindowKeys.handle(it) }
         ) {
             window.minimumSize = Dimension(800, 580)
             val density = LocalDensity.current.density
@@ -104,4 +107,18 @@ fun main(args: Array<String>) {
             ExitWhenQuiet(AppExitRequest.requested) { exitApplication() }
         }
     }
+}
+
+/**
+ * The window a first launch opens at: 80 % of the screen's usable area, no larger
+ * than 1440×900 and no smaller than the 800×580 minimum (SIDE-003). It was a fixed
+ * 1100×720, which with a 236.dp sidebar left the toolbar and grid cramped on any
+ * screen big enough to have room to spare. AWT reports the area in the same scaled
+ * units Compose calls dp, so no density conversion is needed.
+ */
+private fun defaultWindowSize(): DpSize {
+    val area = GraphicsEnvironment.getLocalGraphicsEnvironment().maximumWindowBounds
+    val width = (area.width * 0.8f).coerceIn(800f, 1440f)
+    val height = (area.height * 0.8f).coerceIn(580f, 900f)
+    return DpSize(width.dp, height.dp)
 }

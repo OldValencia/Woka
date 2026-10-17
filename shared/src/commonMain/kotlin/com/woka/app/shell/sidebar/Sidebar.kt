@@ -1,27 +1,23 @@
 package com.woka.app.shell.sidebar
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.woka.app.AppDependencies
 import com.woka.app.collectField
@@ -36,7 +32,7 @@ import java.io.File
  * The window's left column: the linked folders as a tree, the pinned folders under
  * them, and `Link Folder…` at the foot (SIDE-001, `features/pending/sidebar/`).
  *
- * It reads the router and the settings itself, as `FloatingDock` does, rather than
+ * It reads the router and the settings itself, as `GlobalTopBar` does, rather than
  * taking them through `App`: navigation is the shell's business, and threading six
  * callbacks through `MainShell` would only have moved this file's wiring somewhere
  * further from where it is used.
@@ -83,67 +79,41 @@ fun Sidebar(
         )
     }
 
-    Row(modifier = Modifier.width(SidebarTokens.Width).fillMaxHeight()) {
-        Column(modifier = Modifier.weight(1f).fillMaxHeight().background(Theme.colors.surface)) {
-            topBarArea { SidebarHeader() }
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = SidebarTokens.ListInset)
-            ) {
-                SidebarFolders(linked, tree, current, menu, pinned, actions)
-                SidebarPinned(pinned, linked, current, menu, actions)
-            }
-            SidebarFoot(prominent = linked.isEmpty(), onLink = {
-                val path = openDirectoryPicker("Link folder")
-                if (path != null) {
-                    settingsRepo.addLinkedFolder(path)
-                    router.navigateTo(Screen.Folder(path))
-                }
-            })
-        }
-        Box(modifier = Modifier.width(1.dp).fillMaxHeight().background(Theme.colors.border))
-    }
-}
-
-/** `.side-top`: the logo square and the app's name, in the title bar's row. */
-@Composable
-private fun SidebarHeader() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(SidebarTokens.HeaderHeight)
-            .padding(start = SidebarTokens.HeaderStart, end = SidebarTokens.HeaderEnd),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(SidebarTokens.RowPadding)
-    ) {
-        Box(
+    // Hidden by width, not by removal (SIDE-003): the tree keeps its open rows and
+    // its cache, and the column slides out to the left at its full width.
+    val visible by settingsRepo.collectField { it.sidebarVisible }
+    val width by animateDpAsState(
+        if (visible) SidebarTokens.Width else 0.dp,
+        tween(250, easing = FastOutSlowInEasing)
+    )
+    Box(modifier = Modifier.width(width).fillMaxHeight().clipToBounds()) {
+        Row(
             modifier = Modifier
-                .size(SidebarTokens.LogoSize)
-                .background(
-                    Brush.linearGradient(listOf(Theme.colors.accent, SidebarTokens.LogoGradientEnd)),
-                    RoundedCornerShape(SidebarTokens.LogoRadius)
-                ),
-            contentAlignment = Alignment.Center
+                .wrapContentWidth(Alignment.End, unbounded = true)
+                .width(SidebarTokens.Width)
+                .fillMaxHeight()
         ) {
-            BasicText(
-                "W",
-                style = TextStyle(
-                    color = Color.White,
-                    fontSize = SidebarTokens.SubSize,
-                    fontWeight = FontWeight.Bold
-                )
-            )
+            Column(modifier = Modifier.weight(1f).fillMaxHeight().background(Theme.colors.surface)) {
+                topBarArea { SidebarHeader(onHide = { settingsRepo.setSidebarVisible(false) }) }
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = SidebarTokens.ListInset)
+                ) {
+                    SidebarFolders(linked, tree, current, menu, pinned, actions)
+                    SidebarPinned(pinned, linked, current, menu, actions)
+                }
+                SidebarFoot(prominent = linked.isEmpty(), onLink = {
+                    val path = openDirectoryPicker("Link folder")
+                    if (path != null) {
+                        settingsRepo.addLinkedFolder(path)
+                        router.navigateTo(Screen.Folder(path))
+                    }
+                })
+            }
+            Box(modifier = Modifier.width(1.dp).fillMaxHeight().background(Theme.colors.border))
         }
-        BasicText(
-            "Woka",
-            style = TextStyle(
-                color = Theme.colors.textPrimary,
-                fontSize = SidebarTokens.LabelSize,
-                fontWeight = FontWeight.SemiBold
-            )
-        )
     }
 }

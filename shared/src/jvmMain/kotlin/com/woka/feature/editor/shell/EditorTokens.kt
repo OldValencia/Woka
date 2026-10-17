@@ -25,10 +25,13 @@ import androidx.compose.ui.unit.sp
  */
 object EditorTokens {
 
-    /** The tool rail — the viewer's dock geometry, reused rather than re-invented. */
+    /**
+     * The tool rail — the dock's geometry, reused rather than re-invented. The dock
+     * itself was deleted in SIDE-003; these values are now the rail's own.
+     */
     object Rail {
 
-        /** `DockItem`: 40.dp tall, 14.dp radius. */
+        /** As the dock's items were: 40.dp tall, 14.dp radius. */
         val itemRadius = 14.dp
 
         val iconSize = 16.dp
@@ -46,7 +49,7 @@ object EditorTokens {
 
         val itemGap = 4.dp
 
-        /** Container: `FloatingDock`'s 6.dp inset and 20.dp radius. */
+        /** Container: the dock's 6.dp inset and 20.dp radius. */
         val containerPadding = 6.dp
         val containerRadius = 20.dp
 

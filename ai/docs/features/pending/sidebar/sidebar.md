@@ -40,7 +40,7 @@ is no Home screen and no dock.
   its root, so two `Season 1` rows can be told apart. A pinned folder still restores the scroll it
   was left at, as it does today.
 - **Sidebar foot**: `Link Folder…`. The sidebar hides from its own header button.
-- **Toolbar**: Back and Forward, the path (parents muted, the current folder bold), an
+- **Toolbar**: the path (parents muted, the current folder bold), an
   All · Photos · Videos filter, sort, a continuous thumbnail-size slider, the search field, Info,
   Settings, then the window controls.
 - **Content**: the folder's sub-folders first, then its media. A folder that is mostly photos is a
@@ -53,8 +53,8 @@ is no Home screen and no dock.
 ### Navigation and launch
 
 `Screen.Home` is deleted. The stack's root is always a folder, or `Screen.Welcome` while nothing is
-linked. Back pops; Forward replays what Back popped and is cleared by any new navigation, as in a
-browser. A sidebar click is an ordinary navigation, so Back undoes it.
+linked. There is no history: a navigation replaces the one screen. A folder re-entered in the same run
+comes back at its scroll (SIDE-003).
 
 **Launch opens the folder that was open at quit, at its scroll.** It is stored as one
 `PinnedSession`-shaped record, written as the top folder changes and as its scroll settles, rather
@@ -83,8 +83,8 @@ Previously it rode on the dock.
 `mediaFilter` already exists in `WokaSettings` and is already applied in `FolderStateMapper`. It
 has never had a control. The filter is that control.
 
-Thumbnail size goes from the three `ViewLayout` steps to a continuous cell width per folder. The
-steps stay as the values `Ctrl +/-` and Ctrl+wheel jump between.
+Thumbnail size is one setting for every folder: S, M or L, set from View or by Ctrl+wheel and
+`Ctrl +/-`.
 
 Whether a folder is mostly video is a count over the items the grid already holds, not a setting.
 
@@ -120,7 +120,7 @@ next one is specified. The rest are blocks in `tickets/backlog.md`.
 |---|---|---|
 | [SIDE-001](tickets/SIDE-001-the-sidebar.md) | The sidebar: the folder tree, Pinned, Link Folder, and the dock's Library item gone | **done 2026-10-17** |
 | [SIDE-002](tickets/SIDE-002-no-home.md) | No Home: launch restores the last folder, Welcome for a first run, Back and Forward | **done 2026-10-17** |
-| SIDE-003 | The toolbar replaces the dock: filter, sort, size, search, settings, selection bar | backlog |
+| [SIDE-003](tickets/SIDE-003-the-toolbar.md) | The toolbar replaces the dock and history goes: filter, sort, size, search, settings, selection bar | **done 2026-10-17** |
 | SIDE-004 | Two grids, chosen by content, a continuous size, and search results in the content | backlog |
 | SIDE-005 | The keyboard drives the grid: focus, Quick Look, Info | backlog |
 | SIDE-006 | Hovering a video plays five excerpts | backlog |
@@ -138,4 +138,8 @@ next one is specified. The rest are blocks in `tickets/backlog.md`.
 | 2026-10-17 | A badge for files new since the last visit? | **No — update the folder instead.** One user at one computer moved the file and expects to see it; announcing it adds nothing. |
 | 2026-10-17 | `Ctrl+K` folder jump? | **No.** The global search is enough. |
 | 2026-10-17 | Drag files out of Woka? | **No.** Copy and paste a file covers sending one to another app. Dragging a folder *in* to link it stays. |
+| 2026-10-17 | Keep Back and Forward? | **No — removed in SIDE-003, the same day SIDE-002 added Forward.** The tree, the path and Backspace say where to go; history said only where you had been, which with a sidebar is rarely where you want to be. A folder keeps its scroll for the run instead. The `<` that closes the viewer or editor stays: it was never history. |
+| 2026-10-17 | What does the toolbar carry? | **The folder's name, View, Pin, Search and Settings.** Filter, size and sort share the View button. The first cut put them in the bar, and from the running app it was crowded at the default window. A breadcrumb path is gone too: it ate the bar in a deep folder, and the tree already shows where you are. |
+| 2026-10-17 | Thumbnail size: per folder, continuous? | **One size for every folder, S · M · L.** The three-detent slider could not get back to its middle once left. Per-folder sizes opened every unvisited folder at M, so the size chosen never followed the user. This supersedes the continuous size planned for SIDE-004. |
+| 2026-10-17 | Default window size? | **80 % of the screen, at most 1440×900.** The old 1100×720 left the toolbar and grid cramped beside a 236.dp sidebar. |
 | 2026-10-17 | How many tickets? | **Seven, each a sitting.** One person builds this. A ticket is the smallest slice that changes the screen, not a layer of the code. |

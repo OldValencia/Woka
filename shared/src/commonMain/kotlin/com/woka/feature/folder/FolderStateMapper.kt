@@ -32,7 +32,7 @@ internal data class FolderSettings(
 )
 
 internal fun WokaSettings.folderSettings(path: String): FolderSettings = FolderSettings(
-    layout = folderLayouts[path] ?: ViewLayout.Grid,
+    layout = gridLayout,
     sort = folderSorts[path] ?: SortType.NameAsc,
     showTitles = folderShowTitles[path] ?: showTitles,
     showFolders = showFolders,

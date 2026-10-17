@@ -13,25 +13,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.woka.core.ui.components.floatingPanel
 import com.woka.core.ui.theme.Theme
-import com.woka.feature.library.AccessoryPill
+import com.woka.core.ui.components.AccessoryPill
 
 /**
  * The offer the roadmap's "Direct OS Launch Behavior" asks for: a folder reached by
  * launching `Woka.exe <path>` is not in the sidebar, so once the viewer is closed there is
  * nothing pointing back to it.
  *
- * It takes the dock's top accessory slot rather than a banner over the grid — the
- * dock already hides while the viewer is open and returns exactly when `X` lands
+ * A strip at the top of the grid since SIDE-003; it rode on the dock until the dock
+ * was deleted. The viewer draws over it, so it still appears exactly when `X` lands
  * the user in Folder View.
  */
 @Composable
 fun FolderPinPrompt(
     folderName: String,
     onPin: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = Modifier.floatingPanel(),
+        modifier = modifier.floatingPanel(),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

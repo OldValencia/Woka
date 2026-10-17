@@ -16,6 +16,7 @@ import com.woka.app.navigation.Screen
 import com.woka.app.navigation.ScreenHost
 import com.woka.app.shell.MainShell
 import com.woka.app.shell.StatusBanners
+import com.woka.feature.folder.FolderScrollMemory
 import com.woka.feature.search.SearchOverlay
 import com.woka.feature.settings.SettingsOverlay
 import com.woka.core.ui.theme.Theme
@@ -27,6 +28,7 @@ import java.io.File
 object AppDependencies : KoinComponent {
     val router: Router by inject()
     val settingsRepository: SettingsRepository by inject()
+    val scrollMemory: FolderScrollMemory by inject()
 }
 
 @Composable
@@ -52,7 +54,6 @@ fun App(
 
     var isSettingsOpen by remember { mutableStateOf(false) }
     val stack by router.stack.collectAsState()
-    val forward by router.forward.collectAsState()
     val currentScreen = stack.lastOrNull() ?: Screen.Welcome
 
     ThumbnailHousekeeping()
@@ -77,11 +78,7 @@ fun App(
                 onMaximizeWindow = onMaximizeWindow,
                 isMaximized = isMaximized,
                 onOpenSettings = { isSettingsOpen = true },
-                onOpenSearch = { isSearchOpen = true },
-                onNavigateBack = if (stack.size > 1) { { router.pop() } } else null,
-                onNavigateForward = if (forward.isNotEmpty()) { { router.goForward() } } else null,
-                onBreadcrumbClick = { path -> router.navigateTo(Screen.Folder(path)) },
-                linkedFolders = linkedFolders
+                onOpenSearch = { isSearchOpen = true }
             ) {
             ScreenHost(
                 currentScreen = currentScreen,

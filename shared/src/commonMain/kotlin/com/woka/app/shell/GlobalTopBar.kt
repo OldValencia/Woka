@@ -1,136 +1,127 @@
 package com.woka.app.shell
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.hoverable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.pointerHoverIcon
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.woka.core.ui.theme.Theme
+import com.woka.app.AppDependencies
+import com.woka.app.collectField
+import com.woka.core.ui.icons.Icons
 
+/** Under this width the search box shrinks to its icon (SIDE-003). */
+private val COMPACT_BELOW = 620.dp
+
+/**
+ * The window's toolbar (SIDE-003, `sidebar-redesign.html` `.bar`): 52.dp, right of
+ * the sidebar.
+ *
+ * - **Left**, from the edge in:
+ *   - the show-sidebar button while the sidebar is hidden;
+ *   - the overlay's `<`;
+ *   - the folder's name, or a screen's leading accessory.
+ *
+ * **The name, not the path** (2026-10-17). A breadcrumb trail took the bar's width
+ * in a deep folder and said what the sidebar's tree already shows, opened down to
+ * this folder and highlighted.
+ * - **Centre**: an overlay's controls.
+ * - **Right**: the screen's controls, then Search and Settings, then the window
+ *   controls.
+ *
+ * **No Back for history.** It went with the dock: the tree and the path are the
+ * navigation. The `<` drawn here is only an overlay's way out — the viewer and the
+ * editor set [TopBarAccessoriesState.backActionOverride] — which a file launched
+ * from Explorer, on a window with nothing else in it, still needs.
+ *
+ * Search and Settings step aside while an overlay holds the centre, as the dock did
+ * under the viewer: the viewer and the editor speak for the whole bar.
+ */
 @Composable
 fun GlobalTopBar(
     currentPath: String?,
     onClose: () -> Unit,
     onMinimize: () -> Unit,
     onMaximize: () -> Unit,
-    onNavigateBack: (() -> Unit)? = null,
-    onNavigateForward: (() -> Unit)? = null,
-    onBreadcrumbClick: ((String) -> Unit)? = null,
-    linkedFolders: List<String> = emptyList(),
+    onOpenSearch: () -> Unit,
+    onOpenSettings: () -> Unit,
     isMaximized: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val topBarAccessories = LocalTopBarAccessories.current
+    val settingsRepo = remember { AppDependencies.settingsRepository }
+    val sidebarVisible by settingsRepo.collectField { it.sidebarVisible }
+    val overlay = topBarAccessories.centerAccessory != null
 
     // Window drag, drag-to-restore and double-click maximize are handled by the
     // platform wrapper around the top bar (see desktop main.kt), not here.
-    Box(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .height(60.dp)
-            .padding(horizontal = 24.dp)
+            .height(52.dp)
+            .padding(horizontal = 10.dp)
     ) {
-        // Back Button on the left, and whatever the screen puts beside it
-        Row(
-            modifier = Modifier.align(Alignment.CenterStart),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // An overlay's own Back counts as history: a file launched from Explorer
-            // opens the viewer over a one-screen stack, and it still needs a way out.
-            // Forward hides while an overlay owns Back — it would move the folder
-            // underneath the viewer, not the viewer (SIDE-002).
-            val back = topBarAccessories.backActionOverride ?: onNavigateBack
-            if (back != null) NavButton("<", onClick = back)
-            if (onNavigateForward != null && topBarAccessories.backActionOverride == null) {
-                NavButton(">", onClick = onNavigateForward)
+        CompositionLocalProvider(LocalToolbarCompact provides (maxWidth < COMPACT_BELOW)) {
+            // One row, the path taking what the right side leaves and clipping there:
+            // the right side is laid out first at its own width, so the two can never
+            // overlap (2026-10-17 — two independently aligned rows did, the filter
+            // running over the path).
+            Row(modifier = Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f).clipToBounds(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    if (!sidebarVisible) {
+                        ToolbarSidebarButton(
+                            "Show sidebar",
+                            onClick = { settingsRepo.setSidebarVisible(true) }
+                        )
+                    }
+                    topBarAccessories.backActionOverride?.let { back ->
+                        ToolbarIconButton(Icons.Static.ChevronLeft, "Back", onClick = back)
+                    }
+                    // The folder's name and a screen's leading accessory are one slot:
+                    // both answer "what is this screen". The name yields to an overlay
+                    // that has taken the centre; the editor's Revert wants the slot then.
+                    if (currentPath != null && !overlay) {
+                        ToolbarTitle(currentPath)
+                    } else {
+                        topBarAccessories.leadingAccessory?.invoke()
+                    }
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    topBarAccessories.rightAccessory?.invoke()
+                    if (!overlay) {
+                        ToolbarSearchField(onOpen = onOpenSearch)
+                        ToolbarIconButton(Icons.Static.Settings, "Settings", onClick = onOpenSettings)
+                    }
+                    Spacer(Modifier.width(4.dp))
+                    WinControls(
+                        onClose = onClose,
+                        onMinimize = onMinimize,
+                        onMaximize = onMaximize,
+                        isMaximized = isMaximized
+                    )
+                }
             }
 
-            // The path and a screen's leading accessory are one slot, not two: both
-            // answer "what is this screen". Beside Back rather than centred in the
-            // bar, because that is where Home's title starts too.
-            //
-            // Exclusive on purpose. `AnimatedContent` keeps the outgoing screen
-            // composed for the length of the slide, so drawing both would put Home's
-            // title beside the folder's path for 220 ms and then jump the path left
-            // when Home was finally disposed. The path yields in turn to an overlay
-            // that has taken the centre — the viewer and the editor speak for the
-            // whole bar, and the editor's Revert wants this slot while they do.
-            if (currentPath != null && topBarAccessories.centerAccessory == null) {
-                SmartBreadcrumbs(
-                    path = currentPath,
-                    linkedFolders = linkedFolders,
-                    onBreadcrumbClick = onBreadcrumbClick
-                )
-            } else {
-                topBarAccessories.leadingAccessory?.invoke()
+            // A Row since ME-173: the pair is centred over the bar, so an editor
+            // control can sit beside the viewer's pill without being composed inside it.
+            Row(
+                modifier = Modifier.align(Alignment.Center),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                topBarAccessories.centerAccessory?.invoke()
+                topBarAccessories.centerTrailingAccessory?.invoke()
             }
-        }
-
-        // A Row rather than a Box since ME-173: the pair is centred, so an editor
-        // control can sit beside the viewer's pill without being composed inside it.
-        Row(
-            modifier = Modifier.align(Alignment.Center),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            topBarAccessories.centerAccessory?.invoke()
-            topBarAccessories.centerTrailingAccessory?.invoke()
-        }
-
-        // Win Controls & Right Accessory on the right
-        Row(
-            modifier = Modifier.align(Alignment.CenterEnd),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            topBarAccessories.rightAccessory?.invoke()
-
-            WinControls(
-                onClose = onClose,
-                onMinimize = onMinimize,
-                onMaximize = onMaximize,
-                isMaximized = isMaximized
-            )
         }
     }
 }
-
-@Composable
-private fun NavButton(glyph: String, onClick: () -> Unit) {
-    val src = remember { MutableInteractionSource() }
-    val isHovered by src.collectIsHoveredAsState()
-    val bg by animateColorAsState(if (isHovered) Theme.colors.surfaceHover else Color.Transparent, tween(150))
-
-    Box(
-        modifier = Modifier.size(34.dp).clip(RoundedCornerShape(6.dp)).background(bg)
-            .pointerHoverIcon(PointerIcon.Hand).hoverable(src)
-            .clickable(interactionSource = src, indication = null, onClick = onClick),
-        contentAlignment = Alignment.Center
-    ) {
-        BasicText(
-            glyph,
-            style = TextStyle(color = Theme.colors.textPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-        )
-    }
-}
-
-

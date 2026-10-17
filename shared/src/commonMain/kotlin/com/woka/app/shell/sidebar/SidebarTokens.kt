@@ -13,11 +13,8 @@ internal object SidebarTokens {
     /** `.side` width. */
     val Width = 236.dp
 
-    /**
-     * `.side-top` is 52px in the mockup. It stays 60.dp until SIDE-003 brings the
-     * top bar down to match, because the two share one row across the window.
-     */
-    val HeaderHeight = 60.dp
+    /** `.side-top`, and the toolbar beside it: the two share one row (SIDE-003). */
+    val HeaderHeight = 52.dp
 
     /** `.side-scroll` horizontal padding: the inset of every row from the edges. */
     val ListInset = 10.dp

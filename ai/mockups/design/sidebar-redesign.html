@@ -110,8 +110,14 @@ svg{display:block}
 .seg{display:flex;background:var(--hover);border-radius:8px;padding:2px;flex:none}
 .seg span{font-size:12px;font-weight:550;color:var(--text2);padding:4px 10px;border-radius:6px;cursor:pointer}
 .seg span.on{background:var(--raise);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.25)}
-.size{display:flex;align-items:center;gap:6px;color:var(--text3);flex:none;margin:0 4px}
-.size input{width:84px;accent-color:var(--accent)}
+/* View: filter, size and sort behind one button (2026-10-17 — the bar was crowded) */
+.vwrap{position:relative;flex:none}
+.vpop{position:absolute;right:0;top:34px;z-index:15;background:var(--raise);border:1px solid var(--sep);
+  border-radius:10px;padding:10px 12px;box-shadow:0 16px 36px rgba(0,0,0,.35);display:none;
+  flex-direction:column;gap:10px;width:max-content}
+.vpop.open{display:flex}
+.vrow{display:flex;align-items:center;gap:8px}
+.vrow > span{width:40px;font-size:12px;color:var(--text2)}
 .search{display:flex;align-items:center;gap:6px;height:28px;width:190px;padding:0 9px;border-radius:8px;
   background:var(--hover);color:var(--text3);font-size:12.5px;flex:none;transition:width .25s,box-shadow .2s}
 .search input{background:none;border:0;outline:0;color:var(--text);font:inherit;width:100%}
@@ -265,7 +271,7 @@ svg{display:block}
 .dropov .ghost{position:absolute;right:30%;bottom:30%;font-size:12px;font-weight:600;color:#fff;
   background:var(--accent);padding:4px 9px;border-radius:7px;box-shadow:0 8px 20px rgba(0,0,0,.4);transform:rotate(-3deg)}
 
-@media (max-width:820px){.side{display:none}.size,.seg{display:none}.search{width:130px}}
+@media (max-width:820px){.side{display:none}.search{width:130px}}
 </style>
 </head>
 <body>
@@ -308,15 +314,16 @@ svg{display:block}
       <div class="ib" id="showSide" title="Show sidebar" hidden>
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1.5" y="2.5" width="13" height="11" rx="2.5"/><path d="M6 2.5v11"/></svg>
       </div>
-      <div class="ib" id="back"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 3L5 8l5 5"/></svg></div>
-      <div class="ib off"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3l5 5-5 5"/></svg></div>
       <div class="title" id="title"></div>
-      <div class="seg" id="filter"><span class="on">All</span><span>Photos</span><span>Videos</span></div>
-      <div class="size" title="Thumbnail size">
-        <svg width="10" height="10" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" rx="1.5" fill="currentColor"/></svg>
-        <input type="range" min="90" max="260" value="150" id="size">
-        <svg width="15" height="15" viewBox="0 0 10 10"><rect x=".5" y=".5" width="9" height="9" rx="1.5" fill="currentColor"/></svg>
+      <div class="vwrap">
+        <div class="ib" id="viewBtn" title="View"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2.5 4.5h11M4.5 8h7M6.5 11.5h3"/></svg></div>
+        <div class="vpop" id="vpop">
+          <div class="vrow"><span>Show</span><div class="seg" id="filter"><span class="on">All</span><span>Photos</span><span>Videos</span></div></div>
+          <div class="vrow"><span>Size</span><div class="seg" id="sizes"><span data-c="110">S</span><span class="on" data-c="150">M</span><span data-c="220">L</span></div></div>
+          <div class="vrow"><span>Sort</span><div class="seg" id="sorts"><span class="on">Name</span><span>Date</span></div><div class="ib" title="Ascending"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 3v10M2.5 10.5L5 13l2.5-2.5M11 13V3M8.5 5.5L11 3l2.5 2.5"/></svg></div></div>
+        </div>
       </div>
+      <div class="ib" id="pinBtn" title="Pin"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M5 1.5h6l-1 4.5 2.5 2.5V10H8.75v4.75L8 16l-.75-1.25V10H3.5V8.5L6 6z"/></svg></div>
       <div class="search" id="search">
         <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="7" cy="7" r="4.8"/><path d="M10.5 10.5L14 14"/></svg>
         <input id="q" placeholder="Search  Ctrl+F">
@@ -363,9 +370,13 @@ svg{display:block}
     <p><code>PinnedSession</code> already exists — a folder deep inside a root plus its scroll position. It
     finally gets a permanent place: one click from anywhere, with its parent named under it so two
     “Season 1” rows can be told apart.</p></div>
-  <div class="note"><h4>The tree replaces breadcrumbs as navigation</h4>
-    <p>Roots expand in place. The toolbar keeps a short path — parent crumbs muted, current folder bold —
-    with Back/Forward beside it. Backspace still goes up.</p></div>
+  <div class="note"><h4>The tree is the navigation</h4>
+    <p>Roots expand in place and open themselves down to the folder on screen. The toolbar shows that
+    folder's name alone — a path took the bar's width in a deep folder and said what the tree already
+    shows. No Back or Forward; Backspace goes up a level.</p></div>
+  <div class="note"><h4>View, one button</h4>
+    <p>Show (All · Photos · Videos), Size (S · M · L, one for every folder) and Sort live behind one
+    button, as Finder's View Options do. Each is set rarely, so none earns a place in the bar.</p></div>
   <div class="note"><h4>Two grids, chosen by what is in the folder</h4>
     <p>Photos: a tight square mosaic, 3 px gaps, no captions — the picture is the label. A folder that is
     mostly video switches to 16:9 cards with a title, duration and the watched bar, because an episode
@@ -401,8 +412,7 @@ svg{display:block}
   <div class="note"><h4>Launch restores where you were</h4>
     <p>The folder that was open when you quit, with its scroll — standard window restoration. Replaces
     home-rethink's per-card launch flag; without a Home screen there is nothing else to land on.</p></div>
-  <div class="note"><h4>All · Photos · Videos</h4>
-    <p>A filter on the open folder. Cheap: the grid already knows each item's <code>MediaKind</code>.</p></div>
+
 </div>
 </div>
 
@@ -484,8 +494,7 @@ function renderTitle(){
   if (state === 'first'){ t.innerHTML = '<h2>Woka</h2>'; return; }
   if (state === 'search'){ t.innerHTML = '<h2>Search</h2>'; return; }
   const n = find(selected);
-  t.innerHTML = (PATHS[selected] || []).map(p => `<span class="crumb">${p}</span><span class="crumb-sep">›</span>`).join('')
-    + `<h2>${n.name.replace(' · ', ' · ')}</h2>`;
+  t.innerHTML = `<h2>${n.name}</h2>`;
 }
 
 /* ---------- content ---------- */
@@ -561,8 +570,8 @@ function render(){
   document.body.classList.toggle('light', theme === 'light');
   document.getElementById('search').classList.toggle('focus', state === 'search');
   document.getElementById('q').value = state === 'search' ? 'ice' : '';
-  ['filter', 'search'].forEach(id => document.getElementById(id).style.visibility = state === 'first' ? 'hidden' : '');
-  document.querySelector('.size').style.visibility = state === 'first' || state === 'search' ? 'hidden' : '';
+  ['search'].forEach(id => document.getElementById(id).style.visibility = state === 'first' ? 'hidden' : '');
+  document.querySelector('.vwrap').style.visibility = state === 'first' || state === 'search' ? 'hidden' : '';
   renderSide(); renderTitle(); renderContent();
 }
 
@@ -600,12 +609,16 @@ document.getElementById('content').addEventListener('click', e => {
 document.getElementById('selDone').addEventListener('click', () => { picked.clear(); state = 'lib'; renderContent(); });
 document.getElementById('content').addEventListener('scroll', e =>
   document.getElementById('bar').classList.toggle('scrolled', e.target.scrollTop > 4));
-document.getElementById('size').addEventListener('input', e =>
-  document.getElementById('content').style.setProperty('--cell', e.target.value + 'px'));
-document.getElementById('filter').addEventListener('click', e => {
-  if (e.target.tagName !== 'SPAN') return;
-  document.querySelectorAll('#filter span').forEach(s => s.classList.toggle('on', s === e.target));
+document.getElementById('viewBtn').addEventListener('click', () => {
+  const open = document.getElementById('vpop').classList.toggle('open');
+  document.getElementById('viewBtn').classList.toggle('on', open);
 });
+['filter', 'sizes', 'sorts'].forEach(id => document.getElementById(id).addEventListener('click', e => {
+  if (e.target.tagName !== 'SPAN') return;
+  document.querySelectorAll('#' + id + ' span').forEach(s => s.classList.toggle('on', s === e.target));
+  if (e.target.dataset.c) document.getElementById('content').style.setProperty('--cell', e.target.dataset.c + 'px');
+}));
+document.getElementById('pinBtn').addEventListener('click', e => e.currentTarget.classList.toggle('on'));
 document.getElementById('hideSide').addEventListener('click', () => {
   document.getElementById('app').classList.add('collapsed'); document.getElementById('showSide').hidden = false; });
 document.getElementById('showSide').addEventListener('click', () => {

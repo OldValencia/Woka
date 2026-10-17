@@ -53,7 +53,33 @@ class TopBarAccessoriesState {
             leadingAccessory = null
         }
     }
+
+    /**
+     * The folder's toolbar controls (SIDE-003) claim [rightAccessory] the way Home
+     * claimed the leading slot, and for the same reason: the outgoing folder's
+     * `onDispose` runs after the incoming one has claimed it.
+     */
+    private var rightKey by mutableStateOf<String?>(null)
+
+    fun setRight(key: String, content: @Composable () -> Unit) {
+        rightKey = key
+        rightAccessory = content
+    }
+
+    fun clearRight(key: String) {
+        if (rightKey == key) {
+            rightKey = null
+            rightAccessory = null
+        }
+    }
 }
+
+/**
+ * Whether the toolbar is too narrow for every control (SIDE-003). Provided by
+ * `GlobalTopBar` from its own width, so a screen's accessory can drop its widest
+ * items at the 800 px minimum window instead of running under the path.
+ */
+val LocalToolbarCompact = compositionLocalOf { false }
 
 val LocalTopBarAccessories = compositionLocalOf { TopBarAccessoriesState() }
 

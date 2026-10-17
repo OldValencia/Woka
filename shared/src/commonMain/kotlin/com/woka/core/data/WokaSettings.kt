@@ -35,7 +35,10 @@ data class PinnedSession(
 @Serializable
 data class WokaSettings(
     val linkedFolders: List<String> = emptyList(),
-    val folderLayouts: Map<String, ViewLayout> = emptyMap(),
+    // One thumbnail size for every folder (SIDE-003). It was per folder, and every
+    // folder not yet sized opened at M whatever the last one used — the size the user
+    // chose did not follow them anywhere.
+    val gridLayout: ViewLayout = ViewLayout.Grid,
     val folderSorts: Map<String, SortType> = emptyMap(),
     val folderShowTitles: Map<String, Boolean> = emptyMap(),
     val showTitles: Boolean = true,
@@ -55,6 +58,9 @@ data class WokaSettings(
     // Written as the folder changes and as its scroll settles, never at exit. Null
     // until a folder has been shown; honoured only while inside a linked root.
     val lastSession: PinnedSession? = null,
+    // Whether the sidebar is drawn (SIDE-003). On by default: it is the navigation,
+    // and a first run with it hidden would show a window with no way to a folder.
+    val sidebarVisible: Boolean = true,
     val scalePreset: ScalePreset = ScalePreset.Fit,
     /** Overrides HDR *detection*, never the output — see [HdrViewMode] (ME-119). */
     val hdrViewMode: HdrViewMode = HdrViewMode.Auto,

@@ -126,7 +126,7 @@ class FolderStateMapperTest {
     fun `the per-folder overrides win over the global ones`() {
         val global = WokaSettings(
             showTitles = true,
-            folderLayouts = mapOf("D:/Photos" to ViewLayout.BigGrid),
+            gridLayout = ViewLayout.BigGrid,
             folderSorts = mapOf("D:/Photos" to SortType.DateDesc),
             folderShowTitles = mapOf("D:/Photos" to false)
         )
@@ -135,7 +135,7 @@ class FolderStateMapperTest {
         assertEquals(SortType.DateDesc, mine.sort)
         assertEquals(false, mine.showTitles)
         val other = global.folderSettings("D:/Films")
-        assertEquals(ViewLayout.Grid, other.layout)
+        assertEquals(ViewLayout.BigGrid, other.layout, "the size is one for every folder")
         assertEquals(SortType.NameAsc, other.sort)
         assertEquals(true, other.showTitles)
     }

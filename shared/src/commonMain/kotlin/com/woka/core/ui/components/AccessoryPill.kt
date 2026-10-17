@@ -1,10 +1,12 @@
-package com.woka.feature.library
+package com.woka.core.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
@@ -21,38 +23,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.woka.core.ui.theme.Theme
-import com.woka.core.ui.components.floatingPanel
 
-@Composable
-fun LibraryTopAccessory(
-    selectedCount: Int,
-    onSelectAll: () -> Unit,
-    onDuplicate: () -> Unit,
-    onCopy: () -> Unit,
-    onMove: () -> Unit,
-    onDelete: () -> Unit
-) {
-    Row(
-        modifier = Modifier.floatingPanel(),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        BasicText(
-            text = "$selectedCount selected",
-            style = TextStyle(color = Theme.colors.textSecondary, fontSize = 13.sp, fontWeight = FontWeight.Medium),
-            modifier = Modifier.padding(horizontal = 12.dp)
-        )
-
-        Box(modifier = Modifier.width(1.dp).height(20.dp).background(Theme.colors.border))
-
-        AccessoryPill("Select All", enabled = true, onClick = onSelectAll, isSmall = true)
-        AccessoryPill("Duplicate", enabled = selectedCount > 0, onClick = onDuplicate, isSmall = true)
-        AccessoryPill("Copy", enabled = selectedCount > 0, onClick = onCopy, isSmall = true)
-        AccessoryPill("Move", enabled = selectedCount > 0, onClick = onMove, isSmall = true)
-        AccessoryPill("Delete", enabled = selectedCount > 0, onClick = onDelete, isDanger = true, isSmall = true)
-    }
-}
-
+/**
+ * A text button in a floating panel: the selection bar's actions and the link
+ * offer's two answers. Moved here from `feature/library/` when the dock and its
+ * Library tenants were deleted (SIDE-003) — it was the one piece still in use.
+ */
 @Composable
 fun AccessoryPill(
     text: String,

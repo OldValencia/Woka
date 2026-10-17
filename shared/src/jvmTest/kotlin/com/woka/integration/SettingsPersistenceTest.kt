@@ -94,17 +94,15 @@ class SettingsPersistenceTest {
     }
 
     @Test
-    fun `two folders keep their own layout and sort across a restart`() {
+    fun `two folders keep their own sort, and the one size, across a restart`() {
         onSettingsDisk { repository ->
-            repository.setFolderLayout("D:/Photos", ViewLayout.BigGrid)
+            repository.setGridLayout(ViewLayout.BigGrid)
             repository.setFolderSort("D:/Photos", SortType.DateDesc)
-            repository.setFolderLayout("D:/Films", ViewLayout.SmallGrid)
             repository.setFolderSort("D:/Films", SortType.NameDesc)
             awaitSettingsWrite("D:/Films")
             val reopened = SettingsRepositoryImpl().settings.value
-            assertEquals(ViewLayout.BigGrid, reopened.folderLayouts["D:/Photos"])
+            assertEquals(ViewLayout.BigGrid, reopened.gridLayout)
             assertEquals(SortType.DateDesc, reopened.folderSorts["D:/Photos"])
-            assertEquals(ViewLayout.SmallGrid, reopened.folderLayouts["D:/Films"])
             assertEquals(SortType.NameDesc, reopened.folderSorts["D:/Films"])
         }
     }
