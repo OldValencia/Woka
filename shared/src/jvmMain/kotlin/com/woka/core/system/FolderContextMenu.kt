@@ -14,6 +14,12 @@ object FolderContextMenu {
 
     private val isWindows = System.getProperty("os.name").lowercase().contains("windows")
 
+    private val regExe: String by lazy {
+        val sysRoot = System.getenv("SystemRoot") ?: "C:\\Windows"
+        val exe = File(sysRoot, "System32\\reg.exe")
+        if (exe.exists()) exe.absolutePath else "reg"
+    }
+
     fun isSupported(): Boolean = isWindows
 
     /**
@@ -33,7 +39,7 @@ object FolderContextMenu {
     fun isRegistered(): Boolean {
         if (!isWindows) return false
         return try {
-            val process = ProcessBuilder("reg", "query", "HKCU\\Software\\Classes\\Directory\\shell\\Woka").start()
+            val process = ProcessBuilder(regExe, "query", "HKCU\\Software\\Classes\\Directory\\shell\\Woka\\command").start()
             process.waitFor() == 0
         } catch (_: Exception) {
             false
@@ -63,37 +69,33 @@ object FolderContextMenu {
     fun register(customExePath: String? = null): Boolean {
         if (!isWindows) return false
         val exe = customExePath ?: executablePath() ?: return false
-        val icon = "\"$exe\""
-        val cmdFolder = "\"$exe\" \"%1\""
-        val cmdBackground = "\"$exe\" \"%V\""
+        val r = regExe
 
-        return try {
-            runReg("add", "HKCU\\Software\\Classes\\Directory\\shell\\Woka", "/ve", "/t", "REG_SZ", "/d", "Open with Woka", "/f")
-            runReg("add", "HKCU\\Software\\Classes\\Directory\\shell\\Woka", "/v", "Icon", "/t", "REG_SZ", "/d", icon, "/f")
-            runReg("add", "HKCU\\Software\\Classes\\Directory\\shell\\Woka\\command", "/ve", "/t", "REG_SZ", "/d", cmdFolder, "/f")
+        val ok1 = runCmd("$r add \"HKCU\\Software\\Classes\\Directory\\shell\\Woka\" /ve /d \"Open with Woka\" /f")
+        val ok2 = runCmd("$r add \"HKCU\\Software\\Classes\\Directory\\shell\\Woka\" /v Icon /d \"$exe\" /f")
+        val ok3 = runCmd("$r add \"HKCU\\Software\\Classes\\Directory\\shell\\Woka\\command\" /ve /d \"\\\"$exe\\\" \\\"%1\\\"\" /f")
 
-            runReg("add", "HKCU\\Software\\Classes\\Directory\\Background\\shell\\Woka", "/ve", "/t", "REG_SZ", "/d", "Open with Woka", "/f")
-            runReg("add", "HKCU\\Software\\Classes\\Directory\\Background\\shell\\Woka", "/v", "Icon", "/t", "REG_SZ", "/d", icon, "/f")
-            runReg("add", "HKCU\\Software\\Classes\\Directory\\Background\\shell\\Woka\\command", "/ve", "/t", "REG_SZ", "/d", cmdBackground, "/f")
-            true
-        } catch (_: Exception) {
-            false
-        }
+        val ok4 = runCmd("$r add \"HKCU\\Software\\Classes\\Directory\\Background\\shell\\Woka\" /ve /d \"Open with Woka\" /f")
+        val ok5 = runCmd("$r add \"HKCU\\Software\\Classes\\Directory\\Background\\shell\\Woka\" /v Icon /d \"$exe\" /f")
+        val ok6 = runCmd("$r add \"HKCU\\Software\\Classes\\Directory\\Background\\shell\\Woka\\command\" /ve /d \"\\\"$exe\\\" \\\"%V\\\"\" /f")
+
+        return ok1 && ok2 && ok3 && ok4 && ok5 && ok6
     }
 
     fun unregister(): Boolean {
         if (!isWindows) return false
+        val r = regExe
+        val ok1 = runCmd("$r delete \"HKCU\\Software\\Classes\\Directory\\shell\\Woka\" /f")
+        val ok2 = runCmd("$r delete \"HKCU\\Software\\Classes\\Directory\\Background\\shell\\Woka\" /f")
+        return ok1 && ok2
+    }
+
+    private fun runCmd(command: String): Boolean {
         return try {
-            runReg("delete", "HKCU\\Software\\Classes\\Directory\\shell\\Woka", "/f")
-            runReg("delete", "HKCU\\Software\\Classes\\Directory\\Background\\shell\\Woka", "/f")
-            true
+            val process = ProcessBuilder("cmd.exe", "/c", command).start()
+            process.waitFor() == 0
         } catch (_: Exception) {
             false
         }
-    }
-
-    private fun runReg(vararg args: String): Int {
-        val process = ProcessBuilder("reg", *args).start()
-        return process.waitFor()
     }
 }
