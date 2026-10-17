@@ -35,10 +35,19 @@ and asserted row by row by `StartupRouteTest`:
 - **Grid & Cards:** Refine folder and media cards with proper corner radii, smooth hover animations, selection states, and glassmorphism elements.
 - **Typography & Spacing:** Adjust fonts (weight, size, color hierarchy) and padding to ensure a clean, uncluttered, professional aesthetic.
 - **Empty States & Settings:** Polish the Settings overlay and empty folder views with engaging graphics or subtle instructions.
-- **Sidebar (pending):** `features/pending/sidebar/` — Home and the dock are replaced by a window
-  with a sidebar (linked folders as a tree, Pinned) and a toolbar. Launch restores the last folder.
-  It also adds Quick Look, an Info panel, keyboard navigation, video hover excerpts and live folders.
-  Seven tickets; `home-rethink` lost to it on 2026-10-17 and is archived inside it.
+- **Sidebar (done 2026-10-17):** `features/implemented/sidebar/`.
+  - Home and the dock are gone. The window is a sidebar (linked folders as a tree, Pinned) beside a
+    toolbar: the folder's name, View (Show, Size S·M·L, Sort), Pin, the search box, Info, Settings.
+    Launch restores the last folder at its scroll.
+  - Photo folders draw as a mosaic. The open folder follows the disk.
+  - The grid answers the keyboard, with Quick Look on Space.
+  - Hovering a video plays five excerpts.
+  - Search runs inside the window, and the Info panel opens on Ctrl+I.
+  - A folder dropped from Explorer is linked, and an unlink can be undone.
+  - Ten tickets. `home-rethink` lost to it and is archived inside it.
+- **Formats (done 2026-10-17):** SVG through skia's `SVGDOM`. Also `tga`, `qoi`, `jp2`, `pcx`,
+  `ppm`, and the video containers `m4v`, `3gp`, `mpg`, `m2ts`, `wmv`, `flv`. Each was measured
+  readable by `FormatUnlockProbe`.
 - **Package restructure (done):** moved from layer-first to feature-first (`app/`, `core/`,
   `feature/<name>/`) per `features/implemented/package-restructure-feature-first.md`.
 - **Code-quality refactor (done):** `features/implemented/code-quality-refactor.md` — a media domain

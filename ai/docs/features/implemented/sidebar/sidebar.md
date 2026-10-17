@@ -1,6 +1,6 @@
 # Sidebar
 
-**Status: all ten tickets done 2026-10-17.** The visual spec is `ai/mockups/design/sidebar-redesign.html`.
+**Status: shipped 2026-10-17, all ten tickets done; moved to `implemented/`.** The visual spec is `ai/mockups/design/sidebar-redesign.html`.
 Once a UI ticket is written, disagreements are settled by changing the mockup first. Replaces
 `home-rethink`, archived in `archive/` beside this file with the reason it lost.
 

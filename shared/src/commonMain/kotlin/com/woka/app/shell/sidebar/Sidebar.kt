@@ -34,7 +34,7 @@ import java.io.File
 
 /**
  * The window's left column: the linked folders as a tree, the pinned folders under
- * them, and `Link Folder…` at the foot (SIDE-001, `features/pending/sidebar/`).
+ * them, and `Link Folder…` at the foot (SIDE-001, `features/implemented/sidebar/`).
  *
  * It reads the router and the settings itself, as `GlobalTopBar` does, rather than
  * taking them through `App`: navigation is the shell's business, and threading six
