@@ -18,6 +18,7 @@ object Icons {
         val Delete = Res.drawable.delete
         val Disabled = Res.drawable.disabled
         val Folder = Res.drawable.folder
+        val Pin = Res.drawable.pin
         val Play = Res.drawable.play
         val PlayFill = Res.drawable.play_fill
         val Pause = Res.drawable.pause

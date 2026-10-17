@@ -1,24 +1,22 @@
 package com.woka.app.shell
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.woka.app.AppDependencies
 import com.woka.core.ui.icons.Icons
 import com.woka.core.ui.theme.Theme
-import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.milliseconds
 import com.woka.core.ui.components.floatingPanel
-import com.woka.feature.library.LibraryPopup
 
 /**
- * The dock's destinations, and there are two.
+ * The dock's destinations, and there is one.
+ *
+ * `Navigation` — the Library item — went in SIDE-001: it lit up while you stood in a
+ * folder, which is not a place, its hover popup listed the pinned folders the sidebar
+ * now shows permanently, and its click did nothing. Home goes in SIDE-002.
  *
  * `Editor` was a third until 2026-09-01 and never worked: `App` maps `Screen` to this
  * enum and there is no `Screen.Editor`, so the item could not light, and `onTabSelected`
@@ -28,20 +26,17 @@ import com.woka.feature.library.LibraryPopup
  * destination. The list of open editors that would have justified it was ME-128, dropped
  * the same day.
  */
-enum class DockTab { Home, Navigation }
+enum class DockTab { Home }
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun FloatingDock(
-    activeTab: DockTab,
+    activeTab: DockTab?,
     onTabSelected: (DockTab) -> Unit,
     onSearchClick: () -> Unit,
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val settingsRepo = remember { AppDependencies.settingsRepository }
-    val settings by settingsRepo.settings.collectAsState()
-    val pinnedSessions = settings.pinnedSessions
     val inlineAccessory = LocalDockAccessories.current.inlineAccessory
     Row(
         modifier = modifier,
@@ -68,42 +63,6 @@ fun FloatingDock(
                 activeColor = Theme.colors.accentHome,
                 onClick = { onTabSelected(DockTab.Home) }
             )
-            Box {
-                val navInteractionSource = remember { MutableInteractionSource() }
-                val isNavHovered by navInteractionSource.collectIsHoveredAsState()
-                var isPopupHovered by remember { mutableStateOf(false) }
-                val showPopup = (isNavHovered || isPopupHovered) && pinnedSessions.isNotEmpty()
-                var delayedShowPopup by remember { mutableStateOf(false) }
-
-                LaunchedEffect(showPopup) {
-                    if (showPopup) {
-                        delayedShowPopup = true
-                    } else {
-                        delay(150.milliseconds)
-                        delayedShowPopup = false
-                    }
-                }
-
-                DockItem(
-                    text = "Library",
-                    iconRes = Icons.Static.Folder,
-                    isActive = activeTab == DockTab.Navigation,
-                    activeColor = Theme.colors.accentFolders,
-                    hasBadge = pinnedSessions.isNotEmpty(),
-                    interactionSource = navInteractionSource,
-                    onClick = { onTabSelected(DockTab.Navigation) }
-                )
-
-                if (delayedShowPopup) {
-                    LibraryPopup(
-                        pinnedSessions = pinnedSessions,
-                        settingsRepo = settingsRepo,
-                        onHoverEnter = { isPopupHovered = true },
-                        onHoverExit = { isPopupHovered = false }
-                    )
-                }
-            }
-
             DockSeparator()
 
             DockSecondaryItem(

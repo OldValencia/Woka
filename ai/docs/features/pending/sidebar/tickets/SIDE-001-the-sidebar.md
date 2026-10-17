@@ -47,16 +47,17 @@ Visual values are from `ai/mockups/design/sidebar-redesign.html`, except the hea
      parent, relative to the root that contains it, with segments joined by `" › "`. The root's own
      name comes first. Outside every root, it is the parent's name.
 
-3. **The tree's state: `app/shell/sidebar/SidebarTreeState.kt` (new).** A `@Stable` holder with no
-   ViewModel and no Compose UI.
-   - Fields: `var expanded: Set<String>` and `var children: Map<String, List<SidebarNode>>`, both
-     `mutableStateOf`, always replaced with `+`/`-` and never mutated.
+3. **The tree's state: `app/shell/sidebar/SidebarTreeState.kt` (new).** A plain state holder with
+   no `androidx.compose` import (`code-style/state.md`).
+   - Fields: `expanded: StateFlow<Set<String>>` and `children: StateFlow<Map<String,
+     List<SidebarNode>>>`, both replaced with `+`/`-` and never mutated.
    - `suspend fun expand(path)` loads `listSubfolders` under `withContext(Dispatchers.IO)` if the
      path is not cached, then adds it to `expanded`.
    - `fun collapse(path)` removes it from `expanded`.
    - `suspend fun reveal(current: String?, roots: List<String>)` expands every `ancestorsWithin` of
      the root that contains `current`.
-   - `@Composable fun rememberSidebarTreeState()`.
+   - The `Sidebar` owns it with `remember`. It has no scope of its own; its suspend verbs run in
+     the sidebar's effects and click scope.
 
 4. **The pin icon.** Add `commonMain/composeResources/drawable/pin.svg`, using the mockup's pin path
    on a 16-unit viewBox. Add `val Pin = Res.drawable.pin` to `Icons.Static` in `core/ui/icons/Icons.kt`.
@@ -148,7 +149,7 @@ Visual values are from `ai/mockups/design/sidebar-redesign.html`, except the hea
   - files and hidden directories are left out and the order ignores case;
   - `mediaCount` counts only media directly inside a folder, never in its sub-folders;
   - `ancestorsWithin` matches across separators and a trailing slash, and is empty outside the root;
-  - `pinnedParentLabel` names `Movies › Series` for `…/Movies/Series/Andor/Season 1`.
+  - `pinnedParentLabel` names `Movies › Series › Andor` for `…/Movies/Series/Andor/Season 1`.
 - By hand, with the result dated in this file:
   - the tree expands and collapses;
   - opening a folder from Home reveals and highlights it in the sidebar;
@@ -159,3 +160,8 @@ Visual values are from `ai/mockups/design/sidebar-redesign.html`, except the hea
 - `MainShell.kt` is at or under 150 lines, and every new file is under 150.
 - The anti-FQN grep over every touched `.kt` is clean.
 - `./gradlew.bat :shared:build` is green.
+
+## Result
+
+- 2026-10-17: built. `:shared:build` green, 1374 tests; `SidebarTreeTest` passes 5 of 5.
+- 2026-10-17: the by-hand check passed, run by the author.

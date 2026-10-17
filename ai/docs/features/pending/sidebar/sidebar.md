@@ -118,8 +118,8 @@ next one is specified. The rest are blocks in `tickets/backlog.md`.
 
 | ID | Ticket | Status |
 |---|---|---|
-| [SIDE-001](tickets/SIDE-001-the-sidebar.md) | The sidebar: the folder tree, Pinned, Link Folder, and the dock's Library item gone | **← NEXT** |
-| SIDE-002 | No Home: launch restores the last folder, Welcome for a first run, Back and Forward | backlog |
+| [SIDE-001](tickets/SIDE-001-the-sidebar.md) | The sidebar: the folder tree, Pinned, Link Folder, and the dock's Library item gone | **done 2026-10-17** |
+| SIDE-002 | No Home: launch restores the last folder, Welcome for a first run, Back and Forward | **← NEXT** |
 | SIDE-003 | The toolbar replaces the dock: filter, sort, size, search, settings, selection bar | backlog |
 | SIDE-004 | Two grids, chosen by content, a continuous size, and search results in the content | backlog |
 | SIDE-005 | The keyboard drives the grid: focus, Quick Look, Info | backlog |

@@ -66,10 +66,7 @@ fun App(
                 .border(1.dp, Theme.colors.border, RoundedCornerShape(12.dp))
         ) {
             val currentPath = (currentScreen as? Screen.Folder)?.path
-            val activeTab = when (currentScreen) {
-                is Screen.Home -> DockTab.Home
-                is Screen.Folder -> DockTab.Navigation
-            }
+            val activeTab = if (currentScreen is Screen.Home) DockTab.Home else null
 
             var isSearchOpen by remember { mutableStateOf(false) }
 
