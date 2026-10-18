@@ -23,6 +23,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.woka.app.APP_VERSION
 import com.woka.core.ui.icons.Icons
 import com.woka.core.ui.theme.Theme
 import org.jetbrains.compose.resources.painterResource
@@ -49,7 +50,7 @@ fun AboutSettingsPanel() {
                     .padding(horizontal = 6.dp, vertical = 2.dp)
             ) {
                 BasicText(
-                    text = "v1.0.0",
+                    text = "v$APP_VERSION",
                     style = TextStyle(
                         color = Theme.colors.textSecondary,
                         fontSize = 10.sp,

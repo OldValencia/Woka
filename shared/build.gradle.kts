@@ -40,12 +40,31 @@ fun hostPlatform(): String {
     }
 }
 
+val generateAppVersion = tasks.register("generateAppVersion") {
+    val version = providers.gradleProperty("app.version").getOrElse("1.0.0")
+    val outputDir = layout.buildDirectory.dir("generated/version/kotlin")
+    inputs.property("appVersion", version)
+    outputs.dir(outputDir)
+    doLast {
+        val file = outputDir.get().file("com/woka/app/AppVersion.kt").asFile
+        file.parentFile.mkdirs()
+        file.writeText(
+            """
+            package com.woka.app
+
+            const val APP_VERSION = "$version"
+            """.trimIndent() + "\n"
+        )
+    }
+}
+
 kotlin {
     jvm()
     
-    
     sourceSets {
-        commonMain.dependencies {
+        commonMain {
+            kotlin.srcDir(generateAppVersion)
+            dependencies {
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)
@@ -55,6 +74,7 @@ kotlin {
             implementation(libs.koin.core)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.coil.compose)
+            }
         }
         jvmMain.dependencies {
             implementation("org.bytedeco:javacv:${libs.versions.javacv.get()}") {

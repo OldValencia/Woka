@@ -36,10 +36,12 @@ compose.desktop {
             "-Xshare:auto"
         )
 
+        val appVersion = providers.gradleProperty("app.version").getOrElse("1.0.0")
+
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Woka"
-            packageVersion = "1.0.0"
+            packageVersion = appVersion
             description = "Woka"
             copyright = "Copyright 2026 OldValencia"
             vendor = "OldValencia"
@@ -64,7 +66,7 @@ compose.desktop {
             macOS {
                 bundleID = "com.woka.app"
                 dockName = "Woka"
-                packageBuildVersion = "1.0.0"
+                packageBuildVersion = appVersion
                 iconFile.set(icns)
             }
 
