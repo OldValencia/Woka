@@ -50,7 +50,6 @@ kotlin {
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)
             implementation(libs.compose.components.resources)
-            implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.koin.core)
@@ -58,7 +57,20 @@ kotlin {
             implementation(libs.coil.compose)
         }
         jvmMain.dependencies {
-            implementation(libs.javacv)
+            implementation("org.bytedeco:javacv:${libs.versions.javacv.get()}") {
+                exclude(group = "org.bytedeco", module = "opencv")
+                exclude(group = "org.bytedeco", module = "openblas")
+                exclude(group = "org.bytedeco", module = "tesseract")
+                exclude(group = "org.bytedeco", module = "leptonica")
+                exclude(group = "org.bytedeco", module = "artoolkitplus")
+                exclude(group = "org.bytedeco", module = "videoinput")
+                exclude(group = "org.bytedeco", module = "librealsense")
+                exclude(group = "org.bytedeco", module = "librealsense2")
+                exclude(group = "org.bytedeco", module = "libfreenect")
+                exclude(group = "org.bytedeco", module = "libfreenect2")
+                exclude(group = "org.bytedeco", module = "libdc1394")
+                exclude(group = "org.bytedeco", module = "flycapture")
+            }
             implementation(nativeOf(libs.javacpp))
             implementation(nativeOf(libs.ffmpeg))
         }

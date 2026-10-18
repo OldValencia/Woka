@@ -25,7 +25,7 @@ import kotlin.concurrent.thread
 internal object SingleInstance {
 
     private const val HANDSHAKE = "WOKA-INSTANCE"
-    private const val TIMEOUT_MS = 800
+    private const val TIMEOUT_MS = 250
 
     private val portFile: File get() = File(WokaStorage.root, "lock.port")
     private var serverSocket: ServerSocket? = null

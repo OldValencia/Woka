@@ -1,4 +1,6 @@
+import org.gradle.api.provider.Property
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.compose.desktop.application.tasks.AbstractJLinkTask
 
 plugins {
     alias(libs.plugins.kotlinJvm)
@@ -12,8 +14,6 @@ dependencies {
     implementation(compose.desktop.currentOs)
     implementation(libs.compose.components.resources)
     implementation(libs.kotlinx.coroutinesSwing)
-
-    implementation(libs.compose.uiToolingPreview)
 }
 
 compose.desktop {
@@ -27,7 +27,14 @@ compose.desktop {
         // which meant a collection every twenty seconds and seven gigabytes of
         // frames waiting on it. Capping the young generation caps the frames:
         // 256MB of staging arrays is a collection roughly every second at 24fps.
-        jvmArgs += listOf("-Xmx1536m", "-XX:MaxNewSize=256m")
+        jvmArgs += listOf(
+            "-Xmx1536m",
+            "-XX:MaxNewSize=256m",
+            "-XX:+TieredCompilation",
+            "-XX:Tier4CompileThreshold=100000",
+            "-XX:CICompilerCount=2",
+            "-Xshare:auto"
+        )
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
@@ -113,4 +120,11 @@ compose.desktop {
             }
         }
     }
+}
+
+tasks.withType<AbstractJLinkTask>().configureEach {
+    val method = javaClass.methods.firstOrNull { it.name.startsWith("getStripNativeCommands") }
+    @Suppress("UNCHECKED_CAST")
+    (method?.invoke(this) as? Property<Boolean>)?.set(false)
+    freeArgs.add("--generate-cds-archive")
 }
