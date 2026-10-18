@@ -15,8 +15,18 @@ enum class MediaKind { Image, Video }
 
 private val IMAGE_EXTENSIONS = setOf(
     "jpg", "jpeg", "png", "webp", "bmp", "gif", "heic", "heif", "avif", "tif", "tiff", "svg",
-    "tga", "qoi", "jp2", "pcx", "ppm"
+    "tga", "qoi", "jp2", "pcx", "ppm",
+    "psd", "psdt", "pdd"
 )
+
+/**
+ * Image formats that Woka can only display in read-only mode (composite view),
+ * without any editing capabilities.
+ */
+private val READONLY_IMAGE_EXTENSIONS = setOf("psd", "psdt", "pdd")
+
+val File.isReadOnlyMedia: Boolean
+    get() = extension.lowercase() in READONLY_IMAGE_EXTENSIONS
 
 /**
  * The second half of each list was added on 2026-10-17, from `FormatUnlockProbe`:
@@ -31,6 +41,10 @@ private val VIDEO_EXTENSIONS = setOf(
     "m4v", "3gp", "mpg", "mpeg", "m2ts", "mts", "wmv", "flv"
 )
 
+/** The complete set of image and video file extensions supported by Woka. */
+val ALL_SUPPORTED_MEDIA_EXTENSIONS: Set<String>
+    get() = IMAGE_EXTENSIONS + VIDEO_EXTENSIONS
+
 /**
  * Formats **Coil** cannot read, and the grid draws with `AsyncImage`.
  *
@@ -43,7 +57,10 @@ private val VIDEO_EXTENSIONS = setOf(
  * `.gif` and `.webp` are absent because Coil reads both, animation included.
  */
 private val COIL_BLIND_EXTENSIONS =
-    setOf("heic", "heif", "avif", "tif", "tiff", "svg", "tga", "qoi", "jp2", "pcx", "ppm")
+    setOf(
+        "heic", "heif", "avif", "tif", "tiff", "svg", "tga", "qoi", "jp2", "pcx", "ppm",
+        "psd", "psdt", "pdd"
+    )
 
 fun File.mediaKind(): MediaKind? = when (extension.lowercase()) {
     in IMAGE_EXTENSIONS -> MediaKind.Image

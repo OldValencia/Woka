@@ -67,6 +67,33 @@ FFmpeg-powered playback engine with frame-accurate scrubbing, multi-track audio,
 
 ---
 
+## Supported Formats
+
+Woka is built to replace bloated third-party viewers with a single, lightning-fast local media player and viewer.
+
+### 🖼️ Images & Graphics (21 formats)
+
+| Category | Extensions | Capabilities |
+| :--- | :--- | :--- |
+| **Standard Raster** | `.jpg`, `.jpeg`, `.png`, `.webp`, `.bmp`, `.gif` | Viewing, frame extraction, built-in non-destructive editor (crop, rotate, adjust) |
+| **Modern & High-Efficiency** | `.heic`, `.heif`, `.avif` | Hardware-accelerated decode, HDR tone mapping, burst/multi-frame support, editor |
+| **High-Fidelity & Print** | `.tif`, `.tiff` | Multi-page TIFF navigation, high dynamic range viewing & editing |
+| **Vector Graphics** | `.svg` | Skia-powered vector rendering (viewing only) |
+| **Game Textures & Legacy** | `.tga`, `.qoi`, `.jp2`, `.pcx`, `.ppm` | Instant viewing, fast thumbnail caching via Skia/FFmpeg pipeline |
+| **Adobe Photoshop** | `.psd`, `.psdt`, `.pdd` | **Read-only**: Full-quality composite preview of Photoshop documents |
+
+### 🎬 Video (13 formats)
+
+Powered by bundled **FFmpeg 8.x** with frame-accurate scrubbing and hardware-accelerated playback:
+
+| Category | Extensions | Features |
+| :--- | :--- | :--- |
+| **Modern & Web Video** | `.mp4`, `.m4v`, `.mov`, `.webm`, `.mkv` | 4K/8K playback, HDR (PQ/HLG), multi-track audio, subtitles (SRT, ASS, VTT), Picture-in-Picture |
+| **Broadcast & Transport Streams** | `.mpg`, `.mpeg`, `.m2ts`, `.mts`, `.avi` | Multi-channel audio, seamless container demuxing |
+| **Legacy & Mobile Formats** | `.wmv`, `.flv`, `.3gp` | Full playback support with software fallback |
+
+---
+
 ## Architecture
 
 | Layer | Technologies |

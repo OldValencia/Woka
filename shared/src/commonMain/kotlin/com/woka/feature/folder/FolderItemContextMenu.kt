@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import com.woka.core.data.MediaItem
 import com.woka.core.data.WatchRecord
+import com.woka.core.data.isReadOnlyMedia
 import com.woka.core.data.mayHoldFrames
 import com.woka.core.ui.components.DropdownItem
 import com.woka.core.ui.theme.Theme
@@ -79,7 +80,8 @@ internal fun FolderItemContextMenu(
     // factory refuses — video until ME-201, and every format Skia cannot encode — so
     // the entry is honest rather than absent.
     if (item !is MediaItem.Folder && (item !is MediaItem.Video || VIDEO_EDITING_ENABLED)) {
-        DropdownItem("Edit", enabled = isEditable(engineFactory, target)) {
+        val isReadOnly = item.file.isReadOnlyMedia
+        DropdownItem("Edit", enabled = isEditable(engineFactory, target) || isReadOnly) {
             dismiss()
             onEditMedia(target)
         }

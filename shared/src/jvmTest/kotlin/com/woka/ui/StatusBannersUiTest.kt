@@ -7,6 +7,8 @@ import androidx.compose.ui.test.onNodeWithText
 import com.woka.app.shell.StatusBanners
 import com.woka.core.utils.FrameExportStatus
 import com.woka.feature.editor.EditorSaveStatus
+import com.woka.feature.editor.EditorNoticeStatus
+import com.woka.feature.editor.READONLY_MEDIA_EDIT_NOTICE
 import com.woka.support.onUi
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -29,6 +31,7 @@ class StatusBannersUiTest {
     fun reset() {
         FrameExportStatus.clear()
         EditorSaveStatus.clear()
+        EditorNoticeStatus.clear()
     }
 
     @Test
@@ -47,6 +50,18 @@ class StatusBannersUiTest {
             val export = onNodeWithText(EXPORTING).getUnclippedBoundsInRoot()
             val save = onNodeWithText(SAVING).getUnclippedBoundsInRoot()
             assertTrue(export.bottom <= save.top, "the pills overlap: $export against $save")
+        }
+    }
+
+    @Test
+    fun `an editor notice displays in status banners`() {
+        onUi {
+            setContent { StatusBanners() }
+            EditorNoticeStatus.show(READONLY_MEDIA_EDIT_NOTICE)
+            waitForIdle()
+            mainClock.advanceTimeBy(1000)
+
+            onNodeWithText(READONLY_MEDIA_EDIT_NOTICE).assertIsDisplayed()
         }
     }
 }

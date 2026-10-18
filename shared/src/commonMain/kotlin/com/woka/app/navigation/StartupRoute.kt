@@ -55,19 +55,32 @@ private fun restoredScreen(last: PinnedSession?, linked: List<String>): Screen {
     return roots.firstOrNull()?.let { Screen.Folder(it) } ?: Screen.Welcome
 }
 
+private fun sanitizeArg(arg: String): String {
+    var s = arg.trim().removeSurrounding("\"")
+    while (s.endsWith("%*") || s.endsWith("%1")) {
+        s = s.removeSuffix("%*").removeSuffix("%1").trim().removeSurrounding("\"")
+    }
+    return s
+}
+
 /**
  * Windows hands an unquoted path with spaces over as several arguments, so a first
  * argument that is not on disk is retried as the whole line joined back together.
+ * Shell file association placeholders (%*, %1) and surrounding quotes are stripped.
  */
 private fun launchTarget(args: List<String>): File? {
-    val first = args.firstOrNull()?.trim().orEmpty()
+    val cleanArgs = args
+        .map { sanitizeArg(it) }
+        .filter { it.isNotEmpty() }
+
+    val first = cleanArgs.firstOrNull().orEmpty()
     if (first.isEmpty()) return null
 
     val direct = File(first)
     if (direct.exists()) return direct
 
-    if (args.size < 2) return null
-    val joined = File(args.joinToString(" ").trim())
+    if (cleanArgs.size < 2) return null
+    val joined = File(cleanArgs.joinToString(" ").trim().removeSurrounding("\""))
     return if (joined.exists()) joined else null
 }
 

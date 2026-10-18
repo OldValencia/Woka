@@ -36,10 +36,12 @@ compose.desktop {
             "-Xshare:auto"
         )
 
+        val appVersion = providers.gradleProperty("app.version").getOrElse("1.0.0")
+
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Woka"
-            packageVersion = "1.0.0"
+            packageVersion = appVersion
             description = "Woka"
             copyright = "Copyright 2026 OldValencia"
             vendor = "OldValencia"
@@ -64,7 +66,7 @@ compose.desktop {
             macOS {
                 bundleID = "com.woka.app"
                 dockName = "Woka"
-                packageBuildVersion = "1.0.0"
+                packageBuildVersion = appVersion
                 iconFile.set(icns)
             }
 
@@ -94,6 +96,9 @@ compose.desktop {
                 Triple("image/jp2", "jp2", "JPEG 2000 Image"),
                 Triple("image/x-pcx", "pcx", "PCX Image"),
                 Triple("image/x-portable-pixmap", "ppm", "PPM Image"),
+                Triple("image/vnd.adobe.photoshop", "psd", "Photoshop Document"),
+                Triple("image/vnd.adobe.photoshop", "psdt", "Photoshop Document Template"),
+                Triple("image/x-photodeluxe", "pdd", "PhotoDeluxe Document"),
                 Triple("video/mp4", "mp4", "MP4 Video"),
                 Triple("video/x-matroska", "mkv", "Matroska Video"),
                 Triple("video/x-msvideo", "avi", "AVI Video"),
