@@ -39,7 +39,7 @@ class ReadOnlyMediaEditNoticeTest {
         assertNull(EditorNoticeStatus.message)
         EditorNoticeStatus.show()
         assertEquals(READONLY_MEDIA_EDIT_NOTICE, EditorNoticeStatus.message)
-        assertEquals("Нельзя редактировать, нет функционала", EditorNoticeStatus.message)
+        assertEquals("Editing is not supported for this format", EditorNoticeStatus.message)
         EditorNoticeStatus.clear()
         assertNull(EditorNoticeStatus.message)
     }
