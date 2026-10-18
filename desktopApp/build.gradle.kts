@@ -33,7 +33,8 @@ compose.desktop {
             "-XX:+TieredCompilation",
             "-XX:Tier4CompileThreshold=100000",
             "-XX:CICompilerCount=2",
-            "-Xshare:auto"
+            "-Xshare:auto",
+            "--enable-native-access=ALL-UNNAMED"
         )
 
         val appVersion = providers.gradleProperty("app.version").getOrElse("1.0.0")

@@ -25,12 +25,14 @@ import com.woka.app.shell.ExitWhenQuiet
 import com.woka.app.shell.WindowKeys
 import com.woka.core.data.WokaStorage
 import com.woka.core.system.FolderContextMenu
+import com.woka.core.system.WindowsCommandLine
 import java.awt.Point
 import com.woka.app.App
 import java.awt.Dimension
 import java.awt.GraphicsEnvironment
 
-fun main(args: Array<String>) {
+fun main(rawArgs: Array<String>) {
+    val args = WindowsCommandLine.resolveArgs(rawArgs).toTypedArray()
     if (!SingleInstance.startOrForward(args)) {
         return
     }
