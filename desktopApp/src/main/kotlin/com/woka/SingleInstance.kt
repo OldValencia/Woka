@@ -3,7 +3,6 @@ package com.woka
 import androidx.compose.ui.awt.ComposeWindow
 import com.woka.app.navigation.openExternalPath
 import com.woka.core.data.WokaStorage
-import java.awt.Desktop
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
@@ -48,7 +47,7 @@ internal object SingleInstance {
         serverSocket = socket
         writePort(socket.localPort)
         startListening(socket)
-        registerMacOpenFileHandler()
+        registerMacOpenFileHandler(::openPathInRunningWindow)
         true
     } catch (_: Exception) {
         true
@@ -127,19 +126,6 @@ internal object SingleInstance {
             if (window.isMinimized) window.isMinimized = false
             window.toFront()
             window.requestFocus()
-        }
-    }
-
-    private fun registerMacOpenFileHandler() {
-        try {
-            val desktop = if (Desktop.isDesktopSupported()) Desktop.getDesktop() else return
-            if (desktop.isSupported(Desktop.Action.APP_OPEN_FILE)) {
-                desktop.setOpenFileHandler { event ->
-                    event.files.firstOrNull()?.let { openPathInRunningWindow(it.absolutePath) }
-                }
-            }
-        } catch (_: Throwable) {
-            // Not supported on this desktop environment
         }
     }
 

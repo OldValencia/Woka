@@ -1,7 +1,7 @@
 package com.woka.unit
 
 import com.woka.core.data.ALL_SUPPORTED_MEDIA_EXTENSIONS
-import com.woka.core.system.WindowsFileAssociations
+import com.woka.core.system.associationRegContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -22,9 +22,9 @@ class WindowsFileAssociationsTest {
     }
 
     @Test
-    fun `generateRegContent generates valid registry structure`() {
+    fun `associationRegContent generates valid registry structure`() {
         val testExe = "C:\\Users\\TestUser\\AppData\\Local\\Woka\\Woka.exe"
-        val reg = WindowsFileAssociations.generateRegContent(testExe)
+        val reg = associationRegContent(testExe)
 
         // Registry version header
         assertTrue(reg.startsWith("Windows Registry Editor Version 5.00"))

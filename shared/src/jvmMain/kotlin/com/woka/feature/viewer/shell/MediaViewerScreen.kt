@@ -7,11 +7,8 @@ import androidx.compose.ui.focus.FocusRequester
 import com.woka.app.AppDependencies
 import com.woka.core.data.MediaItem
 import com.woka.app.shell.LocalGlobalShortcuts
-import com.woka.core.data.isReadOnlyMedia
-import com.woka.feature.editor.EditorNoticeStatus
 import com.woka.feature.viewer.shell.frames.rememberFrameExportEntry
 import com.woka.feature.viewer.shell.frames.rememberFrameStrip
-import java.io.File
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -67,22 +64,8 @@ fun MediaViewerScreen(
     var showInfoDialog by remember { mutableStateOf(false) }
     val copyAction = rememberCopyAction(activeItem, state.frameIndex)
     val infoAction = { if (activeItem != null) showInfoDialog = true }
-    // Was a stub that closed the viewer; the editor now opens *over* it, so the
-    // viewer stays mounted and Cancel returns to this exact zoom and frame (§4.1).
-    // The frame goes with the path: editing what is on screen means *this* picture,
-    // and a strip stopped on frame 5 of an animation was handing over frame 0.
-    val editAction = editActionOf(videoState != null) {
-        val file = activeItem?.file ?: File(state.currentId)
-        if (file.isReadOnlyMedia) {
-            EditorNoticeStatus.show()
-        } else {
-            onEdit(state.currentId, strip.editableFrameOf(state.frameIndex))
-        }
-    }
-    val onSizeModeChange: (SizeMode) -> Unit = { mode ->
-        state.sizeMode = mode
-        if (settings.rememberSizeState) persistSizeState(settingsRepo, mode)
-    }
+    val editAction = viewerEditAction(videoState != null, activeItem, state, strip, onEdit)
+    val onSizeModeChange = sizeModeSetter(state, settings, settingsRepo)
     val toggleFullscreen = { enterFullscreen(state, videoState, activeItem, onClose) }
 
     MediaViewerShortcutEffect(
