@@ -48,7 +48,14 @@ class StillDecoderRoutingTest {
         "ppm" to FfmpegStillDecoder,
         "psd" to FfmpegStillDecoder,
         "psdt" to FfmpegStillDecoder,
-        "pdd" to FfmpegStillDecoder
+        "pdd" to FfmpegStillDecoder,
+        "jfif" to SkiaFrameDecoder,
+        "jpe" to SkiaFrameDecoder,
+        "dib" to SkiaFrameDecoder,
+        "rle" to SkiaFrameDecoder,
+        "hif" to FfmpegStillDecoder,
+        "pgm" to FfmpegStillDecoder,
+        "pbm" to FfmpegStillDecoder
     )
 
     @Test

@@ -59,6 +59,7 @@ val generateAppVersion = tasks.register("generateAppVersion") {
 }
 
 kotlin {
+    jvmToolchain(25)
     jvm()
     
     sourceSets {

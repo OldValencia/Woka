@@ -8,6 +8,10 @@ plugins {
     alias(libs.plugins.composeCompiler)
 }
 
+kotlin {
+    jvmToolchain(25)
+}
+
 dependencies {
     implementation(projects.shared)
 
@@ -33,7 +37,8 @@ compose.desktop {
             "-XX:+TieredCompilation",
             "-XX:Tier4CompileThreshold=100000",
             "-XX:CICompilerCount=2",
-            "-Xshare:auto"
+            "-Xshare:auto",
+            "--enable-native-access=ALL-UNNAMED"
         )
 
         val appVersion = providers.gradleProperty("app.version").getOrElse("1.0.0")
@@ -81,12 +86,17 @@ compose.desktop {
             val mediaAssociations = listOf(
                 Triple("image/jpeg", "jpg", "JPEG Image"),
                 Triple("image/jpeg", "jpeg", "JPEG Image"),
+                Triple("image/jpeg", "jfif", "JPEG File Interchange Format"),
+                Triple("image/jpeg", "jpe", "JPEG Image"),
                 Triple("image/png", "png", "PNG Image"),
                 Triple("image/webp", "webp", "WebP Image"),
                 Triple("image/bmp", "bmp", "Bitmap Image"),
+                Triple("image/bmp", "dib", "Device Independent Bitmap"),
+                Triple("image/bmp", "rle", "Run-Length Encoded Bitmap"),
                 Triple("image/gif", "gif", "GIF Image"),
                 Triple("image/heic", "heic", "High Efficiency Image"),
                 Triple("image/heif", "heif", "High Efficiency Image"),
+                Triple("image/heif", "hif", "High Efficiency Image"),
                 Triple("image/avif", "avif", "AVIF Image"),
                 Triple("image/tiff", "tif", "TIFF Image"),
                 Triple("image/tiff", "tiff", "TIFF Image"),
@@ -96,22 +106,46 @@ compose.desktop {
                 Triple("image/jp2", "jp2", "JPEG 2000 Image"),
                 Triple("image/x-pcx", "pcx", "PCX Image"),
                 Triple("image/x-portable-pixmap", "ppm", "PPM Image"),
+                Triple("image/x-portable-graymap", "pgm", "Portable Graymap Image"),
+                Triple("image/x-portable-bitmap", "pbm", "Portable Bitmap Image"),
                 Triple("image/vnd.adobe.photoshop", "psd", "Photoshop Document"),
                 Triple("image/vnd.adobe.photoshop", "psdt", "Photoshop Document Template"),
                 Triple("image/x-photodeluxe", "pdd", "PhotoDeluxe Document"),
                 Triple("video/mp4", "mp4", "MP4 Video"),
                 Triple("video/x-matroska", "mkv", "Matroska Video"),
+                Triple("video/x-matroska", "mk3d", "Matroska 3D Video"),
                 Triple("video/x-msvideo", "avi", "AVI Video"),
+                Triple("video/x-msvideo", "divx", "DivX Video"),
+                Triple("video/x-msvideo", "gvi", "Google Video"),
                 Triple("video/quicktime", "mov", "QuickTime Video"),
                 Triple("video/webm", "webm", "WebM Video"),
                 Triple("video/x-m4v", "m4v", "M4V Video"),
                 Triple("video/3gpp", "3gp", "3GP Video"),
+                Triple("video/3gpp2", "3g2", "3GPP2 Video"),
                 Triple("video/mpeg", "mpg", "MPEG Video"),
                 Triple("video/mpeg", "mpeg", "MPEG Video"),
+                Triple("video/mpeg", "mpeg1", "MPEG-1 Video"),
+                Triple("video/mpeg", "mpeg2", "MPEG-2 Video"),
+                Triple("video/mp4", "mpeg4", "MPEG-4 Video"),
+                Triple("video/mp4", "mpg4", "MPEG-4 Video"),
+                Triple("video/mpeg", "mpv", "MPEG Video Stream"),
+                Triple("video/mpeg", "mpv2", "MPEG-2 Video Stream"),
                 Triple("video/mp2t", "m2ts", "MPEG-2 Transport Stream"),
                 Triple("video/mp2t", "mts", "MPEG-2 Transport Stream"),
+                Triple("video/mp2t", "ts", "MPEG-2 Transport Stream"),
+                Triple("video/mp2t", "tp", "MPEG Transport Stream Video"),
+                Triple("video/mp2t", "tod", "JVC Transport Stream Video"),
+                Triple("video/mp2t", "rec", "Topfield PVR Video"),
+                Triple("video/dvd", "vob", "DVD Video Object"),
+                Triple("video/x-vro", "vro", "DVD Video Recording"),
+                Triple("video/dvd", "evo", "Enhanced Video Object"),
+                Triple("application/mxf", "mxf", "Material Exchange Format Video"),
                 Triple("video/x-ms-wmv", "wmv", "Windows Media Video"),
-                Triple("video/x-flv", "flv", "Flash Video")
+                Triple("video/x-ms-asf", "asf", "Advanced Systems Format Video"),
+                Triple("video/x-flv", "flv", "Flash Video"),
+                Triple("video/x-f4v", "f4v", "Flash MP4 Video"),
+                Triple("video/x-dirac", "drc", "Dirac Video"),
+                Triple("video/x-dv", "dv", "Digital Video")
             )
             for ((mime, ext, desc) in mediaAssociations) {
                 fileAssociation(
