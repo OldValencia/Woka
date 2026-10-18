@@ -41,6 +41,10 @@ private val VIDEO_EXTENSIONS = setOf(
     "m4v", "3gp", "mpg", "mpeg", "m2ts", "mts", "wmv", "flv"
 )
 
+/** The complete set of image and video file extensions supported by Woka. */
+val ALL_SUPPORTED_MEDIA_EXTENSIONS: Set<String>
+    get() = IMAGE_EXTENSIONS + VIDEO_EXTENSIONS
+
 /**
  * Formats **Coil** cannot read, and the grid draws with `AsyncImage`.
  *
