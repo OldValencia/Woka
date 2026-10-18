@@ -69,28 +69,34 @@ FFmpeg-powered playback engine with frame-accurate scrubbing, multi-track audio,
 
 ## Supported Formats
 
-Woka is built to replace bloated third-party viewers with a single, lightning-fast local media player and viewer.
+Woka is built to replace bloated third-party viewers with a single, lightning-fast local media player and viewer supporting **62 media formats** natively.
 
-### 🖼️ Images & Graphics (21 formats)
+### 🖼️ Images & Graphics (27 formats)
 
 | Category | Extensions | Capabilities |
 | :--- | :--- | :--- |
-| **Standard Raster** | `.jpg`, `.jpeg`, `.png`, `.webp`, `.bmp`, `.gif` | Viewing, frame extraction, built-in non-destructive editor (crop, rotate, adjust) |
-| **Modern & High-Efficiency** | `.heic`, `.heif`, `.avif` | Hardware-accelerated decode, HDR tone mapping, burst/multi-frame support, editor |
+| **Standard Raster** | `.jpg`, `.jpeg`, `.jfif`, `.jpe`, `.png`, `.webp`, `.bmp`, `.dib`, `.rle`, `.gif` | Viewing, frame extraction, built-in non-destructive editor (crop, rotate, adjust) |
+| **Modern & High-Efficiency** | `.heic`, `.heif`, `.hif`, `.avif` | Hardware-accelerated decode, HDR tone mapping, burst/multi-frame support, editor |
 | **High-Fidelity & Print** | `.tif`, `.tiff` | Multi-page TIFF navigation, high dynamic range viewing & editing |
+| **Netpbm & Graymaps** | `.pbm`, `.pgm`, `.ppm` | Portable AnyMap format suite support via FFmpeg |
+| **Game Textures & Legacy** | `.tga`, `.qoi`, `.jp2`, `.pcx` | Instant viewing, fast thumbnail caching via Skia/FFmpeg pipeline |
 | **Vector Graphics** | `.svg` | Skia-powered vector rendering (viewing only) |
-| **Game Textures & Legacy** | `.tga`, `.qoi`, `.jp2`, `.pcx`, `.ppm` | Instant viewing, fast thumbnail caching via Skia/FFmpeg pipeline |
 | **Adobe Photoshop** | `.psd`, `.psdt`, `.pdd` | **Read-only**: Full-quality composite preview of Photoshop documents |
 
-### 🎬 Video (13 formats)
+### 🎬 Video (35 formats)
 
 Powered by bundled **FFmpeg 8.x** with frame-accurate scrubbing and hardware-accelerated playback:
 
 | Category | Extensions | Features |
 | :--- | :--- | :--- |
-| **Modern & Web Video** | `.mp4`, `.m4v`, `.mov`, `.webm`, `.mkv` | 4K/8K playback, HDR (PQ/HLG), multi-track audio, subtitles (SRT, ASS, VTT), Picture-in-Picture |
-| **Broadcast & Transport Streams** | `.mpg`, `.mpeg`, `.m2ts`, `.mts`, `.avi` | Multi-channel audio, seamless container demuxing |
-| **Legacy & Mobile Formats** | `.wmv`, `.flv`, `.3gp` | Full playback support with software fallback |
+| **Modern & Web Video** | `.mp4`, `.m4v`, `.mov`, `.webm`, `.mkv`, `.mk3d` | 4K/8K playback, HDR (PQ/HLG), multi-track audio, subtitles (SRT, ASS, VTT), Picture-in-Picture |
+| **Broadcast & Transport Streams** | `.ts`, `.m2ts`, `.mts`, `.tp`, `.tod`, `.rec` | MPEG transport stream demuxing, multi-channel audio, frame-accurate seeking |
+| **Optical Disc & Production** | `.vob`, `.vro`, `.evo`, `.mxf` | DVD Video Object, Enhanced VOB, broadcast Material Exchange Format |
+| **MPEG Standards** | `.mpg`, `.mpeg`, `.mpeg1`, `.mpeg2`, `.mpeg4`, `.mpg4`, `.mpv`, `.mpv2` | MPEG-1/2/4 video streams and elementary streams |
+| **Windows Media & Legacy PC** | `.avi`, `.wmv`, `.asf`, `.divx`, `.gvi` | AVI, Windows Media Video, Advanced Systems Format, DivX, Google Video |
+| **Flash & Streaming** | `.flv`, `.f4v` | Flash Video and Flash MP4 containers |
+| **Mobile & Telecom** | `.3gp`, `.3g2` | 3GPP and 3GPP2 mobile multimedia containers |
+| **Specialized & Open Formats** | `.dv`, `.drc` | Digital Video and Dirac container/codecs |
 
 ---
 

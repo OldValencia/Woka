@@ -16,7 +16,9 @@ enum class MediaKind { Image, Video }
 private val IMAGE_EXTENSIONS = setOf(
     "jpg", "jpeg", "png", "webp", "bmp", "gif", "heic", "heif", "avif", "tif", "tiff", "svg",
     "tga", "qoi", "jp2", "pcx", "ppm",
-    "psd", "psdt", "pdd"
+    "psd", "psdt", "pdd",
+    "jfif", "jpe", "dib", "rle",
+    "hif", "pgm", "pbm"
 )
 
 /**
@@ -28,17 +30,12 @@ private val READONLY_IMAGE_EXTENSIONS = setOf("psd", "psdt", "pdd")
 val File.isReadOnlyMedia: Boolean
     get() = extension.lowercase() in READONLY_IMAGE_EXTENSIONS
 
-/**
- * The second half of each list was added on 2026-10-17, from `FormatUnlockProbe`:
- * the bundled FFmpeg wrote a sample of each and read it back. `ogv` stayed out because
- * the bundle has no Theora encoder to make a sample with, so it went unmeasured;
- * `ts` stayed out because it is also TypeScript's extension, and a folder of code
- * would fill with broken video tiles. `mpeg` and `mts` are `mpg`'s and `m2ts`'s
- * containers under another name.
- */
 private val VIDEO_EXTENSIONS = setOf(
     "mp4", "mkv", "avi", "mov", "webm",
-    "m4v", "3gp", "mpg", "mpeg", "m2ts", "mts", "wmv", "flv"
+    "m4v", "3gp", "mpg", "mpeg", "m2ts", "mts", "wmv", "flv",
+    "asf", "divx", "3g2", "mpeg1", "mpeg2", "mpeg4", "mpg4", "mpv", "mpv2",
+    "ts", "vob", "vro", "mxf", "f4v", "mk3d", "tod", "tp", "rec", "evo",
+    "gvi", "drc", "dv"
 )
 
 /** The complete set of image and video file extensions supported by Woka. */
@@ -59,7 +56,8 @@ val ALL_SUPPORTED_MEDIA_EXTENSIONS: Set<String>
 private val COIL_BLIND_EXTENSIONS =
     setOf(
         "heic", "heif", "avif", "tif", "tiff", "svg", "tga", "qoi", "jp2", "pcx", "ppm",
-        "psd", "psdt", "pdd"
+        "psd", "psdt", "pdd",
+        "hif", "pgm", "pbm"
     )
 
 fun File.mediaKind(): MediaKind? = when (extension.lowercase()) {
@@ -88,7 +86,7 @@ val File.needsWokaCover: Boolean
  * picture exports a single PNG, which is the honest answer rather than an error.
  */
 private val FRAME_CAPABLE_EXTENSIONS =
-    setOf("heic", "heif", "avif", "gif", "webp", "tif", "tiff")
+    setOf("heic", "heif", "hif", "avif", "gif", "webp", "tif", "tiff")
 
 val File.mayHoldFrames: Boolean
     get() = extension.lowercase() in FRAME_CAPABLE_EXTENSIONS
