@@ -1,6 +1,7 @@
 import org.gradle.api.provider.Property
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.compose.desktop.application.tasks.AbstractJLinkTask
+import org.jetbrains.compose.desktop.application.tasks.AbstractJPackageTask
 
 plugins {
     alias(libs.plugins.kotlinJvm)
@@ -157,6 +158,28 @@ compose.desktop {
                     macOSIconFile = null
                 )
             }
+        }
+    }
+}
+
+// The jlink archive below covers only JDK classes; Compose, Skiko, Kotlin and Woka
+// itself were still parsed and verified from the jars on every launch. The launcher
+// also maps a dynamic archive of those, `app/woka.jsa`, which the JVM records during
+// the first launch after an install or update and rewrites whenever the JDK or jar
+// set changes. That one launch takes ~7.6s to its first frame; every later one went
+// from ~1000ms to ~615ms warm, ~1300–2400ms to ~750ms cold. The archive cannot ship
+// in the MSI: the JVM checks each jar's modification time, and the installer's
+// copies carry their own. Windows only: on macOS the archive would be written into
+// the `.app` bundle, on Linux into a read-only `/opt`. Only the packaged launcher
+// gets the flags — `run` would receive `$APPDIR` unexpanded. The compose plugin sets
+// `launcherJvmArgs` in its own afterEvaluate, so this one runs after it.
+if (System.getProperty("os.name").startsWith("Windows")) {
+    afterEvaluate {
+        tasks.withType<AbstractJPackageTask>().configureEach {
+            launcherJvmArgs.addAll(
+                "-XX:+AutoCreateSharedArchive",
+                "-XX:SharedArchiveFile=\$APPDIR/woka.jsa"
+            )
         }
     }
 }
