@@ -59,7 +59,7 @@ internal interface StillDecoder {
 private val FFMPEG_EXTENSIONS =
     setOf(
         "heic", "heif", "avif", "tga", "qoi", "jp2", "pcx", "ppm",
-        "psd", "psb", "psdt", "pdd"
+        "psd", "psdt", "pdd"
     )
 
 /** skia has no TIFF codec, and FFmpeg's `tiff_pipe` reports 1 page for 3. */

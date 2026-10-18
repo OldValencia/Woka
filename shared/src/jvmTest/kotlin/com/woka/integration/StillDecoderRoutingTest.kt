@@ -47,7 +47,6 @@ class StillDecoderRoutingTest {
         "pcx" to FfmpegStillDecoder,
         "ppm" to FfmpegStillDecoder,
         "psd" to FfmpegStillDecoder,
-        "psb" to FfmpegStillDecoder,
         "psdt" to FfmpegStillDecoder,
         "pdd" to FfmpegStillDecoder
     )

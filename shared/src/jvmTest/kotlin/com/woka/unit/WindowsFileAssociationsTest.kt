@@ -9,11 +9,11 @@ import kotlin.test.assertTrue
 class WindowsFileAssociationsTest {
 
     @Test
-    fun `all supported extensions total 34 formats`() {
-        assertEquals(34, ALL_SUPPORTED_MEDIA_EXTENSIONS.size)
+    fun `all supported extensions total 33 formats`() {
+        assertEquals(33, ALL_SUPPORTED_MEDIA_EXTENSIONS.size)
         // Verify key formats are present
         val expected = listOf(
-            "jpg", "png", "webp", "gif", "psd", "psb", "psdt", "pdd",
+            "jpg", "png", "webp", "gif", "psd", "psdt", "pdd",
             "mp4", "mkv", "avi", "mov", "webm", "flv"
         )
         for (ext in expected) {

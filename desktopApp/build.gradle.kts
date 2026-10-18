@@ -97,7 +97,6 @@ compose.desktop {
                 Triple("image/x-pcx", "pcx", "PCX Image"),
                 Triple("image/x-portable-pixmap", "ppm", "PPM Image"),
                 Triple("image/vnd.adobe.photoshop", "psd", "Photoshop Document"),
-                Triple("image/vnd.adobe.photoshop", "psb", "Photoshop Large Document"),
                 Triple("image/vnd.adobe.photoshop", "psdt", "Photoshop Document Template"),
                 Triple("image/x-photodeluxe", "pdd", "PhotoDeluxe Document"),
                 Triple("video/mp4", "mp4", "MP4 Video"),

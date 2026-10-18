@@ -40,8 +40,10 @@ import com.woka.core.data.WokaSettings
 import com.woka.core.system.FolderContextMenu
 import com.woka.core.system.WindowsFileAssociations
 import com.woka.core.ui.theme.Theme
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Operating system integration settings panel.
@@ -80,7 +82,7 @@ actual fun OsIntegrationSettingsPanel(settings: WokaSettings, repo: SettingsRepo
             onClick = {
                 isAssociating = true
                 coroutineScope.launch {
-                    val success = WindowsFileAssociations.register()
+                    val success = withContext(Dispatchers.IO) { WindowsFileAssociations.register() }
                     if (success) {
                         WindowsFileAssociations.openDefaultAppsSettings()
                         assocStatus = "Registered ${ALL_SUPPORTED_MEDIA_EXTENSIONS.size} formats. Choose Woka in Windows Settings."

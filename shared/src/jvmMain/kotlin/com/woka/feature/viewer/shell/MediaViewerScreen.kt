@@ -11,6 +11,7 @@ import com.woka.core.data.isReadOnlyMedia
 import com.woka.feature.editor.EditorNoticeStatus
 import com.woka.feature.viewer.shell.frames.rememberFrameExportEntry
 import com.woka.feature.viewer.shell.frames.rememberFrameStrip
+import java.io.File
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -71,7 +72,7 @@ fun MediaViewerScreen(
     // The frame goes with the path: editing what is on screen means *this* picture,
     // and a strip stopped on frame 5 of an animation was handing over frame 0.
     val editAction = editActionOf(videoState != null) {
-        val file = activeItem?.file ?: java.io.File(state.currentId)
+        val file = activeItem?.file ?: File(state.currentId)
         if (file.isReadOnlyMedia) {
             EditorNoticeStatus.show()
         } else {

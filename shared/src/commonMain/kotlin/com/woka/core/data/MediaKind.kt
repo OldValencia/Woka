@@ -16,14 +16,14 @@ enum class MediaKind { Image, Video }
 private val IMAGE_EXTENSIONS = setOf(
     "jpg", "jpeg", "png", "webp", "bmp", "gif", "heic", "heif", "avif", "tif", "tiff", "svg",
     "tga", "qoi", "jp2", "pcx", "ppm",
-    "psd", "psb", "psdt", "pdd"
+    "psd", "psdt", "pdd"
 )
 
 /**
  * Image formats that Woka can only display in read-only mode (composite view),
  * without any editing capabilities.
  */
-private val READONLY_IMAGE_EXTENSIONS = setOf("psd", "psb", "psdt", "pdd")
+private val READONLY_IMAGE_EXTENSIONS = setOf("psd", "psdt", "pdd")
 
 val File.isReadOnlyMedia: Boolean
     get() = extension.lowercase() in READONLY_IMAGE_EXTENSIONS
@@ -59,7 +59,7 @@ val ALL_SUPPORTED_MEDIA_EXTENSIONS: Set<String>
 private val COIL_BLIND_EXTENSIONS =
     setOf(
         "heic", "heif", "avif", "tif", "tiff", "svg", "tga", "qoi", "jp2", "pcx", "ppm",
-        "psd", "psb", "psdt", "pdd"
+        "psd", "psdt", "pdd"
     )
 
 fun File.mediaKind(): MediaKind? = when (extension.lowercase()) {

@@ -80,7 +80,7 @@ Woka is built to replace bloated third-party viewers with a single, lightning-fa
 | **High-Fidelity & Print** | `.tif`, `.tiff` | Multi-page TIFF navigation, high dynamic range viewing & editing |
 | **Vector Graphics** | `.svg` | Skia-powered vector rendering (viewing only) |
 | **Game Textures & Legacy** | `.tga`, `.qoi`, `.jp2`, `.pcx`, `.ppm` | Instant viewing, fast thumbnail caching via Skia/FFmpeg pipeline |
-| **Adobe Photoshop** | `.psd`, `.psb`, `.psdt`, `.pdd` | **Read-only**: Full-quality composite preview of standard and large Photoshop documents |
+| **Adobe Photoshop** | `.psd`, `.psdt`, `.pdd` | **Read-only**: Full-quality composite preview of Photoshop documents |
 
 ### 🎬 Video (13 formats)
 
