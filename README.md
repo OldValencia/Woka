@@ -116,7 +116,7 @@ Powered by bundled **FFmpeg 8.x** with frame-accurate scrubbing and hardware-acc
 
 ### Prerequisites
 
-- **JDK 17** or higher (OpenJDK, Temurin, or Corretto recommended)
+- **JDK 25** or higher (Oracle JDK, OpenJDK, Temurin, or Corretto recommended)
 - **Windows 10/11** (officially tested and supported)
 
 > [!NOTE]

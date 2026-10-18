@@ -73,7 +73,7 @@ object WindowsCommandLine {
         }
     }
 
-    // `MemorySegment.getString(offset, Charset)` arrives in JDK 22; the build runs on 21.
+    // Reads a null-terminated wide character (UTF-16) string from a native pointer.
     private fun readWideString(ptr: MemorySegment): String {
         val wide = ptr.reinterpret(Long.MAX_VALUE)
         val sb = StringBuilder()
