@@ -11,11 +11,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import com.woka.core.data.MediaItem
+import com.woka.core.data.isReadOnlyMedia
 import com.woka.core.ui.theme.Theme
+import com.woka.feature.editor.EditorNoticeStatus
 import com.woka.feature.editor.EditorTarget
 import com.woka.feature.editor.NativeMediaEditor
 import com.woka.feature.viewer.NativeMediaViewer
 import com.woka.core.utils.directoryChanges
+import java.io.File
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import org.koin.core.component.KoinComponent
@@ -80,7 +83,13 @@ fun FolderScreen(
                     overlays = overlays,
                     onNavigateToFolder = onNavigateToFolder,
                     onOpenMedia = { id -> viewerMediaId = id },
-                    onEditMedia = { id -> editorTarget = EditorTarget(id) },
+                    onEditMedia = { id ->
+                        if (File(id).isReadOnlyMedia) {
+                            EditorNoticeStatus.show()
+                        } else {
+                            editorTarget = EditorTarget(id)
+                        }
+                    },
                     highlightFile = highlightFile,
                     scrollToMediaId = scrollToMediaId,
                     onScrollToMediaIdConsumed = { scrollToMediaId = null },

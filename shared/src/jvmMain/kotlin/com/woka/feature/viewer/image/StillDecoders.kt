@@ -56,7 +56,11 @@ internal interface StillDecoder {
  * are formats neither skia nor `ImageIO` reads, measured readable through FFmpeg by
  * `FormatUnlockProbe` (2026-10-17).
  */
-private val FFMPEG_EXTENSIONS = setOf("heic", "heif", "avif", "tga", "qoi", "jp2", "pcx", "ppm")
+private val FFMPEG_EXTENSIONS =
+    setOf(
+        "heic", "heif", "avif", "tga", "qoi", "jp2", "pcx", "ppm",
+        "psd", "psb", "psdt", "pdd"
+    )
 
 /** skia has no TIFF codec, and FFmpeg's `tiff_pipe` reports 1 page for 3. */
 private val IMAGE_IO_EXTENSIONS = setOf("tif", "tiff")

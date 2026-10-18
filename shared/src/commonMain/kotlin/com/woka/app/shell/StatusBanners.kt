@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.woka.core.ui.components.FrameExportBanner
+import com.woka.feature.editor.EditorNoticeBanner
 import com.woka.feature.editor.EditorSaveBanner
 
 /**
@@ -35,6 +36,7 @@ fun StatusBanners() {
         ) {
             FrameExportBanner()
             EditorSaveBanner()
+            EditorNoticeBanner()
             UnlinkUndoBanner()
         }
     }
