@@ -104,6 +104,46 @@ class StartupRouteTest {
     }
 
     @Test
+    fun `windows file association with trailing percent-star is handled`() {
+        inDir { dir ->
+            val photo = dir.touch("a summer shot.heic")
+            val split = photo.absolutePath.split(" ") + listOf("%*")
+            assertEquals(photo.absolutePath, folderOf(startupStack(split)).openViewerForId)
+        }
+    }
+
+    @Test
+    fun `windows file association with joined string containing percent-star is handled`() {
+        inDir { dir ->
+            val photo = dir.touch("a summer shot.heic")
+            assertEquals(photo.absolutePath, folderOf(startupStack(listOf(photo.absolutePath + " %*"))).openViewerForId)
+        }
+    }
+
+    @Test
+    fun `windows file association with unicode and spaces is handled`() {
+        inDir { dir ->
+            val photo = dir.touch("A Certain Magical Index とある魔術の禁書目録 new.heic")
+            val split = photo.absolutePath.split(" ") + listOf("%*")
+            assertEquals(photo.absolutePath, folderOf(startupStack(split)).openViewerForId)
+        }
+    }
+
+    @Test
+    fun `windows file association with quotes is handled`() {
+        inDir { dir ->
+            val photo = dir.touch("quoted shot.heic")
+            val quoted = listOf("\"${photo.absolutePath}\"", "%*")
+            assertEquals(photo.absolutePath, folderOf(startupStack(quoted)).openViewerForId)
+        }
+    }
+
+    @Test
+    fun `only percent-star placeholder opens Welcome`() {
+        assertEquals(listOf(Screen.Welcome), startupStack(listOf("%*")))
+    }
+
+    @Test
     fun `a launched folder stands alone, with no history under it`() {
         inDir { dir ->
             assertEquals(1, startupStack(listOf(dir.absolutePath)).size)

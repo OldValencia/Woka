@@ -7,11 +7,13 @@ import java.awt.Desktop
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
+import java.io.OutputStreamWriter
 import java.io.PrintWriter
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import javax.swing.SwingUtilities
 import kotlin.concurrent.thread
@@ -69,9 +71,9 @@ internal object SingleInstance {
             try {
                 client.use {
                     it.soTimeout = TIMEOUT_MS
-                    val writer = PrintWriter(it.getOutputStream(), true)
+                    val writer = PrintWriter(OutputStreamWriter(it.getOutputStream(), StandardCharsets.UTF_8), true)
                     writer.println(HANDSHAKE)
-                    val reader = BufferedReader(InputStreamReader(it.getInputStream()))
+                    val reader = BufferedReader(InputStreamReader(it.getInputStream(), StandardCharsets.UTF_8))
                     val payload = reader.readLine()?.trim().orEmpty()
                     openPathInRunningWindow(payload)
                 }
@@ -85,12 +87,17 @@ internal object SingleInstance {
         Socket().use { socket ->
             socket.connect(InetSocketAddress(InetAddress.getLoopbackAddress(), port), TIMEOUT_MS)
             socket.soTimeout = TIMEOUT_MS
-            val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
+            val reader = BufferedReader(InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8))
             if (reader.readLine()?.trim() != HANDSHAKE) {
                 portFile.delete()
                 false
             } else {
-                PrintWriter(socket.getOutputStream(), true).println(args.joinToString(" ").trim())
+                val clean = args
+                    .map { it.trim().removeSurrounding("\"") }
+                    .filter { it.isNotEmpty() && it != "%*" && it != "%1" }
+                val payload = clean.joinToString(" ").trim().removeSurrounding("\"")
+                val writer = PrintWriter(OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true)
+                writer.println(payload)
                 true
             }
         }
