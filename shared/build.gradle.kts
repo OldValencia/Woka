@@ -94,6 +94,16 @@ kotlin {
             }
             implementation(nativeOf(libs.javacpp))
             implementation(nativeOf(libs.ffmpeg))
+            // ImageIO plugins, registered by SPI: `psb` (FFmpeg's psd decoder is v1-only),
+            // and `ico`/`cur` with their alpha and every entry (photo-formats PF-002).
+            implementation(libs.twelvemonkeys.psd)
+            implementation(libs.twelvemonkeys.bmp)
+            // Camera RAW. The preset is built for javacpp 1.5.11 and runs under 1.5.14 with a
+            // loader warning only — measured on nine cameras' files (photo-formats, 2026-10-24).
+            implementation(libs.libraw)
+            implementation(nativeOf(libs.libraw))
+            // `.ai`: page 1 of a PDF-compatible Illustrator file.
+            implementation(libs.pdfbox)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -123,4 +133,13 @@ tasks.withType<Test>().configureEach {
         "woka.storageRoot",
         layout.buildDirectory.dir("test-storage").get().asFile.absolutePath
     )
+    // Where `BundledNatives` finds libjxl/jxrlib: the folder Compose merges into the
+    // packaged app, named the way Compose names it (`windows-x64`, `macos-arm64`).
+    // Filled by `natives/*/build.*`; the literal must match `RESOURCES_DIR_PROPERTY`.
+    val composeArch = javacppPlatform.replace("x86_64", "x64").replace("macosx", "macos")
+    systemProperty(
+        "compose.application.resources.dir",
+        rootProject.file("desktopApp/appResources/$composeArch").absolutePath
+    )
+    jvmArgs("--enable-native-access=ALL-UNNAMED")
 }

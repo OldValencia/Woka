@@ -76,17 +76,16 @@ internal object StillPreview {
     /**
      * A tiled HEIF is assembled *at* preview size rather than assembled whole
      * and then shrunk — the difference between allocating 0.5 MB and 138 MB.
-     * Every other decoder has no such option and hands over the full picture,
-     * which for the formats they read is small enough not to matter.
+     * A RAW is developed at half size, skipping the demosaic that makes up most
+     * of its cost. Every other decoder has no such option and hands over the full
+     * picture, which for the formats they read is small enough not to matter.
      */
-    private fun decodeSmall(file: File, frameIndex: Int): ImageBitmap {
-        val decoder = stillDecoderFor(file)
-        return if (decoder is FfmpegStillDecoder) {
-            decoder.frame(file, frameIndex, PREVIEW_MAX_PX)
-        } else {
-            decoder.frame(file, frameIndex)
+    private fun decodeSmall(file: File, frameIndex: Int): ImageBitmap =
+        when (val decoder = stillDecoderFor(file)) {
+            is FfmpegStillDecoder -> decoder.frame(file, frameIndex, PREVIEW_MAX_PX)
+            is RawStillDecoder -> decoder.halfSize(file)
+            else -> decoder.frame(file, frameIndex)
         }
-    }
 }
 
 /**

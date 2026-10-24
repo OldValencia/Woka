@@ -20,7 +20,7 @@ class ReadOnlyMediaEditNoticeTest {
 
     @Test
     fun `photoshop family files classify as read only media`() {
-        val readOnlyExtensions = listOf("psd", "psdt", "pdd", "PSD", "PDD")
+        val readOnlyExtensions = listOf("psd", "psdt", "pdd", "psb", "paint", "ai", "PSD", "PDD", "PSB")
         readOnlyExtensions.forEach { ext ->
             assertTrue(File("test.$ext").isReadOnlyMedia, "Expected .$ext to be read-only")
         }

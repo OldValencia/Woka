@@ -9,6 +9,9 @@ kotlinx-serialization = "1.11.0"
 coil3 = "3.5.0"
 javacv = "1.5.14"
 ffmpeg = "8.1.2-1.5.14"
+twelvemonkeys = "3.15.3"
+libraw = "0.21.2-1.5.11"
+pdfbox = "3.0.8"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -30,6 +33,10 @@ coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil3"
 javacv = { module = "org.bytedeco:javacv", version.ref = "javacv" }
 javacpp = { module = "org.bytedeco:javacpp", version.ref = "javacv" }
 ffmpeg = { module = "org.bytedeco:ffmpeg", version.ref = "ffmpeg" }
+twelvemonkeys-psd = { module = "com.twelvemonkeys.imageio:imageio-psd", version.ref = "twelvemonkeys" }
+twelvemonkeys-bmp = { module = "com.twelvemonkeys.imageio:imageio-bmp", version.ref = "twelvemonkeys" }
+libraw = { module = "org.bytedeco:libraw", version.ref = "libraw" }
+pdfbox = { module = "org.apache.pdfbox:pdfbox", version.ref = "pdfbox" }
 
 [plugins]
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }

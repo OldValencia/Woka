@@ -6,11 +6,8 @@ import com.woka.core.data.FrameKind
 import com.woka.core.data.ImageFrame
 import com.woka.core.data.ImageFrameSet
 import org.bytedeco.javacv.FFmpegFrameGrabber
-import org.bytedeco.javacv.Frame
 import java.awt.image.BufferedImage
 import java.io.File
-import java.awt.image.DataBufferByte
-import java.nio.ByteBuffer
 
 /** A picture whose next eight grabs are all empty is broken, not slow. */
 private const val MAX_EMPTY_GRABS = 8
@@ -106,41 +103,7 @@ private fun grabAt(grabber: FFmpegFrameGrabber, frameInStream: Int): BufferedIma
         }
         empty = 0
         reached++
-        if (reached == frameInStream) return frame.toBgrImage()
+        if (reached == frameInStream) return frame.toBgraImage()
     }
     error("ran out of frames at $reached looking for $frameInStream")
-}
-
-/**
- * The decoded frame as a `TYPE_3BYTE_BGR` image, **taking three channels as a given
- * rather than asking the frame how many it has** (ME-182).
- *
- * `Java2DFrameConverter` infers the channel count as `imageStride / imageWidth`, and
- * ffmpeg pads each row to an alignment. At most widths the division is either exact at
- * three or not exact at all, and the inference survives — but where the padding happens
- * to add exactly one byte per pixel it lands on **four**, and the picture is then read
- * four bytes at a time out of three-byte data. Measured 2026-09-03: a 96-wide frame
- * pads 288 to 384, `384 / 96 == 4`, and the result was the right half black with the
- * rows walking. 128 (`384 / 128 == 3`) and 160 (`576 / 160 == 3.6`) were unaffected,
- * which is why this went unseen — the corpus is 320 and 640 wide.
- *
- * Nothing has to be inferred here: [onGrabber] asks for `AV_PIX_FMT_BGR24` and that is
- * what the buffer holds. The stride is still honoured, because the padding is real.
- */
-/** `AV_PIX_FMT_BGR24` is what [onGrabber] asks for, and this is its width in bytes. */
-private const val BGR_CHANNELS = 3
-
-private fun Frame.toBgrImage(): BufferedImage {
-    val source = image[0] as ByteBuffer
-    val target = BufferedImage(imageWidth, imageHeight, BufferedImage.TYPE_3BYTE_BGR)
-    val row = ByteArray(imageWidth * BGR_CHANNELS)
-    val into = (target.raster.dataBuffer as DataBufferByte).data
-
-    for (y in 0 until imageHeight) {
-        source.position(y * imageStride)
-        source.get(row, 0, row.size)
-        row.copyInto(into, y * row.size)
-    }
-    source.rewind()
-    return target
 }

@@ -18,3 +18,8 @@ captures
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
 *.log
+
+# Bundled natives: the Windows set is committed so a fresh clone tests and runs as is;
+# the macOS/Linux sets are built by natives/*/build.sh in CI and never committed.
+desktopApp/appResources/*/
+!desktopApp/appResources/windows-x64/

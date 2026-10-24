@@ -32,6 +32,14 @@ in the file names or in the stream metadata.
 | `noaudio.mkv` | video, no audio stream | volume and media keys on the boundary case |
 | `broken.mkv` | first 2 KB of a valid container | error paths |
 | `still.png` / `still.jpg` / `still.webp` | 640×480 | `ImageLoader` |
+| `still.exr` / `still.dds` / `still.xbm` / `still.xpm` / `still.pnm` | 64×48 `gradient:red-blue` (red top, blue bottom); `dds` DXT5 with alpha fading to 0 at the left, `xpm` with `None` in the left half | photo-formats PF-001: the FFmpeg-read formats, channel order and alpha |
+| `still.ico` / `still.cur` | **3** entries: 16 and 32 as 32-bit BMP, then 256 as PNG — largest **last**; a `#3478F6` circle on transparency. `cur` is the same bytes with type 2 and hotspot 3,5 | PF-002: largest-first frame order, alpha, PNG-in-ICO |
+| `still.psb` | 64×48 `gradient:red-blue`, 8-bit, PSB (version 2) | PF-002: the large-document variant FFmpeg cannot read |
+| `still.paint` / `multilayer.paint` | real Windows 11 Paint projects (the author's, cleared for the repo): one layer 830×500; four canvas-sized layers 1022×575 | PF-003: the HEIF `unci` + `iovl` reader, against `reference/*.paint.png` — ImageMagick/libheif's composite |
+| `still.hdr` / `flat.hdr` | Radiance RGBE 64×48 written by ImageMagick: from `plasma:fractal -seed 7`, and from `gradient:red-blue` (compresses 56:1) | PF-003: `reference/still.hdr.png` is the **sRGB source**, not ImageMagick's linear read-back |
+| `still.ai` | a 200×100 pt PDF-compatible `.ai` from ImageMagick: white, a `#3478F6` rectangle inset 20 pt | PF-003: page 1 through PDFBox at 2× |
+| `jxl-*.jxl` | 64×48, encoded by libjxl 0.12's `cjxl` — lossy, lossless, alpha, 3-frame animation (100 ms), recompressed JPEG | PF-003: expected corners are `djxl`'s decode; values and commands in `natives/jxl/README.md` |
+| `jxr-*.jxr` | 64×48, written by Windows' own WIC encoder — 8-bit, alpha, lossy, 16-bit gray, half-float HDR | PF-003: against `reference/jxr-*.jxr.png`, WIC's own decode |
 | `still.bmp` | 160×120, uncompressed | §5.1's bucket C: the one format with neither a recipe slot nor an encoder. Small because a BMP is uncompressed — at 640×480 it would be 900 KB of a 3.3 MB corpus, and nothing asks about its pixels |
 | `exif_rot90.jpg` | `still.jpg` with EXIF `Orientation=6` | **F3**: a correct loader returns 480×640 |
 | `burst.heic` | **5** HEIC images in one container, 320×240 | frame sets: the HEIC burst case |
@@ -139,6 +147,18 @@ Stills:
 
 ```sh
 "$FF" -y -f lavfi -i "testsrc2=size=640x480" -frames:v 1 -c:v png     "$D/still.png"
+# PF-001 fixtures — ImageMagick 7.1.2 ($M = magick), since the bundled ffmpeg writes no dds/xpm:
+"$M" -size 64x48 gradient:red-blue base.png
+"$M" base.png -compress zip "$D/still.exr"
+"$M" base.png -alpha set -channel A -fx "i/w" +channel -define dds:compression=dxt5 -define dds:mipmaps=0 "$D/still.dds"
+"$M" base.png -threshold 50% "$D/still.xbm"
+"$M" base.png -colors 4 -alpha set -channel A -fx "i<32?0:1" +channel "$D/still.xpm"
+"$M" base.png -depth 8 "$D/still.pnm"
+# PF-002 — the 256 entry is spliced in as PNG by a few lines of Python (struct-packed
+# ICONDIR, entries appended in order; for .cur the type is 2 and planes/bpp hold the hotspot):
+"$M" -size 256x256 xc:none -fill "#3478F6" -draw "circle 128,128 128,8" icon.png
+"$M" icon.png -define icon:auto-resize=16,32 small.ico   # then small.ico entries + icon.png
+"$M" -size 64x48 gradient:red-blue -depth 8 "$D/still.psb"
 "$FF" -y -f lavfi -i "testsrc2=size=640x480" -frames:v 1 -c:v mjpeg   "$D/still.jpg"
 "$FF" -y -f lavfi -i "testsrc2=size=640x480" -frames:v 1 -c:v libwebp "$D/still.webp"
 ```
