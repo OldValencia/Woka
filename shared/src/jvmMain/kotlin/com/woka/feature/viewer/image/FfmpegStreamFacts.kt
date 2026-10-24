@@ -4,7 +4,7 @@ import androidx.compose.ui.unit.IntSize
 import org.bytedeco.ffmpeg.avformat.AVFormatContext
 import org.bytedeco.ffmpeg.global.avformat.AV_DISPOSITION_DEPENDENT
 import org.bytedeco.ffmpeg.global.avutil.AVMEDIA_TYPE_VIDEO
-import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_BGR24
+import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_BGRA
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import java.io.File
 
@@ -57,7 +57,7 @@ internal fun <T> onGrabber(
     block: (FFmpegFrameGrabber) -> T
 ): T {
     val grabber = FFmpegFrameGrabber(file)
-    grabber.pixelFormat = AV_PIX_FMT_BGR24
+    grabber.pixelFormat = AV_PIX_FMT_BGRA
     grabber.setOption("max_streams", MAX_STREAMS_OPTION)
     grabber.videoStream = videoStreamIndex
     return try {

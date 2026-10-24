@@ -1,6 +1,7 @@
 import org.gradle.api.provider.Property
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.compose.desktop.application.tasks.AbstractJLinkTask
+import org.jetbrains.compose.desktop.application.tasks.AbstractJPackageTask
 
 plugins {
     alias(libs.plugins.kotlinJvm)
@@ -51,6 +52,9 @@ compose.desktop {
             copyright = "Copyright 2026 OldValencia"
             vendor = "OldValencia"
             licenseFile.set(project.file("../LICENSE"))
+            // Bundled natives (libjxl, jxrlib), one folder per `<os>-<arch>`: `windows-x64` is
+            // committed, the others built by `natives/*/build.sh` in CI; `BundledNatives` loads them.
+            appResourcesRootDir.set(project.layout.projectDirectory.dir("appResources"))
 
             modules("java.instrument", "java.management", "jdk.unsupported")
 
@@ -111,6 +115,52 @@ compose.desktop {
                 Triple("image/vnd.adobe.photoshop", "psd", "Photoshop Document"),
                 Triple("image/vnd.adobe.photoshop", "psdt", "Photoshop Document Template"),
                 Triple("image/x-photodeluxe", "pdd", "PhotoDeluxe Document"),
+                Triple("image/x-exr", "exr", "OpenEXR Image"),
+                Triple("image/vnd-ms.dds", "dds", "DirectDraw Surface"),
+                Triple("image/x-xbitmap", "xbm", "X BitMap Image"),
+                Triple("image/x-xpixmap", "xpm", "X PixMap Image"),
+                Triple("image/x-portable-anymap", "pnm", "Portable Anymap Image"),
+                Triple("image/vnd.adobe.photoshop", "psb", "Photoshop Large Document"),
+                Triple("image/vnd.microsoft.icon", "ico", "Icon"),
+                Triple("image/vnd.microsoft.icon", "cur", "Cursor"),
+                Triple("image/x-paint", "paint", "Paint Project"),
+                Triple("image/vnd.radiance", "hdr", "Radiance HDR Image"),
+                Triple("application/illustrator", "ai", "Adobe Illustrator Artwork"),
+                Triple("image/jxl", "jxl", "JPEG XL Image"),
+                Triple("image/jxr", "jxr", "JPEG XR Image"),
+                Triple("image/vnd.ms-photo", "wdp", "HD Photo"),
+                Triple("image/x-adobe-dng", "dng", "Digital Negative"),
+                Triple("image/x-canon-cr2", "cr2", "Canon RAW Image"),
+                Triple("image/x-canon-cr3", "cr3", "Canon RAW Image"),
+                Triple("image/x-canon-crw", "crw", "Canon RAW Image"),
+                Triple("image/x-nikon-nef", "nef", "Nikon RAW Image"),
+                Triple("image/x-nikon-nrw", "nrw", "Nikon RAW Image"),
+                Triple("image/x-sony-arw", "arw", "Sony RAW Image"),
+                Triple("image/x-sony-sr2", "sr2", "Sony RAW Image"),
+                Triple("image/x-fuji-raf", "raf", "Fujifilm RAW Image"),
+                Triple("image/x-olympus-orf", "orf", "Olympus RAW Image"),
+                Triple("image/x-olympus-orf", "ori", "Olympus RAW Image"),
+                Triple("image/x-panasonic-rw2", "rw2", "Panasonic RAW Image"),
+                Triple("image/x-pentax-pef", "pef", "Pentax RAW Image"),
+                Triple("image/x-pentax-pef", "ptx", "Pentax RAW Image"),
+                Triple("image/x-hasselblad-3fr", "3fr", "Hasselblad RAW Image"),
+                Triple("image/x-hasselblad-fff", "fff", "Hasselblad RAW Image"),
+                Triple("image/x-phaseone-iiq", "iiq", "Phase One RAW Image"),
+                Triple("image/x-phaseone-cap", "cap", "Phase One RAW Image"),
+                Triple("image/x-leica-rwl", "rwl", "Leica RAW Image"),
+                Triple("image/x-casio-bay", "bay", "Casio RAW Image"),
+                Triple("image/x-kodak-dcr", "dcr", "Kodak RAW Image"),
+                Triple("image/x-kodak-dcs", "dcs", "Kodak RAW Image"),
+                Triple("image/x-kodak-drf", "drf", "Kodak RAW Image"),
+                Triple("image/x-kodak-k25", "k25", "Kodak RAW Image"),
+                Triple("image/x-kodak-kdc", "kdc", "Kodak RAW Image"),
+                Triple("image/x-epson-erf", "erf", "Epson RAW Image"),
+                Triple("image/x-mamiya-mef", "mef", "Mamiya RAW Image"),
+                Triple("image/x-leaf-mos", "mos", "Leaf RAW Image"),
+                Triple("image/x-minolta-mrw", "mrw", "Minolta RAW Image"),
+                Triple("image/x-minolta-mdc", "mdc", "Minolta RAW Image"),
+                Triple("image/x-logitech-pxn", "pxn", "Logitech RAW Image"),
+                Triple("image/x-panasonic-raw", "raw", "Camera RAW Image"),
                 Triple("video/mp4", "mp4", "MP4 Video"),
                 Triple("video/x-matroska", "mkv", "Matroska Video"),
                 Triple("video/x-matroska", "mk3d", "Matroska 3D Video"),
@@ -157,6 +207,28 @@ compose.desktop {
                     macOSIconFile = null
                 )
             }
+        }
+    }
+}
+
+// The jlink archive below covers only JDK classes; Compose, Skiko, Kotlin and Woka
+// itself were still parsed and verified from the jars on every launch. The launcher
+// also maps a dynamic archive of those, `app/woka.jsa`, which the JVM records during
+// the first launch after an install or update and rewrites whenever the JDK or jar
+// set changes. That one launch takes ~7.6s to its first frame; every later one went
+// from ~1000ms to ~615ms warm, ~1300–2400ms to ~750ms cold. The archive cannot ship
+// in the MSI: the JVM checks each jar's modification time, and the installer's
+// copies carry their own. Windows only: on macOS the archive would be written into
+// the `.app` bundle, on Linux into a read-only `/opt`. Only the packaged launcher
+// gets the flags — `run` would receive `$APPDIR` unexpanded. The compose plugin sets
+// `launcherJvmArgs` in its own afterEvaluate, so this one runs after it.
+if (System.getProperty("os.name").startsWith("Windows")) {
+    afterEvaluate {
+        tasks.withType<AbstractJPackageTask>().configureEach {
+            launcherJvmArgs.addAll(
+                "-XX:+AutoCreateSharedArchive",
+                "-XX:SharedArchiveFile=\$APPDIR/woka.jsa"
+            )
         }
     }
 }

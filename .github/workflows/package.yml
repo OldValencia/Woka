@@ -61,6 +61,18 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y fakeroot dpkg dpkg-dev
 
+      # libjxl and jxrlib ship inside the app (desktopApp/appResources/<os>-<arch>/). The Windows
+      # set is committed; macOS and Linux build theirs from pinned sources before packaging.
+      - name: Install native build tools (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y cmake ninja-build patchelf
+
+      - name: Build bundled natives (macOS / Linux)
+        if: runner.os != 'Windows'
+        run: |
+          bash natives/jxl/build.sh
+          sh natives/jxr/build.sh
+
       - name: Build native installer
         run: ./gradlew ${{ matrix.gradle-task }}
 

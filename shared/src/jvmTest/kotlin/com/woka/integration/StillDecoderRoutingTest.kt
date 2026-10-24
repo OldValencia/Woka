@@ -1,10 +1,17 @@
 package com.woka.integration
 
 import com.woka.core.data.MediaKind
+import com.woka.core.data.RAW_IMAGE_EXTENSIONS
 import com.woka.core.data.needsWokaCover
 import com.woka.core.data.mediaKind
 import com.woka.feature.viewer.image.FfmpegStillDecoder
+import com.woka.feature.viewer.image.IllustratorStillDecoder
 import com.woka.feature.viewer.image.ImageIoStillDecoder
+import com.woka.feature.viewer.image.JxlStillDecoder
+import com.woka.feature.viewer.image.JxrStillDecoder
+import com.woka.feature.viewer.image.PaintStillDecoder
+import com.woka.feature.viewer.image.RadianceStillDecoder
+import com.woka.feature.viewer.image.RawStillDecoder
 import com.woka.feature.viewer.image.SkiaFrameDecoder
 import com.woka.feature.viewer.image.SvgStillDecoder
 import com.woka.feature.viewer.image.StillDecoder
@@ -55,8 +62,22 @@ class StillDecoderRoutingTest {
         "rle" to SkiaFrameDecoder,
         "hif" to FfmpegStillDecoder,
         "pgm" to FfmpegStillDecoder,
-        "pbm" to FfmpegStillDecoder
-    )
+        "pbm" to FfmpegStillDecoder,
+        "exr" to FfmpegStillDecoder,
+        "dds" to FfmpegStillDecoder,
+        "xbm" to FfmpegStillDecoder,
+        "xpm" to FfmpegStillDecoder,
+        "pnm" to FfmpegStillDecoder,
+        "psb" to ImageIoStillDecoder,
+        "ico" to ImageIoStillDecoder,
+        "cur" to ImageIoStillDecoder,
+        "paint" to PaintStillDecoder,
+        "hdr" to RadianceStillDecoder,
+        "ai" to IllustratorStillDecoder,
+        "jxl" to JxlStillDecoder,
+        "jxr" to JxrStillDecoder,
+        "wdp" to JxrStillDecoder
+    ) + RAW_IMAGE_EXTENSIONS.associateWith { RawStillDecoder }
 
     @Test
     fun `each extension reaches the decoder that can read it`() {

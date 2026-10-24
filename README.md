@@ -69,19 +69,26 @@ FFmpeg-powered playback engine with frame-accurate scrubbing, multi-track audio,
 
 ## Supported Formats
 
-Woka is built to replace bloated third-party viewers with a single, lightning-fast local media player and viewer supporting **62 media formats** natively.
+Woka is built to replace bloated third-party viewers with a single, lightning-fast local media player and viewer supporting **108 media formats** natively.
 
-### 🖼️ Images & Graphics (27 formats)
+### 🖼️ Images & Graphics (73 formats)
 
 | Category | Extensions | Capabilities |
 | :--- | :--- | :--- |
 | **Standard Raster** | `.jpg`, `.jpeg`, `.jfif`, `.jpe`, `.png`, `.webp`, `.bmp`, `.dib`, `.rle`, `.gif` | Viewing, frame extraction, built-in non-destructive editor (crop, rotate, adjust) |
 | **Modern & High-Efficiency** | `.heic`, `.heif`, `.hif`, `.avif` | Hardware-accelerated decode, HDR tone mapping, burst/multi-frame support, editor |
+| **JPEG XL & JPEG XR** | `.jxl`, `.jxr`, `.wdp` | Bundled libjxl and jxrlib — nothing to install; animated JPEG XL, Xbox / Game Bar HDR screenshots |
 | **High-Fidelity & Print** | `.tif`, `.tiff` | Multi-page TIFF navigation, high dynamic range viewing & editing |
-| **Netpbm & Graymaps** | `.pbm`, `.pgm`, `.ppm` | Portable AnyMap format suite support via FFmpeg |
-| **Game Textures & Legacy** | `.tga`, `.qoi`, `.jp2`, `.pcx` | Instant viewing, fast thumbnail caching via Skia/FFmpeg pipeline |
+| **High Dynamic Range** | `.exr`, `.hdr` | OpenEXR via FFmpeg, Radiance RGBE, mapped to the display |
+| **Camera RAW** | `.dng`, `.cr2`, `.cr3`, `.crw`, `.nef`, `.nrw`, `.arw`, `.sr2`, `.raf`, `.orf`, `.ori`, `.rw2`, `.pef`, `.ptx`, `.3fr`, `.fff`, `.iiq`, `.cap`, `.rwl`, `.bay`, `.dcr`, `.dcs`, `.drf`, `.k25`, `.kdc`, `.erf`, `.mef`, `.mos`, `.mrw`, `.mdc`, `.pxn`, `.raw` | Full development via LibRaw (camera white balance), fast half-size previews and grid tiles |
+| **Netpbm & Graymaps** | `.pbm`, `.pgm`, `.ppm`, `.pnm` | Portable AnyMap format suite support via FFmpeg |
+| **Game Textures & Legacy** | `.tga`, `.qoi`, `.jp2`, `.pcx`, `.dds` | Instant viewing with transparency, fast thumbnail caching via Skia/FFmpeg pipeline |
+| **Icons & Cursors** | `.ico`, `.cur` | Opens on the largest size, every size browsable, transparency kept |
+| **X11 Bitmaps** | `.xbm`, `.xpm` | X BitMap and X PixMap, with transparency |
 | **Vector Graphics** | `.svg` | Skia-powered vector rendering (viewing only) |
-| **Adobe Photoshop** | `.psd`, `.psdt`, `.pdd` | **Read-only**: Full-quality composite preview of Photoshop documents |
+| **Adobe Photoshop** | `.psd`, `.psdt`, `.pdd`, `.psb` | **Read-only**: Full-quality composite preview of Photoshop documents, Large Document Format included |
+| **Adobe Illustrator** | `.ai` | **Read-only**: the artwork of PDF-compatible files (Illustrator CS and later) |
+| **Windows Paint Projects** | `.paint` | **Read-only**: every layer composed, as Paint shows it on reopening |
 
 ### 🎬 Video (35 formats)
 

@@ -13,19 +13,35 @@ import java.io.File
  */
 enum class MediaKind { Image, Video }
 
+/**
+ * Camera RAW, all read by LibRaw — public because the decoder routing needs the
+ * same set, and a second copy of 32 names is how the two would drift. Absent:
+ * `rwz` (Rawzor), which LibRaw has no decoder for, and `ari` (ARRI), which the
+ * bundled LibRaw 0.21.2 refuses as "Unsupported file format" (measured on an
+ * Alexa Mini sample, 2026-10-24).
+ */
+val RAW_IMAGE_EXTENSIONS = setOf(
+    "dng", "cr2", "cr3", "crw", "nef", "nrw", "arw", "sr2", "raf", "orf", "ori",
+    "rw2", "pef", "ptx", "3fr", "fff", "iiq", "cap", "rwl", "bay", "dcr", "dcs",
+    "drf", "k25", "kdc", "erf", "mef", "mos", "mrw", "mdc", "pxn", "raw"
+)
+
 private val IMAGE_EXTENSIONS = setOf(
     "jpg", "jpeg", "png", "webp", "bmp", "gif", "heic", "heif", "avif", "tif", "tiff", "svg",
     "tga", "qoi", "jp2", "pcx", "ppm",
     "psd", "psdt", "pdd",
     "jfif", "jpe", "dib", "rle",
-    "hif", "pgm", "pbm"
-)
+    "hif", "pgm", "pbm",
+    "exr", "dds", "xbm", "xpm", "pnm",
+    "psb", "ico", "cur",
+    "paint", "hdr", "ai", "jxl", "jxr", "wdp"
+) + RAW_IMAGE_EXTENSIONS
 
 /**
  * Image formats that Woka can only display in read-only mode (composite view),
  * without any editing capabilities.
  */
-private val READONLY_IMAGE_EXTENSIONS = setOf("psd", "psdt", "pdd")
+private val READONLY_IMAGE_EXTENSIONS = setOf("psd", "psdt", "pdd", "psb", "paint", "ai")
 
 val File.isReadOnlyMedia: Boolean
     get() = extension.lowercase() in READONLY_IMAGE_EXTENSIONS
@@ -57,8 +73,11 @@ private val COIL_BLIND_EXTENSIONS =
     setOf(
         "heic", "heif", "avif", "tif", "tiff", "svg", "tga", "qoi", "jp2", "pcx", "ppm",
         "psd", "psdt", "pdd",
-        "hif", "pgm", "pbm"
-    )
+        "hif", "pgm", "pbm",
+        "exr", "dds", "xbm", "xpm", "pnm",
+        "psb", "ico", "cur",
+        "paint", "hdr", "ai", "jxl", "jxr", "wdp"
+    ) + RAW_IMAGE_EXTENSIONS
 
 fun File.mediaKind(): MediaKind? = when (extension.lowercase()) {
     in IMAGE_EXTENSIONS -> MediaKind.Image
@@ -86,7 +105,7 @@ val File.needsWokaCover: Boolean
  * picture exports a single PNG, which is the honest answer rather than an error.
  */
 private val FRAME_CAPABLE_EXTENSIONS =
-    setOf("heic", "heif", "hif", "avif", "gif", "webp", "tif", "tiff")
+    setOf("heic", "heif", "hif", "avif", "gif", "webp", "tif", "tiff", "ico", "cur", "jxl")
 
 val File.mayHoldFrames: Boolean
     get() = extension.lowercase() in FRAME_CAPABLE_EXTENSIONS

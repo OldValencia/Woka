@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.ImageFrameSet
+import com.woka.core.data.RAW_IMAGE_EXTENSIONS
 import org.jetbrains.skia.Image
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
@@ -54,17 +55,23 @@ internal interface StillDecoder {
 /**
  * HEIF is an item collection in a `meta` box; only FFmpeg 7.1+ walks one. The rest
  * are formats neither skia nor `ImageIO` reads, measured readable through FFmpeg by
- * `FormatUnlockProbe` (2026-10-17).
+ * `FormatUnlockProbe` (2026-10-17). The last row was measured against the bundled
+ * FFmpeg 8.1.2 on ImageMagick-written fixtures (2026-10-24, photo-formats PF-001).
  */
 private val FFMPEG_EXTENSIONS =
     setOf(
         "heic", "heif", "avif", "tga", "qoi", "jp2", "pcx", "ppm",
         "psd", "psdt", "pdd",
-        "hif", "pgm", "pbm"
+        "hif", "pgm", "pbm",
+        "exr", "dds", "xbm", "xpm", "pnm"
     )
 
-/** skia has no TIFF codec, and FFmpeg's `tiff_pipe` reports 1 page for 3. */
-private val IMAGE_IO_EXTENSIONS = setOf("tif", "tiff")
+/**
+ * skia has no TIFF codec, and FFmpeg's `tiff_pipe` reports 1 page for 3. The rest
+ * are TwelveMonkeys plugins: FFmpeg's `psd` decoder is v1-only, and its `ico`
+ * demuxer refuses `cur` and drops alpha (2026-10-24).
+ */
+private val IMAGE_IO_EXTENSIONS = setOf("tif", "tiff", "psb", "ico", "cur")
 
 /**
  * The routing table — the only place in the app that knows which library reads
@@ -84,6 +91,13 @@ internal fun stillDecoderFor(file: File): StillDecoder =
     when (file.extension.lowercase()) {
         in FFMPEG_EXTENSIONS -> FfmpegStillDecoder
         in IMAGE_IO_EXTENSIONS -> ImageIoStillDecoder
+        in RAW_IMAGE_EXTENSIONS -> RawStillDecoder
+        // Formats no library on the classpath reads well — see each decoder.
+        "paint" -> PaintStillDecoder
+        "hdr" -> RadianceStillDecoder
+        "ai" -> IllustratorStillDecoder
+        "jxl" -> JxlStillDecoder
+        "jxr", "wdp" -> JxrStillDecoder
         // A vector: skia's `SVGDOM` draws it, its `Codec` cannot (2026-10-17).
         "svg" -> SvgStillDecoder
         else -> SkiaFrameDecoder
@@ -93,7 +107,7 @@ internal fun stillDecoderFor(file: File): StillDecoder =
  * A decoded AWT frame handed to Skia, via a PNG re-encode.
  *
  * The round trip is the point, not an oversight: both non-skia decoders produce
- * a `BufferedImage` in whatever layout their library likes — BGR24 off the
+ * a `BufferedImage` in whatever layout their library likes — 4-byte ABGR off the
  * FFmpeg grabber — while the viewer draws `N32Premul` throughout. Re-encoding is
  * what the video poster path already does and already proved, and it lets Skia
  * do the conversion rather than this file reimplementing it per pixel format.
