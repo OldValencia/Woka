@@ -93,7 +93,7 @@ every hover-reel position seeking to 0 in `HoverExcerptReel`, and no length row 
 | Ticket | Title | Status |
 |---|---|---|
 | [VF-001](tickets/VF-001-all-video-formats.md) | Every remaining video format, one pass | specified |
-| [VF-002](tickets/VF-002-associate-without-settings.md) | "Associate Formats" stops opening Windows Settings | specified |
+| [VF-002](tickets/VF-002-associate-without-settings.md) | "Associate Formats" stops opening Windows Settings | **done** 2026-10-24 |
 | VF-101 | Duration for the existing formats too | backlog |
 | VF-102 | Deinterlacing, with a setting | backlog |
 | VF-103 | Truncated and damaged files | backlog |

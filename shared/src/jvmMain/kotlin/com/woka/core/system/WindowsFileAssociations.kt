@@ -86,17 +86,4 @@ object WindowsFileAssociations {
             tempFile.delete()
         }
     }
-
-    /**
-     * Launches the Windows Default Apps system settings dialog.
-     */
-    fun openDefaultAppsSettings(): Boolean {
-        if (!isWindows) return false
-        return try {
-            ProcessBuilder("cmd.exe", "/c", "start", "ms-settings:defaultapps").start()
-            true
-        } catch (_: Exception) {
-            false
-        }
-    }
 }

@@ -49,6 +49,7 @@ Woka — no jump to *Apps › Default apps*.
 ## Decided (2026-10-24)
 - **The window goes, with no replacement link.** The author: making Woka the default already means
   clicking through every format in Windows by hand, so the jump to *Default apps* bought nothing.
-
-## Open, needs the author
-- The status line's wording.
+- **No `SHChangeNotify`:** checked by the author 2026-10-24 — Woka shows under *Open with* right after
+  registering, no Explorer restart. Step 3 adds nothing.
+- **Status line:** *"Registered N formats. Set Woka as default in Windows › Default apps."* — a hint,
+  not a link.

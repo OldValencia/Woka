@@ -63,11 +63,10 @@ actual fun OsIntegrationSettingsPanel(settings: WokaSettings, repo: SettingsRepo
                 isAssociating = true
                 coroutineScope.launch {
                     val success = withContext(Dispatchers.IO) { WindowsFileAssociations.register() }
-                    if (success) {
-                        WindowsFileAssociations.openDefaultAppsSettings()
-                        assocStatus = "Registered ${ALL_SUPPORTED_MEDIA_EXTENSIONS.size} formats. Choose Woka in Windows Settings."
+                    assocStatus = if (success) {
+                        "Registered ${ALL_SUPPORTED_MEDIA_EXTENSIONS.size} formats. Set Woka as default in Windows › Default apps."
                     } else {
-                        assocStatus = "Could not register file associations."
+                        "Could not register file associations."
                     }
                     isAssociating = false
                     delay(4000.milliseconds)
