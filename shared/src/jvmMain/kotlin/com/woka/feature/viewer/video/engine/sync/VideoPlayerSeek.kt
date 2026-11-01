@@ -32,7 +32,7 @@ internal fun VideoPlayerState.videoSeekTo(
 ) {
     while (videoChannel.tryReceive().isSuccess) {}
     // The graph holds neighbouring frames from before the jump (VF-102).
-    deinterlace.reset()
+    pictureFilter.reset()
     if (targetMs <= 0L) {
         try { grabber.restart() } catch (_: Exception) {}
         while (scope.isActive) {
@@ -58,10 +58,10 @@ internal fun VideoPlayerState.videoSeekTo(
     if (grabber.mediaTimeUs > targetMs * 1000L + 100000L) {
         try { grabber.restart() } catch (_: Exception) {}
     }
-    deinterlace.reset()
+    pictureFilter.reset()
     val landed = decodeForwardTo(grabber, targetMs) ?: run {
         try { grabber.restart() } catch (_: Exception) {}
-        deinterlace.reset()
+        pictureFilter.reset()
         decodeForwardTo(grabber, targetMs)
     }
     landed?.let {

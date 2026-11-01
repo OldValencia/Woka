@@ -9,6 +9,8 @@ import com.woka.core.ui.image.ImageBitmapCache
 import com.woka.core.ui.image.encodeWebp
 import com.woka.feature.viewer.video.engine.sync.grabImageAt
 import com.woka.feature.viewer.video.engine.sync.lengthMs
+import com.woka.feature.viewer.video.engine.probe.clockwiseTurns
+import com.woka.feature.viewer.video.engine.probe.rotatedClockwise
 import org.bytedeco.ffmpeg.global.avutil.AV_LOG_QUIET
 import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_BGR24
 import org.bytedeco.ffmpeg.global.avutil.av_log_set_level
@@ -92,7 +94,10 @@ internal object VideoThumbnailExtractor {
             }
             // Every candidate past the end: a one-frame `.bik` (VF-001) still has a picture.
             if (selectedImage == null) selectedImage = grabFrameAt(grabber, converter, 0L, duration)
-            selectedImage?.let { saveAndDecode(it, previewFile, file) }
+            // Upright before it is scaled and cached: JavaCV never applies the
+            // display matrix, so a phone's portrait clip arrived on its side (VF-105).
+            val turns = grabber.clockwiseTurns
+            selectedImage?.let { saveAndDecode(it.rotatedClockwise(turns), previewFile, file) }
         } finally {
             // Guarded, or a `start()` that threw is masked by whatever `stop()`
             // throws on top of it and the real cause never leaves this method (F5).

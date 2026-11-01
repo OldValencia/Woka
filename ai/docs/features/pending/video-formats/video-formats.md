@@ -140,9 +140,9 @@ have fixed, and the author chose the fix for each (2026-11-01, §6):
 | VF-101 | Duration for the existing formats too | **closed** 2026-11-01 — measured, nothing to build (§7) |
 | [VF-102](tickets/VF-102-deinterlace-in-the-player.md) | Deinterlace interlaced video in the player | **built** 2026-11-01 |
 | [VF-106](tickets/VF-106-deinterlace-row.md) | "Deinterlace: Auto / Off" in the player's ⚙ popover | **built** 2026-11-01 |
-| VF-103 | Truncated and damaged files | backlog |
-| VF-104 | "Save as MP4" for formats nothing else opens | backlog |
-| VF-105 | Rotation from metadata | backlog |
+| [VF-103](tickets/VF-103-truncated-files.md) | Truncated and damaged files | **done** 2026-11-01 |
+| VF-104 | "Save as MP4" for formats nothing else opens | **moved** 2026-11-01 to `video-editor/backlog.md` (§290 Render) |
+| [VF-105](tickets/VF-105-rotation-from-metadata.md) | Rotation from metadata | **done** 2026-11-01 |
 
 ## 5. Facts about the current code (2026-10-24)
 
@@ -182,6 +182,10 @@ have fixed, and the author chose the fix for each (2026-11-01, §6):
 | 2026-11-01 | VF-101: duration for `vob`/`ts`/`mpg`/`evo`/`mod` | closed, no code | 19 real samples: the stated length is right everywhere (§7); a missing one already falls to `lengthMs`'s count for every format |
 | 2026-11-01 | Deinterlace: what decides | the decoded frame's interlaced flag, not the stream's `field_order` | `field_order` names the wrong parity on 2 of 16 samples, calls a film interlaced, and says `unknown` on an interlaced one (§7) |
 | 2026-11-01 | Deinterlace: per frame or per field | per frame, 25i → 25p | the author; keeps one grab = one picture through pacer and seek. 50p is a later ticket if wanted |
+| 2026-11-01 | VF-103: a cut `.mp4` with no index | a notice, no recovery | nothing to rebuild the index from without a reference file; every other cut file already ends cleanly (VF-103) |
+| 2026-11-01 | VF-103: a cut `.mkv` keeps its stated length | left as is | the author: cosmetic — the bar jumps to the end at the cut |
+| 2026-11-01 | VF-104 | moved to the video editor (1.0.6) | the author: it needs the encoder that work builds anyway |
+| 2026-11-01 | VF-105: where the turn is applied | the player's picture graph; the previews turn their bitmap | upright from the decoder means zoom, pan and fit need no change |
 | 2026-11-01 | Deinterlace: whose filter | our own libavfilter graph, not `FFmpegFrameFilter` | measured: JavaCV's drops the frame flags and crashes on RAW planar frames (§7) |
 | 2026-11-01 | Deinterlace: setting | Auto / Off, global, **only in the player's ⚙ popover and only on a file whose frames are interlaced** | the author: not in the Settings screen, and no row where the filter would do nothing |
 | 2026-10-24 | Raw `.hevc`/`.h265`/`.265` | dropped | no encoder in the bundle for a fixture, one sample of unknown origin, rare in practice |
@@ -266,3 +270,18 @@ wrong parity (`bff`) **0.75**.
 
   → **`bwdif`**: faster than `yadif` while emitting twice the frames, and better quality. On RGBA
   input both cost ~3× — the second reason the graph sits before the RGBA conversion.
+
+## 8. Rotation (VF-105) — 2026-11-01
+
+Fixtures made with the bundled FFmpeg: `-display_rotation N -i in.mp4 -c copy`. `ffprobe` then prints
+the stream's `rotation` as **90, −180, −90** for N = 90, 180, 270 — counter-clockwise, as
+`av_display_rotation_get` returns it. Which filter turns each upright, against the CLI's own
+autorotate (`ffmpeg -i rotN.mp4` vs `ffmpeg -noautorotate -i rotN.mp4 -vf …`, PSNR):
+
+| `rotation` | `transpose=clock` | `transpose=cclock` | `hflip,vflip` |
+|---|---|---|---|
+| 90 | 0.73 dB | **inf** | — |
+| −180 | — | — | **inf** |
+| −90 | **inf** | 0.73 dB | — |
+
+So clockwise turns = `(−rotation) mod 360 / 90`.

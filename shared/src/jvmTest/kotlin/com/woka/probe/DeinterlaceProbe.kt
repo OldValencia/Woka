@@ -1,6 +1,6 @@
 package com.woka.probe
 
-import com.woka.feature.viewer.video.engine.decode.DeinterlaceGraph
+import com.woka.feature.viewer.video.engine.decode.PictureGraph
 import com.woka.support.combScore
 import org.bytedeco.ffmpeg.avutil.AVFrame
 import org.bytedeco.ffmpeg.avutil.AVFrame.AV_FRAME_FLAG_INTERLACED
@@ -16,7 +16,7 @@ private const val SAMPLES_ENV = "WOKA_VIDEO_SAMPLES"
 
 /**
  * VF-102 step 1: whether a decoded frame's interlaced/TFF flags reach the RGBA
- * frame the player grabs (`Frame.opaque`), and what [DeinterlaceGraph] does on the
+ * frame the player grabs (`Frame.opaque`), and what [PictureGraph] does on the
  * grabber's RAW path — its timestamps and the comb it leaves. Run by hand:
  *
  *     $env:WOKA_VIDEO_SAMPLES = "D:\video-samples"
@@ -27,7 +27,7 @@ private const val SAMPLES_ENV = "WOKA_VIDEO_SAMPLES"
 class DeinterlaceProbe {
 
     @Test
-    fun `interlaced flags on the RGBA path and bwdif through DeinterlaceGraph`() {
+    fun `interlaced flags on the RGBA path and bwdif through PictureGraph`() {
         val media = File(javaClass.getResource("/media/README.md")!!.toURI()).parentFile
         val samples = System.getenv(SAMPLES_ENV)?.let(::File)?.listFiles().orEmpty().sortedBy { it.name }
         println("file | RGBA frames flagged interlaced / TFF of first 200")
@@ -66,7 +66,7 @@ class DeinterlaceProbe {
             start()
         }
         val timeBase = grabber.formatContext.streams(grabber.videoStream).time_base()
-        val graph = DeinterlaceGraph(timeBase, 0, 0)
+        val graph = PictureGraph(timeBase, 0, 0, deinterlace = true, clockwiseTurns = 0)
         val lines = mutableListOf("RAW, ${grabber.imageWidth}×${grabber.imageHeight}")
         try {
             var index = 0

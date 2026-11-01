@@ -53,6 +53,9 @@ private const val VISIBLE_MS = 8_000L
  */
 @Composable
 internal fun PlaybackHealthNotice(videoState: VideoPlayerState, bottomPadding: Dp) {
+    // The other thing to say about this file, from the same call site in both
+    // windows (VF-103): it did not open at all.
+    VideoOpenFailedNotice(isVisible = videoState.openFailed)
     val health = videoState.health
     // The only frame-rate-adjacent state the tree reads, and it flips at most twice
     // in the life of a file — see [PlaybackHealth] for why nothing else may be.
@@ -99,7 +102,7 @@ private fun noticeText(videoState: VideoPlayerState, displayed: Int, expected: I
 }
 
 @Composable
-private fun NoticeCard(text: String) {
+internal fun NoticeCard(text: String) {
     val shape = RoundedCornerShape(10.dp)
     Box(
         modifier = Modifier

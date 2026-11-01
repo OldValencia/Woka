@@ -6,6 +6,8 @@ import com.woka.feature.viewer.video.engine.decode.toComposeBitmap
 import com.woka.feature.viewer.video.engine.sync.grabImageAt
 import com.woka.feature.viewer.video.engine.sync.lengthMs
 import com.woka.feature.viewer.video.engine.track.readStreamHdrInfo
+import com.woka.feature.viewer.video.engine.probe.clockwiseTurns
+import com.woka.feature.viewer.video.engine.probe.rotatedClockwise
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -60,10 +62,13 @@ internal fun hoverExcerpts(file: File): Flow<Excerpt> = flow {
         val frameMs = (1000.0 / fps).roundToInt().toLong()
         val color = grabber.readStreamHdrInfo().let { StillColorInfo(it.transfer, it.isWideGamut) }
         val length = grabber.lengthMs(file) * 1000L
+        val turns = grabber.clockwiseTurns // upright, as the player shows it (VF-105)
         while (true) {
             POSITIONS.forEachIndexed { index, at ->
-                val first = grabber.grabImageAt((length * at).toLong())?.toComposeBitmap()
-                val rest = generateSequence { grabber.grabImage()?.toComposeBitmap() }
+                val first = grabber.grabImageAt((length * at).toLong())
+                    ?.toComposeBitmap()
+                    ?.rotatedClockwise(turns)
+                val rest = generateSequence { grabber.grabImage()?.toComposeBitmap()?.rotatedClockwise(turns) }
                     .take(count - 1)
                     .toList()
                 val frames = listOfNotNull(first) + rest

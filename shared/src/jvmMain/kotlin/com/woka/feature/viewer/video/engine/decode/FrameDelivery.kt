@@ -10,36 +10,45 @@ import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.Frame
 
 /**
- * The picture a decoded [frame] becomes: itself, or what the deinterlace graph
- * returns for it — null while `bwdif` waits for the next frame (VF-102).
+ * The picture a decoded [frame] becomes: itself, or what the picture graph
+ * returns for it — null while `bwdif` waits for the next frame (VF-102, VF-105).
  *
  * On the ordinary RGBA path every frame is looked at for the interlaced flag, and
  * the first one that carries it re-opens the grabber RAW behind the graph — before
- * the first paint, so the comb is never shown — unless the user turned it Off.
+ * the first paint, so the comb is never shown — unless the user turned it Off. That
+ * frame itself is held back.
  */
 internal suspend fun VideoPlayerState.pictureOf(grabber: FFmpegFrameGrabber, frame: Frame): Frame? {
-    if (deinterlace.filtering) return deinterlace.process(frame)
-    if (deinterlace.observe(frame)) {
-        writeUiState { deinterlace.isInterlaced = true }
-        if (deinterlace.enabled) requestDeinterlaceReopen(grabber.videoStream)
+    // Looked at on both paths: a rotated file already runs RAW behind the graph,
+    // and its graph is rebuilt with `bwdif` once a flagged frame turns up.
+    if (pictureFilter.observe(frame)) {
+        writeUiState { pictureFilter.isInterlaced = true }
+        if (pictureFilter.deinterlaceEnabled) {
+            requestPictureReopen(grabber.videoStream)
+            // Not shown: shown, it moves the play head, and the re-open then seeks
+            // back to it instead of starting over — on a cut 1080i H.264 `.ts` that
+            // seek landed 1.3 s late and the run of late pictures was dropped
+            // (measured 2026-11-01, `TruncatedFileProbe`).
+            return null
+        }
     }
-    return frame
+    return if (pictureFilter.filtering) pictureFilter.process(frame) else frame
 }
 
 /** The seek path's [pictureOf]: it only lands frames, the decode loop observes them. */
 internal fun VideoPlayerState.filteredPicture(frame: Frame): Frame? =
-    if (deinterlace.filtering) deinterlace.process(frame) else frame
+    if (pictureFilter.filtering) pictureFilter.process(frame) else frame
 
 /** [picture]'s time on the media timeline, in µs: the graph's when filtering. */
 internal fun VideoPlayerState.pictureTimeUs(grabber: FFmpegFrameGrabber, picture: Frame): Long =
-    if (deinterlace.filtering) deinterlace.mediaTimeUs(picture) else grabber.mediaTimeUs
+    if (pictureFilter.filtering) pictureFilter.mediaTimeUs(picture) else grabber.mediaTimeUs
 
 /**
  * Re-opens the video grabber in place, onto the same stream, so its frames take
- * the deinterlace path or leave it. The spinner only once something is on screen,
+ * the picture graph or leave it. The spinner only once something is on screen,
  * as for a rescale.
  */
-internal fun VideoPlayerState.requestDeinterlaceReopen(fallbackVideoStream: Int) {
+internal fun VideoPlayerState.requestPictureReopen(fallbackVideoStream: Int) {
     isReloadingVideo = currentPositionMs > 0
     pendingVideoReopenIndex = tracks.selectedVideoIndex ?: fallbackVideoStream
 }

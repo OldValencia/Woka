@@ -24,9 +24,12 @@ import org.bytedeco.ffmpeg.global.avutil.av_strdup
 import org.bytedeco.javacpp.BytePointer
 import org.bytedeco.javacv.Frame
 
+/** The filter for each number of clockwise quarter turns; none for zero. */
+private val TURNS = listOf(null, "transpose=clock", "hflip,vflip", "transpose=cclock")
+
 /**
- * `bwdif`, the render-scale and the RGBA conversion in one libavfilter graph, fed
- * the decoder's own `AVFrame` (VF-102).
+ * `bwdif`, the display rotation, the render-scale and the RGBA conversion in one
+ * libavfilter graph, fed the decoder's own `AVFrame` (VF-102, VF-105).
  *
  * **Not JavaCV's `FFmpegFrameFilter`.** Its `push(Frame)` rebuilds an `AVFrame`
  * from the frame's buffers, which drops the interlaced/TFF flags `bwdif` reads, and
@@ -38,10 +41,12 @@ import org.bytedeco.javacv.Frame
  * Built on the first frame, from that frame's own size and pixel format. Confined
  * to the decoder thread, like the grabber it sits behind.
  */
-internal class DeinterlaceGraph(
+internal class PictureGraph(
     private val timeBase: AVRational,
     private val outWidth: Int,
-    private val outHeight: Int
+    private val outHeight: Int,
+    private val deinterlace: Boolean,
+    private val clockwiseTurns: Int
 ) : AutoCloseable {
     private var graph: AVFilterGraph? = null
     private val source = AVFilterContext()
@@ -57,7 +62,7 @@ internal class DeinterlaceGraph(
         if (graph == null) build(decoded)
         if (decoded.pts() == AV_NOPTS_VALUE) decoded.pts(decoded.best_effort_timestamp())
         check(av_buffersrc_add_frame_flags(source, decoded, AV_BUFFERSRC_FLAG_KEEP_REF) >= 0) {
-            "deinterlace: push rejected"
+            "picture graph: push rejected"
         }
         return pull()
     }
@@ -96,10 +101,10 @@ internal class DeinterlaceGraph(
         val args = "video_size=${first.width()}x${first.height()}:pix_fmt=${first.format()}:" +
             "time_base=${timeBase.num()}/${timeBase.den()}:pixel_aspect=$aspect"
         check(avfilter_graph_create_filter(source, avfilter_get_by_name("buffer"), "in", args, null, built) >= 0) {
-            "deinterlace: buffer source rejected $args"
+            "picture graph: buffer source rejected $args"
         }
         check(avfilter_graph_create_filter(sink, avfilter_get_by_name("buffersink"), "out", null, null, built) >= 0) {
-            "deinterlace: buffer sink rejected"
+            "picture graph: buffer sink rejected"
         }
         val outputs = avfilter_inout_alloc()
         val inputs = avfilter_inout_alloc()
@@ -107,20 +112,27 @@ internal class DeinterlaceGraph(
             outputs.name(av_strdup(BytePointer("in"))).filter_ctx(source).pad_idx(0).next(null)
             inputs.name(av_strdup(BytePointer("out"))).filter_ctx(sink).pad_idx(0).next(null)
             check(avfilter_graph_parse_ptr(built, chain(), inputs, outputs, null) >= 0) {
-                "deinterlace: graph rejected ${chain()}"
+                "picture graph: graph rejected ${chain()}"
             }
-            check(avfilter_graph_config(built, null) >= 0) { "deinterlace: graph config failed" }
+            check(avfilter_graph_config(built, null) >= 0) { "picture graph: graph config failed" }
         } finally {
             avfilter_inout_free(inputs)
             avfilter_inout_free(outputs)
         }
     }
 
-    /** `scale` only when the render-scale asked for a size; 0 keeps the stream's own. */
-    private fun chain(): String {
-        val scale = if (outWidth > 0 && outHeight > 0) "scale=$outWidth:$outHeight," else ""
-        return "bwdif=mode=send_frame:parity=auto:deint=interlaced,${scale}format=rgba"
-    }
+    /**
+     * `bwdif` first, on the fields as they were shot; then the turn the stream's
+     * display matrix asks for (VF-105) — matched against the CLI's own autorotate,
+     * PSNR inf on all three; then `scale`, only when the render-scale asked for a
+     * size, which is already in the turned orientation.
+     */
+    private fun chain(): String = listOfNotNull(
+        "bwdif=mode=send_frame:parity=auto:deint=interlaced".takeIf { deinterlace },
+        TURNS[clockwiseTurns],
+        "scale=$outWidth:$outHeight".takeIf { outWidth > 0 && outHeight > 0 },
+        "format=rgba"
+    ).joinToString(",")
 
     override fun close() {
         av_frame_free(output)

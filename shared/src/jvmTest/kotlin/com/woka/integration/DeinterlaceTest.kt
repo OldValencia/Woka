@@ -1,6 +1,6 @@
 package com.woka.integration
 
-import com.woka.feature.viewer.video.engine.decode.DeinterlaceGraph
+import com.woka.feature.viewer.video.engine.decode.PictureGraph
 import com.woka.feature.viewer.video.engine.decode.setDeinterlace
 import com.woka.feature.viewer.video.engine.seek
 import com.woka.fixtures.CHAPTERS
@@ -44,7 +44,7 @@ class DeinterlaceTest {
             start()
         }
         val base = decoded.formatContext.streams(decoded.videoStream).time_base()
-        val graph = DeinterlaceGraph(base, 0, 0)
+        val graph = PictureGraph(base, 0, 0, deinterlace = true, clockwiseTurns = 0)
         try {
             repeat(12) { raw.grabImage() }
             val rawComb = combScore(assertNotNull(raw.grabImage()))
@@ -67,9 +67,9 @@ class DeinterlaceTest {
     @Test
     fun `an interlaced file is found so and plays through the graph`() {
         onPlayer(SampleMedia.file(INTERLACED)) { player ->
-            awaitTrue("the interlaced flag to be seen", timeoutMs = 15_000L) { player.deinterlace.isInterlaced }
+            awaitTrue("the interlaced flag to be seen", timeoutMs = 15_000L) { player.pictureFilter.isInterlaced }
             awaitTrue("the grabber to re-open behind the graph", timeoutMs = 15_000L) {
-                player.deinterlace.filtering
+                player.pictureFilter.filtering
             }
             awaitTrue("a picture to reach the screen", timeoutMs = 15_000L) { player.currentFrame != null }
         }
@@ -78,7 +78,7 @@ class DeinterlaceTest {
     @Test
     fun `a seek behind the graph lands a picture`() {
         onPlayer(SampleMedia.file(INTERLACED)) { player ->
-            awaitTrue("the graph", timeoutMs = 15_000L) { player.deinterlace.filtering && !player.isReloadingVideo }
+            awaitTrue("the graph", timeoutMs = 15_000L) { player.pictureFilter.filtering && !player.isReloadingVideo }
             awaitTrue("a picture", timeoutMs = 15_000L) { player.currentFrame != null }
             // Paused, so the only new picture can come from the seek's landing.
             player.isPlaying = false
@@ -86,7 +86,7 @@ class DeinterlaceTest {
             val before = player.currentFrame
             player.seek(500L)
             awaitTrue("a picture after the seek", timeoutMs = 15_000L) { player.currentFrame !== before }
-            assertTrue(player.deinterlace.filtering, "the seek left the graph")
+            assertTrue(player.pictureFilter.filtering, "the seek left the graph")
         }
     }
 
@@ -94,11 +94,11 @@ class DeinterlaceTest {
     fun `Off leaves an interlaced file on the plain path and still says it is interlaced`() {
         onPlayer(SampleMedia.file(INTERLACED)) { player ->
             player.setDeinterlace(false)
-            awaitTrue("the interlaced flag to be seen", timeoutMs = 15_000L) { player.deinterlace.isInterlaced }
+            awaitTrue("the interlaced flag to be seen", timeoutMs = 15_000L) { player.pictureFilter.isInterlaced }
             awaitTrue("no re-open left pending", timeoutMs = 15_000L) {
                 player.pendingVideoReopenIndex == null && !player.isReloadingVideo
             }
-            assertFalse(player.deinterlace.filtering, "Off still filters")
+            assertFalse(player.pictureFilter.filtering, "Off still filters")
         }
     }
 
@@ -106,9 +106,9 @@ class DeinterlaceTest {
     fun `a progressive file never shows the row or opens a graph`() {
         onPlayer(SampleMedia.file(CHAPTERS)) { player ->
             awaitTrue("a picture to reach the screen", timeoutMs = 15_000L) { player.currentFrame != null }
-            waitFor(1_000L) { player.deinterlace.isInterlaced }
-            assertFalse(player.deinterlace.isInterlaced, "a progressive file was flagged interlaced")
-            assertFalse(player.deinterlace.filtering)
+            waitFor(1_000L) { player.pictureFilter.isInterlaced }
+            assertFalse(player.pictureFilter.isInterlaced, "a progressive file was flagged interlaced")
+            assertFalse(player.pictureFilter.filtering)
         }
     }
 }

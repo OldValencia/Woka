@@ -74,7 +74,7 @@ internal fun PlayerSettingsMenuList(videoState: VideoPlayerState) {
         // Only where it does something: a file whose frames are flagged interlaced
         // (VF-106). The same global choice for every such file, kept out of the
         // Settings screen — it means nothing until one is open.
-        if (videoState.deinterlace.isInterlaced) {
+        if (videoState.pictureFilter.isInterlaced) {
             ValueRow(
                 label = "Deinterlace",
                 value = if (settings.deinterlace) "Auto" else "Off",

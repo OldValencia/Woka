@@ -22,9 +22,9 @@ import com.woka.feature.viewer.video.model.MediaTrack
 internal fun VideoPlayerState.openVideoGrabber(videoStreamIndex: Int = -1): FFmpegFrameGrabber {
     val grabber = FFmpegFrameGrabber(file)
     grabber.setVideoOption("threads", "auto") // SW decode: dodge D3D11VA half-frame scaling bugs
-    // An interlaced file hands the decoder's own frames to the deinterlace graph,
-    // which does the scale and the RGBA conversion after `bwdif` (VF-102).
-    if (deinterlace.active) grabber.imageMode = FrameGrabber.ImageMode.RAW
+    // An interlaced or rotated file hands the decoder's own frames to the picture
+    // graph, which scales and converts to RGBA after `bwdif` and the turn (VF-102/105).
+    if (pictureFilter.active) grabber.imageMode = FrameGrabber.ImageMode.RAW
     else grabber.pixelFormat = AV_PIX_FMT_RGBA
     if (videoStreamIndex >= 0) grabber.videoStream = videoStreamIndex
     // Output at the size actually drawn (§6). No-op until the probe has filled in

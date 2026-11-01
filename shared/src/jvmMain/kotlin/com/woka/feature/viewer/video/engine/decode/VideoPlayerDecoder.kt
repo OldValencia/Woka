@@ -33,8 +33,16 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
         // tears down whichever grabber is current.
         var grabber = openVideoGrabber()
         try {
-            grabber.start()
-            deinterlace.open(grabber)
+            try {
+                grabber.start()
+            } catch (e: Exception) {
+                writeUiState { openFailed = true }
+                throw e
+            }
+            // A rotated stream needs the graph from its first picture (VF-105).
+            if (pictureFilter.open(grabber, renderScale.decodeWidth, renderScale.decodeHeight)) {
+                requestPictureReopen(grabber.videoStream)
+            }
 
             var hdrInfo = grabber.readStreamHdrInfo()
             val length = grabber.lengthMs(file)
@@ -98,7 +106,7 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
                 val frame = grabber.grabFrame(false, true, true, false, false)
                 if (frame == null) {
                     // The picture `bwdif` held back for a neighbour that never came.
-                    deinterlace.drain()?.let {
+                    pictureFilter.drain()?.let {
                         deliverPicture(grabber, it, pacer, videoChannel, frameGeneration, hdrInfo)
                     }
                     handleEndOfStream(videoChannel, frameGeneration)
@@ -128,7 +136,7 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
             saveResumePosition()
             tracksProbed.complete(Unit) // never leave the audio loop waiting if start() failed
             isReloadingVideo = false // a failed swap must not leave a stuck spinner
-            deinterlace.close()
+            pictureFilter.close()
             try {
                 grabber.stop()
                 grabber.release()

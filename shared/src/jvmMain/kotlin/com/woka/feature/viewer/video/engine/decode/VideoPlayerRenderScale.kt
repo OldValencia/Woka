@@ -1,6 +1,7 @@
 package com.woka.feature.viewer.video.engine.decode
 
 import com.woka.feature.viewer.video.engine.VideoPlayerState
+import com.woka.feature.viewer.video.engine.probe.swapsSides
 
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import kotlin.math.abs
@@ -40,7 +41,8 @@ internal class RenderScale {
         private set
 
     @Volatile
-    private var decodeHeight = 0
+    var decodeHeight = 0
+        private set
 
     @Volatile
     private var surfaceWidth = 0
@@ -99,10 +101,11 @@ internal class RenderScale {
         grabber.imageHeight = decodeHeight
     }
 
-    /** Takes the stream's own dimensions from the track being decoded. */
-    fun useNativeOf(track: MediaTrack?) {
-        nativeWidth = track?.width ?: 0
-        nativeHeight = track?.height ?: 0
+    /** The stream's own dimensions, as shown: sides swapped by an odd [turns] (VF-105). */
+    fun useNativeOf(track: MediaTrack?, turns: Int) {
+        val swap = swapsSides(turns)
+        nativeWidth = (if (swap) track?.height else track?.width) ?: 0
+        nativeHeight = (if (swap) track?.width else track?.height) ?: 0
     }
 
     private fun even(value: Int): Int = (value - value % 2).coerceAtLeast(2)

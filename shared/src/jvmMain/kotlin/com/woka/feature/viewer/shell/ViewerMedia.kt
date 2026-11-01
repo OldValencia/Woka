@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.StillColorInfo
 import com.woka.feature.viewer.video.engine.VideoPlayerState
+import com.woka.feature.viewer.video.engine.probe.swapsSides
 
 /**
  * What the viewer is showing.
@@ -78,7 +79,9 @@ sealed interface ViewerMedia {
                 val track = player.tracks.mediaTracks.video
                     .firstOrNull { it.index == player.tracks.selectedVideoIndex }
                 return if (track?.width != null && track.height != null) {
-                    IntSize(track.width, track.height)
+                    // As shown: a phone's portrait clip is stored on its side (VF-105).
+                    if (swapsSides(player.pictureFilter.turns)) IntSize(track.height, track.width)
+                    else IntSize(track.width, track.height)
                 } else {
                     IntSize(frame.width, frame.height)
                 }
