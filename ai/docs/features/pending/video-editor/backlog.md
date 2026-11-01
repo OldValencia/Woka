@@ -352,6 +352,13 @@ palettegen/paletteuse over the same document, so it is a render *target* and not
 
 ---
 
+### VF-104 — "Save as MP4" for formats nothing else opens (from video-formats, 2026-11-01)
+A context-menu action on `rm`, `rmvb`, `amv`, `mtv`, `dav`, `bik`, `thp`, `rpl`, `nsv`,
+`xesc`…: a copy beside the original as MP4 through the bundled FFmpeg — stream copy where MP4 can hold
+the codec (H.264 from `dav`), re-encode to H.264 with `libopenh264` + AAC otherwise. Moved here
+because Woka has no video encode path before this folder's render work, and a second one is not wanted —
+build it on that path; the LGPL build has no x264, so openh264 is the only H.264 encoder.
+
 ## 300 — The shared shell
 
 *Numbered outside the video bands on purpose: these change the shell **both** editors use, so a still

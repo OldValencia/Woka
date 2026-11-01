@@ -51,7 +51,9 @@ private val VIDEO_EXTENSIONS = setOf(
     "m4v", "3gp", "mpg", "mpeg", "m2ts", "mts", "wmv", "flv",
     "asf", "divx", "3g2", "mpeg1", "mpeg2", "mpeg4", "mpg4", "mpv", "mpv2",
     "ts", "vob", "vro", "mxf", "f4v", "mk3d", "tod", "tp", "rec", "evo",
-    "gvi", "drc", "dv"
+    "gvi", "drc", "dv",
+    "ogv", "ogm", "ogx", "rm", "rmvb", "nsv", "bik", "thp", "rpl",
+    "amv", "mtv", "gxf", "xesc", "dav"
 )
 
 /** The complete set of image and video file extensions supported by Woka. */

@@ -39,6 +39,18 @@ in the file names or in the stream metadata.
 | `still.hdr` / `flat.hdr` | Radiance RGBE 64×48 written by ImageMagick: from `plasma:fractal -seed 7`, and from `gradient:red-blue` (compresses 56:1) | PF-003: `reference/still.hdr.png` is the **sRGB source**, not ImageMagick's linear read-back |
 | `still.ai` | a 200×100 pt PDF-compatible `.ai` from ImageMagick: white, a `#3478F6` rectangle inset 20 pt | PF-003: page 1 through PDFBox at 2× |
 | `jxl-*.jxl` | 64×48, encoded by libjxl 0.12's `cjxl` — lossy, lossless, alpha, 3-frame animation (100 ms), recompressed JPEG | PF-003: expected corners are `djxl`'s decode; values and commands in `natives/jxl/README.md` |
+| `dahua.dav` | the first 300 000 bytes of a real Dahua DVR export (starts `DAHUA`, `dhav` demuxer): H.264 1920×1080, 17 frames decode, the 18th is cut; packets run 1939 ms from a wall-clock origin, `dhav` states 1000 ms | video-formats VF-001: `.dav`, the media timeline's origin, a stated length that is wrong |
+| `raw.h264` | raw H.264 elementary stream, 160×120, 50 frames, `libopenh264` | VF-001: the evidence for excluding raw H.264 — every frame reaches JavaCV with timestamp 0 |
+| `raw-10bit.h264` | raw H.264, 320×180, `yuv420p10le`, one frame (Chromium's `bear-320x180-10bit-frame-0.h264`) | VF-001: 10-bit raw H.264, excluded with `raw.h264` |
+| `noseek.roq` | id RoQ, 64×64 25 fps, 2 s, no stated length — not an app format | VF-001: a container whose `setTimestamp` throws, as `.thp`/`.rpl`/`.mtv`/`.nsv` do |
+| `nolength.amv` | AMV (`avi` demuxer), 128×96 25 fps + AMV ADPCM, 2 s, no stated length | VF-001: a length that has to be counted with the whole-file walk |
+| `blank.bik` | Bink 1, 640×480, one black frame + Bink audio, 520 B (the author's) | VF-001: `.bik` |
+| `realvideo.rm` | RealMedia, RealVideo 2 (`rv20`) 160×120, 2 s | VF-001: `.rm` |
+| `pal.gxf` | GXF, MPEG-2 720×576 25 fps, 2 s — the muxer takes PAL/NTSC sizes only | VF-001: `.gxf` |
+| `interlaced.ts` | MPEG-TS, MPEG-2 720×576 25i, 1 s, **every frame flagged interlaced TFF** (`field_order=tt`) — two 288-line fields woven from a 50 fps `testsrc2` | VF-102: deinterlace detection, `DeinterlaceGraph`, the comb score |
+| `cut.mkv` | first half of a 4 s 160×120 H.264 + AAC `.mkv` — the header still says 4 s, 53 frames are there | VF-103: a file cut mid-write plays to the cut and ends |
+| `nomoov.mp4` | first half of the same as `.mp4`, index (`moov`) at the end — so absent; FFmpeg cannot open it | VF-103: the "can't be played" notice |
+| `rot90.mp4` / `rot180.mp4` | 160×96 H.264, 1 s, display matrix 90 / 180 (`-display_rotation`, stream copy) | VF-105: the turn read and applied |
 | `jxr-*.jxr` | 64×48, written by Windows' own WIC encoder — 8-bit, alpha, lossy, 16-bit gray, half-float HDR | PF-003: against `reference/jxr-*.jxr.png`, WIC's own decode |
 | `still.bmp` | 160×120, uncompressed | §5.1's bucket C: the one format with neither a recipe slot nor an encoder. Small because a BMP is uncompressed — at 640×480 it would be 900 KB of a 3.3 MB corpus, and nothing asks about its pixels |
 | `exif_rot90.jpg` | `still.jpg` with EXIF `Orientation=6` | **F3**: a correct loader returns 480×640 |
@@ -159,6 +171,19 @@ Stills:
 "$M" -size 256x256 xc:none -fill "#3478F6" -draw "circle 128,128 128,8" icon.png
 "$M" icon.png -define icon:auto-resize=16,32 small.ico   # then small.ico entries + icon.png
 "$M" -size 64x48 gradient:red-blue -depth 8 "$D/still.psb"
+# VF-001 — the bundled ffmpeg.exe ($FF); dahua.dav is `head -c 300000` of the author's D3M1.dav
+"$FF" -f lavfi -i testsrc2=s=160x120:r=25:d=2 -c:v libopenh264 -f h264 "$D/raw.h264"
+"$FF" -f lavfi -i testsrc2=s=160x120:d=2 -c:v rv20 -f rm "$D/realvideo.rm"
+"$FF" -f lavfi -i testsrc2=s=720x576:r=25:d=2 -c:v mpeg2video -pix_fmt yuv420p -f gxf "$D/pal.gxf"
+"$FF" -f lavfi -i testsrc2=s=64x64:r=25:d=2 -c:v roqvideo -f roq "$D/noseek.roq"
+"$FF" -f lavfi -i testsrc2=s=128x96:r=25:d=2 -f lavfi -i sine=r=22050:d=2 -c:v amv -pix_fmt yuvj420p   -c:a adpcm_ima_amv -ac 1 -block_size 882 "$D/nolength.amv"
+"$FF" -f lavfi -i testsrc2=s=720x288:r=50:d=1 -vf "weave=first_field=top,setfield=tff" -c:v mpeg2video -b:v 2M -flags +ildct+ilme -top 1 -f mpegts "$D/interlaced.ts"
+# VF-103 — $SM is a 4 s testsrc2 160x120 + sine, libopenh264 + aac; "half" = head -c of half its size
+"$FF" -i "$SM.mp4" -c copy "$SM.mkv"; head -c $(( $(stat -c %s "$SM.mkv") / 2 )) "$SM.mkv" > "$D/cut.mkv"
+head -c $(( $(stat -c %s "$SM.mp4") / 2 )) "$SM.mp4" > "$D/nomoov.mp4"
+# VF-105 — $R is a 1 s testsrc2 160x96 libopenh264 .mp4
+"$FF" -display_rotation 90 -i "$R" -c copy "$D/rot90.mp4"
+"$FF" -display_rotation 180 -i "$R" -c copy "$D/rot180.mp4"
 "$FF" -y -f lavfi -i "testsrc2=size=640x480" -frames:v 1 -c:v mjpeg   "$D/still.jpg"
 "$FF" -y -f lavfi -i "testsrc2=size=640x480" -frames:v 1 -c:v libwebp "$D/still.webp"
 ```

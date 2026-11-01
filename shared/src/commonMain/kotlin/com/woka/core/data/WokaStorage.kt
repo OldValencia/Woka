@@ -11,8 +11,11 @@ import java.security.MessageDigest
  * v4 is the second kind (ME-177): the key is path, size and mtime, and an HDR still now
  * decodes to tone-mapped pixels without any of the three moving. Its old thumbnail would
  * otherwise outlive the change and sit dull beside a correct picture.
+ *
+ * v5 is the same kind (VF-105): a video's poster is now turned by its display matrix,
+ * so a phone's portrait clip cached on its side would never be redrawn upright.
  */
-private const val KEY_SCHEMA_MARKER = ".keys-v4"
+private const val KEY_SCHEMA_MARKER = ".keys-v5"
 
 /**
  * What an entry is written as. WebP rather than PNG since v3 — a poster is a

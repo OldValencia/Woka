@@ -95,7 +95,7 @@ class StorageKeyTest {
         withTempStorageRoot { _ ->
             val dir = WokaStorage.thumbnailsDir
             assertTrue(dir.isDirectory, "the cache directory was not created")
-            assertTrue(File(dir, ".keys-v4").isFile, "the schema marker was not written")
+            assertTrue(File(dir, ".keys-v5").isFile, "the schema marker was not written")
         }
     }
 

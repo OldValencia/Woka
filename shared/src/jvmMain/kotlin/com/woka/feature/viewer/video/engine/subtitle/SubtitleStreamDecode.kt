@@ -20,6 +20,7 @@ import org.bytedeco.ffmpeg.global.avformat.avformat_find_stream_info
 import org.bytedeco.ffmpeg.global.avformat.avformat_open_input
 import org.bytedeco.ffmpeg.global.avutil.AVMEDIA_TYPE_SUBTITLE
 import org.bytedeco.javacpp.IntPointer
+import com.woka.feature.viewer.video.engine.sync.originUs
 import com.woka.feature.viewer.video.model.Cue
 
 /** What one pass over the container yields: parsed text cues and indexed bitmap tracks. */
@@ -91,16 +92,23 @@ internal fun decodeEmbeddedSubtitles(
         e.printStackTrace()
     }
 
+    // Cue times are the container's presentation times; the player's clock starts
+    // at the container's origin (`originUs`, VF-001), so they are moved onto it.
+    val originMs = fc.originUs / 1000L
     // A bitmap source keeps its codec context alive for on-demand decoding; the
     // text ones are done the moment the pass ends.
     val bitmapSources = indexers.mapNotNull { (index, indexer) ->
         val ctx = contexts[index] ?: return@mapNotNull null
         val par = fc.streams(index)?.codecpar()
-        index to BitmapSubtitleSource(indexer.finish(), ctx, par?.width() ?: 0, par?.height() ?: 0)
+        val cues = indexer.finish().map { it.copy(startMs = it.startMs - originMs, endMs = it.endMs - originMs) }
+        index to BitmapSubtitleSource(cues, ctx, par?.width() ?: 0, par?.height() ?: 0)
     }.toMap()
     contexts.filterKeys { it !in bitmapSources }.values.forEach { avcodec_free_context(it) }
     avformat_close_input(fc)
-    return SubtitleStreams(textCues, bitmapSources)
+    val shifted = textCues.mapValues { (_, cues) ->
+        cues.map { it.copy(startMs = it.startMs - originMs, endMs = it.endMs - originMs) }
+    }
+    return SubtitleStreams(shifted, bitmapSources)
 }
 
 private fun openCodecContexts(fc: AVFormatContext, indices: Set<Int>): Map<Int, AVCodecContext> {

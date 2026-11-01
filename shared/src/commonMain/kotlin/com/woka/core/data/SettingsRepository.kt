@@ -80,6 +80,9 @@ interface PlaybackSettings {
     /** Total or remaining in the seek bar's right-hand label. Written by the label itself. */
     fun setShowRemainingTime(enabled: Boolean)
 
+    /** Auto (true) or Off for interlaced files — the player's ⚙ row only (VF-106). */
+    fun setDeinterlace(enabled: Boolean)
+
     /** The play head; leaves [WatchRecord.finished] alone — see `withWatchPosition`. */
     fun setWatchPosition(filePath: String, positionMs: Long, durationMs: Long)
 

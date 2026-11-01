@@ -3,16 +3,6 @@ package com.woka.core.data
 import androidx.compose.runtime.Immutable
 import kotlinx.serialization.Serializable
 
-enum class ViewLayout { SmallGrid, Grid, BigGrid }
-enum class SortType { Custom, NameAsc, NameDesc, DateAsc, DateDesc }
-enum class CarouselVisibility { AUTO, ALWAYS_ON, HIDDEN }
-enum class ScalePreset { Fit, Fill, Original }
-// Subtitle appearance (§3). Auto scales the size from the video-panel height; the
-// other steps are fixed multipliers of that same relative base, so the user's
-// choice stays proportional on window resize instead of being reset.
-enum class SubtitleSize { Auto, Small, Medium, Large, ExtraLarge }
-enum class SubtitleFont { System, Serif, Monospace }
-
 /**
  * The size-state schema this build writes. The field below still **defaults to 0**
  * on purpose: that default is what a `settings.json` written before the field
@@ -119,6 +109,10 @@ data class WokaSettings(
     // itself is a toggle — an enum would turn every read into "if it is Total then
     // Remaining else Total". Off by default: the total is what it has always said.
     val showRemainingTime: Boolean = false,
+    // Deinterlacing in the player (VF-106): true is Auto — `bwdif` on a file whose
+    // frames are flagged interlaced — false is Off. Global, like the playback
+    // modes, and offered only in the player's ⚙ popover, on an interlaced file.
+    val deinterlace: Boolean = true,
     // Fades the thumbnail of any video already started, so an untouched one stands
     // out. On by default: the marks are the feature, and a library where everything
     // looks identical is the state this exists to fix. Videos only — a photograph

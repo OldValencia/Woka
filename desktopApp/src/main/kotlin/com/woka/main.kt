@@ -32,6 +32,7 @@ import java.awt.Dimension
 import java.awt.GraphicsEnvironment
 
 fun main(rawArgs: Array<String>) {
+    StartupPrewarm.start()
     val args = WindowsCommandLine.resolveArgs(rawArgs).toTypedArray()
     if (!SingleInstance.startOrForward(args)) {
         return

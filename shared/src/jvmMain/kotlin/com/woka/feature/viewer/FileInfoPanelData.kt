@@ -9,6 +9,7 @@ import com.woka.feature.viewer.shell.resolution
 import com.woka.feature.viewer.shell.subtitleDetail
 import com.woka.feature.viewer.shell.toReadableSize
 import com.woka.feature.viewer.video.engine.probe.probeMediaTracks
+import com.woka.feature.viewer.video.engine.sync.lengthMs
 import com.woka.feature.viewer.video.engine.track.readStreamHdrInfo
 import com.woka.feature.viewer.video.model.MediaTracks
 import org.bytedeco.javacv.FFmpegFrameGrabber
@@ -47,7 +48,7 @@ private fun probeVideo(file: File): Probed? = try {
         start()
     }
     try {
-        val length = grabber.lengthInTime.takeIf { it > 0 }?.div(1000)
+        val length = grabber.lengthMs(file).takeIf { it > 0 }
         Probed(probeMediaTracks(grabber), length, grabber.readStreamHdrInfo().transfer, null)
     } finally {
         grabber.stop()

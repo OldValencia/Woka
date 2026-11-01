@@ -71,6 +71,17 @@ internal fun PlayerSettingsMenuList(videoState: VideoPlayerState) {
         // The same global flag the Settings panel writes — a second way in, not a
         // per-file override. Only does anything in fullscreen, where the bars are.
         PopoverSectionLabel("Picture")
+        // Only where it does something: a file whose frames are flagged interlaced
+        // (VF-106). The same global choice for every such file, kept out of the
+        // Settings screen — it means nothing until one is open.
+        if (videoState.pictureFilter.isInterlaced) {
+            ValueRow(
+                label = "Deinterlace",
+                value = if (settings.deinterlace) "Auto" else "Off",
+                active = settings.deinterlace,
+                onClick = { repo.setDeinterlace(!settings.deinterlace) }
+            )
+        }
         PopoverListRow(
             label = "Ambient fill",
             selected = settings.ambientFill,

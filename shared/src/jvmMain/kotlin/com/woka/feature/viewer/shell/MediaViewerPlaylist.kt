@@ -8,6 +8,7 @@ import com.woka.core.data.MediaItem
 import com.woka.core.data.RepeatMode
 import com.woka.core.data.WokaSettings
 import com.woka.feature.viewer.video.engine.VideoPlayerState
+import com.woka.feature.viewer.video.engine.decode.setDeinterlace
 import com.woka.feature.viewer.video.engine.setPlaybackSpeed
 
 /**
@@ -102,6 +103,9 @@ internal fun PlaybackModeEffects(videoState: VideoPlayerState?, settings: WokaSe
     }
     LaunchedEffect(videoState, settings.playbackSpeed) {
         videoState?.setPlaybackSpeed(settings.playbackSpeed)
+    }
+    LaunchedEffect(videoState, settings.deinterlace) {
+        videoState?.setDeinterlace(settings.deinterlace)
     }
 }
 

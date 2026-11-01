@@ -60,7 +60,8 @@ internal suspend fun VideoPlayerState.probeTracksAndChapters(grabber: FFmpegFram
             hasAudio = tracks.mediaTracks.audio.isNotEmpty()
         }
         renderScale.useNativeOf(
-            tracks.mediaTracks.video.firstOrNull { it.index == tracks.selectedVideoIndex }
+            tracks.mediaTracks.video.firstOrNull { it.index == tracks.selectedVideoIndex },
+            pictureFilter.turns
         )
         // FFmpeg's own pick for the default video stream is not necessarily the one
         // flagged AV_DISPOSITION_DEFAULT, so on a multi-video container the picture

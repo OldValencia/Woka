@@ -1,9 +1,8 @@
 package com.woka.feature.viewer.video.engine
 
-import com.woka.feature.viewer.video.engine.audio.lineLevel
+import com.woka.feature.viewer.video.engine.decode.PictureFilter
 import com.woka.feature.viewer.video.engine.decode.FrameRetention
 import com.woka.feature.viewer.video.engine.decode.RenderScale
-import com.woka.feature.viewer.video.engine.decode.setVolumeInternal
 import com.woka.feature.viewer.video.engine.decode.startPlayback
 import com.woka.feature.viewer.video.engine.probe.HdrInfo
 import com.woka.feature.viewer.video.engine.track.VideoPlayerTracks
@@ -57,6 +56,11 @@ class VideoPlayerState(
 
     var hasAudio by mutableStateOf(false)
 
+    // The container would not open at all — an `.mp4` cut before its index was
+    // written is the usual one (VF-103). Shown as a notice instead of a still poster.
+    var openFailed by mutableStateOf(false)
+        internal set
+
     // Repeat (§6). Only File is a decoder concern — it re-seeks to 0 at EOF.
     // Folder is navigation, so the decoder treats it exactly like Off and lets
     // [reachedEnd] surface upwards; MediaViewerPlaylist decides what plays next.
@@ -79,6 +83,7 @@ class VideoPlayerState(
 
     val tracks = VideoPlayerTracks()
     internal val renderScale = RenderScale() // decode-size policy (§6)
+    internal val pictureFilter = PictureFilter() // VF-102 / VF-105
 
     // Displayed frame rate against the rate the file declares. Read by the notice
     // that explains a struggling machine; costs one call per presented frame.
@@ -130,13 +135,6 @@ class VideoPlayerState(
 
     init {
         startPlayback()
-    }
-
-    fun updateVolume(newVolume: Float) {
-        volume = newVolume
-        soundLineInstance?.let { line ->
-            setVolumeInternal(line, lineLevel(newVolume))
-        }
     }
 
     // Transport (seek / play-pause) lives in VideoPlayerControls.kt.

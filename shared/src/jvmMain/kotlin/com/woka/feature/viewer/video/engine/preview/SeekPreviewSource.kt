@@ -2,6 +2,9 @@ package com.woka.feature.viewer.video.engine.preview
 
 import androidx.compose.ui.graphics.ImageBitmap
 import com.woka.feature.viewer.video.engine.decode.toComposeBitmap
+import com.woka.feature.viewer.video.engine.sync.grabImageAt
+import com.woka.feature.viewer.video.engine.probe.clockwiseTurns
+import com.woka.feature.viewer.video.engine.probe.rotatedClockwise
 import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_RGBA
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import java.io.File
@@ -38,8 +41,8 @@ internal class SeekPreviewSource(
     fun frameAt(positionMs: Long): ImageBitmap? {
         val open = grabber ?: openGrabber() ?: return null
         return try {
-            open.setTimestamp(positionMs * 1000L)
-            open.grabImage()?.takeIf { it.image != null }?.toComposeBitmap()
+            // Upright, as the player shows it (VF-105).
+            open.grabImageAt(positionMs * 1000L)?.toComposeBitmap()?.rotatedClockwise(open.clockwiseTurns)
         } catch (_: Exception) {
             null
         }

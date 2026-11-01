@@ -1,5 +1,6 @@
 package com.woka.integration
 
+import com.woka.feature.viewer.video.engine.updateVolume
 import com.woka.fixtures.BROKEN
 import com.woka.fixtures.NO_AUDIO
 import com.woka.fixtures.SampleMedia
