@@ -242,3 +242,39 @@ than a system one, because that is the encoder Woka itself runs:
 - **AVIF and nothing else.** `libx265` cannot open a HEIF output at all, and `-color_trc
   arib-std-b67` is silently ignored, so HLG is not an offerable target — both measured in ME-010.
 
+
+## Audio (`audio/`)
+
+AP-001, 2026-11-01 — the audio player's format probe (`probe/AudioFormatProbe.kt`). Every file is
+a 440 Hz sine written by the **bundled Bytedeco `ffmpeg.exe`**, so the encoders are the ones Woka
+ships with. 552 KB in all. `cover.png` is a 64×64 `#3478F6` square
+(`-f lavfi -i color=c=0x3478F6:s=64x64 -frames:v 1 cover.png`), not committed.
+
+```sh
+S="-f lavfi -i sine=f=440:d=2"; T="-metadata title=Woka_Tone -metadata artist=Woka"
+"$FF" $S -ac 1 -ar 22050 -c:a libmp3lame -b:a 48k tone.mp3
+"$FF" $S -i cover.png -map 0:a -map 1:v -ac 1 -ar 22050 -c:a libmp3lame -b:a 48k -c:v copy -disposition:v attached_pic -id3v2_version 3 $T tone-cover.mp3
+"$FF" $S -i cover.png -map 0:a -map 1:v -ac 1 -ar 22050 -c:a flac -c:v copy -disposition:v attached_pic $T tone.flac
+"$FF" $S -i cover.png -map 0:a -map 1:v -ac 1 -ar 22050 -c:a aac -b:a 48k -c:v copy -disposition:v attached_pic $T -f ipod tone.m4a
+"$FF" $S -ac 1 -ar 22050 -c:a alac -f ipod tone-alac.m4a
+"$FF" $S -ac 1 -ar 22050 -c:a aac -b:a 48k -f adts tone.aac
+"$FF" $S -ac 1 -ar 48000 -c:a libopus -b:a 24k tone.opus
+"$FF" $S -ac 2 -ar 22050 -c:a vorbis -strict -2 $T tone.ogg
+"$FF" $S -ac 1 -ar 16000 -c:a libspeex tone.spx
+"$FF" $S -ac 1 -ar 22050 -c:a wmav2 -b:a 32k $T tone.wma
+"$FF" $S -ac 2 -ar 48000 -c:a ac3 -b:a 96k tone.ac3          # eac3: same with -c:a eac3
+"$FF" $S -ac 1 -ar 8000 -c:a libopencore_amrnb -b:a 12.2k tone.amr   # tone.3ga: same + -f 3gp
+"$FF" $S -ac 1 -ar 8000 -c:a real_144 -f rm tone.ra
+"$FF" $S -ac 1 -ar 22050 -c:a mp2 -b:a 48k tone.mp2
+"$FF" -f lavfi -i sine=f=440:d=3 -ac 1 -ar 8000 -c:a tta tone.tta
+"$FF" -f lavfi -i sine=f=440:d=0.5 -ac 2 -ar 48000 -c:a dca -strict -2 tone.dts
+# 1 s, -ac 1 -ar 22050: tone.wav (pcm_s16le), tone.w64 (pcm_s16le), tone.aiff (pcm_s16be),
+#   tone.caf (alac), tone.voc (pcm_u8); 1 s -ac 2 -ar 48000 -strict -2: tone.mlp (mlp), tone.thd (truehd)
+```
+
+- **The cover comes from a file, not from `lavfi`.** With `color` as a second live input the muxer
+  stopped the audio at the first video packet: `tone-cover.mp3` held 26 ms, `tone.m4a` no audio.
+- **`tone.tta` is 3 s at 8 kHz** because a TTA frame is ~1.045 s: at 1 s the whole file is one
+  frame and a seek has nothing to land on.
+- **No encoder in the bundle** for `ape`, `mpc`, `qcp`, `oma` (ATRAC), `vqf`, `xa`, `aob`, `mp1` —
+  those need third-party samples (`audio-player.md` §1a).

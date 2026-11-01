@@ -13,7 +13,13 @@ data class MediaSessionInfo(
     val title: String,
     val durationMs: Long,
     val hasNext: Boolean,
-    val hasPrevious: Boolean
+    val hasPrevious: Boolean,
+    /** The line under the title in the OS panel: a track's artist (AP-007). */
+    val artist: String = "",
+    /** A film is announced as video, a track as music; the panel lays them out differently. */
+    val isVideo: Boolean = false,
+    /** The cover or poster, PNG-encoded; null shows the panel's own placeholder. */
+    val cover: ByteArray? = null
 )
 
 /** Transport state pushed to the OS panel. */
@@ -23,7 +29,7 @@ data class MediaPlaybackState(
 )
 
 /**
- * One platform's media session — an AWT key hook on Windows, macOS remote
+ * One platform's media session — SMTC on Windows (AP-007), macOS remote
  * commands, or nothing.
  *
  * Deliberately narrow: the OS side owns a single session for the whole process,

@@ -21,9 +21,16 @@ import androidx.compose.ui.graphics.graphicsLayer
  * The blur itself still re-rasterises per frame — whether the backdrop should
  * track the video at all, or freeze on a poster, is a visible choice and stays
  * open in the plan.
+ *
+ * **Glass shows what is behind it, and only that** (the author, 2026-11-01). The copy
+ * lies exactly on the picture — it was inflated 5 % — and the blur is [BLUR_PX]: at 50
+ * a picture ending well above the controls bar still tinted it, colour no glass there
+ * would have caught. A track draws none: its cover is the stage's, not a picture at the
+ * viewer's scale, and drawn here it was a giant cover only the bar could see.
  */
 @Composable
 internal fun ViewerBackdrop(media: ViewerMedia, backdrop: BackdropTransform) {
+    if (media is AudioMedia) return
     val saturation = remember { ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(1.4f) }) }
     val video = media as? ViewerMedia.Video
     // This is the second scene-level reader of the decoded frame, so it reports
@@ -41,11 +48,14 @@ internal fun ViewerBackdrop(media: ViewerMedia, backdrop: BackdropTransform) {
                 video?.player?.frameRetention?.acknowledge(drawnFrameId)
             }
             .graphicsLayer(
-                scaleX = backdrop.scale * 1.05f,
-                scaleY = backdrop.scale * 1.05f,
+                scaleX = backdrop.scale,
+                scaleY = backdrop.scale,
                 translationX = backdrop.offsetX,
                 translationY = backdrop.offsetY,
-                renderEffect = BlurEffect(50f / backdrop.scale, 50f / backdrop.scale)
+                renderEffect = BlurEffect(BLUR_PX / backdrop.scale, BLUR_PX / backdrop.scale)
             )
     )
 }
+
+/** On screen, whatever the zoom: the layer's scale multiplies it back up. */
+private const val BLUR_PX = 20f

@@ -132,7 +132,8 @@ fun EditButton(onEdit: () -> Unit) {
         Image(
             painter = painterResource(Icons.Static.Pencil),
             contentDescription = "Edit",
-            modifier = Modifier.size(12.dp).padding(end = 4.dp),
+            // The gap outside the size: inside it, it came out of the glyph and left 8 dp of pencil.
+            modifier = Modifier.padding(end = 4.dp).size(12.dp),
             colorFilter = ColorFilter.tint(Theme.colors.textPrimary)
         )
         BasicText(

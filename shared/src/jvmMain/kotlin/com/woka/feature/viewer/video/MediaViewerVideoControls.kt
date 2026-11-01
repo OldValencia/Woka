@@ -37,6 +37,8 @@ fun MediaViewerVideoControls(
     onSeekerHoverChange: (Boolean) -> Unit = {},
     isFullscreen: Boolean,
     onToggleFullscreen: () -> Unit,
+    /** False for a track: there is no picture to take fullscreen (AP-003). */
+    canFullscreen: Boolean = true,
     /** Passed straight through to the speaker's wheel — see `MediaViewerVolumeControl`. */
     soundBoost: Boolean = false
 ) {
@@ -120,7 +122,7 @@ fun MediaViewerVideoControls(
                 soundBoost = soundBoost
             )
             PlayerSettingsControl(onHoverChange = onSettingsHoverChange)
-            SimpleTooltip(if (isFullscreen) "Exit Fullscreen" else "Fullscreen") {
+            if (canFullscreen) SimpleTooltip(if (isFullscreen) "Exit Fullscreen" else "Fullscreen") {
                 Box(
                     modifier = Modifier
                         .size(32.dp)

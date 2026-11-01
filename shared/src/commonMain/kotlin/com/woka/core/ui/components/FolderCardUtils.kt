@@ -24,6 +24,7 @@ fun getFolderCardSubtitle(isDir: Boolean, file: File): String {
     val type = when (file.mediaKind()) {
         MediaKind.Image -> "Image"
         MediaKind.Video -> "Video"
+        MediaKind.Audio -> "Audio"
         null -> "File"
     }
     return "$type · ${formatFileSize(file.length())}"

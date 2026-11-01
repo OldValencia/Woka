@@ -9,10 +9,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import com.woka.core.data.MediaItem
+import com.woka.core.data.isPlayable
 import com.woka.core.system.MediaCommand
 import com.woka.core.system.MediaPlaybackState
 import com.woka.core.system.MediaSessionInfo
 import com.woka.core.system.SystemMediaSession
+import com.woka.feature.viewer.audio.AudioSession
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.engine.seek
 import com.woka.feature.viewer.video.engine.togglePlayPause
@@ -22,10 +24,11 @@ import kotlin.time.Duration.Companion.milliseconds
 import com.woka.feature.viewer.shell.MediaViewerState
 
 /**
- * Registers the OS media session while a video is open (§4). Windowed viewer:
- * next/previous walk the folder's **videos** — the carousel also holds images,
- * and advancing onto a still would just park there, the same reason
- * `MediaViewerPlaylist` skips them.
+ * Registers the OS media session while a film is open in the viewer (§4). Fullscreen,
+ * PiP and music hold the Now Playing slot, which registers it instead (AP-007).
+ * Next/previous walk the folder's **videos** — the carousel also holds images, and
+ * advancing onto a still would just park there, the same reason `MediaViewerPlaylist`
+ * skips them.
  */
 @Composable
 internal fun MediaViewerSystemControlsEffect(
@@ -35,12 +38,14 @@ internal fun MediaViewerSystemControlsEffect(
     enabled: Boolean
 ) {
     val videos = remember(mediaItems) {
-        mediaItems.filterIsInstance<MediaItem.Video>().map { it.file.absolutePath }
+        mediaItems.filter { it.isPlayable }.map { it.file.absolutePath }
     }
     val index = remember(videos, state.currentId) { videos.indexOf(state.currentId) }
 
     SystemControlsEffect(
-        videoState = videoState,
+        // A track is the Now Playing slot's, and the slot owns its session (AP-007);
+        // a film in the viewer claims no slot, so the viewer holds the session for it.
+        videoState = videoState?.takeUnless { AudioSession.owns(it) },
         file = remember(state.currentId) { File(state.currentId) },
         hasNext = index >= 0 && index < videos.lastIndex,
         hasPrevious = index > 0,
@@ -52,27 +57,6 @@ internal fun MediaViewerSystemControlsEffect(
                 state.currentId = target
             }
         }
-    )
-}
-
-/**
- * Fullscreen window: the same session, handed a single [item] and no folder
- * listing, so it offers no next/previous — which is also what that window's own
- * control bar offers.
- */
-@Composable
-internal fun FullscreenSystemControlsEffect(
-    item: MediaItem,
-    videoState: VideoPlayerState?,
-    enabled: Boolean
-) {
-    SystemControlsEffect(
-        videoState = videoState,
-        file = item.file,
-        hasNext = false,
-        hasPrevious = false,
-        enabled = enabled,
-        onNavigate = {}
     )
 }
 
@@ -106,7 +90,8 @@ private fun SystemControlsEffect(
     LaunchedEffect(token, file, videoState?.durationMs, hasNext, hasPrevious) {
         if (token == 0L) return@LaunchedEffect
         val duration = videoState?.durationMs ?: 0L
-        SystemMediaSession.setSession(token, MediaSessionInfo(file.name, duration, hasNext, hasPrevious))
+        val info = MediaSessionInfo(file.name, duration, hasNext, hasPrevious, isVideo = true)
+        SystemMediaSession.setSession(token, info)
     }
 
     // Immediate on every play/pause, then a slow tick for the position. The

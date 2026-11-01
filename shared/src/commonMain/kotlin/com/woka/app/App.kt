@@ -16,6 +16,9 @@ import com.woka.app.navigation.Screen
 import com.woka.app.navigation.ScreenHost
 import com.woka.app.shell.MainShell
 import com.woka.app.shell.StatusBanners
+import com.woka.app.shell.nowplaying.NowPlaying
+import com.woka.app.shell.nowplaying.NowPlayingBubble
+import com.woka.app.shell.nowplaying.NowPlayingSystemSession
 import com.woka.feature.folder.FolderScrollMemory
 import com.woka.feature.search.SearchResults
 import com.woka.feature.search.SearchState
@@ -30,6 +33,7 @@ object AppDependencies : KoinComponent {
     val router: Router by inject()
     val settingsRepository: SettingsRepository by inject()
     val scrollMemory: FolderScrollMemory by inject()
+    val nowPlaying: NowPlaying by inject()
 }
 
 @Composable
@@ -94,6 +98,10 @@ fun App(
             // it started on: an export keeps running once the viewer opens over the
             // grid, and a save keeps running once the editor has closed (ME-130).
             StatusBanners()
+
+            // Now Playing with the sidebar hidden: above the sidebar and every screen (AP-006).
+            NowPlayingBubble()
+            NowPlayingSystemSession()
 
             // Settings Overlay
             SettingsOverlay(

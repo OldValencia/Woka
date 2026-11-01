@@ -33,6 +33,11 @@ sealed class MediaItem {
         override val lastModified: Long = file.lastModified()
         override val isHidden: Boolean = file.isHidden
     }
+    data class Audio(override val file: File) : MediaItem() {
+        override val name: String = file.name
+        override val lastModified: Long = file.lastModified()
+        override val isHidden: Boolean = file.isHidden
+    }
 }
 
 class LocalMediaRepository {

@@ -15,8 +15,6 @@ object Icons {
     object Static : EditorIcons() {
         val Add = Res.drawable.add
         val Close = Res.drawable.close
-        val Delete = Res.drawable.delete
-        val Disabled = Res.drawable.disabled
         val Folder = Res.drawable.folder
         val Pin = Res.drawable.pin
         val Play = Res.drawable.play
@@ -24,52 +22,28 @@ object Icons {
         val Pause = Res.drawable.pause
         val SkipForward5 = Res.drawable.skip_forward_5_clockwise
         val SkipBackward5 = Res.drawable.skip_backward_5_counterclockwise
-        val SpeakerFill = Res.drawable.speaker_fill
         val SpeakerSlashFill = Res.drawable.speaker_slash_fill
         val SpeakerWave1Fill = Res.drawable.speaker_wave_1_fill
         val SpeakerWave2Fill = Res.drawable.speaker_wave_2_fill
         val SpeakerWave3Fill = Res.drawable.speaker_wave_3_fill
 
-        /** Sound boost — `speaker.fill` and `bolt.fill` side by side, at one height. */
+        /** Sound boost — Phosphor's `speaker-high` and `lightning`, filled, side by side. */
         val SpeakerBoltFill = Res.drawable.speaker_bolt_fill
-        val Home = Res.drawable.home
         val Image = Res.drawable.image
-        val File = Res.drawable.file_present
         val Video = Res.drawable.videocam
-        val Link = Res.drawable.link
+        val MusicNote = Res.drawable.music_note
         val ChevronRight = Res.drawable.keyboard_arrow_right
         val Collapse = Res.drawable.collapse_content
         val Expand = Res.drawable.expand_content
         val Search = Res.drawable.magnifyingglass
-        val Clear = Res.drawable.xmark_circle_fill
-        val Tag = Res.drawable.tag
         val Filter = Res.drawable.line_3_horizontal_decrease
-        val MagnifyingGlassPlus = Res.drawable.magnifyingglass_plus
         val Settings = Res.drawable.settings
-        val Grid = Res.drawable.square_grid_2x2
-        val List = Res.drawable.list_bullet
-        val Table = Res.drawable.tablecells
         val Sort = Res.drawable.arrow_up_arrow_down
-        
-        val Bell = Res.drawable.bell
-        val BellFill = Res.drawable.bell_fill
-        val BellBadge = Res.drawable.bell_badge
-        val BellBadgeFill = Res.drawable.bell_badge_fill
-        val BellSlash = Res.drawable.bell_slash
-        val BellSlashFill = Res.drawable.bell_slash_fill
-        val BellWaves = Res.drawable.bell_and_waves_left_and_right
-        val BellWavesFill = Res.drawable.bell_and_waves_left_and_right_fill
 
-        val CheckmarkCircle = Res.drawable.checkmark_circle
         val PencilLine = Res.drawable.pencil_line
         val Pencil = Res.drawable.pencil
-        val PencilSlash = Res.drawable.pencil_slash
 
         val Export = Res.drawable.export
-        val ExportDone = Res.drawable.export_done
-        val ExportFail = Res.drawable.export_fail
-        val ExportWait = Res.drawable.export_wait
-        val Share = Res.drawable.share
 
         /**
          * **Auto's**, not Styles' (ME-174). A wand means "make this better on its own",
@@ -82,7 +56,7 @@ object Icons {
 
         /**
          * One parameter back to its detent, and all of them back to theirs — the same
-         * arrowhead in both, so the pair reads as one idea at two scopes.
+         * counter-clockwise turn in both, so the pair reads as one idea at two scopes.
          */
         val Reset = Res.drawable.arrow_trianglehead_counterclockwise
         val ResetAll = Res.drawable.slider_horizontal_2_arrow_trianglehead_counterclockwise
@@ -92,7 +66,7 @@ object Icons {
         val ShapeRectangle = Res.drawable.rectangle
         val ShapeEllipse = Res.drawable.circle
         val ShapeFreehand = Res.drawable.scribble
-        // The pen that draws a caption is a **box with a letter in it**, not the `Aa` it
+        // The pen that draws a caption is a **T** (Phosphor `text-t`), not the `Aa` it
         // used to be (ME-155): `Aa` is now the button that sets the caption's faces, and
         // two adjacent controls drawing the same glyph read as one control.
         val ShapeText = Res.drawable.character_textbox
@@ -103,24 +77,16 @@ object Icons {
         val TextUnderline = Res.drawable.underline
         val TextStrikethrough = Res.drawable.strikethrough
 
-        val Undo = Res.drawable.undo
-        val Redo = Res.drawable.redo
-        
-        val NoSign = Res.drawable.nosign
-
         // New macOS style icons
-        val SidebarLeft = Res.drawable.sidebar_left
         val ChevronDown = Res.drawable.chevron_down
-        val ZoomOut = Res.drawable.minus_magnifyingglass
         val Editor = Res.drawable.square_and_pencil
-        val Crop = Res.drawable.rectangle_arrowtriangle_2_inward
+        val Crop = Res.drawable.crop
         val Adjust = Res.drawable.slash_circle
         val Navigation = Res.drawable.photo_on_rectangle_angled
         val ChevronRightMac = Res.drawable.chevron_right
         val Eye = Res.drawable.eye
         val EyeSlash = Res.drawable.eye_slash
         val InfoCircle = Res.drawable.info_circle
-        val DocumentOnDocument = Res.drawable.document_on_document
 
         // Zoom & scaling controls (video player enhancements)
         val ChevronLeft = Res.drawable.chevron_left

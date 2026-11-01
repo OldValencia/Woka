@@ -33,8 +33,13 @@ internal fun VideoPlayerState.startPlayback() {
     val videoChannel = Channel<VideoFrame>(capacity = 8)
     val audioChannel = Channel<ByteArray>(capacity = 500)
 
-    startPresenterLoop(videoChannel)
-    startDecoderLoop(videoChannel)
+    // A file with no picture has a clock in place of the decoder and presenter (AP-003).
+    if (isAudioOnly) {
+        startAudioClockLoop()
+    } else {
+        startPresenterLoop(videoChannel)
+        startDecoderLoop(videoChannel)
+    }
     startAudioDecodeLoop(audioChannel)
 }
 

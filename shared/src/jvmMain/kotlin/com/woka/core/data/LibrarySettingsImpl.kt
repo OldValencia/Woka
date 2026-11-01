@@ -86,6 +86,9 @@ internal class LibrarySettingsImpl(private val mutator: SettingsMutator) : Libra
     override fun setSidebarVisible(visible: Boolean) =
         mutator.update { it.copy(sidebarVisible = visible) }
 
+    override fun setNowPlayingCorner(corner: WindowCorner) =
+        mutator.update { it.copy(nowPlayingCorner = corner) }
+
     override fun setMediaFilter(filter: String) =
         mutator.update { it.copy(mediaFilter = filter) }
 

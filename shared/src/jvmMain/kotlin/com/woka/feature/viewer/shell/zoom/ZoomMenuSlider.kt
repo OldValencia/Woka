@@ -1,10 +1,12 @@
 package com.woka.feature.viewer.shell.zoom
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.ScalePreset
 import com.woka.core.ui.components.DetentSlider
 import com.woka.core.ui.components.DetentSliderColors
+import com.woka.core.ui.components.resetOnRightClick
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.viewer.shell.percentFromFraction
 import com.woka.feature.viewer.shell.presetPercent
@@ -22,7 +24,9 @@ internal fun ZoomMenuSlider(
     bounds: IntRange,
     container: IntSize,
     native: IntSize,
-    onPercent: (Int) -> Unit
+    onPercent: (Int) -> Unit,
+    /** The menu's own reset — Fit, offset cleared — on a right-click of the track. */
+    onReset: () -> Unit
 ) {
     val detents = listOf(ScalePreset.Fit, ScalePreset.Fill, ScalePreset.Original).map { preset ->
         sliderFraction(presetPercent(preset, container, native), bounds)
@@ -39,6 +43,7 @@ internal fun ZoomMenuSlider(
         // Every drag position is committed: the zoom has no cost to re-apply, so
         // the picture tracks the finger. Speed commits on release instead.
         onTap = { onPercent(percentFromFraction(it, bounds)) },
+        modifier = Modifier.resetOnRightClick(onReset),
         detents = detents,
         gestureKey = bounds
     )

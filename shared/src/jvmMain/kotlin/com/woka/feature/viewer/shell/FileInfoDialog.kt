@@ -13,6 +13,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -21,7 +23,10 @@ import com.woka.core.ui.dialogs.AbstractDialog
 import com.woka.core.ui.dialogs.DialogButton
 import com.woka.core.ui.dialogs.DialogTitle
 import com.woka.core.ui.theme.Theme
+import com.woka.feature.viewer.audio.AudioTags
 import com.woka.feature.viewer.video.model.MediaTracks
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
 
@@ -33,12 +38,16 @@ fun FileInfoDialog(
     durationMs: Long? = null,
     selectedAudioIndex: Int? = null
 ) {
+    // A track's tags (AP-003), read off the main thread; null for anything else.
+    val tags by produceState<AudioTags?>(null, item) {
+        if (item is MediaItem.Audio) value = withContext(Dispatchers.IO) { AudioTags.read(item.file) }
+    }
     AbstractDialog(onDismissRequest = onDismiss, width = if (mediaTracks != null) 340.dp else 300.dp) {
         DialogTitle(text = "File Information", color = Theme.colors.textPrimary)
         if (mediaTracks == null) {
             FileMetaBlock(item)
         } else {
-            ScrollableInfo(item, mediaTracks, durationMs, selectedAudioIndex)
+            ScrollableInfo(item, mediaTracks, durationMs, selectedAudioIndex, tags)
         }
         Row(
             modifier = Modifier.align(Alignment.End),
@@ -46,7 +55,7 @@ fun FileInfoDialog(
         ) {
             DialogButton(
                 text = "Copy",
-                onClick = { copyToClipboard(buildInfoText(item, mediaTracks, durationMs)) },
+                onClick = { copyToClipboard(buildInfoText(item, mediaTracks, durationMs, tags)) },
                 color = Theme.colors.textSecondary
             )
             DialogButton(text = "Close", onClick = onDismiss, color = Theme.colors.accent)
@@ -64,7 +73,8 @@ private fun ScrollableInfo(
     item: MediaItem,
     mediaTracks: MediaTracks,
     durationMs: Long?,
-    selectedAudioIndex: Int?
+    selectedAudioIndex: Int?,
+    tags: AudioTags?
 ) {
     val scrollState = rememberScrollState()
     // The outer Box hugs the (height-capped) content column; the scrollbar sits
@@ -80,6 +90,7 @@ private fun ScrollableInfo(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             FileMetaBlock(item)
+            tags?.let { TrackTagsSection(it) }
             StreamInfoSections(mediaTracks, durationMs, selectedAudioIndex)
         }
         Box(modifier = Modifier.matchParentSize()) {

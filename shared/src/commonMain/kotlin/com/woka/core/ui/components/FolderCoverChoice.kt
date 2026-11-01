@@ -69,6 +69,9 @@ private fun Array<File>.coverHere(): List<File> = asSequence()
             // drawn by `StillCoverImage` through Woka's own decoders.
             MediaKind.Image -> f
             MediaKind.Video -> WokaStorage.thumbnailFile(f).takeIf { it.exists() }
+            // A folder of music is drawn by its folders and pictures, not its tracks:
+            // a cover is per album and lives beside the files as a picture already.
+            MediaKind.Audio -> null
             null -> null
         }
     }

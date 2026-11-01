@@ -47,6 +47,8 @@ class EditorEngineFactoryImpl(
         return when (file.mediaKind()) {
             MediaKind.Image -> imageCapability(file)
             MediaKind.Video -> videoCapability(file)
+            // Playback only — the author, 2026-11-01: no audio editor.
+            MediaKind.Audio -> EditCapability.Unavailable
             null -> EditCapability.Unavailable
         }
     }

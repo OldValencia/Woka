@@ -4,6 +4,7 @@ import com.woka.feature.folder.FolderScrollMemory
 import com.woka.feature.folder.FolderViewModel
 import com.woka.app.navigation.Router
 import com.woka.app.navigation.startupStack
+import com.woka.app.shell.nowplaying.NowPlaying
 import com.woka.core.data.LocalMediaRepository
 import com.woka.core.data.SettingsRepository
 import org.koin.core.context.startKoin
@@ -28,6 +29,7 @@ val appModule = module {
     single { Router() }
     single { LocalMediaRepository() }
     single { FolderScrollMemory() }
+    single { NowPlaying() }
     factory { (path: String) -> FolderViewModel(path, get(), get()) }
 }
 

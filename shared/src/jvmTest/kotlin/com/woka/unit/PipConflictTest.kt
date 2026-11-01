@@ -1,6 +1,7 @@
 package com.woka.unit
 
 import com.woka.core.data.MediaItem
+import com.woka.feature.viewer.shell.musicConflicts
 import com.woka.feature.viewer.shell.pipConflicts
 import java.io.File
 import kotlin.test.Test
@@ -48,5 +49,20 @@ class PipConflictTest {
     @Test
     fun `an empty viewer asks nothing`() {
         assertFalse(pipConflicts(null, pipActive = true, pipPath = playing))
+    }
+
+    /** AP-003: a film over a playing track asks first; a picture or no music never does. */
+    @Test
+    fun `only a video collides with music`() {
+        val track = File("music/song.mp3").absolutePath
+        assertTrue(musicConflicts(MediaItem.Video(FILM), musicPath = track))
+        assertFalse(musicConflicts(MediaItem.Image(PHOTO), musicPath = track))
+        assertFalse(musicConflicts(MediaItem.Video(FILM), musicPath = null))
+    }
+
+    @Test
+    fun `a track collides with a video in PiP`() {
+        val track = MediaItem.Audio(File("music/song.mp3").absoluteFile)
+        assertTrue(pipConflicts(track, pipActive = true, pipPath = playing))
     }
 }

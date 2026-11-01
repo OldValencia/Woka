@@ -24,7 +24,7 @@ import com.woka.core.ui.components.SegmentedControlColors
 import com.woka.core.ui.icons.Icons
 import com.woka.core.ui.theme.Theme
 
-private val FILTERS = listOf("All", "Photos", "Videos")
+private val FILTERS = listOf("All", "Photos", "Videos", "Music")
 private val SIZES = listOf("S" to ViewLayout.SmallGrid, "M" to ViewLayout.Grid, "L" to ViewLayout.BigGrid)
 private val SORTS = listOf("Name", "Date")
 

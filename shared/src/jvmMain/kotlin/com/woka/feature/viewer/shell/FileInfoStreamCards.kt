@@ -43,8 +43,18 @@ fun StreamInfoSections(tracks: MediaTracks, durationMs: Long?, selectedAudioInde
             }
         }
         if (tracks.audio.isNotEmpty()) InfoSection("Audio") {
-            tracks.audio.forEach { a ->
-                InfoRow(a.label, audioDetail(a), highlight = a.index == selectedAudioIndex)
+            val single = tracks.audio.singleOrNull()
+            // A file of sound alone (AP-003): its one stream laid out like a video's.
+            if (videos.isEmpty() && single != null) {
+                InfoRow("Codec", single.codec.uppercase())
+                single.channelLayout?.let { InfoRow("Channels", it) }
+                single.sampleRate?.let { InfoRow("Sample rate", formatSampleRate(it)) }
+                single.bitRate?.let { InfoRow("Bitrate", formatBitrate(it)) }
+            } else {
+                tracks.audio.forEach { a ->
+                    val full = videos.isEmpty()
+                    InfoRow(a.label, audioDetail(a, full), highlight = a.index == selectedAudioIndex)
+                }
             }
         }
         if (tracks.subtitle.isNotEmpty()) InfoSection("Subtitles") {
@@ -54,7 +64,7 @@ fun StreamInfoSections(tracks: MediaTracks, durationMs: Long?, selectedAudioInde
 }
 
 @Composable
-private fun InfoSection(title: String, rows: @Composable () -> Unit) {
+internal fun InfoSection(title: String, rows: @Composable () -> Unit) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -86,7 +96,7 @@ private fun InfoSubheader(text: String, topGap: Boolean) {
 }
 
 @Composable
-private fun InfoRow(label: String, value: String, highlight: Boolean = false) {
+internal fun InfoRow(label: String, value: String, highlight: Boolean = false) {
     // Active audio track is tinted with the carousel-eye accent (§2.5).
     val labelColor = if (highlight) Theme.colors.accentFolders else Theme.colors.textSecondary
     val valueColor = if (highlight) Theme.colors.accentFolders else Theme.colors.textPrimary

@@ -11,3 +11,5 @@ enum class ScalePreset { Fit, Fill, Original }
 // choice stays proportional on window resize instead of being reset.
 enum class SubtitleSize { Auto, Small, Medium, Large, ExtraLarge }
 enum class SubtitleFont { System, Serif, Monospace }
+// Where Now Playing's bubble sits while the sidebar is hidden (AP-006).
+enum class WindowCorner { TopLeft, TopRight, BottomLeft, BottomRight }

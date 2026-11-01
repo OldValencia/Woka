@@ -81,6 +81,7 @@ fun FolderCardPreview(
                 StillCoverImage(it, colorFilter = calm, placeholder = { FolderGlyph() })
             }
             isVideo -> VideoCover(file, dim = dimWatched && watch?.isStarted == true, calm = calm)
+            file.mediaKind() == MediaKind.Audio -> AudioTrackCover(file, calm)
             else -> StillCoverImage(file, colorFilter = calm)
         }
 

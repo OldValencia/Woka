@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.StillColorInfo
 import com.woka.feature.viewer.video.engine.VideoPlayerState
+import com.woka.feature.viewer.video.engine.decode.isAudioOnly
 import com.woka.feature.viewer.video.engine.probe.swapsSides
 
 /**
@@ -89,9 +90,22 @@ sealed interface ViewerMedia {
     }
 }
 
+/** Stands in for the poster of a track with no cover; the stage draws its own placeholder. */
+private val NO_COVER = ImageBitmap(1, 1)
+
+/**
+ * A track (AP-003): the player, and its cover when it has one. Not a picture — the
+ * stage draws it, the zoom and size modes have nothing to act on.
+ */
+@Stable
+class AudioMedia(val player: VideoPlayerState, val cover: ImageBitmap?) : ViewerMedia {
+    override val poster: ImageBitmap = cover ?: NO_COVER
+    override val nativeSize: IntSize get() = IntSize(poster.width, poster.height)
+}
+
 /** The player, when there is one. For the branches that genuinely have to ask. */
 val ViewerMedia.player: VideoPlayerState?
-    get() = (this as? ViewerMedia.Video)?.player
+    get() = (this as? ViewerMedia.Video)?.player ?: (this as? AudioMedia)?.player
 
 /**
  * Builds the media the shell shows. Null until the poster has decoded — the player
@@ -106,6 +120,8 @@ fun rememberViewerMedia(
 ): ViewerMedia? =
     remember(poster, player, sourceSize, color) {
         when {
+            // A track shows without a cover, so it does not wait for one.
+            player?.isAudioOnly == true -> AudioMedia(player, poster)
             poster == null -> null
             player != null -> ViewerMedia.Video(player, poster)
             else -> ViewerMedia.Still(poster, sourceSize, color)

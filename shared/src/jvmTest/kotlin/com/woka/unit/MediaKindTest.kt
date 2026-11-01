@@ -34,6 +34,27 @@ class MediaKindTest {
         }
     }
 
+    /**
+     * AP-003: the formats AP-001 measured playable; `.ogg` is audio even with Theora inside.
+     * AP-009 measured and added the last four.
+     */
+    @Test
+    fun `every listed audio extension classifies as audio and plays`() {
+        val measured = listOf("mp3", "flac", "m4a", "wav", "ogg", "opus", "wma", "aac", "mlp")
+        (measured + listOf("vqf", "oma", "aob", "mp1")).forEach { extension ->
+            assertEquals(MediaKind.Audio, named("track.$extension").mediaKind(), extension)
+            assertTrue(mediaItemOrNull(named("track.$extension")) is MediaItem.Audio, extension)
+        }
+    }
+
+    /** AP-009: measured, cut — their frames carry no timestamps. */
+    @Test
+    fun `ape and musepack are not media`() {
+        listOf("ape", "mpc").forEach { extension ->
+            assertEquals(null, named("track.$extension").mediaKind(), extension)
+        }
+    }
+
     @Test
     fun `the extension is matched case-insensitively`() {
         assertEquals(MediaKind.Image, named("PHOTO.JPG").mediaKind())

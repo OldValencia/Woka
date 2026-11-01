@@ -44,6 +44,14 @@ object PipManager {
 
     var isTransitioningToMain = false
 
+    /** Raised by Now Playing's row; the PiP window, the one holder of its AWT frame, answers it (AP-004). */
+    var frontRequests by mutableStateOf(0)
+        private set
+
+    fun requestFront() {
+        frontRequests++
+    }
+
     fun createOrGetState(item: MediaItem, initialVolume: Float): VideoPlayerState {
         if (activeItem?.file?.absolutePath == item.file.absolutePath && videoState != null) {
             return videoState!!
@@ -69,9 +77,12 @@ object PipManager {
         scale = 1f
         offsetX = initialOffsetX
         offsetY = initialOffsetY
+        AppDependencies.nowPlaying.claim(PipNowPlaying(item, state))
     }
 
     fun closePip(returnToMain: Boolean = false) {
+        // A video back in the viewer is not in the slot either (audio-player §3.3).
+        activeItem?.let { AppDependencies.nowPlaying.release(it.file.absolutePath) }
         if (returnToMain && activeItem != null) {
             // An open editor is saved and closed **before** the route changes (ME-124).
             // The hazard is invisible from here: `replaceTop` with a fresh nonce is a
@@ -110,6 +121,7 @@ object PipManager {
         } else {
             state.dispose()
             if (videoState == state) {
+                activeItem?.let { AppDependencies.nowPlaying.release(it.file.absolutePath) }
                 videoState = null
                 activeItem = null
             }

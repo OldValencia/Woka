@@ -11,7 +11,7 @@ import java.io.File
  * `.bmp` files read "0 items" and still opened non-empty. Nothing else may declare
  * an extension list.
  */
-enum class MediaKind { Image, Video }
+enum class MediaKind { Image, Video, Audio }
 
 /**
  * Camera RAW, all read by LibRaw — public because the decoder routing needs the
@@ -56,9 +56,21 @@ private val VIDEO_EXTENSIONS = setOf(
     "amv", "mtv", "gxf", "xesc", "dav"
 )
 
-/** The complete set of image and video file extensions supported by Woka. */
+/**
+ * Audio the player plays (AP-001, measured 2026-11-01 through the player's own
+ * grabbers; `vqf`, `oma`, `aob` and `mp1` measured on downloaded samples for AP-009).
+ * `ape` and `mpc` are not here: their frames carry no timestamps, and the player's
+ * audio loop follows timestamps.
+ */
+private val AUDIO_EXTENSIONS = setOf(
+    "mp3", "mpga", "mp1", "wav", "wave", "flac", "aac", "wma", "m4a", "m4b", "m4r",
+    "aiff", "aif", "tta", "w64", "caf", "ac3", "a52", "eac3", "dts", "mlp", "aob",
+    "opus", "ogg", "oga", "spx", "amr", "3ga", "voc", "vqf", "oma"
+)
+
+/** The complete set of image, video and audio file extensions supported by Woka. */
 val ALL_SUPPORTED_MEDIA_EXTENSIONS: Set<String>
-    get() = IMAGE_EXTENSIONS + VIDEO_EXTENSIONS
+    get() = IMAGE_EXTENSIONS + VIDEO_EXTENSIONS + AUDIO_EXTENSIONS
 
 /**
  * Formats **Coil** cannot read, and the grid draws with `AsyncImage`.
@@ -84,6 +96,7 @@ private val COIL_BLIND_EXTENSIONS =
 fun File.mediaKind(): MediaKind? = when (extension.lowercase()) {
     in IMAGE_EXTENSIONS -> MediaKind.Image
     in VIDEO_EXTENSIONS -> MediaKind.Video
+    in AUDIO_EXTENSIONS -> MediaKind.Audio
     else -> null
 }
 
@@ -112,9 +125,14 @@ private val FRAME_CAPABLE_EXTENSIONS =
 val File.mayHoldFrames: Boolean
     get() = extension.lowercase() in FRAME_CAPABLE_EXTENSIONS
 
-/** The only place a [MediaItem] learns whether it is an image or a video. */
+/** A file the player plays, as opposed to a picture the viewer shows. */
+val MediaItem.isPlayable: Boolean
+    get() = this is MediaItem.Video || this is MediaItem.Audio
+
+/** The only place a [MediaItem] learns whether it is an image, a video or audio. */
 fun mediaItemOrNull(file: File): MediaItem? = when (file.mediaKind()) {
     MediaKind.Image -> MediaItem.Image(file)
     MediaKind.Video -> MediaItem.Video(file)
+    MediaKind.Audio -> MediaItem.Audio(file)
     null -> null
 }

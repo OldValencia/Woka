@@ -103,7 +103,7 @@ actual fun OsIntegrationSettingsPanel(settings: WokaSettings, repo: SettingsRepo
 
         SettingsToggleRow(
             title = "Hardware Media Keys",
-            subtitle = "Control video playback using system media keys and Now Playing notifications",
+            subtitle = "Control playback using system media keys and Now Playing notifications",
             checked = settings.systemMediaControls,
             onCheckedChange = { repo.setSystemMediaControls(it) }
         )

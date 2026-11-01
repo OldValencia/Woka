@@ -5,6 +5,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import com.woka.feature.viewer.video.engine.VideoPlayerState
+import com.woka.feature.viewer.video.engine.decode.isAudioOnly
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import java.util.concurrent.Executors
@@ -21,7 +22,8 @@ internal fun rememberSeekPreview(
     videoState: VideoPlayerState?,
     durationMs: Long
 ): SeekPreviewController? {
-    if (videoState == null || durationMs <= 0L) return null
+    // A track has no pictures to preview a seek with (AP-003).
+    if (videoState == null || durationMs <= 0L || videoState.isAudioOnly) return null
     val track = videoState.tracks.mediaTracks.video
         .firstOrNull { it.index == videoState.tracks.selectedVideoIndex }
     val sourceWidth = track?.width ?: 0

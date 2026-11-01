@@ -11,6 +11,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import com.woka.core.data.MediaItem
+import com.woka.core.data.MediaKind
+import com.woka.core.data.mediaKind
 import com.woka.core.data.isReadOnlyMedia
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.editor.EditorNoticeStatus
@@ -101,9 +103,13 @@ fun FolderScreen(
     }
 
     // Remembered, not filtered inline: a fresh list every recomposition changes
-    // identity and invalidates everything the viewer keys on it (§10.8).
-    val viewerItems = remember(state.items) {
-        state.items.filter { it is MediaItem.Image || it is MediaItem.Video }
+    // identity and invalidates everything the viewer keys on it (§10.8). Opened on a
+    // track, the viewer walks the folder's audio only; on a picture, never into it (AP-003).
+    val openedAudio = viewerMediaId?.let { File(it).mediaKind() } == MediaKind.Audio
+    val viewerItems = remember(state.items, openedAudio) {
+        state.items.filter {
+            if (openedAudio) it is MediaItem.Audio else it is MediaItem.Image || it is MediaItem.Video
+        }
     }
 
     if (viewerMediaId != null) {

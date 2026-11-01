@@ -63,7 +63,8 @@ internal fun QuickLook(item: MediaItem, watch: WatchRecord?, onClose: () -> Unit
                 .clickable(remember { MutableInteractionSource() }, indication = null, onClick = {})
         ) {
             Box(modifier = Modifier.fillMaxWidth().aspectRatio(3f / 2f).heightIn(max = 560.dp)) {
-                if (item is MediaItem.Video) {
+                // A track shows its cover the way its tile does (AP-003).
+                if (item is MediaItem.Video || item is MediaItem.Audio) {
                     FolderCardPreview(
                         isDir = false,
                         file = item.file,

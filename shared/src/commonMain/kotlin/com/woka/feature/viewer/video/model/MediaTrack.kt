@@ -23,10 +23,12 @@ data class MediaTrack(
     val width: Int? = null,
     val height: Int? = null,
     val frameRate: Double? = null,
+    // Video and audio.
     val bitRate: Long? = null,
     // Audio-only.
     val channels: Int? = null,
     val channelLayout: String? = null,
+    val sampleRate: Int? = null,
     // Subtitle-only.
     val isTextBased: Boolean? = null
 ) {
