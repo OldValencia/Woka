@@ -7,6 +7,8 @@ import com.woka.core.data.WokaStorage
 import com.woka.core.data.markUsed
 import com.woka.core.ui.image.ImageBitmapCache
 import com.woka.core.ui.image.encodeWebp
+import com.woka.feature.viewer.video.engine.sync.grabImageAt
+import com.woka.feature.viewer.video.engine.sync.lengthMs
 import org.bytedeco.ffmpeg.global.avutil.AV_LOG_QUIET
 import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_BGR24
 import org.bytedeco.ffmpeg.global.avutil.av_log_set_level
@@ -76,7 +78,7 @@ internal object VideoThumbnailExtractor {
             grabber.setVideoOption("hwaccel", "auto")
             grabber.pixelFormat = AV_PIX_FMT_BGR24
             grabber.start()
-            val duration = grabber.lengthInTime
+            val duration = grabber.lengthMs(file) * 1000L
             val timestamps = buildTimestampCandidates(duration)
             var selectedImage: BufferedImage? = null
             val converter = Java2DFrameConverter()
@@ -88,6 +90,8 @@ internal object VideoThumbnailExtractor {
                     break
                 }
             }
+            // Every candidate past the end: a one-frame `.bik` (VF-001) still has a picture.
+            if (selectedImage == null) selectedImage = grabFrameAt(grabber, converter, 0L, duration)
             selectedImage?.let { saveAndDecode(it, previewFile, file) }
         } finally {
             // Guarded, or a `start()` that threw is masked by whatever `stop()`
@@ -103,7 +107,9 @@ internal object VideoThumbnailExtractor {
         targetTs: Long,
         duration: Long
     ): BufferedImage? {
-        if (duration !in 1..targetTs) grabber.setTimestamp(targetTs)
+        if (duration !in 1..targetTs) {
+            return grabber.grabImageAt(targetTs)?.let { converter.getBufferedImage(it) }
+        }
         (0 until 15).forEach { _ ->
             val frame: Frame? = grabber.grabImage()
             if (frame != null && frame.image != null) {

@@ -69,7 +69,7 @@ FFmpeg-powered playback engine with frame-accurate scrubbing, multi-track audio,
 
 ## Supported Formats
 
-Woka is built to replace bloated third-party viewers with a single, lightning-fast local media player and viewer supporting **108 media formats** natively.
+Woka is built to replace bloated third-party viewers with a single, lightning-fast local media player and viewer supporting **122 media formats** natively.
 
 ### 🖼️ Images & Graphics (73 formats)
 
@@ -90,7 +90,7 @@ Woka is built to replace bloated third-party viewers with a single, lightning-fa
 | **Adobe Illustrator** | `.ai` | **Read-only**: the artwork of PDF-compatible files (Illustrator CS and later) |
 | **Windows Paint Projects** | `.paint` | **Read-only**: every layer composed, as Paint shows it on reopening |
 
-### 🎬 Video (35 formats)
+### 🎬 Video (49 formats)
 
 Powered by bundled **FFmpeg 8.x** with frame-accurate scrubbing and hardware-accelerated playback:
 
@@ -104,6 +104,9 @@ Powered by bundled **FFmpeg 8.x** with frame-accurate scrubbing and hardware-acc
 | **Flash & Streaming** | `.flv`, `.f4v` | Flash Video and Flash MP4 containers |
 | **Mobile & Telecom** | `.3gp`, `.3g2` | 3GPP and 3GPP2 mobile multimedia containers |
 | **Specialized & Open Formats** | `.dv`, `.drc` | Digital Video and Dirac container/codecs |
+| **Ogg & RealMedia** | `.ogv`, `.ogm`, `.ogx`, `.rm`, `.rmvb` | Theora/Vorbis in Ogg, OGM, RealVideo with Cook audio |
+| **Broadcast, CCTV & Capture** | `.gxf`, `.dav`, `.xesc` | General eXchange Format, Dahua DVR exports, Expression Encoder screen captures |
+| **Legacy Web, Players & Games** | `.nsv`, `.amv`, `.mtv`, `.bik`, `.thp`, `.rpl` | Nullsoft Streaming Video, MP4-player AMV/MTV, Bink 1, Nintendo THP, ARMovie |
 
 ---
 

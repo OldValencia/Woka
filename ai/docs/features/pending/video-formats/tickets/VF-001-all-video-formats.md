@@ -78,3 +78,26 @@ into the feature doc's §1 table before code is written:
 5. **`.rmvb` sample** — search `samples.ffmpeg.org/real/`; open one (RealVideo 4 + cook expected).
 6. **`ogm`/`ogx`** — whether either needs anything beyond `.ogv` (both are Ogg; `ogm` may carry old
    DirectShow-style video headers the `ogg` demuxer reads as `ogm` streams).
+
+## Result — 2026-11-01
+The probe table is in the feature doc §1 (one row per sample, dated); what was built beyond the plan,
+and why, is §3; the author's calls are in §6.
+
+- **Shipped:** `xesc`, `rpl`, `bik`, `thp`, `nsv`, `mtv`, `amv`, `rm`, `rmvb`, `gxf`, `ogv`, `ogm`,
+  `ogx`, `dav` — 35 → 49 video, 122 in all; `MediaKind` and `mediaAssociations` compared 122/122.
+- **Cut:** raw `h264`/`264` (no timestamps reach JavaCV) and `nuv` (FFmpeg stops 4–5 s into RTjpeg).
+- **Beyond the plan:** the media timeline (`originUs`), the restart-and-walk seek fallback, and the
+  first-frame poster fallback — without them `.dav` had no usable position and `thp`/`rpl`/`mtv`/`nsv`
+  seeks ended playback.
+- **Tests:** `integration/VideoFormatsTest`, `integration/ContainerDurationTest` (on disk, so
+  `integration/`, not `unit/`), `WindowsFileAssociationsTest` 108 → 122.
+
+Done-when:
+- [x] probe table recorded, dated
+- [x] `.nsv`, `.mtv`, `.amv`, `.dav` show a length and seek (`.dav` fixture: see §1 note ¹)
+- [x] `thp` audio recorded: every packet logs `invalid number of samples in packet`; the spectrogram
+  is broadband noise. Broken in this sample; `.thp` kept (feature doc §6). Opening it crashed the
+  audio loop with `BufferUnderflowException` — fixed in `toPcmBytes`, `PcmBytesTest`
+- [ ] counting on the author's 440 MB `.dav` < 1 s — measured only on a 387 MB `.amv` walked whole
+  (82 ms, warm cache); `.dav` takes the cheaper tail read
+- [x] `:shared:build` green; anti-FQN clean; no touched `.kt` over 150 lines

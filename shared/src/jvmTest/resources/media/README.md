@@ -39,9 +39,11 @@ in the file names or in the stream metadata.
 | `still.hdr` / `flat.hdr` | Radiance RGBE 64×48 written by ImageMagick: from `plasma:fractal -seed 7`, and from `gradient:red-blue` (compresses 56:1) | PF-003: `reference/still.hdr.png` is the **sRGB source**, not ImageMagick's linear read-back |
 | `still.ai` | a 200×100 pt PDF-compatible `.ai` from ImageMagick: white, a `#3478F6` rectangle inset 20 pt | PF-003: page 1 through PDFBox at 2× |
 | `jxl-*.jxl` | 64×48, encoded by libjxl 0.12's `cjxl` — lossy, lossless, alpha, 3-frame animation (100 ms), recompressed JPEG | PF-003: expected corners are `djxl`'s decode; values and commands in `natives/jxl/README.md` |
-| `dahua.dav` | the first 300 000 bytes of a real Dahua DVR export (starts `DAHUA`, `dhav` demuxer): H.264 1920×1080, 17 frames decode, the 18th is cut | video-formats VF-001: `.dav`, and a container with no duration |
-| `raw.h264` | raw H.264 elementary stream, 160×120, 50 frames, `libopenh264` | VF-001: a stream with no container and no timestamps |
-| `raw-10bit.h264` | raw H.264, 320×180, `yuv420p10le`, one frame (Chromium's `bear-320x180-10bit-frame-0.h264`) | VF-001: 10-bit raw H.264 |
+| `dahua.dav` | the first 300 000 bytes of a real Dahua DVR export (starts `DAHUA`, `dhav` demuxer): H.264 1920×1080, 17 frames decode, the 18th is cut; packets run 1939 ms from a wall-clock origin, `dhav` states 1000 ms | video-formats VF-001: `.dav`, the media timeline's origin, a stated length that is wrong |
+| `raw.h264` | raw H.264 elementary stream, 160×120, 50 frames, `libopenh264` | VF-001: the evidence for excluding raw H.264 — every frame reaches JavaCV with timestamp 0 |
+| `raw-10bit.h264` | raw H.264, 320×180, `yuv420p10le`, one frame (Chromium's `bear-320x180-10bit-frame-0.h264`) | VF-001: 10-bit raw H.264, excluded with `raw.h264` |
+| `noseek.roq` | id RoQ, 64×64 25 fps, 2 s, no stated length — not an app format | VF-001: a container whose `setTimestamp` throws, as `.thp`/`.rpl`/`.mtv`/`.nsv` do |
+| `nolength.amv` | AMV (`avi` demuxer), 128×96 25 fps + AMV ADPCM, 2 s, no stated length | VF-001: a length that has to be counted with the whole-file walk |
 | `blank.bik` | Bink 1, 640×480, one black frame + Bink audio, 520 B (the author's) | VF-001: `.bik` |
 | `realvideo.rm` | RealMedia, RealVideo 2 (`rv20`) 160×120, 2 s | VF-001: `.rm` |
 | `pal.gxf` | GXF, MPEG-2 720×576 25 fps, 2 s — the muxer takes PAL/NTSC sizes only | VF-001: `.gxf` |
@@ -169,6 +171,8 @@ Stills:
 "$FF" -f lavfi -i testsrc2=s=160x120:r=25:d=2 -c:v libopenh264 -f h264 "$D/raw.h264"
 "$FF" -f lavfi -i testsrc2=s=160x120:d=2 -c:v rv20 -f rm "$D/realvideo.rm"
 "$FF" -f lavfi -i testsrc2=s=720x576:r=25:d=2 -c:v mpeg2video -pix_fmt yuv420p -f gxf "$D/pal.gxf"
+"$FF" -f lavfi -i testsrc2=s=64x64:r=25:d=2 -c:v roqvideo -f roq "$D/noseek.roq"
+"$FF" -f lavfi -i testsrc2=s=128x96:r=25:d=2 -f lavfi -i sine=r=22050:d=2 -c:v amv -pix_fmt yuvj420p   -c:a adpcm_ima_amv -ac 1 -block_size 882 "$D/nolength.amv"
 "$FF" -y -f lavfi -i "testsrc2=size=640x480" -frames:v 1 -c:v mjpeg   "$D/still.jpg"
 "$FF" -y -f lavfi -i "testsrc2=size=640x480" -frames:v 1 -c:v libwebp "$D/still.webp"
 ```

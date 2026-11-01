@@ -195,7 +195,21 @@ compose.desktop {
                 Triple("video/x-flv", "flv", "Flash Video"),
                 Triple("video/x-f4v", "f4v", "Flash MP4 Video"),
                 Triple("video/x-dirac", "drc", "Dirac Video"),
-                Triple("video/x-dv", "dv", "Digital Video")
+                Triple("video/x-dv", "dv", "Digital Video"),
+                Triple("video/ogg", "ogv", "Ogg Video"),
+                Triple("video/ogg", "ogm", "Ogg Media Video"),
+                Triple("application/ogg", "ogx", "Ogg Multimedia"),
+                Triple("application/vnd.rn-realmedia", "rm", "RealMedia Video"),
+                Triple("application/vnd.rn-realmedia-vbr", "rmvb", "RealMedia Variable Bitrate Video"),
+                Triple("video/x-nsv", "nsv", "Nullsoft Streaming Video"),
+                Triple("video/x-bink", "bik", "Bink Video"),
+                Triple("video/x-thp", "thp", "Nintendo THP Video"),
+                Triple("video/x-rpl", "rpl", "ARMovie Video"),
+                Triple("video/x-amv", "amv", "AMV Video"),
+                Triple("video/x-mtv", "mtv", "MTV Video"),
+                Triple("video/x-gxf", "gxf", "General eXchange Format Video"),
+                Triple("video/x-xesc", "xesc", "Expression Encoder Screen Capture"),
+                Triple("video/x-dav", "dav", "Dahua DVR Video")
             )
             for ((mime, ext, desc) in mediaAssociations) {
                 fileAssociation(

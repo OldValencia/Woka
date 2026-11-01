@@ -5,6 +5,8 @@ import com.woka.feature.viewer.video.engine.launchResumeSaver
 import com.woka.feature.viewer.video.engine.resumePositionMs
 import com.woka.feature.viewer.video.engine.saveResumePosition
 import com.woka.feature.viewer.video.engine.seek
+import com.woka.feature.viewer.video.engine.sync.lengthMs
+import com.woka.feature.viewer.video.engine.sync.mediaTimeUs
 import com.woka.feature.viewer.video.engine.sync.videoSeekTo
 import com.woka.feature.viewer.video.engine.track.reopenVideoGrabber
 
@@ -35,7 +37,7 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
             grabber.start()
 
             var hdrInfo = grabber.readStreamHdrInfo()
-            val length = grabber.lengthInTime / 1000L
+            val length = grabber.lengthMs(file)
             // Snapshot state, written from `Dispatchers.IO` — it goes in a mutable
             // snapshot or the recomposer's next global advance can drop it. A lost
             // `durationMs` is a video that plays with no seek bar and no timecodes
@@ -106,7 +108,7 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
                         if (durationMs <= 0L) durationMs = grabber.lengthInTime / 1000L
                         durationChecked = true
                     }
-                    val frameTsMs = grabber.timestamp / 1000L
+                    val frameTsMs = grabber.mediaTimeUs / 1000L
                     // Already past its slot: decoded (the stream needs it) but not
                     // converted, which is where the time actually goes (§6).
                     if (pacer.shouldSkip(frameTsMs, playbackSpeed)) {

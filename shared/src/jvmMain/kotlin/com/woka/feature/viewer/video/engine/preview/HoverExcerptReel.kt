@@ -3,6 +3,8 @@ package com.woka.feature.viewer.video.engine.preview
 import androidx.compose.ui.graphics.ImageBitmap
 import com.woka.core.data.StillColorInfo
 import com.woka.feature.viewer.video.engine.decode.toComposeBitmap
+import com.woka.feature.viewer.video.engine.sync.grabImageAt
+import com.woka.feature.viewer.video.engine.sync.lengthMs
 import com.woka.feature.viewer.video.engine.track.readStreamHdrInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -57,13 +59,14 @@ internal fun hoverExcerpts(file: File): Flow<Excerpt> = flow {
         val count = (EXCERPT_SECONDS * fps).roundToInt()
         val frameMs = (1000.0 / fps).roundToInt().toLong()
         val color = grabber.readStreamHdrInfo().let { StillColorInfo(it.transfer, it.isWideGamut) }
-        val length = grabber.lengthInTime.coerceAtLeast(0L)
+        val length = grabber.lengthMs(file) * 1000L
         while (true) {
             POSITIONS.forEachIndexed { index, at ->
-                grabber.setTimestamp((length * at).toLong())
-                val frames = generateSequence { grabber.grabImage()?.toComposeBitmap() }
-                    .take(count)
+                val first = grabber.grabImageAt((length * at).toLong())?.toComposeBitmap()
+                val rest = generateSequence { grabber.grabImage()?.toComposeBitmap() }
+                    .take(count - 1)
                     .toList()
+                val frames = listOfNotNull(first) + rest
                 if (frames.isEmpty()) return@flow
                 emit(Excerpt(index, frames, frameMs, color))
             }

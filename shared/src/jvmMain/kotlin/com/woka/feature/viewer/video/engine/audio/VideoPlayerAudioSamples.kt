@@ -14,9 +14,16 @@ internal suspend fun sendAudioSamples(samples: Array<Buffer>, audioChannel: Chan
     audioChannel.send((samples[0] as ShortBuffer).toPcmBytes())
 }
 
-/** Interleaved S16 samples to the little-endian byte layout the sound line takes. */
+/**
+ * Interleaved S16 samples to the little-endian byte layout the sound line takes.
+ *
+ * Sized by `remaining()`, not `capacity()`: JavaCV reuses one buffer per stream, so
+ * a frame shorter than the largest before it leaves `limit` below `capacity` —
+ * `.thp` 2128 of 2156, `.amv` 3674 of 3676, `.rpl` 2912 of 2954 (VF-001,
+ * 2026-11-01) — and reading to capacity threw `BufferUnderflowException`.
+ */
 internal fun ShortBuffer.toPcmBytes(): ByteArray {
-    val shortArray = ShortArray(capacity())
+    val shortArray = ShortArray(remaining())
     get(shortArray)
     val byteArray = ByteArray(shortArray.size * 2)
     for (i in shortArray.indices) {
