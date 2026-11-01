@@ -2,6 +2,12 @@
 
 Hardware media keys control Woka. ~~And the OS shows a Now Playing entry for it.~~
 
+> **Superseded on Windows, 2026-11-01 (AP-007, `pending/audio-player/`).** SMTC works on Woka's
+> own top-level window: `add_ButtonPressed` returns `S_OK` there, and the keys and the panel both
+> work, focused or not. The `CO_E_NOT_SUPPORTED` below came from the message-only window. The
+> session now belongs to the Now Playing slot, and the AWT hook is gone. Read what follows as
+> history.
+>
 > **Scope cut, and it is the current state of this plan.** The Now Playing panel is **out**, on
 > every platform. Windows SMTC was built to completion — session, title, poster frame, all visible
 > in the flyout — and it would not accept a button handler; details in *Why Now Playing was

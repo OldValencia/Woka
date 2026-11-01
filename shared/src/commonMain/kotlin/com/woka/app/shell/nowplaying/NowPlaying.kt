@@ -31,6 +31,17 @@ interface NowPlayingSource {
 
     /** Brings the playing thing into view: the PiP window to the front, or the viewer open on it. */
     fun reveal()
+
+    /**
+     * Whether the OS media keys may skip, and the skip itself (AP-007). A video in PiP is
+     * one file and offers neither; a track walks its folder.
+     */
+    val hasNext: Boolean get() = false
+    val hasPrevious: Boolean get() = false
+
+    fun next() {}
+
+    fun previous() {}
 }
 
 /**

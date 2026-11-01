@@ -96,7 +96,7 @@ class MediaViewerPlaylist {
  * kept whatever the main window last wrote: turning repeat off in there left the
  * decoder on Repeat File, looping a file the UI said was set to Off (§6).
  *
- * That window has no folder listing on purpose (see `FullscreenSystemControlsEffect`),
+ * That window has no folder listing on purpose — it plays the one file handed to it —
  * so `Repeat.Folder` and shuffle still stop at the end there — a limitation of
  * what it is handed, not a missing effect.
  */

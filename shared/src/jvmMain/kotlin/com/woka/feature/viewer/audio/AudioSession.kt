@@ -85,6 +85,30 @@ object AudioSession {
         return queue.firstOrNull { it.file.absolutePath == path } as? MediaItem.Audio
     }
 
+    /**
+     * The OS media keys' Next and Previous (AP-007). Next takes the walk's own next track,
+     * the one an ended track would start; Previous the track before in the folder's order.
+     */
+    fun hasNext(player: VideoPlayerState): Boolean = player === current && nextAfter(player) != null
+
+    fun hasPrevious(player: VideoPlayerState): Boolean = player === current && previousOf(player) != null
+
+    fun next(player: VideoPlayerState) {
+        if (player !== current) return
+        nextAfter(player)?.let { createOrGet(it, player.volume, queue) }
+    }
+
+    fun previous(player: VideoPlayerState) {
+        if (player !== current) return
+        previousOf(player)?.let { createOrGet(it, player.volume, queue) }
+    }
+
+    private fun previousOf(player: VideoPlayerState): MediaItem.Audio? {
+        val tracks = queue.filterIsInstance<MediaItem.Audio>()
+        val index = tracks.indexOfFirst { it.file.absolutePath == player.file.absolutePath }
+        return if (index > 0) tracks[index - 1] else null
+    }
+
     /** Ends [player] for good and empties the slot if it is still the one held. */
     fun stop(player: VideoPlayerState) {
         if (current === player) current = null

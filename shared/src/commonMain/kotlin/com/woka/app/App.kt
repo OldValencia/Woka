@@ -18,6 +18,7 @@ import com.woka.app.shell.MainShell
 import com.woka.app.shell.StatusBanners
 import com.woka.app.shell.nowplaying.NowPlaying
 import com.woka.app.shell.nowplaying.NowPlayingBubble
+import com.woka.app.shell.nowplaying.NowPlayingSystemSession
 import com.woka.feature.folder.FolderScrollMemory
 import com.woka.feature.search.SearchResults
 import com.woka.feature.search.SearchState
@@ -100,6 +101,7 @@ fun App(
 
             // Now Playing with the sidebar hidden: above the sidebar and every screen (AP-006).
             NowPlayingBubble()
+            NowPlayingSystemSession()
 
             // Settings Overlay
             SettingsOverlay(

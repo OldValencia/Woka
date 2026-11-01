@@ -237,7 +237,7 @@ PiP is the thing that is hard to find today — and audio joins the slot when it
 | AP-005 | merged into AP-004 | retired |
 | [AP-006](tickets/AP-006-now-playing-bubble.md) | The bubble when the sidebar is hidden | **done** 2026-11-01 — checked by the author in the running app |
 | [AP-008](tickets/AP-008-now-playing-flight.md) | The cover flies between row and corner | **done** 2026-11-01 — checked by the author in the running app |
-| AP-007 | SMTC, second attempt (media keys with Woka in the background) | backlog |
+| [AP-007](tickets/AP-007-media-keys-through-smtc.md) | Media keys and the Windows media panel through SMTC, owned by Now Playing | **built** 2026-11-01 — the spike checked by the author (keys focused and minimised, panel shown); open: the by-hand check of the whole |
 | mockup | [`audio-player.html`](../../../mockups/design/audio-player.html) — the viewer and the grid tile for an audio file | **accepted** 2026-11-01 — the spec for AP-003 |
 | [AP-003](tickets/AP-003-audio-plays-in-the-viewer.md) | An audio file opens in the viewer, plays, and carries on in Now Playing (absorbs AP-002) | **done** 2026-11-01 — checked by the author in the running app |
 | AP-002 | merged into AP-003 | retired |
@@ -254,9 +254,11 @@ New surfaces get a mockup before their UI ticket (`feature-docs.md` §6), and th
 
 ## 7. Open
 
-- **Media keys in the background — reopened** by the author (AP-007). Today the keys work only with
-  Woka focused, so a minimised Woka playing music cannot be paused from the keyboard. Read
-  `implemented/media-viewer/system-media-controls.md`, "Why Now Playing was dropped", first.
+- The Windows media panel names the app after the process: `Unknown app` under `gradlew run`
+  (`java.exe`). The packaged `Woka.exe` carries `FileDescription: Woka`, so the installed app is
+  expected to read "Woka". That is not yet checked on the packaged build.
+- macOS (`MPRemoteCommandCenter` with `MPNowPlayingInfoCenter`) and Linux (MPRIS over D-Bus) stay
+  in the backlog until there is a machine to check them on.
 
 ## 8. Decision log
 
@@ -302,3 +304,7 @@ New surfaces get a mockup before their UI ticket (`feature-docs.md` §6), and th
 | 2026-11-01 | The nine formats left from AP-001 | keep `vqf`, `oma`, `aob`, `mp1`; cut `ape`, `mpc`, `qcp`, `xa`, `ra` | measured on downloaded samples (§1a): the four play to the end and seek; `ape` and `mpc` carry no timestamps, `qcp`, `xa` and two `ra` codecs of three throw on seek |
 | 2026-11-01 | `ape` and `mpc` | a backlog ticket (AP-010), not this one | popular lossless and audiophile formats, so worth the engine change, but the change is to the audio loop, not to the library |
 | 2026-11-01 | `ape` and `mpc` — revisited | cut for good; AP-010 dropped | the author has never met either; the fix touches the audio loop every format runs through, for two formats nobody here plays. Reopened only by a real file that needs it |
+| 2026-11-01 | How AP-007 reaches the keys | SMTC on Woka's real window, not `RegisterHotKey` | the author: cooperate rather than seize. SMTC hands the keys to the session that played last, so Spotify and a browser keep theirs, and the panel shows what plays. `RegisterHotKey` would have taken the keys from every app while the slot held anything |
+| 2026-11-01 | Why SMTC works now | Woka's own top-level `HWND` (`ComposeWindow.windowHandle`) | measured: `add_ButtonPressed` returns `S_OK` on it. On the first attempt's message-only window it returned `CO_E_NOT_SUPPORTED`. The handler is asked for its delegate IID and `IAgileObject`, and refuses the marshalling interfaces harmlessly |
+| 2026-11-01 | Who owns the session | the Now Playing slot (music, PiP and fullscreen); a film open in the viewer keeps its own effect | the author: right over the viewer. Keys work with the viewer closed, and an emptied slot gives the keys back. Fullscreen and PiP are one window that already holds the slot, so its own effect went |
+| 2026-11-01 | The AWT key hook | removed on Windows | SMTC also takes the keys while Woka is focused; both together would deliver each press twice |

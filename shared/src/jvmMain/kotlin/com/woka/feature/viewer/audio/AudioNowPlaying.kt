@@ -61,6 +61,14 @@ internal class AudioNowPlaying(
 
     override fun stop() = AudioSession.stop(player)
 
+    override val hasNext: Boolean get() = AudioSession.hasNext(player)
+
+    override val hasPrevious: Boolean get() = AudioSession.hasPrevious(player)
+
+    override fun next() = AudioSession.next(player)
+
+    override fun previous() = AudioSession.previous(player)
+
     override fun reveal() {
         val parent = player.file.absoluteFile.parent ?: return
         AppDependencies.router.navigateTo(

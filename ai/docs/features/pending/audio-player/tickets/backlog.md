@@ -12,10 +12,12 @@ slot that already exists. AP-004 and AP-005 were merged into
 
 ## Media keys
 
-### AP-007 — SMTC, second attempt
-A time-boxed spike, measured before anything is built on it. The first attempt
-(`implemented/media-viewer/system-media-controls.md`) got the flyout's title and poster working and
-`add_ButtonPressed` refused with `CO_E_NOT_SUPPORTED` before touching the delegate. Leads, in order:
-Woka's real top-level `HWND` instead of a hidden window (the one untried lead recorded there); a
-`Windows.Media.Playback.MediaPlayer`'s own controls, which need no window; JMTC's prebuilt DLL last.
-Success = the hardware Play/Pause key reaches a minimised Woka. Fails → the limitation stays, logged.
+### AP-011 — macOS media keys and Now Playing
+`MPRemoteCommandCenter` for the keys, `MPNowPlayingInfoCenter` for Control Centre, over FFM into
+`libobjc` — the design in `implemented/media-viewer/system-media-controls.md` Phase 4, behind the
+same `SystemMediaControls` seam AP-007 fills on Windows. Built when there is a Mac to verify it on,
+run from `createDistributable`.
+
+### AP-012 — Linux MPRIS
+The `org.mpris.MediaPlayer2` D-Bus interface for the keys and the desktop's media widget. Only if
+Linux becomes a target; today the project does not test on it.

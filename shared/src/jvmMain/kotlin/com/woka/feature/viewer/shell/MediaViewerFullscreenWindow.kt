@@ -22,7 +22,6 @@ import com.woka.feature.viewer.pip.PipCornerFlash
 import com.woka.feature.viewer.pip.handlePipKeyEvent
 import com.woka.feature.viewer.pip.pipWindowDraggable
 import com.woka.feature.viewer.pip.rememberPipWindowMode
-import com.woka.feature.viewer.video.FullscreenSystemControlsEffect
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -80,7 +79,8 @@ fun MediaViewerFullscreenWindow(
 
         val pipMode = rememberPipWindowMode(window, windowState, PipManager.nativeSize)
 
-        FullscreenSystemControlsEffect(item, videoState, fsSettings.systemMediaControls)
+        // No media session of its own: this window's video holds the Now Playing slot,
+        // and the slot owns the session (AP-007).
         // The player carried in from the main window keeps its own repeat/speed
         // fields; without this, changing either in this window's ⚙ popover writes
         // settings that never reach it (§6).
