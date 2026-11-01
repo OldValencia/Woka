@@ -1,7 +1,10 @@
 package com.woka.feature.viewer.shell
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import com.woka.app.AppDependencies
 import com.woka.core.data.MediaItem
 import com.woka.core.data.WokaSettings
 import com.woka.core.ui.image.rememberReloadKey
@@ -61,6 +64,11 @@ internal fun MediaViewerActiveItemEffects(
             state.offsetY = 0f
         }
     }
+
+    // Now Playing's bubble hides over its own file (AP-006).
+    val nowPlaying = remember { AppDependencies.nowPlaying }
+    LaunchedEffect(state.activeItemPath) { nowPlaying.shownInViewer = state.activeItemPath }
+    DisposableEffect(Unit) { onDispose { nowPlaying.shownInViewer = null } }
 
     if (showConflictDialog) {
         VideoAlreadyOpenedDialog(

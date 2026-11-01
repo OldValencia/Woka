@@ -221,8 +221,8 @@ PiP is the thing that is hard to find today — and audio joins the slot when it
 | [AP-001](tickets/AP-001-audio-format-probe.md) | Probe: every candidate format through the player's grabber | **measured** 2026-11-01 for every encodable format (§1a); open: 9 formats need downloaded samples — nothing on screen |
 | [AP-004](tickets/AP-004-now-playing-row.md) | Now Playing: the slot and its sidebar row, PiP video as the source (absorbs AP-005) | **done** 2026-11-01 — `:shared:build` green; checked by the author in the running app |
 | AP-005 | merged into AP-004 | retired |
-| AP-006 | The bubble — see [backlog](tickets/backlog.md) | backlog, after AP-004 |
-| AP-008 | The flight between row and corner | backlog, after AP-006 |
+| [AP-006](tickets/AP-006-now-playing-bubble.md) | The bubble when the sidebar is hidden | **done** 2026-11-01 — checked by the author in the running app |
+| [AP-008](tickets/AP-008-now-playing-flight.md) | The cover flies between row and corner | **done** 2026-11-01 — checked by the author in the running app |
 | AP-007 | SMTC, second attempt (media keys with Woka in the background) | backlog |
 | mockup | `audio-player.html` — the viewer for an audio file | not started — before AP-003 |
 | AP-002, AP-003 | engine without a picture, audio in the viewer | backlog |

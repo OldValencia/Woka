@@ -4,6 +4,7 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.ImageBitmap
 
 /**
@@ -45,6 +46,15 @@ class NowPlaying {
 
     var source: NowPlayingSource? by mutableStateOf(null)
         private set
+
+    /**
+     * The file the viewer has open, or null with no viewer. The bubble hides while it
+     * is the slot's own file: the thing it points at is already on screen (AP-006).
+     */
+    var shownInViewer: String? by mutableStateOf(null)
+
+    /** The sidebar row's cover, in root coordinates: where the bubble's flight starts or lands (AP-008). */
+    var rowCover: Rect? by mutableStateOf(null)
 
     /**
      * Holds [next], stopping the source held before it. The same path is the same

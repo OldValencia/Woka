@@ -29,4 +29,22 @@ internal object NowPlayingTokens {
     /** `.nprow .t b` / `.t span`. */
     val TitleSize = 13.sp
     val SubtitleSize = 11.sp
+
+    /** `.bub`: the anchor, its distance from the window's edges, and where the top corners start. */
+    val BubbleSize = 48.dp
+    val BubbleEdge = 16.dp
+    val BubbleTop = 64.dp
+
+    /** `.ring`: the box the progress arc is drawn in, the cover inside it, and the stroke. */
+    val RingBox = 46.dp
+    val BubbleCover = 40.dp
+    val RingStroke = 2.dp
+
+    /** `.bub .more .t`. */
+    val CapsuleText = 150.dp
+
+    /** `.more`'s width transition, the snap to a corner, the fade in and out. */
+    const val CapsuleMs = 260
+    const val SnapMs = 320
+    const val FadeMs = 200
 }

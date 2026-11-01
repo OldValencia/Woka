@@ -39,6 +39,7 @@ interface LibrarySettings {
     fun removePinnedSession(path: String)
     fun setLastSession(session: PinnedSession)
     fun setSidebarVisible(visible: Boolean)
+    fun setNowPlayingCorner(corner: WindowCorner)
     fun setMediaFilter(filter: String)
     fun restoreUnlinkedFolder(before: WokaSettings, path: String)
 }

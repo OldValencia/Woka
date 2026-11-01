@@ -17,6 +17,7 @@ import com.woka.app.navigation.ScreenHost
 import com.woka.app.shell.MainShell
 import com.woka.app.shell.StatusBanners
 import com.woka.app.shell.nowplaying.NowPlaying
+import com.woka.app.shell.nowplaying.NowPlayingBubble
 import com.woka.feature.folder.FolderScrollMemory
 import com.woka.feature.search.SearchResults
 import com.woka.feature.search.SearchState
@@ -96,6 +97,9 @@ fun App(
             // it started on: an export keeps running once the viewer opens over the
             // grid, and a save keeps running once the editor has closed (ME-130).
             StatusBanners()
+
+            // Now Playing with the sidebar hidden: above the sidebar and every screen (AP-006).
+            NowPlayingBubble()
 
             // Settings Overlay
             SettingsOverlay(

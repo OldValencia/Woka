@@ -28,10 +28,15 @@ import org.jetbrains.compose.resources.painterResource
  * video glyph on a raised surface, as a grid tile's `VideoCover` falls back.
  */
 @Composable
-internal fun NowPlayingCover(source: NowPlayingSource, size: Dp, shape: Shape) {
+internal fun NowPlayingCover(
+    source: NowPlayingSource,
+    size: Dp,
+    shape: Shape,
+    modifier: Modifier = Modifier
+) {
     val cover by produceState<ImageBitmap?>(null, source.path) { value = source.cover() }
     Box(
-        modifier = Modifier
+        modifier = modifier
             .size(size)
             .clip(shape)
             .background(Theme.colors.surfaceElevated)
