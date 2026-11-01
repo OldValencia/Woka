@@ -219,7 +219,7 @@ PiP is the thing that is hard to find today — and audio joins the slot when it
 |---|---|---|
 | mockup | [`now-playing.html`](../../../mockups/design/now-playing.html) — row, bubble, capsule, drag, flight | **accepted** 2026-11-01 — the spec for AP-004…AP-006 |
 | [AP-001](tickets/AP-001-audio-format-probe.md) | Probe: every candidate format through the player's grabber | **measured** 2026-11-01 for every encodable format (§1a); open: 9 formats need downloaded samples — nothing on screen |
-| [AP-004](tickets/AP-004-now-playing-row.md) | Now Playing: the slot and its sidebar row, PiP video as the source (absorbs AP-005) | **specified** 2026-11-01 — next to build |
+| [AP-004](tickets/AP-004-now-playing-row.md) | Now Playing: the slot and its sidebar row, PiP video as the source (absorbs AP-005) | **done** 2026-11-01 — `:shared:build` green; checked by the author in the running app |
 | AP-005 | merged into AP-004 | retired |
 | AP-006 | The bubble — see [backlog](tickets/backlog.md) | backlog, after AP-004 |
 | AP-008 | The flight between row and corner | backlog, after AP-006 |

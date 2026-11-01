@@ -16,6 +16,7 @@ import com.woka.app.navigation.Screen
 import com.woka.app.navigation.ScreenHost
 import com.woka.app.shell.MainShell
 import com.woka.app.shell.StatusBanners
+import com.woka.app.shell.nowplaying.NowPlaying
 import com.woka.feature.folder.FolderScrollMemory
 import com.woka.feature.search.SearchResults
 import com.woka.feature.search.SearchState
@@ -30,6 +31,7 @@ object AppDependencies : KoinComponent {
     val router: Router by inject()
     val settingsRepository: SettingsRepository by inject()
     val scrollMemory: FolderScrollMemory by inject()
+    val nowPlaying: NowPlaying by inject()
 }
 
 @Composable

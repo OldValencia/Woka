@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.woka.app.AppDependencies
 import com.woka.app.collectField
 import com.woka.app.navigation.Screen
+import com.woka.app.shell.nowplaying.NowPlayingRow
 import com.woka.core.data.PinnedSession
 import com.woka.core.ui.theme.Theme
 import com.woka.core.utils.openDirectoryPicker
@@ -121,6 +122,7 @@ fun Sidebar(
                     SidebarFolders(linked, tree, current, menu, pinned, actions)
                     SidebarPinned(pinned, linked, current, menu, actions)
                 }
+                NowPlayingRow()
                 SidebarFoot(prominent = linked.isEmpty(), onLink = {
                     val path = openDirectoryPicker("Link folder")
                     if (path != null) {

@@ -71,6 +71,12 @@ fun MediaViewerFullscreenWindow(
             window.toFront()
             window.requestFocus()
         }
+        // Now Playing's row asks from the main window, where this frame is out of reach.
+        LaunchedEffect(PipManager.frontRequests) {
+            if (PipManager.frontRequests == 0) return@LaunchedEffect
+            window.toFront()
+            window.requestFocus()
+        }
 
         val pipMode = rememberPipWindowMode(window, windowState, PipManager.nativeSize)
 

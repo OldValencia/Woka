@@ -106,3 +106,11 @@ nothing (`tickets.md` §4). AP-005's id is retired and never reused.
 - Every edited `.kt` stays ≤ 150 lines, and the anti-FQN grep is clean.
 - `./gradlew.bat :shared:build` is green. Read a lone `SettingsPersistenceTest` or
   `SettingsRecordsTest` failure as the known lock race (2026-11-01): rerun them alone.
+
+## Result — 2026-11-01
+- `:shared:build` green. `NowPlayingTest` 4/4, `PipNowPlayingTest` 6/6, `PipReturnTest` 3/3.
+- **By hand, the author, 2026-11-01:** the row appears and leaves with PiP, play/pause follows the
+  player, the click brings PiP forward, the row matches the mockup — "всё работает".
+- Built as specified, with one addition: `PipNowPlaying.stop()` closes PiP only while PiP still
+  holds that player. Without it, `claim` stopping the old source would close the film `openPip`
+  had just installed (`PipNowPlayingTest`, "a second film in PiP…").
