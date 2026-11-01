@@ -1,9 +1,8 @@
 package com.woka.feature.viewer.video.engine
 
-import com.woka.feature.viewer.video.engine.audio.lineLevel
+import com.woka.feature.viewer.video.engine.decode.Deinterlace
 import com.woka.feature.viewer.video.engine.decode.FrameRetention
 import com.woka.feature.viewer.video.engine.decode.RenderScale
-import com.woka.feature.viewer.video.engine.decode.setVolumeInternal
 import com.woka.feature.viewer.video.engine.decode.startPlayback
 import com.woka.feature.viewer.video.engine.probe.HdrInfo
 import com.woka.feature.viewer.video.engine.track.VideoPlayerTracks
@@ -79,6 +78,7 @@ class VideoPlayerState(
 
     val tracks = VideoPlayerTracks()
     internal val renderScale = RenderScale() // decode-size policy (§6)
+    internal val deinterlace = Deinterlace() // VF-102
 
     // Displayed frame rate against the rate the file declares. Read by the notice
     // that explains a struggling machine; costs one call per presented frame.
@@ -130,13 +130,6 @@ class VideoPlayerState(
 
     init {
         startPlayback()
-    }
-
-    fun updateVolume(newVolume: Float) {
-        volume = newVolume
-        soundLineInstance?.let { line ->
-            setVolumeInternal(line, lineLevel(newVolume))
-        }
     }
 
     // Transport (seek / play-pause) lives in VideoPlayerControls.kt.

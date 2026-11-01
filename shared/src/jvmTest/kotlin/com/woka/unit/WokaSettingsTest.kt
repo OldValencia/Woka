@@ -123,4 +123,11 @@ class WokaSettingsTest {
         val back = json.decodeFromString<WokaSettings>(json.encodeToString(settings))
         assertEquals(prefs, back.trackPrefsPerFile["D:/Films/a.mkv"])
     }
+
+    @Test
+    fun `deinterlace Off survives and a file written before the field is Auto`() {
+        val off = WokaSettings(deinterlace = false)
+        assertFalse(json.decodeFromString<WokaSettings>(json.encodeToString(off)).deinterlace)
+        assertTrue(json.decodeFromString<WokaSettings>("""{"shuffle":true}""").deinterlace)
+    }
 }

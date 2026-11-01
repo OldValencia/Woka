@@ -10,6 +10,7 @@ import androidx.compose.ui.focus.FocusRequester
 import com.woka.app.shell.EditorPresence
 import com.woka.core.data.SettingsRepository
 import com.woka.feature.viewer.video.engine.VideoPlayerState
+import com.woka.feature.viewer.video.engine.updateVolume
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 

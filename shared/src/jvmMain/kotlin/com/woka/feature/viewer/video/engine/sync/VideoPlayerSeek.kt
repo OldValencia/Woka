@@ -2,6 +2,8 @@ package com.woka.feature.viewer.video.engine.sync
 
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.engine.decode.VideoFrame
+import com.woka.feature.viewer.video.engine.decode.filteredPicture
+import com.woka.feature.viewer.video.engine.decode.pictureTimeUs
 import com.woka.feature.viewer.video.engine.decode.publishFrame
 import com.woka.feature.viewer.video.engine.probe.HdrInfo
 
@@ -29,11 +31,16 @@ internal fun VideoPlayerState.videoSeekTo(
     hdrInfo: HdrInfo? = null
 ) {
     while (videoChannel.tryReceive().isSuccess) {}
+    // The graph holds neighbouring frames from before the jump (VF-102).
+    deinterlace.reset()
     if (targetMs <= 0L) {
         try { grabber.restart() } catch (_: Exception) {}
         while (scope.isActive) {
             val frame = grabber.grabFrame(false, true, true, false, false) ?: break
-            if (frame.image != null) { publishFrame(frame.toComposeBitmap(), hdrInfo); break }
+            if (frame.image == null) continue
+            val picture = filteredPicture(frame) ?: continue
+            publishFrame(picture.toComposeBitmap(), hdrInfo)
+            break
         }
         return
     }
@@ -51,8 +58,10 @@ internal fun VideoPlayerState.videoSeekTo(
     if (grabber.mediaTimeUs > targetMs * 1000L + 100000L) {
         try { grabber.restart() } catch (_: Exception) {}
     }
+    deinterlace.reset()
     val landed = decodeForwardTo(grabber, targetMs) ?: run {
         try { grabber.restart() } catch (_: Exception) {}
+        deinterlace.reset()
         decodeForwardTo(grabber, targetMs)
     }
     landed?.let {
@@ -61,17 +70,20 @@ internal fun VideoPlayerState.videoSeekTo(
     }
 }
 
-/** The first picture at [targetMs], or the last one before the stream ended. */
+/**
+ * The first picture at [targetMs], or the last one before the stream ended. When
+ * deinterlacing, a picture is the graph's — one frame behind the grabber — and its
+ * own time is what is compared.
+ */
 private fun VideoPlayerState.decodeForwardTo(grabber: FFmpegFrameGrabber, targetMs: Long): Frame? {
     var lastGoodFrame: Frame? = null
     while (scope.isActive) {
         val frame = grabber.grabFrame(false, true, true, false, false) ?: break
-        if (grabber.mediaTimeUs >= targetMs * 1000L) {
-            if (frame.image != null) { lastGoodFrame?.close(); lastGoodFrame = frame.clone(); break }
-        } else if (frame.image != null) {
-            lastGoodFrame?.close()
-            lastGoodFrame = frame.clone()
-        }
+        if (frame.image == null) continue
+        val picture = filteredPicture(frame) ?: continue
+        lastGoodFrame?.close()
+        lastGoodFrame = picture.clone()
+        if (pictureTimeUs(grabber, picture) >= targetMs * 1000L) break
     }
     return lastGoodFrame
 }

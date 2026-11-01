@@ -19,6 +19,7 @@ import com.woka.feature.viewer.video.PlayerSettingsOverlay
 import com.woka.feature.viewer.video.SubtitleVerticalOverlay
 import com.woka.feature.viewer.video.VolumeVerticalOverlay
 import com.woka.feature.viewer.video.engine.VideoPlayerState
+import com.woka.feature.viewer.video.engine.updateVolume
 import com.woka.feature.viewer.video.engine.decode.selectAudioTrack
 
 /**

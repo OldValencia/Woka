@@ -36,6 +36,7 @@ internal fun VideoPlayerState.reopenVideoGrabber(
 
     val grabber = openVideoGrabber(videoStreamIndex)
     grabber.start()
+    deinterlace.open(grabber) // the graph follows the grabber's mode and size (VF-102)
     // Decode back to where the user was, tagged with the NEW track's HDR metadata
     // so the landed frame is drawn through the right painter from the first paint.
     val resumeMs = currentPositionMs

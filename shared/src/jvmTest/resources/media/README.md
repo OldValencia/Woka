@@ -47,6 +47,7 @@ in the file names or in the stream metadata.
 | `blank.bik` | Bink 1, 640×480, one black frame + Bink audio, 520 B (the author's) | VF-001: `.bik` |
 | `realvideo.rm` | RealMedia, RealVideo 2 (`rv20`) 160×120, 2 s | VF-001: `.rm` |
 | `pal.gxf` | GXF, MPEG-2 720×576 25 fps, 2 s — the muxer takes PAL/NTSC sizes only | VF-001: `.gxf` |
+| `interlaced.ts` | MPEG-TS, MPEG-2 720×576 25i, 1 s, **every frame flagged interlaced TFF** (`field_order=tt`) — two 288-line fields woven from a 50 fps `testsrc2` | VF-102: deinterlace detection, `DeinterlaceGraph`, the comb score |
 | `jxr-*.jxr` | 64×48, written by Windows' own WIC encoder — 8-bit, alpha, lossy, 16-bit gray, half-float HDR | PF-003: against `reference/jxr-*.jxr.png`, WIC's own decode |
 | `still.bmp` | 160×120, uncompressed | §5.1's bucket C: the one format with neither a recipe slot nor an encoder. Small because a BMP is uncompressed — at 640×480 it would be 900 KB of a 3.3 MB corpus, and nothing asks about its pixels |
 | `exif_rot90.jpg` | `still.jpg` with EXIF `Orientation=6` | **F3**: a correct loader returns 480×640 |
@@ -173,6 +174,7 @@ Stills:
 "$FF" -f lavfi -i testsrc2=s=720x576:r=25:d=2 -c:v mpeg2video -pix_fmt yuv420p -f gxf "$D/pal.gxf"
 "$FF" -f lavfi -i testsrc2=s=64x64:r=25:d=2 -c:v roqvideo -f roq "$D/noseek.roq"
 "$FF" -f lavfi -i testsrc2=s=128x96:r=25:d=2 -f lavfi -i sine=r=22050:d=2 -c:v amv -pix_fmt yuvj420p   -c:a adpcm_ima_amv -ac 1 -block_size 882 "$D/nolength.amv"
+"$FF" -f lavfi -i testsrc2=s=720x288:r=50:d=1 -vf "weave=first_field=top,setfield=tff" -c:v mpeg2video -b:v 2M -flags +ildct+ilme -top 1 -f mpegts "$D/interlaced.ts"
 "$FF" -y -f lavfi -i "testsrc2=size=640x480" -frames:v 1 -c:v mjpeg   "$D/still.jpg"
 "$FF" -y -f lavfi -i "testsrc2=size=640x480" -frames:v 1 -c:v libwebp "$D/still.webp"
 ```

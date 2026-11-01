@@ -137,8 +137,9 @@ have fixed, and the author chose the fix for each (2026-11-01, §6):
 |---|---|---|
 | [VF-001](tickets/VF-001-all-video-formats.md) | Every remaining video format, one pass | **built** 2026-11-01 — open: the 440 MB `.dav` |
 | [VF-002](tickets/VF-002-associate-without-settings.md) | "Associate Formats" stops opening Windows Settings | **done** 2026-10-24 |
-| VF-101 | Duration for the existing formats too | backlog |
-| VF-102 | Deinterlacing, with a setting | backlog — deferred until VF-001, investigation in `backlog.md` |
+| VF-101 | Duration for the existing formats too | **closed** 2026-11-01 — measured, nothing to build (§7) |
+| [VF-102](tickets/VF-102-deinterlace-in-the-player.md) | Deinterlace interlaced video in the player | **built** 2026-11-01 |
+| [VF-106](tickets/VF-106-deinterlace-row.md) | "Deinterlace: Auto / Off" in the player's ⚙ popover | **built** 2026-11-01 |
 | VF-103 | Truncated and damaged files | backlog |
 | VF-104 | "Save as MP4" for formats nothing else opens | backlog |
 | VF-105 | Rotation from metadata | backlog |
@@ -178,5 +179,90 @@ have fixed, and the author chose the fix for each (2026-11-01, §6):
 | 2026-11-01 | `dhav`'s own length | ignored, always counted | 1000 ms on a fixture whose packets run 1939 ms |
 | 2026-11-01 | `.thp` with noise for audio | kept, no special case | the one sample is broken, not the format; muting a stream that exists would be a heuristic proven on one file |
 | 2026-11-01 | `BufferUnderflowException` opening `.thp` | `toPcmBytes` reads `remaining()`, not `capacity()` | JavaCV reuses one sample buffer; a shorter frame leaves `limit` below `capacity` — also hit `.amv` and `.rpl` (`PcmBytesTest`) |
+| 2026-11-01 | VF-101: duration for `vob`/`ts`/`mpg`/`evo`/`mod` | closed, no code | 19 real samples: the stated length is right everywhere (§7); a missing one already falls to `lengthMs`'s count for every format |
+| 2026-11-01 | Deinterlace: what decides | the decoded frame's interlaced flag, not the stream's `field_order` | `field_order` names the wrong parity on 2 of 16 samples, calls a film interlaced, and says `unknown` on an interlaced one (§7) |
+| 2026-11-01 | Deinterlace: per frame or per field | per frame, 25i → 25p | the author; keeps one grab = one picture through pacer and seek. 50p is a later ticket if wanted |
+| 2026-11-01 | Deinterlace: whose filter | our own libavfilter graph, not `FFmpegFrameFilter` | measured: JavaCV's drops the frame flags and crashes on RAW planar frames (§7) |
+| 2026-11-01 | Deinterlace: setting | Auto / Off, global, **only in the player's ⚙ popover and only on a file whose frames are interlaced** | the author: not in the Settings screen, and no row where the filter would do nothing |
 | 2026-10-24 | Raw `.hevc`/`.h265`/`.265` | dropped | no encoder in the bundle for a fixture, one sample of unknown origin, rare in practice |
 | 2026-10-24 | "Associate Formats" opens Windows Default apps | removed, no replacement link (VF-002) | the user has to click Woka in for every format by hand in Windows anyway; the jump added a window and nothing else |
+
+## 7. Existing MPEG-family formats — duration and interlacing (2026-11-01)
+
+Measured with the bundled `ffprobe.exe` over 19 samples from `samples.ffmpeg.org` (`MPEG2/`,
+`MPEG-VOB/`, `MPEG-VOB/interlaced/`, `MPEG2/interlaced/`, `HDTV/`, `evob/`, `ts/`, `camera-dvr/`), not
+committed — re-download into `WOKA_VIDEO_SAMPLES`. "Span" = last − first video packet pts. "Interlaced"
+= frames with `interlaced_frame=1` among the first 200 decoded.
+
+| Sample | Demuxer | Stated s | Span s | `field_order` | Interlaced, TFF |
+|---|---|---|---|---|---|
+| `01c56b0dc1.ts` (H.264 1080i) | mpegts | 10.73 ¹ | 9.42 | tt | 73/73, TFF |
+| `channel9hdtv_ac3.ts` (MPEG-2 1080i) | mpegts | 16.93 | 16.48 | tt | 198/198, TFF |
+| `mpeg2_field_encoding.ts` | mpegts | 1.62 | 1.60 | bb | 31/31, BFF |
+| `res_change_ffmpeg_aspect.ts` | mpegts | 3.99 ¹ | 3.44 | tt | 84/84, TFF |
+| `vid_0x80.ts` | mpegts | 1.42 | 1.17 | bb | 28/28, BFF |
+| `prev_seek_bug.ts` | mpegts | 8.84 | 8.88 | progressive | — |
+| `TITLE01-ANGLE1.VOB` | mpeg | 8.02 | 7.84 | tt | 198/198, TFF |
+| `V.VOB` | mpeg | 11.23 | 11.06 | **bb** | 181/181, **TFF** |
+| `VTS_06_0.VOB` (NTSC) | mpeg | 38.74 | 38.71 | tt | 89/89, TFF |
+| `lasvegas-vts_01_1.vob` | mpeg | 10.50 | 10.44 | **bb** | 200/200, **TFF** |
+| `burosch1.mpg` | mpeg | 29.96 | 29.92 | bb | 200/200, BFF |
+| `tv2-1_25.mpg` | mpeg | 17.96 ¹ | 17.36 | tt | 198/198, TFF |
+| `impossible_seek.mpg` | mpeg | 23.88 | 23.76 | **unknown** | 192/198, TFF |
+| `dallas.mpg` (MPEG-1) | mpeg | 119.61 | 119.54 | progressive | 0/198 |
+| `eof.mpeg` | mpeg | 4.46 | 4.44 | progressive | 0/110 |
+| `Example_JVC_MOD_VIDEO.MOD` | mpeg | 16.54 | 16.48 | tt | 200/200, TFF |
+| `HV001T01.EVO` (H.264 1080i) | mpeg | 16.38 | 16.37 | tt | 100/100, TFF |
+| `sample.evo` (VC-1 film) | mpeg | 10.69 | 10.63 | **tt** | **0/200**, 99 repeat-field |
+| `zzz.mpg` | **iv8** | **N/A** | 6.04 | unknown | — |
+
+¹ Audio runs past the last video packet; the stated length is the file's, and right.
+
+**Duration (VF-101): nothing to fix.** Every stated length matches its span within a frame or the
+audio tail. The one missing length (`zzz.mpg`, a DVR's `iv8` in an `.mpg`) already goes to
+`measuredDurationMs` through `lengthMs`, which applies to every format. The case left — VOBs
+concatenated across a timestamp reset — would fool the counter (last pts − start) the same way.
+
+**Interlacing (VF-102).** Committed fixtures are all progressive frame by frame, `dahua.dav` included
+(0/17 — the backlog's worry about forcing it is moot). The stream's `field_order` is wrong in bold on
+four samples; the frame flags are right on all of them.
+
+**JavaCV, from the 1.5.14 bytecode.** `FFmpegFrameGrabber.processImage`, COLOR mode:
+`av_frame_copy_props(picture_rgb, picture)`, then `frame.opaque = picture_rgb` — the flags reach the
+RGBA frame. RAW mode: `frame.opaque = picture`. `FFmpegFrameFilter.push(Frame)` → `pushImage`, which
+fills a fresh `image_frame` with format/width/height only — **flags lost**, so `parity` and `deint`
+are set by us.
+
+**Through the player's grabber — `DeinterlaceProbe`, 2026-11-01.** (a) The RGBA frame's
+`Frame.opaque` flags agree with ffprobe on all 21 files above plus the fixtures: `interlaced.ts` 25/25
+TFF, `chapters.mkv` 0/36, `sample.evo` 0/200 interlaced with TFF set on 100 — so parity is never
+read off a frame that is not interlaced. (b) **`FFmpegFrameFilter` crashes the JVM on RAW frames**
+(`av_buffersrc_add_frame_flags` from `pushImage`: one buffer read as three planes) — the graph is our
+own (`DeinterlaceGraph`), fed the decoder's `AVFrame` with its flags, so `parity=auto:deint=interlaced`
+work as in the CLI. (c) Its pictures trail the push by exactly one frame; times must be read in the
+**sink's** time base, `bwdif` halves the source's. (d) Comb score on RGBA G (`combScore`), frame 12 of
+`interlaced.ts`: **2.48 raw → 0.92** through the graph.
+
+**Fixture and comb score.** `interlaced.ts` (447 KB):
+`ffmpeg -f lavfi -i testsrc2=s=720x288:r=50:d=1 -vf "weave=first_field=top,setfield=tff" -c:v
+mpeg2video -b:v 2M -flags +ildct+ilme -top 1 -f mpegts interlaced.ts` — 25 frames 720×576, `tt`, all
+flagged TFF. Comb score = mean over odd rows y and even x of `|p(y) − (p(y−1)+p(y+1))/2|` on the gray
+plane, frame at 0.5 s: raw **1.95**, `bwdif=send_frame:parity=auto:deint=interlaced` (CLI) **0.48**,
+wrong parity (`bff`) **0.75**.
+
+**Cost — moved from the backlog (2026-10-24).**
+
+- **Cost, measured** — 1080i25 MPEG-2, 10 s (250 frames / 500 fields), bundled `ffmpeg.exe -threads
+  auto -benchmark -f null`, rtime:
+
+  | `-vf` | rtime |
+  |---|---|
+  | none | 58 ms |
+  | `format=rgba` | 68 ms |
+  | `yadif` (send_frame, 250 out) | 108 ms |
+  | `bwdif` (send_field, 500 out) | 85 ms |
+  | `yadif,format=rgba` / `bwdif,format=rgba` | 128 / 122 ms |
+  | `format=rgba,yadif,format=rgba` / same with `bwdif` | 327 / 339 ms |
+
+  → **`bwdif`**: faster than `yadif` while emitting twice the frames, and better quality. On RGBA
+  input both cost ~3× — the second reason the graph sits before the RGBA conversion.

@@ -64,7 +64,7 @@ internal fun PlaybackModeRows(
 
 /** Label on the left, current value on the right; the whole row is the target. */
 @Composable
-private fun ValueRow(label: String, value: String, active: Boolean, onClick: () -> Unit) {
+internal fun ValueRow(label: String, value: String, active: Boolean, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
