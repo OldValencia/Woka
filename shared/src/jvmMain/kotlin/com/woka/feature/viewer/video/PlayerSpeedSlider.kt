@@ -5,10 +5,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import com.woka.core.ui.theme.Theme
 import com.woka.core.data.PlaybackSpeed
 import com.woka.core.ui.components.DetentSlider
 import com.woka.core.ui.components.DetentSliderColors
+import com.woka.core.ui.components.resetOnRightClick
 
 private val SPAN = PlaybackSpeed.MAX - PlaybackSpeed.MIN
 
@@ -47,6 +49,10 @@ internal fun PlayerSpeedSlider(speed: Float, onSpeedChange: (Float) -> Unit) {
             knob = Theme.viewer.onScrim
         ),
         onTap = { onSpeedChange(speedAt(it)) },
+        modifier = Modifier.resetOnRightClick {
+            dragSpeed = null
+            onSpeedChange(PlaybackSpeed.NORMAL)
+        },
         detents = listOf(fractionOf(PlaybackSpeed.NORMAL)),
         onDragStart = { dragSpeed = speedAt(it) },
         onDrag = { dragSpeed = speedAt(it) },

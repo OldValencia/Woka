@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.woka.core.data.volumeCeiling
+import com.woka.core.ui.components.resetOnRightClick
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.viewer.shell.PopoverAnchor
 import com.woka.feature.viewer.shell.ToolbarPopover
@@ -112,7 +113,11 @@ private fun VolumeColumn(
         MediaVerticalSlider(
             value = volume,
             onValueChange = onVolumeChange,
-            modifier = Modifier.width(16.dp).height(80.dp).testTag(VOLUME_SLIDER_TAG),
+            modifier = Modifier
+                .width(16.dp)
+                .height(80.dp)
+                .testTag(VOLUME_SLIDER_TAG)
+                .resetOnRightClick { onVolumeChange(1f) },
             ceiling = ceiling,
             // Only with boost on: a detent on a range that ends at 100 % would snap the
             // top of the ordinary slider to itself.

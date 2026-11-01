@@ -5,8 +5,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
 import com.woka.core.data.MediaItem
+import com.woka.core.data.isPlayable
 import com.woka.core.data.RepeatMode
 import com.woka.core.data.WokaSettings
+import com.woka.feature.viewer.audio.AudioSession
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.engine.decode.setDeinterlace
 import com.woka.feature.viewer.video.engine.setPlaybackSpeed
@@ -22,7 +24,8 @@ import com.woka.feature.viewer.video.engine.setPlaybackSpeed
  * - `Repeat.Folder` — advance through the order, wrapping at the end.
  * - shuffle on, repeat not Folder — advance through the shuffled order, stop at
  *   the end. Every file plays once before any repeats.
- * - neither — return null, i.e. keep the old behaviour of stopping at EOF.
+ * - neither — return null, i.e. keep the old behaviour of stopping at EOF; with
+ *   [playThrough] (music, AP-003) walk on and stop at the end of the order instead.
  */
 @Stable
 class MediaViewerPlaylist {
@@ -61,12 +64,13 @@ class MediaViewerPlaylist {
         currentId: String,
         mediaItems: List<MediaItem>,
         shuffle: Boolean,
-        repeat: RepeatMode
+        repeat: RepeatMode,
+        playThrough: Boolean = false
     ): String? {
-        if (repeat != RepeatMode.Folder && !shuffle) return null
+        if (repeat != RepeatMode.Folder && !shuffle && !playThrough) return null
 
         val videoPaths = mediaItems
-            .filterIsInstance<MediaItem.Video>()
+            .filter { it.isPlayable }
             .map { it.file.absolutePath }
         if (videoPaths.size < 2) return null
         // Before the order is built, not after: an image or a file from another
@@ -80,7 +84,7 @@ class MediaViewerPlaylist {
         return when {
             index < walk.lastIndex -> walk[index + 1]
             repeat == RepeatMode.Folder -> walk.first()
-            else -> null // shuffle without folder-repeat stops once exhausted
+            else -> null // without folder-repeat the walk stops once exhausted
         }
     }
 }
@@ -126,6 +130,8 @@ internal fun MediaViewerPlaybackEffects(
     val playlist = rememberMediaViewerPlaylist()
     LaunchedEffect(videoState?.reachedEnd) {
         if (videoState?.reachedEnd != true) return@LaunchedEffect
+        // A track moves on in the session, open viewer or not (AP-003).
+        if (AudioSession.owns(videoState)) return@LaunchedEffect
         val next = playlist.nextPath(
             currentId = state.currentId,
             mediaItems = mediaItems,

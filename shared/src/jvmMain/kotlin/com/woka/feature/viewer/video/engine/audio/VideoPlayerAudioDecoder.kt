@@ -7,7 +7,6 @@ import com.woka.feature.viewer.video.engine.decode.disposeAudioLine
 import com.woka.feature.viewer.video.engine.decode.openAudioGrabber
 import com.woka.feature.viewer.video.engine.decode.reopenAudioGrabber
 import com.woka.feature.viewer.video.engine.sync.audioTimeFor
-import com.woka.feature.viewer.video.engine.sync.mediaTimeUs
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -118,24 +117,12 @@ internal fun VideoPlayerState.startAudioDecodeLoop(audioChannel: Channel<ByteArr
 
                 val frame = grabber.grabFrame(true, false, true, false, false)
                 if (frame == null) {
+                    // An audio-only file ends here; its clock reads this (AP-003).
+                    generation.markAudioEnd(audioSeekGen, audioTsMs)
                     delay(30.milliseconds)
                     continue
                 }
-                frame.samples?.let { samples ->
-                    // Lazy self-heal: if the eager init was skipped (channel count
-                    // came back 0 on open) but audio is actually decoding, bring the
-                    // sound line up now.
-                    if (soundLineInstance == null) initAudio(grabber, audioChannel)
-                    // Media time, unaffected by atempo — the sync comparisons above
-                    // stay in the same units at every speed.
-                    audioTsMs = grabber.mediaTimeUs / 1000L
-                    val chunks = tempo?.process(frame)
-                    if (chunks != null) {
-                        chunks.forEach { audioChannel.send(it) }
-                    } else {
-                        sendAudioSamples(samples, audioChannel)
-                    }
-                }
+                deliverAudioFrame(grabber, frame, tempo, audioChannel, audioSeekGen)?.let { audioTsMs = it }
             }
         } catch (e: CancellationException) {
             throw e

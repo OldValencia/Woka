@@ -19,6 +19,8 @@ internal fun enterFullscreen(
     onClose: (String) -> Unit
 ) {
     if (videoState == null || activeItem == null) return
+    // A track has no picture to carry; its life outside the viewer is Now Playing (AP-003).
+    if (activeItem is MediaItem.Audio) return
     PipManager.openPip(activeItem, videoState, state.sizeMode, state.offsetX, state.offsetY)
     onClose(state.currentId)
 }

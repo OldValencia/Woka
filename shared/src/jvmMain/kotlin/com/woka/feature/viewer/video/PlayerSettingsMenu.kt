@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.woka.app.AppDependencies
 import com.woka.feature.viewer.video.engine.VideoPlayerState
+import com.woka.feature.viewer.video.engine.decode.isAudioOnly
 import com.woka.feature.viewer.video.engine.track.resetTracksForThisFile
 import com.woka.feature.viewer.video.engine.track.selectVideoTrack
 import com.woka.feature.viewer.shell.PopoverListRow
@@ -34,7 +35,10 @@ internal fun PlayerSettingsMenuList(videoState: VideoPlayerState) {
     val videoTracks = videoState.tracks.mediaTracks.video
     // A single video stream is the overwhelmingly common case; showing a
     // one-entry track list there would be noise, so it stays hidden (§2.3).
-    val showVideoTracks = videoTracks.size > 1
+    // A track's ⚙ is how it plays and nothing else: no picture, no sync, no track
+    // memory (AP-003, `audio-player.html`). Its cover would even list as a video track.
+    val audio = videoState.isAudioOnly
+    val showVideoTracks = videoTracks.size > 1 && !audio
 
     Column(
         modifier = Modifier
@@ -67,6 +71,7 @@ internal fun PlayerSettingsMenuList(videoState: VideoPlayerState) {
         )
         PlayerSpeedNotice(videoState, settings.playbackSpeed)
         PlayerChapterSection(videoState)
+        if (audio) return@Column
         PlayerSyncSection(videoState)
         // The same global flag the Settings panel writes — a second way in, not a
         // per-file override. Only does anything in fullscreen, where the bars are.

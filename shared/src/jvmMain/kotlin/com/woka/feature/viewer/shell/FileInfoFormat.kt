@@ -1,6 +1,7 @@
 package com.woka.feature.viewer.shell
 
 import com.woka.core.data.MediaItem
+import com.woka.feature.viewer.audio.AudioTags
 import com.woka.feature.viewer.video.model.MediaTrack
 import com.woka.feature.viewer.video.model.MediaTracks
 import java.text.SimpleDateFormat
@@ -30,6 +31,10 @@ internal fun formatBitrate(bps: Long): String = when {
     else -> "$bps bps"
 }
 
+/** 44100 → "44.1 kHz", 48000 → "48 kHz". */
+internal fun formatSampleRate(hz: Int): String =
+    "%.1f".format(hz / 1000.0).removeSuffix(".0").removeSuffix(",0") + " kHz"
+
 internal fun subtitleFormat(codec: String): String = when (codec.lowercase()) {
     "subrip" -> "SRT"
     "ass", "ssa" -> "ASS"
@@ -44,8 +49,13 @@ internal fun subtitleFormat(codec: String): String = when (codec.lowercase()) {
 internal fun MediaTrack.resolution(): String? =
     if (width != null && height != null) "${width}×${height}" else null
 
-internal fun audioDetail(a: MediaTrack): String =
-    listOfNotNull(a.codec.uppercase(), a.channelLayout).joinToString(" · ")
+/** [full] for a file of sound alone (AP-003): there the rate and bitrate are the point. */
+internal fun audioDetail(a: MediaTrack, full: Boolean = false): String = listOfNotNull(
+    a.codec.uppercase(),
+    a.channelLayout,
+    a.sampleRate?.takeIf { full }?.let(::formatSampleRate),
+    a.bitRate?.takeIf { full }?.let(::formatBitrate)
+).joinToString(" · ")
 
 internal fun subtitleDetail(s: MediaTrack): String =
     listOfNotNull(subtitleFormat(s.codec), s.language).joinToString(" · ")
@@ -58,11 +68,17 @@ internal fun Long.toReadableSize(): String = when {
 }
 
 /** Full plaintext of the dialog, for the Copy button (reliable "copy all"). */
-internal fun buildInfoText(item: MediaItem, tracks: MediaTracks?, durationMs: Long?): String = buildString {
+internal fun buildInfoText(
+    item: MediaItem,
+    tracks: MediaTracks?,
+    durationMs: Long?,
+    tags: AudioTags? = null
+): String = buildString {
     appendLine("Name: ${item.file.name}")
     appendLine("Path: ${item.file.absolutePath}")
     appendLine("Size: ${item.file.length().toReadableSize()}")
     appendLine("Created: ${SimpleDateFormat("yyyy-MM-dd HH:mm").format(Date(item.file.lastModified()))}")
+    tags?.let { trackTagRows(it).forEach { (label, value) -> appendLine("$label: $value") } }
     if (tracks == null) return@buildString
     val videos = tracks.video
     if (videos.size == 1) videos[0].resolution()?.let { appendLine("Resolution: $it") }
@@ -77,6 +93,6 @@ internal fun buildInfoText(item: MediaItem, tracks: MediaTracks?, durationMs: Lo
         )
         appendLine("$prefix: ${parts.joinToString(", ")}")
     }
-    tracks.audio.forEach { a -> appendLine("Audio: ${a.label} — ${audioDetail(a)}") }
+    tracks.audio.forEach { a -> appendLine("Audio: ${a.label} — ${audioDetail(a, full = videos.isEmpty())}") }
     tracks.subtitle.forEach { s -> appendLine("Subtitle: ${s.label} — ${subtitleDetail(s)}") }
 }.trimEnd()

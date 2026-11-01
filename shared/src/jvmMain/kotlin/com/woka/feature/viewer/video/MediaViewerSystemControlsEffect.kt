@@ -9,6 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import com.woka.core.data.MediaItem
+import com.woka.core.data.isPlayable
 import com.woka.core.system.MediaCommand
 import com.woka.core.system.MediaPlaybackState
 import com.woka.core.system.MediaSessionInfo
@@ -35,7 +36,7 @@ internal fun MediaViewerSystemControlsEffect(
     enabled: Boolean
 ) {
     val videos = remember(mediaItems) {
-        mediaItems.filterIsInstance<MediaItem.Video>().map { it.file.absolutePath }
+        mediaItems.filter { it.isPlayable }.map { it.file.absolutePath }
     }
     val index = remember(videos, state.currentId) { videos.indexOf(state.currentId) }
 

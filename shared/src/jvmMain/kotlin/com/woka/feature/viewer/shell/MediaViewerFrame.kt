@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
+import com.woka.feature.viewer.audio.AudioStage
 import com.woka.feature.viewer.video.engine.activeCue
 import com.woka.feature.viewer.video.SubtitleBitmapLayer
 
@@ -35,6 +36,11 @@ fun MediaViewerFrame(
     subtitleBottomPadding: Dp,
     actions: ViewerActions
 ) {
+    // A track has no frame to zoom or pan: its centre is the cover and the tags (AP-003).
+    if (media is AudioMedia) {
+        AudioStage(media)
+        return
+    }
     val video = media as? ViewerMedia.Video
     val frameToDraw = video?.player?.currentFrame ?: targetPoster
     // Read here, in the same composition as the bitmap above, so the pair the draw

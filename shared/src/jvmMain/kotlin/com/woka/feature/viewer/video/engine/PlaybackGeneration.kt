@@ -72,6 +72,30 @@ internal class PlaybackGeneration {
     @Volatile
     private var rebaseRequested: Boolean = false
 
+    /**
+     * Audio-only playback (AP-003): the seek generation the audio loop has fed the
+     * line under, and where it ran out of samples under which generation. Keyed by
+     * generation, so an EOF met just before a seek can never end the file after it.
+     */
+    @Volatile
+    private var audioFed: Int = -1
+
+    @Volatile
+    private var audioEnd: Pair<Int, Long>? = null
+
+    fun markAudioFed(generation: Int) {
+        audioFed = generation
+    }
+
+    val isAudioFed: Boolean get() = audioFed == seek
+
+    fun markAudioEnd(generation: Int, atMs: Long) {
+        audioEnd = generation to atMs
+    }
+
+    /** Where the audio ran out under [generation], or null while it has not. */
+    fun audioEndFor(generation: Int): Long? = audioEnd?.takeIf { it.first == generation }?.second
+
     /** Target first, then the counter: the bump is the signal that the data is there. */
     fun requestSeek(toMs: Long) {
         targetMs = toMs

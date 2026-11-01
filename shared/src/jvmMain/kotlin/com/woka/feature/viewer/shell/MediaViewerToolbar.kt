@@ -15,6 +15,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.woka.core.data.MediaItem
+import com.woka.core.data.isPlayable
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.viewer.video.MediaViewerVideoControls
 
@@ -65,7 +66,7 @@ fun MediaViewerToolbar(
                 hasPrev = hasPrev,
                 hasNext = hasNext,
                 hasCarousel = chrome.isCarouselEnabled && mediaItems.size > 1 && !chrome.isFullscreen,
-                isVideo = currentItem is MediaItem.Video
+                isVideo = currentItem?.isPlayable == true
             )
             .background(Theme.colors.background.copy(alpha = 0.35f)),
         contentAlignment = Alignment.TopCenter
@@ -98,7 +99,7 @@ fun MediaViewerToolbar(
                 .fillMaxWidth()
                 .padding(bottom = 32.dp)
         ) {
-            if (currentItem is MediaItem.Video) {
+            if (currentItem?.isPlayable == true) {
                 MediaViewerVideoControls(
                     videoState = media.player,
                     mediaVolume = mediaVolume,
@@ -108,6 +109,7 @@ fun MediaViewerToolbar(
                     onSettingsHoverChange = { hover.setHovered(HoverTarget.Settings, it) },
                     onSeekerHoverChange = { hover.setHovered(HoverTarget.Seeker, it) },
                     isFullscreen = chrome.isFullscreen,
+                    canFullscreen = currentItem is MediaItem.Video,
                     onToggleFullscreen = onToggleFullscreen,
                     soundBoost = soundBoost
                 )

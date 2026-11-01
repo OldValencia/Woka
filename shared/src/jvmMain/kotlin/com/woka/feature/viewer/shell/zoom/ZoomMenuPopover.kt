@@ -73,7 +73,8 @@ internal fun ZoomMenuPopover(
             bounds = bounds,
             container = container,
             native = native,
-            onPercent = onPercent
+            onPercent = onPercent,
+            onReset = onReset
         )
 
         ZoomMenuInputRow(

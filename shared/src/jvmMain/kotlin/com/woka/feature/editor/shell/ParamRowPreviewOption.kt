@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.woka.core.ui.components.DetentSlider
 import com.woka.core.ui.components.DetentSliderColors
+import com.woka.core.ui.components.resetOnRightClick
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.editor.core.FloatParam
 import com.woka.feature.editor.core.ParamSet

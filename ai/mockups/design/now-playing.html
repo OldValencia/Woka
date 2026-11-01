@@ -84,16 +84,18 @@ svg{display:block}
 
 /* ---------- Now Playing row: above Link Folder… ---------- */
 /* equal 8 dp above and below: centred between the two separators */
-.np{padding:8px 10px;border-top:1px solid var(--sep)}
+.np{padding:4px 10px;border-top:1px solid var(--sep)}
 .np[hidden]{display:none}
-.nprow{height:44px;display:flex;align-items:center;gap:9px;padding:0 6px 0 6px;border-radius:9px;cursor:pointer;
+.nprow{height:40px;display:flex;align-items:center;gap:9px;padding:0 6px 0 6px;border-radius:9px;cursor:pointer;
   position:relative}
 /* no hover fill: the row already sits in its own block (the author, 2026-11-01) */
 .nprow .t{flex:1;min-width:0}
 .nprow .t b{display:block;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nprow .t span{display:block;font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.nprow .x{opacity:0}
-.nprow:hover .x{opacity:1}
+.nprow .rb{width:22px;height:22px}
+.nprow .rb + .rb{margin-left:-7px}
+.nprow .x{width:0;opacity:0;overflow:hidden;transition:width .15s,opacity .15s}
+.nprow:hover .x{width:22px;opacity:1}
 
 /* cover: the track's art, a video poster, or the placeholder */
 .cover{width:32px;height:32px;border-radius:6px;flex:none;position:relative;overflow:hidden;

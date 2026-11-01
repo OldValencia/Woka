@@ -224,8 +224,10 @@ PiP is the thing that is hard to find today — and audio joins the slot when it
 | [AP-006](tickets/AP-006-now-playing-bubble.md) | The bubble when the sidebar is hidden | **done** 2026-11-01 — checked by the author in the running app |
 | [AP-008](tickets/AP-008-now-playing-flight.md) | The cover flies between row and corner | **done** 2026-11-01 — checked by the author in the running app |
 | AP-007 | SMTC, second attempt (media keys with Woka in the background) | backlog |
-| mockup | `audio-player.html` — the viewer for an audio file | not started — before AP-003 |
-| AP-002, AP-003 | engine without a picture, audio in the viewer | backlog |
+| mockup | [`audio-player.html`](../../../mockups/design/audio-player.html) — the viewer and the grid tile for an audio file | **accepted** 2026-11-01 — the spec for AP-003 |
+| [AP-003](tickets/AP-003-audio-plays-in-the-viewer.md) | An audio file opens in the viewer, plays, and carries on in Now Playing (absorbs AP-002) | **built** 2026-11-01, `:shared:build` green but for the known lock race — open: the by-hand check |
+| AP-002 | merged into AP-003 | retired |
+| AP-009 | `Music` filter, file associations | backlog, after AP-003 |
 
 ## 6. Mockups
 
@@ -271,4 +273,15 @@ New surfaces get a mockup before their UI ticket (`feature-docs.md` §6), and th
 | 2026-11-01 | `attached_pic` | the cover, never the picture or the clock | measured as a one-picture video stream; treated as video it ends playback after one frame |
 | 2026-11-01 | Audio clock source | samples handed to the line | chunk timestamps fail at the edges (WMA flush at 0); the count cannot |
 | 2026-11-01 | `now-playing.html` review | accepted: progress ring, `×` in row and capsule, at-rest glyph; row loses its hover fill | the author; the row already sits in its own block |
+| 2026-11-01 | `audio-player.html` review | side arrows only; codec/rate/length in the Info panel, not under the title; paused cover shrinks and dims slightly; a click on the cover toggles play | the author |
+| 2026-11-01 | Audio clock source — revisited | a wall clock × speed, gated on the first fed chunk, EOF from the audio loop; **replaces** "samples handed to the line" | read against the code: the audio loop already follows an external clock (200 ms lead, 400 ms resync, seek gate); counting samples would rewrite the writer and its `atempo` accounting |
 | 2026-11-01 | One mockup or two | two: `now-playing.html` now, `audio-player.html` before AP-003 | Now Playing is built first and is not audio-specific |
+| 2026-11-01 | Who walks the folder for music | `AudioSession`, open viewer or not; the viewer follows the track it was on | the author: a track that ends with the viewer closed must not stop the music |
+| 2026-11-01 | Repeat Off for music | plays the folder through to its end, then stops (films still stop after themselves) | the author |
+| 2026-11-01 | Length on the grid tile | none; the caption reads `Audio · <size>` | the author; a length means opening every file in the folder |
+| 2026-11-01 | A video opened over playing music | asks first, as a second video over PiP does ("Music Is Playing") | the author |
+| 2026-11-01 | Clock arithmetic | nanoseconds carried between ticks | truncating to ms ran the clock 2.2 % slow; the lead throttle starved the line and a song broke up (measured: drift −336 ms over 15 s → −18 ms, line underruns 4 → 0) |
+| 2026-11-01 | Now Playing block height | 48 dp: 4 dp above and below a 40 dp row (was 8 + 44 + 8) | the author: the block read too tall |
+| 2026-11-01 | A track opened over a video in PiP | asks first, the PiP dialog's other half ("Close it and play this track?") | the author |
+| 2026-11-01 | Fit/Fill and zoom for a track | hidden; Info's divider goes with them | the author: the cover is not a picture to size |
+| 2026-11-01 | The line under a track's title | the artist alone; album, year and genre move to Info's `Track` section, beside codec, channels, sample rate, bitrate and length | the author: "artist — album" read as unfamiliar; Info's audio rows were pulled forward from AP-009 |

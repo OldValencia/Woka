@@ -36,6 +36,7 @@ object Icons {
         val Image = Res.drawable.image
         val File = Res.drawable.file_present
         val Video = Res.drawable.videocam
+        val MusicNote = Res.drawable.music_note
         val Link = Res.drawable.link
         val ChevronRight = Res.drawable.keyboard_arrow_right
         val Collapse = Res.drawable.collapse_content

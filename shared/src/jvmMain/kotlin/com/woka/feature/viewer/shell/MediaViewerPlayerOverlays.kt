@@ -80,11 +80,14 @@ internal fun MediaViewerPlayerOverlays(
             player = video.player,
             onHover = { state.hover.setHovered(HoverTarget.Subtitle, it) }
         )
+    }
+    // Any player, a track's included (AP-003): its ⚙ is where Repeat and Shuffle live.
+    media?.player?.let { player ->
         PlayerSettingsOverlay(
             isVisible = state.hover.visibleTarget == HoverTarget.Settings,
             bottomPadding = bottomPadding,
             alignment = alignment,
-            player = video.player,
+            player = player,
             onHover = { state.hover.setHovered(HoverTarget.Settings, it) }
         )
     }
@@ -92,9 +95,10 @@ internal fun MediaViewerPlayerOverlays(
         FileInfoDialog(
             activeItem,
             onDismiss = { onShowInfoDialogChange(false) },
-            mediaTracks = video?.player?.tracks?.mediaTracks,
-            durationMs = video?.player?.durationMs,
-            selectedAudioIndex = video?.player?.tracks?.selectedAudioIndex
+            // `media?.player`, not `video`: a track has its streams too (AP-003).
+            mediaTracks = media?.player?.tracks?.mediaTracks,
+            durationMs = media?.player?.durationMs,
+            selectedAudioIndex = media?.player?.tracks?.selectedAudioIndex
         )
     }
 }

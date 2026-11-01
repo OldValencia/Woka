@@ -1,6 +1,10 @@
 package com.woka.app.shell.nowplaying
 
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,7 +24,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.geometry.Rect
@@ -39,7 +42,7 @@ import com.woka.core.ui.theme.Theme
  * into view.
  *
  * **No hover fill** — the author, 2026-11-01: the row already sits in its own block
- * between two hairlines, so a second outline around it says nothing. Hover shows `×`.
+ * between two hairlines, so a second outline around it says nothing. Hover slides `×` out.
  */
 @Composable
 fun NowPlayingRow() {
@@ -47,7 +50,6 @@ fun NowPlayingRow() {
     val source = nowPlaying.source ?: return
     val hover = remember { MutableInteractionSource() }
     val hovered by hover.collectIsHoveredAsState()
-    val closeAlpha by animateFloatAsState(if (hovered) 1f else 0f, tween(150))
     Column(modifier = Modifier.fillMaxWidth()) {
         Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Theme.colors.border))
         Row(
@@ -80,10 +82,18 @@ fun NowPlayingRow() {
             val play = if (source.isPlaying) Icons.Static.Pause else Icons.Static.Play
             val playLabel = if (source.isPlaying) "Pause" else "Play"
             val playTint = Theme.colors.textPrimary
-            RoundIconButton(play, NowPlayingTokens.PlayGlyph, playLabel, playTint, source::togglePlayPause)
-            Box(modifier = Modifier.alpha(closeAlpha)) {
-                val closeTint = Theme.colors.textTertiary
-                RoundIconButton(Icons.Static.Close, NowPlayingTokens.CloseGlyph, "Stop", closeTint, source::stop)
+            val button = NowPlayingTokens.RowButtonSize
+            Row(horizontalArrangement = Arrangement.spacedBy(NowPlayingTokens.RowButtonGap)) {
+                RoundIconButton(play, NowPlayingTokens.PlayGlyph, playLabel, playTint, source::togglePlayPause, button)
+                // Slides out on hover rather than fading in place, so at rest the text has its width.
+                AnimatedVisibility(
+                    visible = hovered,
+                    enter = expandHorizontally(tween(150)) + fadeIn(tween(150)),
+                    exit = shrinkHorizontally(tween(150)) + fadeOut(tween(150))
+                ) {
+                    val closeTint = Theme.colors.textTertiary
+                    RoundIconButton(Icons.Static.Close, NowPlayingTokens.CloseGlyph, "Stop", closeTint, source::stop, button)
+                }
             }
         }
     }

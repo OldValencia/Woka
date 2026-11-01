@@ -22,7 +22,7 @@ internal fun viewerEditAction(
     state: MediaViewerState,
     strip: FrameStripModel,
     onEdit: (String, Int) -> Unit
-): (() -> Unit)? = editActionOf(isVideo) {
+): (() -> Unit)? = if (activeItem is MediaItem.Audio) null else editActionOf(isVideo) {
     val file = activeItem?.file ?: File(state.currentId)
     if (file.isReadOnlyMedia) {
         EditorNoticeStatus.show()

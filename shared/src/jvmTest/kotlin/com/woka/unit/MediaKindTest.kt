@@ -34,6 +34,15 @@ class MediaKindTest {
         }
     }
 
+    /** AP-003: the formats AP-001 measured playable; `.ogg` is audio even with Theora inside. */
+    @Test
+    fun `every listed audio extension classifies as audio and plays`() {
+        listOf("mp3", "flac", "m4a", "wav", "ogg", "opus", "wma", "aac", "mlp").forEach { extension ->
+            assertEquals(MediaKind.Audio, named("track.$extension").mediaKind(), extension)
+            assertTrue(mediaItemOrNull(named("track.$extension")) is MediaItem.Audio, extension)
+        }
+    }
+
     @Test
     fun `the extension is matched case-insensitively`() {
         assertEquals(MediaKind.Image, named("PHOTO.JPG").mediaKind())

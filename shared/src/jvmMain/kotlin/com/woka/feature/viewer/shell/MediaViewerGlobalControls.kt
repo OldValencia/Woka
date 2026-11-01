@@ -65,6 +65,8 @@ fun MediaViewerNormalControls(
      * stays and only the argument is false.
      */
     showHdrMode: Boolean = true,
+    /** Fit/Fill and zoom; false for a track, whose cover is not a picture to size (AP-003). */
+    showSizeControl: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val override = LocalCanvasOverride.current
@@ -75,7 +77,7 @@ fun MediaViewerNormalControls(
         // it owns the picture, and the viewer underneath is frozen (see CanvasZoom).
         if (zoom != null) {
             CanvasZoomControl(zoom)
-        } else {
+        } else if (showSizeControl) {
             // The two callbacks are the same lambda here and that is not an
             // oversight: for the viewer, "put the frame back" *is* zeroing the
             // offset, and no zoom rides along with it. Only the editor's pill has
@@ -96,9 +98,12 @@ fun MediaViewerNormalControls(
             HdrModeControl()
         }
 
-        PillGap()
-        PillDivider()
-        PillGap()
+        // A divider separates Info from something; with nothing before it, none.
+        if (zoom != null || showSizeControl || showHdrMode) {
+            PillGap()
+            PillDivider()
+            PillGap()
+        }
         InfoButton(isInfoOpen, onInfo)
 
         // One group, so the pill narrows in a single movement rather than closing two
@@ -111,37 +116,5 @@ fun MediaViewerNormalControls(
                 if (onEdit != null) EditGroup(onEdit)
             }
         }
-    }
-}
-
-/**
- * The fullscreen/PiP window's row. Info and Edit are **not** here: this window has
- * no file open in the sense they mean, and both were wired to no-op lambdas —
- * buttons that looked live and did nothing. The carousel icon stays as the
- * deliberately inert indicator its own tooltip describes.
- */
-@Composable
-fun MediaViewerFullscreenControls(
-    sizeMode: SizeMode,
-    containerSize: IntSize,
-    nativeSize: IntSize,
-    onSizeModeChange: (SizeMode) -> Unit,
-    onOffsetReset: () -> Unit,
-    carouselMode: CarouselVisibility,
-    onToggleCarousel: () -> Unit,
-    isPipWindow: Boolean,
-    onTogglePipWindow: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    MediaViewerControlsContainer(modifier) {
-        SizeControl(
-            sizeMode, containerSize, nativeSize, onSizeModeChange, onOffsetReset,
-            onRecentre = onOffsetReset
-        )
-
-        PillDivider()
-
-        PipWindowButton(isPipWindow, onTogglePipWindow)
-        ToggleCarouselButton(carouselMode, onToggleCarousel, isFullscreen = true)
     }
 }

@@ -45,7 +45,7 @@ internal fun RowText(text: String, size: TextUnit, color: Color, weight: FontWei
 }
 
 /**
- * `.rb`: a 26 dp circle with a hover fill. Not `ToolbarIconButton` — that is the bar's
+ * `.rb`: a circle with a hover fill — 26 dp in the capsule, [size] in the row. Not `ToolbarIconButton` — that is the bar's
  * 30×28 rounded square with a fixed 15 dp glyph, and the mockup draws these round and
  * smaller, with a 13 dp play glyph and a 10 dp `×`.
  */
@@ -55,7 +55,8 @@ internal fun RoundIconButton(
     glyph: Dp,
     label: String,
     rest: Color,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    size: Dp = NowPlayingTokens.ButtonSize
 ) {
     val source = remember { MutableInteractionSource() }
     val hovered by source.collectIsHoveredAsState()
@@ -65,7 +66,7 @@ internal fun RoundIconButton(
     )
     Box(
         modifier = Modifier
-            .size(NowPlayingTokens.ButtonSize)
+            .size(size)
             .clip(CircleShape)
             .background(fill)
             .hoverable(source)

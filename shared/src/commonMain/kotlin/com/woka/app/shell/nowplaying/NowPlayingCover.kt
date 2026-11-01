@@ -18,14 +18,17 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.woka.core.data.MediaKind
+import com.woka.core.data.mediaKind
 import com.woka.core.ui.icons.Icons
 import com.woka.core.ui.theme.Theme
 import org.jetbrains.compose.resources.painterResource
+import java.io.File
 
 /**
  * `.cover`: the source's own picture, cropped square — a PiP video's poster crops its
  * middle — with a 1 dp ring. Until the picture arrives, or when there is none, the
- * video glyph on a raised surface, as a grid tile's `VideoCover` falls back.
+ * video glyph — a note for a track — on a raised surface, as `VideoCover` falls back.
  */
 @Composable
 internal fun NowPlayingCover(
@@ -52,8 +55,9 @@ internal fun NowPlayingCover(
                 contentScale = ContentScale.Crop
             )
         } else {
+            val audio = File(source.path).mediaKind() == MediaKind.Audio
             Image(
-                painter = painterResource(Icons.Static.Video),
+                painter = painterResource(if (audio) Icons.Static.MusicNote else Icons.Static.Video),
                 contentDescription = null,
                 modifier = Modifier.size(size * 0.46f),
                 colorFilter = ColorFilter.tint(Theme.colors.textTertiary)

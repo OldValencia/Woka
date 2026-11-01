@@ -10,20 +10,11 @@ slot that already exists. AP-004 and AP-005 were merged into
 
 ## Audio — after
 
-### AP-002 — The engine plays a file with no picture
-`VideoPlayerState` opens an audio-only file: no video loop, no HDR/rotation/picture-filter reads on
-a missing stream, the clock advanced by the audio writer from samples handed to the line. Seek,
-speed, repeat-file and EOF behave as on video. Shape decided by AP-001's answer on `attached_pic`.
-Integration tests through `PlayerHarness` on the AP-001 fixtures. Shows nothing alone — likely
-merged into AP-003.
-
-### AP-003 — An audio file opens in the viewer and plays
-`MediaKind.Audio` / `MediaItem.Audio` / `AUDIO_EXTENSIONS` (the list AP-001 measured), every
-exhaustive `when` and the 19 `MediaItem.Video` sites decided one by one. Grid tile: cover or
-placeholder, no hover reel. Viewer: cover, title/artist from tags, the bar without picture-only
-controls; arrows and auto-advance over audio files only; no resume or watched marks. `Music` in the
-grid filter; editor entry hidden. Joins the Now Playing slot. File associations +
-`WindowsFileAssociationsTest` total. Needs `audio-player.html` first.
+### AP-009 — Audio in the library
+The `Music` grid filter beside Photos and Videos; `AUDIO_EXTENSIONS` joins
+`ALL_SUPPORTED_MEDIA_EXTENSIONS`, `mediaAssociations` in `desktopApp/build.gradle.kts` and
+`WindowsFileAssociationsTest`'s total. AP-003 is the part that plays; the Info panel's audio rows
+went into it (2026-11-01).
 
 ## Media keys
 

@@ -57,6 +57,7 @@ private fun AVStream.toMediaTrack(index: Int, number: Int, type: TrackType): Med
     val codecId = par.codec_id()
     val disposition = disposition()
     val isVideo = type == TrackType.Video
+    val isAudio = type == TrackType.Audio
     val audioInfo = if (type == TrackType.Audio) par.channelInfo() else null
     return MediaTrack(
         index = index,
@@ -70,9 +71,10 @@ private fun AVStream.toMediaTrack(index: Int, number: Int, type: TrackType): Med
         width = if (isVideo) par.width().takeIf { it > 0 } else null,
         height = if (isVideo) par.height().takeIf { it > 0 } else null,
         frameRate = if (isVideo) avg_frame_rate().toFps() else null,
-        bitRate = if (isVideo) par.bit_rate().takeIf { it > 0 } else null,
+        bitRate = if (isVideo || isAudio) par.bit_rate().takeIf { it > 0 } else null,
         channels = audioInfo?.first,
         channelLayout = audioInfo?.second,
+        sampleRate = if (isAudio) par.sample_rate().takeIf { it > 0 } else null,
         isTextBased = if (type == TrackType.Subtitle) subtitleIsTextBased(codecId) else null
     )
 }

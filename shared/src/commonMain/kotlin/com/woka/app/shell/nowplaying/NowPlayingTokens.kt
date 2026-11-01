@@ -8,12 +8,12 @@ import androidx.compose.ui.unit.sp
  * 2026-11-01). Each value names the CSS rule it comes from, as `SidebarTokens` does.
  */
 internal object NowPlayingTokens {
-    /** `.np`: the block between the two hairlines — the same 8 dp above and below the row. */
-    val BlockVertical = 8.dp
+    /** `.np`: the block between the two hairlines — the same 4 dp above and below the row (tightened 2026-11-01). */
+    val BlockVertical = 4.dp
     val BlockHorizontal = 10.dp
 
     /** `.nprow`. */
-    val RowHeight = 44.dp
+    val RowHeight = 40.dp
     val RowPadding = 6.dp
     val RowGap = 9.dp
 
@@ -23,6 +23,13 @@ internal object NowPlayingTokens {
 
     /** `.rb`: a round button, and the glyphs inside it. */
     val ButtonSize = 26.dp
+
+    /**
+     * `.nprow .rb`: the row's buttons, smaller and closer so the text keeps the width
+     * (the author, 2026-11-01). `×` takes no room until hovered.
+     */
+    val RowButtonSize = 22.dp
+    val RowButtonGap = 2.dp
     val PlayGlyph = 13.dp
     val CloseGlyph = 10.dp
 

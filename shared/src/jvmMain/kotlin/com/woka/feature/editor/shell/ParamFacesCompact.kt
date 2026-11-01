@@ -28,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.woka.core.ui.components.resetOnRightClick
 import com.woka.core.ui.icons.Icons
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.editor.core.ParamFace

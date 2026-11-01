@@ -5,6 +5,8 @@ import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.ImageFrameSet
 import com.woka.core.data.StillColorInfo
 import com.woka.core.data.MediaItem
+import com.woka.core.data.isPlayable
+import com.woka.feature.viewer.audio.AudioCover
 import com.woka.core.ui.image.ImageBitmapCache
 import com.woka.feature.viewer.image.ImageLoader
 import com.woka.feature.viewer.image.StillPreview
@@ -33,10 +35,10 @@ object MediaThumbnails {
         ImageBitmapCache[ImageBitmapCache.key(item.file.absolutePath, frameIndex)]?.let { return it }
         return withContext(ImageBitmapCache.ioDispatcher) {
             decoded(fallback = null, report = true) {
-                if (item is MediaItem.Video) {
-                    VideoThumbnailExtractor.load(item)
-                } else {
-                    ImageLoader.load(item.file, frameIndex)
+                when (item) {
+                    is MediaItem.Video -> VideoThumbnailExtractor.load(item)
+                    is MediaItem.Audio -> AudioCover.load(item.file)
+                    else -> ImageLoader.load(item.file, frameIndex)
                 }
             }
         }
@@ -55,10 +57,10 @@ object MediaThumbnails {
     suspend fun loadPreview(item: MediaItem, frameIndex: Int = 0): ImageBitmap? =
         withContext(ImageBitmapCache.ioDispatcher) {
             decoded(fallback = null, report = true) {
-                if (item is MediaItem.Video) {
-                    VideoThumbnailExtractor.load(item)
-                } else {
-                    StillPreview.load(item.file, frameIndex)
+                when (item) {
+                    is MediaItem.Video -> VideoThumbnailExtractor.load(item)
+                    is MediaItem.Audio -> AudioCover.load(item.file)
+                    else -> StillPreview.load(item.file, frameIndex)
                 }
             }
         }
@@ -66,7 +68,7 @@ object MediaThumbnails {
     /** A still's own dimensions, read from the decoder without decoding it. */
     suspend fun sourceSize(item: MediaItem): IntSize =
         withContext(ImageBitmapCache.ioDispatcher) {
-            if (item is MediaItem.Video) {
+            if (item.isPlayable) {
                 IntSize.Zero
             } else {
                 // Quiet: a file this fails on is one the loader is about to fail on
@@ -83,7 +85,7 @@ object MediaThumbnails {
      */
     suspend fun stillColor(item: MediaItem): StillColorInfo =
         withContext(ImageBitmapCache.ioDispatcher) {
-            if (item is MediaItem.Video) StillColorInfo.Sdr else readStillColor(item.file)
+            if (item.isPlayable) StillColorInfo.Sdr else readStillColor(item.file)
         }
 
     /**
@@ -102,7 +104,7 @@ object MediaThumbnails {
      */
     suspend fun frameSet(item: MediaItem): ImageFrameSet =
         withContext(ImageBitmapCache.ioDispatcher) {
-            if (item is MediaItem.Video) {
+            if (item.isPlayable) {
                 ImageFrameSet.Single
             } else {
                 decoded(fallback = ImageFrameSet.Single, report = false) {

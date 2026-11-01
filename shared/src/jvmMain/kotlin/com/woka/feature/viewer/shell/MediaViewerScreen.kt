@@ -144,6 +144,7 @@ fun MediaViewerScreen(
         // Hidden for video, whose decode the switch never reaches (ME-180), and for an
         // SDR still, which has nothing for it to say — `hdrControlApplies` holds why not.
         showHdrMode = videoState == null && hdrControlVisible(state.stillColor),
+        showSizeControl = activeItem !is MediaItem.Audio,
         playerContent = playerContent
     )
 }

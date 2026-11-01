@@ -79,7 +79,7 @@ internal fun FolderItemContextMenu(
     // Beside Rename/Copy/Delete, where §4.1 puts it. Greyed for anything the engine
     // factory refuses — video until ME-201, and every format Skia cannot encode — so
     // the entry is honest rather than absent.
-    if (item !is MediaItem.Folder && (item !is MediaItem.Video || VIDEO_EDITING_ENABLED)) {
+    if (item !is MediaItem.Folder && item !is MediaItem.Audio && (item !is MediaItem.Video || VIDEO_EDITING_ENABLED)) {
         val isReadOnly = item.file.isReadOnlyMedia
         DropdownItem("Edit", enabled = isEditable(engineFactory, target) || isReadOnly) {
             dismiss()
@@ -125,28 +125,5 @@ internal fun FolderItemContextMenu(
     DropdownItem("Delete", textColor = Theme.colors.danger) {
         dismiss()
         viewModel.deleteFiles(listOf(target))
-    }
-}
-
-/**
- * Asserting watched state by hand, for a video finished somewhere else or one the
- * viewer has no intention of opening.
- *
- * It writes exactly the record a full playthrough writes — one state reached two
- * ways — so the card cannot tell, and has no reason to. The entry inverts once a
- * record exists: being able to claim a state without being able to withdraw it
- * makes a mis-click permanent.
- */
-@Composable
-private fun WatchedMenuItem(
-    target: String,
-    watch: WatchRecord?,
-    viewModel: FolderViewModel,
-    dismiss: () -> Unit
-) {
-    if (watch?.finished == true) {
-        DropdownItem("Mark as not watched") { dismiss(); viewModel.markUnwatched(target) }
-    } else {
-        DropdownItem("Mark as watched") { dismiss(); viewModel.markWatched(target) }
     }
 }

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Woka — Audio Player</title>
+<style>
+/* ---------- tokens (same as sidebar-redesign.html / now-playing.html) ---------- */
+:root{
+  --page:#08090C; --win:#0E1015; --side:#13161C; --raise:#1A1E26;
+  --hover:rgba(255,255,255,.05); --sep:rgba(255,255,255,.07);
+  --text:#F2F2F5; --text2:#9A9FAA; --text3:#5E6370;
+  --accent:#0A84FF; --accent-soft:rgba(10,132,255,.16); --folder:#FF9F0A;
+  --bar:rgba(26,30,38,.5); --shadow:0 30px 80px rgba(0,0,0,.6); --tile-ring:rgba(255,255,255,.06);
+}
+.light{
+  --page:#D9DBE0; --win:#FFFFFF; --side:#F2F2F7; --raise:#FFFFFF;
+  --hover:rgba(0,0,0,.045); --sep:rgba(60,60,67,.13);
+  --text:#1C1C1E; --text2:#6C6C72; --text3:#A1A1A8;
+  --accent:#007AFF; --accent-soft:rgba(0,122,255,.13);
+  --bar:rgba(242,242,247,.72); --shadow:0 30px 70px rgba(0,0,0,.18); --tile-ring:rgba(0,0,0,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:var(--page);color:var(--text);
+  padding:28px 16px 60px;transition:background .25s}
+.wrap{max-width:1360px;margin:0 auto}
+svg{display:block}
+
+/* ---------- demo controls (not part of the app) ---------- */
+.demo{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+.demo h1{font-size:15px;font-weight:700;margin-right:10px}
+.demo label{font-size:11px;color:var(--text3);font-weight:650;margin-right:-4px}
+.dseg{display:flex;background:var(--raise);border:1px solid var(--sep);border-radius:9px;padding:2px}
+.dseg button{border:0;background:none;color:var(--text2);font-weight:600;font-size:12px;font-family:inherit;
+  padding:5px 11px;border-radius:7px;cursor:pointer}
+.dseg button.on{background:var(--accent);color:#fff}
+
+/* ---------- window ---------- */
+.app{display:flex;height:640px;border-radius:12px;overflow:hidden;background:var(--win);
+  border:1px solid var(--sep);box-shadow:var(--shadow);position:relative}
+.side{width:236px;flex:none;background:var(--side);border-right:1px solid var(--sep)}
+.side-top{height:52px;display:flex;align-items:center;gap:8px;padding:0 12px 0 18px;font-size:13px;font-weight:650}
+.logo{width:20px;height:20px;border-radius:6px;background:linear-gradient(135deg,var(--accent),#5E5CE6)}
+.main{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
+.bar{height:52px;flex:none;display:flex;align-items:center;gap:6px;padding:0 10px;position:relative;z-index:3}
+.ib{width:30px;height:28px;border-radius:7px;display:grid;place-items:center;color:var(--text2)}
+.ib svg{width:15px;height:15px}
+.bar .name{font-size:13px;color:var(--text2);margin-left:4px}
+.winc{margin-left:auto;display:flex}
+.winc i{width:44px;height:52px;display:grid;place-items:center;color:var(--text2);font-style:normal;font-size:12px}
+
+/* ---------- the viewer, audio ---------- */
+.stage{position:absolute;inset:0;overflow:hidden}
+/* the cover, blurred, behind everything — the viewer's ambient backdrop */
+.ambient{position:absolute;inset:-60px;filter:blur(60px) saturate(1.3);opacity:.35;transition:opacity .3s}
+.light .ambient{opacity:.22}
+.ambient.none{opacity:0}
+.centre{position:absolute;left:0;right:0;top:52px;bottom:150px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:18px;padding:0 24px}
+.art{width:min(300px,46vh);aspect-ratio:1;border-radius:12px;position:relative;overflow:hidden;
+  box-shadow:0 24px 60px rgba(0,0,0,.45),0 0 0 1px var(--tile-ring);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.light .art{box-shadow:0 20px 50px rgba(0,0,0,.18),0 0 0 1px var(--tile-ring)}
+.art{cursor:pointer}
+/* paused: settles to 94 % and dims a touch (the author, 2026-11-01) */
+.art.paused{transform:scale(.94);filter:brightness(.88)}
+.art{transition:transform .35s cubic-bezier(.2,.8,.2,1),filter .35s}
+.art .fill{position:absolute;inset:0}
+.art.none .fill{background:var(--raise);display:grid;place-items:center;color:var(--text3)}
+.art.none .fill svg{width:34%;height:34%}
+.meta{text-align:center;max-width:520px}
+.meta h2{font-size:20px;font-weight:650;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta p{font-size:13px;color:var(--text2);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* side arrows: the viewer's own, now stepping through audio files only */
+.nav{position:absolute;top:50%;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;
+  color:var(--text2);background:var(--bar);backdrop-filter:blur(20px);transform:translateY(-50%);cursor:pointer}
+.nav.l{left:20px}.nav.r{right:20px}
+.nav svg{width:14px;height:14px}
+
+/* the controls bar: the video bar with picture-only controls taken out */
+.controls{position:absolute;left:32px;right:32px;bottom:82px;height:48px;border-radius:16px;background:var(--bar);
+  backdrop-filter:blur(24px);display:flex;align-items:center;gap:16px;padding:0 16px}
+.cb{width:32px;height:32px;display:grid;place-items:center;color:var(--text);cursor:pointer;flex:none;border-radius:6px}
+.cb svg{width:20px;height:20px}
+.cb.sm svg{width:16px;height:16px}
+.cb.on{color:var(--accent)}
+.time{font-size:11.5px;color:var(--text2);font-variant-numeric:tabular-nums;flex:none}
+.track{flex:1;height:4px;border-radius:2px;background:var(--sep);position:relative}
+.track b{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:var(--text)}
+.track i{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;background:var(--text);transform:translate(-50%,-50%);
+  box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.tools{display:flex;gap:4px;align-items:center}
+
+/* the ⚙ popover's audio rows */
+.pop{position:absolute;right:32px;bottom:140px;width:236px;background:var(--raise);border:1px solid var(--sep);border-radius:12px;
+  box-shadow:0 16px 40px rgba(0,0,0,.35);padding:8px;display:none}
+.pop.show{display:block}
+.pop .r{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;padding:7px 8px;border-radius:7px}
+.pop .r span{color:var(--text2)}
+.pop .seg{display:flex;background:var(--hover);border-radius:7px;padding:2px}
+.pop .seg em{font-style:normal;font-size:11.5px;padding:3px 8px;border-radius:5px;color:var(--text2)}
+.pop .seg em.on{background:var(--win);color:var(--text)}
+.pop hr{border:0;border-top:1px solid var(--sep);margin:4px 6px}
+
+/* carousel: the folder's audio files as cover tiles */
+.carousel{position:absolute;left:0;right:0;bottom:14px;height:52px;display:flex;justify-content:center;gap:6px}
+.carousel div{width:52px;height:52px;border-radius:8px;opacity:.55;box-shadow:0 0 0 1px var(--tile-ring);position:relative;overflow:hidden}
+.carousel div.cur{opacity:1;box-shadow:0 0 0 2px var(--accent)}
+.carousel div.none{background:var(--raise);display:grid;place-items:center;color:var(--text3)}
+.carousel div.none svg{width:20px;height:20px}
+
+/* ---------- the grid tile for an audio file ---------- */
+.gridshow{margin-top:26px}
+.gridshow h3{font-size:13px;font-weight:650;margin-bottom:12px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:3px;max-width:820px}
+.tile{aspect-ratio:1;border-radius:3px;position:relative;overflow:hidden}
+.tile .fill{position:absolute;inset:0}
+.tile.none .fill{background:var(--raise);display:grid;place-items:center;color:var(--text3)}
+.tile.none .fill svg{width:30%;height:30%}
+.tile .badge{position:absolute;left:6px;bottom:5px;display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#fff;
+  text-shadow:0 1px 3px rgba(0,0,0,.7)}
+.tile .badge svg{width:10px;height:10px}
+.tile.none .badge{color:var(--text2);text-shadow:none}
+.tile .nm{position:absolute;left:6px;right:6px;top:6px;font-size:11px;font-weight:600;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0}
+.tile.none .nm{opacity:1;color:var(--text2)}
+
+/* ---------- spec + notes ---------- */
+.spec{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-top:26px}
+.note{background:var(--raise);border:1px solid var(--sep);border-radius:12px;padding:15px 17px}
+.note h4{font-size:13.5px;font-weight:650;margin-bottom:6px}
+.note li{font-size:12.5px;color:var(--text2);line-height:1.55}
+.note ul{padding-left:16px}
+.note code{font-size:11.5px;color:var(--text)}
+.note.ask{border-color:rgba(255,159,10,.4)}
+.note.ask h4{color:var(--folder)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="demo">
+  <h1>Audio player</h1>
+  <label>Theme</label>
+  <div class="dseg" data-k="theme"><button class="on" data-v="dark">Dark</button><button data-v="light">Light</button></div>
+  <label>File</label>
+  <div class="dseg" data-k="file"><button class="on" data-v="tags">Cover + tags</button><button data-v="bare">No cover, no tags</button></div>
+  <label>State</label>
+  <div class="dseg" data-k="play"><button class="on" data-v="on">Playing</button><button data-v="off">Paused</button></div>
+  <label>⚙</label>
+  <div class="dseg" data-k="pop"><button class="on" data-v="closed">Closed</button><button data-v="open">Open</button></div>
+</div>
+
+<div class="app" id="app">
+  <aside class="side"><div class="side-top"><div class="logo"></div>Woka</div></aside>
+  <section class="main">
+    <div class="stage">
+      <div class="ambient" id="ambient"></div>
+      <div class="centre">
+        <div class="art" id="art"><div class="fill" id="artFill"></div></div>
+        <div class="meta">
+          <h2 id="title">Nightcall</h2>
+          <p id="sub">Kavinsky</p>
+        </div>
+      </div>
+      <div class="nav l"><svg viewBox="0 0 14 14"><path d="M9 2L4 7l5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="nav r"><svg viewBox="0 0 14 14"><path d="M5 2l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+
+      <div class="controls">
+        <div class="cb" id="pp"></div>
+        <span class="time">1:32</span>
+        <div class="track"><b style="width:36%"></b><i style="left:36%"></i></div>
+        <span class="time">−2:46</span>
+        <div class="tools">
+          <div class="cb sm" title="Volume"><svg viewBox="0 0 16 16"><path d="M2 6h2.5L8 3v10L4.5 10H2z" fill="currentColor"/><path d="M10.5 5.5a3.5 3.5 0 0 1 0 5M12.5 3.5a6 6 0 0 1 0 9" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+          <div class="cb sm" id="gear" title="Player settings"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+        </div>
+      </div>
+      <div class="pop" id="pop">
+        <div class="r">Repeat <div class="seg"><em>Off</em><em>File</em><em class="on">Folder</em></div></div>
+        <div class="r">Shuffle <div class="seg"><em class="on">Off</em><em>On</em></div></div>
+        <hr>
+        <div class="r">Speed <span>1.0×</span></div>
+        <div class="r">Show remaining time <span>On</span></div>
+      </div>
+      <div class="carousel" id="carousel"></div>
+    </div>
+    <div class="bar">
+      <div class="ib"><svg viewBox="0 0 16 16"><path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <span class="name" id="barName">01 - Nightcall.flac</span>
+      <div class="winc"><i>—</i><i>☐</i><i>✕</i></div>
+    </div>
+  </section>
+</div>
+
+<div class="gridshow">
+  <h3>The grid tile for an audio file</h3>
+  <div class="tiles" id="tiles"></div>
+</div>
+
+<div class="spec">
+  <div class="note"><h4>Centre</h4><ul>
+    <li>Cover: square, up to 300 dp (46 % of the height), radius 12, 1 dp ring, a soft drop shadow.</li>
+    <li>A click on the cover plays / pauses.</li>
+    <li>Paused: the cover settles to 94 % and dims slightly (brightness 0.88), 350 ms.</li>
+    <li>Title 20 sp semibold; the artist 13 sp <code>text2</code>. Album, year, genre, codec, sample rate, bitrate and length live in the Info panel, not here.</li>
+    <li>No tags: title = file name without extension; second line = the folder's name.</li>
+    <li>Behind it, the cover blurred and dimmed — the viewer's ambient backdrop, 35 % (22 % light). No cover → no backdrop.</li>
+  </ul></div>
+  <div class="note"><h4>Controls bar</h4><ul>
+    <li>The video bar exactly — 48 dp, radius 16, <code>surfaceElevated</code> at 0.5 — minus subtitles and fullscreen.</li>
+    <li>Play/pause, elapsed, seek slider (no picture preview on hover), remaining, volume, ⚙.</li>
+    <li>⚙ keeps Repeat, Shuffle, Speed and the time label; video tracks, deinterlace, ambient fill, chapters and sync are not shown.</li>
+  </ul></div>
+  <div class="note"><h4>Moving between files</h4><ul>
+    <li>The side arrows, the keyboard arrows and auto-advance step through the folder's <b>audio files only</b>.</li>
+    <li>The carousel shows those audio files as cover tiles.</li>
+    <li>Closing the viewer does not stop the music — the track goes on in Now Playing.</li>
+  </ul></div>
+  <div class="note"><h4>Grid tile</h4><ul>
+    <li>Cover, cropped square; a note glyph and the length bottom-left, as a video tile carries its duration.</li>
+    <li>No cover: the placeholder, with the file name on the tile so a folder of bare files can still be told apart.</li>
+    <li>No hover reel.</li>
+  </ul></div>
+  <div class="note"><h4>Settled with the author, 2026-11-01</h4><ul>
+    <li>Side arrows only — no previous / next buttons in the bar.</li>
+    <li>No format line under the title; it belongs to the Info panel.</li>
+    <li>Paused cover shrinks and dims a touch; a click on the cover toggles play.</li>
+  </ul></div>
+</div>
+</div>
+
+<script>
+const NOTE='<svg viewBox="0 0 16 16"><path fill="currentColor" d="M6 12.2V4.1l7-1.6v7.9a2 2 0 1 1-1.3-1.9V4.9L7.3 5.9v6.4A2 2 0 1 1 6 12.2z"/></svg>';
+const PLAY='<svg viewBox="0 0 20 20"><path fill="currentColor" d="M6 3.6v12.8a.8.8 0 0 0 1.2.7l10.2-6.4a.8.8 0 0 0 0-1.4L7.2 2.9A.8.8 0 0 0 6 3.6z"/></svg>';
+const PAUSE='<svg viewBox="0 0 20 20"><rect x="4.5" y="3" width="4" height="14" rx="1" fill="currentColor"/><rect x="11.5" y="3" width="4" height="14" rx="1" fill="currentColor"/></svg>';
+const ART=['linear-gradient(135deg,#FF375F 0%,#BF5AF2 55%,#5E5CE6 100%)','linear-gradient(160deg,#30D158,#0A84FF)',
+  'linear-gradient(135deg,#FF9F0A,#FF375F)','linear-gradient(200deg,#64D2FF,#5E5CE6)','linear-gradient(135deg,#FFD60A,#FF9F0A)'];
+const S={theme:'dark',file:'tags',play:'on',pop:'closed'};
+const $=id=>document.getElementById(id);
+
+function render(){
+  document.body.classList.toggle('light',S.theme==='light');
+  const bare=S.file==='bare';
+  $('art').classList.toggle('none',bare);
+  $('art').classList.toggle('paused',S.play==='off');
+  $('artFill').style.background=bare?'':ART[0];
+  $('artFill').innerHTML=bare?NOTE:'';
+  $('ambient').className='ambient'+(bare?' none':'');
+  $('ambient').style.background=ART[0];
+  $('title').textContent=bare?'04 - Untitled':'Nightcall';
+  $('sub').textContent=bare?'Music':'Kavinsky';
+  $('barName').textContent=bare?'04 - Untitled.mp3':'01 - Nightcall.flac';
+  $('pp').innerHTML=S.play==='on'?PAUSE:PLAY;
+  $('pop').classList.toggle('show',S.pop==='open');
+  $('gear').classList.toggle('on',S.pop==='open');
+  $('carousel').innerHTML=[0,1,2,3,4].map(i=>{
+    const none=bare&&i===2, cur=i===2;
+    return `<div class="${none?'none':''} ${cur?'cur':''}" style="${none?'':'background:'+ART[(i+3)%5]}">${none?NOTE:''}</div>`;
+  }).join('');
+}
+$('tiles').innerHTML=[0,1,2,3,4].map(i=>{
+  const none=i===3;
+  return `<div class="tile ${none?'none':''}"><div class="fill" style="${none?'':'background:'+ART[i]}">${none?NOTE:''}</div>
+    ${none?'<div class="nm">04 - Untitled.mp3</div>':''}
+    <div class="badge">${NOTE}${['4:18','3:51','5:02','3:02','6:40'][i]}</div></div>`;
+}).join('');
+document.querySelectorAll('.dseg').forEach(seg=>seg.addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  seg.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+  S[seg.dataset.k]=b.dataset.v; render();
+}));
+$('pp').addEventListener('click',()=>{ document.querySelector(`[data-k=play] [data-v=${S.play==='on'?'off':'on'}]`).click(); });
+$('art').addEventListener('click',()=>$('pp').click());
+$('gear').addEventListener('click',()=>{ document.querySelector(`[data-k=pop] [data-v=${S.pop==='open'?'closed':'open'}]`).click(); });
+render();
+</script>
+</body>
+</html>

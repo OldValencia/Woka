@@ -8,6 +8,7 @@ import com.woka.app.AppDependencies
 import com.woka.core.data.MediaItem
 import com.woka.core.data.WokaSettings
 import com.woka.core.ui.image.rememberReloadKey
+import com.woka.feature.viewer.audio.AudioSession
 import com.woka.feature.viewer.pip.PipManager
 import com.woka.feature.viewer.video.VideoAlreadyOpenedDialog
 
@@ -32,7 +33,10 @@ internal fun MediaViewerActiveItemEffects(
 ) {
     LaunchedEffect(activeItem) {
         val path = activeItem?.file?.absolutePath
-        if (pipConflicts(activeItem, PipManager.isPipActive, PipManager.activeItem?.file?.absolutePath)) {
+        val music = AudioSession.current?.file?.absolutePath
+        if (pipConflicts(activeItem, PipManager.isPipActive, PipManager.activeItem?.file?.absolutePath) ||
+            musicConflicts(activeItem, music)
+        ) {
             onConflictChange(true)
             return@LaunchedEffect
         }
@@ -73,7 +77,9 @@ internal fun MediaViewerActiveItemEffects(
     if (showConflictDialog) {
         VideoAlreadyOpenedDialog(
             onConfirm = {
-                PipManager.closePip()
+                // Only what is up: with no PiP, `closePip` would dispose the viewer's own player.
+                if (PipManager.isPipActive) PipManager.closePip()
+                AudioSession.stopForVideo()
                 onConflictChange(false)
                 if (activeItem != null) {
                     state.activeItemPath = activeItem.file.absolutePath
@@ -85,7 +91,9 @@ internal fun MediaViewerActiveItemEffects(
             onDismiss = {
                 onConflictChange(false)
                 onClose(state.currentId)
-            }
+            },
+            music = AudioSession.current != null,
+            toMusic = activeItem is MediaItem.Audio
         )
     }
 
@@ -120,6 +128,8 @@ internal fun MediaViewerActiveItemEffects(
     ) {
         if (showConflictDialog || activeItem == null) return@LaunchedEffect
         val frame = state.frameIndex
+        // A track with no cover must not show the previous file's picture as its own.
+        if (activeItem is MediaItem.Audio) state.imageBitmap = null
         state.sourceSize = thumbnails.sourceSize(activeItem)
         state.stillColor = thumbnails.stillColor(activeItem)
         val alreadyDecoded = thumbnails.cachedFull(activeItem, frame)
