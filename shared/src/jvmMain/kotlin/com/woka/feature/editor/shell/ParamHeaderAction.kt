@@ -31,7 +31,7 @@ import org.jetbrains.compose.resources.painterResource
 
 /** Sized against the title's cap height, so the row does not grow to hold them. */
 private val ACTION_SIZE = 20.dp
-private val ACTION_GLYPH = 14.dp
+private val ACTION_GLYPH = 16.dp
 
 /**
  * The header actions for a tool, built where the card's title is drawn (ME-174).
@@ -79,7 +79,7 @@ internal fun HeaderActions(header: List<ParamSpec<*>>, writer: ParamWriter) {
  * **No plate behind it** (2026-09-02). It had one, and beside a segmented control — which
  * is itself a filled pill — two filled squares read as objects that had wandered in.
  * Level with the card's own name, chrome is a glyph and nothing else; it brightens under
- * the pointer, which is the whole of the affordance a 15 dp icon needs.
+ * the pointer, which is the whole of the affordance a 16 dp icon needs.
  */
 @Composable
 internal fun HeaderAction(spec: ActionParam, writer: ParamWriter) {
