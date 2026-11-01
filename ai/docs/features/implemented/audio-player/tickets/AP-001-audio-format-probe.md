@@ -49,7 +49,7 @@ so.
 `shared/src/jvmTest/kotlin/com/woka/probe/AudioFormatProbe.kt` (new),
 `shared/src/jvmTest/resources/media/audio/*` (new fixtures),
 `shared/src/jvmTest/resources/media/README.md` (edit),
-`ai/docs/features/pending/audio-player/audio-player.md` (edit), `next_steps.md` (edit).
+`ai/docs/features/implemented/audio-player/audio-player.md` (edit), `next_steps.md` (edit).
 
 ## Done when
 - the probe table is in the feature doc, dated, one row per sample, every §4 extension covered by a

@@ -231,17 +231,17 @@ PiP is the thing that is hard to find today — and audio joins the slot when it
 
 | Ticket | Title | Status |
 |---|---|---|
-| mockup | [`now-playing.html`](../../../mockups/design/now-playing.html) — row, bubble, capsule, drag, flight | **accepted** 2026-11-01 — the spec for AP-004…AP-006 |
+| mockup | [`now-playing.html`](../../../../mockups/design/now-playing.html) — row, bubble, capsule, drag, flight | **accepted** 2026-11-01 — the spec for AP-004…AP-006 |
 | [AP-001](tickets/AP-001-audio-format-probe.md) | Probe: every candidate format through the player's grabber | **measured** 2026-11-01, every candidate (§1a), the last nine on downloaded samples |
 | [AP-004](tickets/AP-004-now-playing-row.md) | Now Playing: the slot and its sidebar row, PiP video as the source (absorbs AP-005) | **done** 2026-11-01 — `:shared:build` green; checked by the author in the running app |
 | AP-005 | merged into AP-004 | retired |
 | [AP-006](tickets/AP-006-now-playing-bubble.md) | The bubble when the sidebar is hidden | **done** 2026-11-01 — checked by the author in the running app |
 | [AP-008](tickets/AP-008-now-playing-flight.md) | The cover flies between row and corner | **done** 2026-11-01 — checked by the author in the running app |
-| [AP-007](tickets/AP-007-media-keys-through-smtc.md) | Media keys and the Windows media panel through SMTC, owned by Now Playing | **built** 2026-11-01 — the spike checked by the author (keys focused and minimised, panel shown); open: the by-hand check of the whole |
-| mockup | [`audio-player.html`](../../../mockups/design/audio-player.html) — the viewer and the grid tile for an audio file | **accepted** 2026-11-01 — the spec for AP-003 |
+| [AP-007](tickets/AP-007-media-keys-through-smtc.md) | Media keys and the Windows media panel through SMTC, owned by Now Playing | **done** 2026-11-01 — checked by the author in the running app and on the packaged `Woka.exe` |
+| mockup | [`audio-player.html`](../../../../mockups/design/audio-player.html) — the viewer and the grid tile for an audio file | **accepted** 2026-11-01 — the spec for AP-003 |
 | [AP-003](tickets/AP-003-audio-plays-in-the-viewer.md) | An audio file opens in the viewer, plays, and carries on in Now Playing (absorbs AP-002) | **done** 2026-11-01 — checked by the author in the running app |
 | AP-002 | merged into AP-003 | retired |
-| [AP-009](tickets/AP-009-audio-in-the-library.md) | `Music` filter, file associations, the four formats measured on samples | **built** 2026-11-01, `:shared:build` green — open: the by-hand check |
+| [AP-009](tickets/AP-009-audio-in-the-library.md) | `Music` filter, file associations, the four formats measured on samples | **done** 2026-11-01 — checked by the author in the running app |
 
 ## 6. Mockups
 
@@ -254,11 +254,9 @@ New surfaces get a mockup before their UI ticket (`feature-docs.md` §6), and th
 
 ## 7. Open
 
-- The Windows media panel names the app after the process: `Unknown app` under `gradlew run`
-  (`java.exe`). The packaged `Woka.exe` carries `FileDescription: Woka`, so the installed app is
-  expected to read "Woka". That is not yet checked on the packaged build.
-- macOS (`MPRemoteCommandCenter` with `MPNowPlayingInfoCenter`) and Linux (MPRIS over D-Bus) stay
-  in the backlog until there is a machine to check them on.
+- Nothing. The Windows media panel reads `Unknown app` under `gradlew run` — the process is
+  `java.exe` — and "Woka" from the packaged `Woka.exe`. macOS and Linux media keys moved to
+  [`pending/media-keys-macos-linux.md`](../../pending/media-keys-macos-linux.md).
 
 ## 8. Decision log
 

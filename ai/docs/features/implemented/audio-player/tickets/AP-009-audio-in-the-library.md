@@ -50,4 +50,4 @@ OS Integration registers 153 formats, and an `.mp3` offers Woka in Explorer's "O
   than over the mandate.
 - `desktopApp/build.gradle.kts` is 285 lines: it was 254 before, and the 150-line mandate is for
   `.kt` sources.
-- By-hand check pending.
+- Checked by the author in the running app, 2026-11-01.

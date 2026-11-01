@@ -63,5 +63,7 @@ Written 2026-11-01, after the author chose SMTC over `RegisterHotKey`. The spike
 - Spike: as above, checked by the author. The rest is built; `:shared:build` result in the
   status table.
 - `Unknown app` under `gradlew run` is the process name `java.exe`. The packaged `Woka.exe` carries
-  `FileDescription: Woka` (read from `createDistributable`'s output). The packaged name is to be
-  checked by hand.
+  `FileDescription: Woka` (read from `createDistributable`'s output), and the panel reads "Woka"
+  from it.
+- Checked by the author, 2026-11-01: the keys minimised with the viewer closed, the panel for a
+  track and for PiP, `×` giving the keys back.

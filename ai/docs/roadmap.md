@@ -152,3 +152,17 @@ replaced the whole export path.
 - Windows Explorer context menu integration (`FolderContextMenu.kt`) for folders and directory backgrounds under `HKCU\Software\Classes\Directory\shell\Woka`.
 - (Future) IPC/Integration with the Echo clipboard manager.
 
+### Phase 7: Audio & Now Playing (done 2026-11-01, release 1.0.5)
+A minimalist player for the music already on disk — no library, no tag editing, no equaliser
+([`implemented/audio-player/`](features/implemented/audio-player/audio-player.md)).
+- **Now Playing:** one sound source for the whole app. A sidebar row, or a bubble in a window corner
+  when the sidebar is hidden, holds the track or the PiP video that plays.
+- **The audio player:** a track opens in the viewer with its cover, title and artist. It plays its
+  folder through on its own, even with the viewer closed, and carries on in Now Playing. 31 audio
+  formats are measured through the player's own grabbers. The grid has a `Music` filter, and the
+  formats are in the file associations (153 in all).
+- **Media keys and the Windows media panel** through SMTC, owned by the Now Playing slot: the keys
+  reach a minimised Woka, and the panel shows title, artist and cover. macOS and Linux are in
+  [`pending/media-keys-macos-linux.md`](features/pending/media-keys-macos-linux.md).
+- **Icons:** every SF Symbol replaced with Phosphor (MIT), its notice shipped with the app
+  ([`implemented/phosphor-icons/`](features/implemented/phosphor-icons/phosphor-icons.md)).

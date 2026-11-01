@@ -9,7 +9,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 
 /**
  * One thing that plays and outlives the screen it started on — today a video in PiP,
- * later an audio file (`features/pending/audio-player/` §3.3).
+ * later an audio file (`features/implemented/audio-player/` §3.3).
  *
  * [isPlaying] and [progress] read snapshot state, so a composable that reads them
  * recomposes as the player moves. [progress] is 0..1, and 0 while the length is unknown.

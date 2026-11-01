@@ -10,7 +10,7 @@ of them. Woka is a Windows app, and its repository carries the SVG files. The au
 2026-11-01; Phosphor was chosen over Fluent UI System Icons ("I don't like Microsoft's style") and
 over Lucide (outline only, while the app pairs outline and fill).
 
-Spec: [`ai/mockups/design/phosphor-icons.html`](../../../mockups/design/phosphor-icons.html).
+Spec: [`ai/mockups/design/phosphor-icons.html`](../../../../mockups/design/phosphor-icons.html).
 
 ---
 
@@ -57,12 +57,12 @@ backs two constants today: `rectangle_arrowtriangle_2_inward` is both `Crop` and
 
 | Item | What | State |
 |---|---|---|
-| mockup | [`phosphor-icons.html`](../../../mockups/design/phosphor-icons.html) — all 99 beside their candidates, weight, size and crop toggles, the controls bar in place | **accepted** 2026-11-01 — picks in [PI-001](tickets/PI-001-every-icon-from-phosphor.md) |
-| [PI-001](tickets/PI-001-every-icon-from-phosphor.md) | Replace every SF Symbol, delete the unused, add the licence | **built** 2026-11-01, `:shared:build` green — open: the by-hand walk |
+| mockup | [`phosphor-icons.html`](../../../../mockups/design/phosphor-icons.html) — all 99 beside their candidates, weight, size and crop toggles, the controls bar in place | **accepted** 2026-11-01 — picks in [PI-001](tickets/PI-001-every-icon-from-phosphor.md) |
+| [PI-001](tickets/PI-001-every-icon-from-phosphor.md) | Replace every SF Symbol, delete the unused, add the licence | **done** 2026-11-01 — walked by the author in the running app |
 
 ## 4. Open items
 
-- None but the by-hand walk. The mockup stays as the record of the choice; it is not regenerated,
+- None. The mockup stays as the record of the choice; it is not regenerated,
   because the SF files it drew from are gone.
 
 ## 5. Decision log
