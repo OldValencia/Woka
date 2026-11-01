@@ -43,6 +43,15 @@ FFmpeg-powered playback engine with frame-accurate scrubbing, multi-track audio,
   <img src="./assets/screenshots/video-viewer.png" alt="Woka Video Player" width="100%"/>
 </p>
 
+<br/>
+
+### Audio Player — Your Music Folder, Played as It Is
+A minimalist player for the music already on your disk: cover art and tags read from the file, the folder played through or shuffled, and playback that carries on in **Now Playing** after the viewer closes. No library to build, no tags to edit.
+
+<p align="center">
+  <img src="./assets/screenshots/audio-player.png" alt="Woka Audio Player" width="100%"/>
+</p>
+
 ---
 
 ## Key Features
@@ -54,6 +63,8 @@ FFmpeg-powered playback engine with frame-accurate scrubbing, multi-track audio,
 - **High-Performance Video Playback:** Powered by JavaCV and Bytedeco FFmpeg. Handles HEVC, AV1, VP9, ProRes, and H.264 up to 4K/8K with low CPU overhead.
 - **Subtitles & Multi-Track Audio:** Full subtitle stream extraction (SRT, ASS, VTT) with configurable styling, language selection, and volume boost.
 - **Picture-in-Picture (PiP):** Detach any video into an independent, borderless floating window that stays on top while you browse other folders.
+- **Minimalist Audio Player:** Embedded cover art (or `cover.jpg` beside the file), title and artist from the tags, repeat, shuffle and playback speed. A folder plays through on its own, even with the viewer closed; album, sample rate and bitrate are in the Info panel.
+- **Now Playing:** One sound source for the whole app. Music or a PiP video keeps playing in a sidebar row — or a floating bubble in a window corner when the sidebar is hidden — with play/pause, progress and a click back to the source.
 - **Built-in Precision Image Editing:** Crop, rotate, color adjustments (brightness, contrast, saturation).
 - **Keyboard-Driven Workflow:**
   - `Space` — Quick Look preview
@@ -69,7 +80,7 @@ FFmpeg-powered playback engine with frame-accurate scrubbing, multi-track audio,
 
 ## Supported Formats
 
-Woka is built to replace bloated third-party viewers with a single, lightning-fast local media player and viewer supporting **122 media formats** natively.
+Woka is built to replace bloated third-party viewers with a single, lightning-fast local media player and viewer supporting **153 media formats** natively.
 
 ### 🖼️ Images & Graphics (73 formats)
 
@@ -108,6 +119,19 @@ Powered by bundled **FFmpeg 8.x** with frame-accurate scrubbing and hardware-acc
 | **Broadcast, CCTV & Capture** | `.gxf`, `.dav`, `.xesc` | General eXchange Format, Dahua DVR exports, Expression Encoder screen captures |
 | **Legacy Web, Players & Games** | `.nsv`, `.amv`, `.mtv`, `.bik`, `.thp`, `.rpl` | Nullsoft Streaming Video, MP4-player AMV/MTV, Bink 1, Nintendo THP, ARMovie |
 
+### 🎵 Audio (31 formats)
+
+Played on the same FFmpeg engine, with embedded cover art, tags, seeking and speed control:
+
+| Category | Extensions | Features |
+| :--- | :--- | :--- |
+| **Everyday Lossy** | `.mp3`, `.mpga`, `.mp1`, `.aac`, `.m4a`, `.m4b`, `.m4r`, `.wma` | MP3, AAC and Windows Media Audio; audiobooks and ringtones in MPEG-4 |
+| **Lossless & Uncompressed** | `.flac`, `.wav`, `.wave`, `.aiff`, `.aif`, `.w64`, `.caf`, `.tta` | FLAC, PCM in WAV / AIFF / Wave64 / Core Audio, True Audio |
+| **Open & Web** | `.ogg`, `.oga`, `.opus`, `.spx` | Vorbis, Opus and Speex in Ogg |
+| **Surround & Home Theater** | `.ac3`, `.a52`, `.eac3`, `.dts`, `.mlp`, `.aob` | Dolby Digital (Plus), DTS, Dolby TrueHD / MLP, DVD-Audio |
+| **Mobile & Voice** | `.amr`, `.3ga` | AMR voice recordings, 3GPP audio |
+| **Legacy** | `.voc`, `.vqf`, `.oma` | Creative Voice, TwinVQ, Sony ATRAC3+ |
+
 ---
 
 ## Architecture
@@ -116,7 +140,7 @@ Powered by bundled **FFmpeg 8.x** with frame-accurate scrubbing and hardware-acc
 | :--- | :--- |
 | **UI Framework** | [Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform) (Desktop / JVM) |
 | **Graphics Engine** | [Skia](https://skia.org/) (via Skiko & Compose) for hardware-accelerated image pipeline and tone-mapping |
-| **Video Engine** | [JavaCV](https://github.com/bytedeco/javacv) (FFmpeg native bindings) for high-efficiency demuxing and decoding |
+| **Video & Audio Engine** | [JavaCV](https://github.com/bytedeco/javacv) (FFmpeg native bindings) for high-efficiency demuxing and decoding |
 | **Dependency Injection** | [Koin](https://insert-koin.io/) |
 | **Reactive State** | Kotlin Coroutines & `StateFlow` |
 

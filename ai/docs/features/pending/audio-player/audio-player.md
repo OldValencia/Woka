@@ -79,11 +79,25 @@ after `setTimestamp` to 50 % of the shown length.
 ⁴ Every packet's pts is 0 in `ffprobe` too — the bundled **`rm` muxer** wrote it so. Says nothing
   about real RealAudio files; needs a real sample.
 
-**Not measured — no encoder in the bundle, and `samples.ffmpeg.org` refused connections for the
-whole session (2026-11-01, `curl` code 28 on every path but one index):** `ape`, `mpc`, `qcp`,
-`oma`, `vqf`, `xa`, `aob`, `mp1`, and a real `ra`. Candidate URLs, unverified:
-`A-codecs/mp1-sample.mp1`, and the folders `A-codecs/musepack/`, `qcp/`, `ATRAC3/`, `ATRAC3+/`,
-`lossless/` (ape), `real/` — download into a folder and point `WOKA_AUDIO_SAMPLES` at it.
+**Downloaded samples — `samples.ffmpeg.org`, measured 2026-11-01 for AP-009** (the same probe,
+`WOKA_AUDIO_SAMPLES` pointed at them; not committed):
+
+| file | demuxer | audio | declared → shown ms | origin ms | to EOF: chunks, last ms | 50 % → landed | verdict |
+|---|---|---|---|---|---|---|---|
+| `achterba.vqf` | vqf | twinvq | 120093 → 120093 | 0 | 2586, 120140 | 60046 → 60139 | kept |
+| `at3p_sample1.oma` | oma | atrac3plus | 20944 → 20944 | 0 | 451, 20898 | 10472 → 10495 | kept |
+| `dvd-audio-sample.aob` | mpeg | mlp 96 kHz | 4439 → 4439 | 150648 | 5320, 4437 | 2219 → 2220 | kept |
+| `mp1-sample.mp1` | mp3 | mp1 | 576 → 576 | 0 | 48, 564 | 288 → 288 | kept |
+| `luckynight.ape` | ape | ape | 60480 → 60480 | 0 | 579, **0** | 30240 → 31764 | cut — no timestamps, for good |
+| `Choral.mpc` | mpc8 | mpc8 | 83591 → 83591 | 0 | 3254, **0** | 41795 → 41795 | cut — no timestamps, for good |
+| `for474.qcp` | qcp | qcelp | 12141 → 12141 | 0 | 562, 11220 | 6070 → **throws** | cut |
+| `Pcat.xa`, `SC2KBUG.XA` | xa | adpcm_ea_maxis_xa | 6255, 56594 | 0 | to the end | **throws** | cut |
+| `luckynightmono2.ra` | rm | real_288 | 61934 → 61934 | 0 | 3096, 61900 | 30967 → **throws** | cut (`ra`) |
+| `sample.PCM…56kbps.ra` | rm | cook | 5629 → 5629 | 0 | 238, 5589 | 2814 → 2829 | plays, but `ra` is cut whole |
+
+"Last 0" means every frame's timestamp stayed at 0. The audio loop paces and resyncs on
+timestamps, so such a file would resync forever. `ra` works for one codec of three, so the extension
+cannot promise it.
 
 ## 2. Facts about the current code (2026-11-01)
 
@@ -218,16 +232,16 @@ PiP is the thing that is hard to find today — and audio joins the slot when it
 | Ticket | Title | Status |
 |---|---|---|
 | mockup | [`now-playing.html`](../../../mockups/design/now-playing.html) — row, bubble, capsule, drag, flight | **accepted** 2026-11-01 — the spec for AP-004…AP-006 |
-| [AP-001](tickets/AP-001-audio-format-probe.md) | Probe: every candidate format through the player's grabber | **measured** 2026-11-01 for every encodable format (§1a); open: 9 formats need downloaded samples — nothing on screen |
+| [AP-001](tickets/AP-001-audio-format-probe.md) | Probe: every candidate format through the player's grabber | **measured** 2026-11-01, every candidate (§1a), the last nine on downloaded samples |
 | [AP-004](tickets/AP-004-now-playing-row.md) | Now Playing: the slot and its sidebar row, PiP video as the source (absorbs AP-005) | **done** 2026-11-01 — `:shared:build` green; checked by the author in the running app |
 | AP-005 | merged into AP-004 | retired |
 | [AP-006](tickets/AP-006-now-playing-bubble.md) | The bubble when the sidebar is hidden | **done** 2026-11-01 — checked by the author in the running app |
 | [AP-008](tickets/AP-008-now-playing-flight.md) | The cover flies between row and corner | **done** 2026-11-01 — checked by the author in the running app |
 | AP-007 | SMTC, second attempt (media keys with Woka in the background) | backlog |
 | mockup | [`audio-player.html`](../../../mockups/design/audio-player.html) — the viewer and the grid tile for an audio file | **accepted** 2026-11-01 — the spec for AP-003 |
-| [AP-003](tickets/AP-003-audio-plays-in-the-viewer.md) | An audio file opens in the viewer, plays, and carries on in Now Playing (absorbs AP-002) | **built** 2026-11-01, `:shared:build` green but for the known lock race — open: the by-hand check |
+| [AP-003](tickets/AP-003-audio-plays-in-the-viewer.md) | An audio file opens in the viewer, plays, and carries on in Now Playing (absorbs AP-002) | **done** 2026-11-01 — checked by the author in the running app |
 | AP-002 | merged into AP-003 | retired |
-| AP-009 | `Music` filter, file associations | backlog, after AP-003 |
+| [AP-009](tickets/AP-009-audio-in-the-library.md) | `Music` filter, file associations, the four formats measured on samples | **built** 2026-11-01, `:shared:build` green — open: the by-hand check |
 
 ## 6. Mockups
 
@@ -285,3 +299,6 @@ New surfaces get a mockup before their UI ticket (`feature-docs.md` §6), and th
 | 2026-11-01 | A track opened over a video in PiP | asks first, the PiP dialog's other half ("Close it and play this track?") | the author |
 | 2026-11-01 | Fit/Fill and zoom for a track | hidden; Info's divider goes with them | the author: the cover is not a picture to size |
 | 2026-11-01 | The line under a track's title | the artist alone; album, year and genre move to Info's `Track` section, beside codec, channels, sample rate, bitrate and length | the author: "artist — album" read as unfamiliar; Info's audio rows were pulled forward from AP-009 |
+| 2026-11-01 | The nine formats left from AP-001 | keep `vqf`, `oma`, `aob`, `mp1`; cut `ape`, `mpc`, `qcp`, `xa`, `ra` | measured on downloaded samples (§1a): the four play to the end and seek; `ape` and `mpc` carry no timestamps, `qcp`, `xa` and two `ra` codecs of three throw on seek |
+| 2026-11-01 | `ape` and `mpc` | a backlog ticket (AP-010), not this one | popular lossless and audiophile formats, so worth the engine change, but the change is to the audio loop, not to the library |
+| 2026-11-01 | `ape` and `mpc` — revisited | cut for good; AP-010 dropped | the author has never met either; the fix touches the audio loop every format runs through, for two formats nobody here plays. Reopened only by a real file that needs it |

@@ -10,12 +10,6 @@ slot that already exists. AP-004 and AP-005 were merged into
 
 ## Audio — after
 
-### AP-009 — Audio in the library
-The `Music` grid filter beside Photos and Videos; `AUDIO_EXTENSIONS` joins
-`ALL_SUPPORTED_MEDIA_EXTENSIONS`, `mediaAssociations` in `desktopApp/build.gradle.kts` and
-`WindowsFileAssociationsTest`'s total. AP-003 is the part that plays; the Info panel's audio rows
-went into it (2026-11-01).
-
 ## Media keys
 
 ### AP-007 — SMTC, second attempt

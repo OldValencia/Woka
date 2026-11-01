@@ -83,6 +83,7 @@ internal fun buildFolderState(
     val filteredItems = when (settings.mediaFilter) {
         "Photos" -> visibleItems.filter { it is MediaItem.Folder || it is MediaItem.Image }
         "Videos" -> visibleItems.filter { it is MediaItem.Folder || it is MediaItem.Video }
+        "Music" -> visibleItems.filter { it is MediaItem.Folder || it is MediaItem.Audio }
         else -> visibleItems
     }
 

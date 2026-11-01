@@ -34,7 +34,7 @@ data class WokaSettings(
     val showTitles: Boolean = true,
     val showFolders: Boolean = true,
     val showHiddenFiles: Boolean = false,
-    val mediaFilter: String = "All", // All, Photos, Videos
+    val mediaFilter: String = "All", // All, Photos, Videos, Music
     val theme: String = "System",
     val mediaViewerCarouselMode: CarouselVisibility = CarouselVisibility.AUTO,
     // Fills the empty *side* bars of a fullscreen video with a blurred, dimmed

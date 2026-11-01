@@ -58,18 +58,19 @@ private val VIDEO_EXTENSIONS = setOf(
 
 /**
  * Audio the player plays (AP-001, measured 2026-11-01 through the player's own
- * grabbers). Not yet in [ALL_SUPPORTED_MEDIA_EXTENSIONS]: file associations are
- * AP-009's, and the set waits for it rather than registering half a feature.
+ * grabbers; `vqf`, `oma`, `aob` and `mp1` measured on downloaded samples for AP-009).
+ * `ape` and `mpc` are not here: their frames carry no timestamps, and the player's
+ * audio loop follows timestamps.
  */
 private val AUDIO_EXTENSIONS = setOf(
-    "mp3", "mpga", "wav", "wave", "flac", "aac", "wma", "m4a", "m4b", "m4r",
-    "aiff", "aif", "tta", "w64", "caf", "ac3", "a52", "eac3", "dts", "mlp",
-    "opus", "ogg", "oga", "spx", "amr", "3ga", "voc"
+    "mp3", "mpga", "mp1", "wav", "wave", "flac", "aac", "wma", "m4a", "m4b", "m4r",
+    "aiff", "aif", "tta", "w64", "caf", "ac3", "a52", "eac3", "dts", "mlp", "aob",
+    "opus", "ogg", "oga", "spx", "amr", "3ga", "voc", "vqf", "oma"
 )
 
-/** The complete set of image and video file extensions supported by Woka. */
+/** The complete set of image, video and audio file extensions supported by Woka. */
 val ALL_SUPPORTED_MEDIA_EXTENSIONS: Set<String>
-    get() = IMAGE_EXTENSIONS + VIDEO_EXTENSIONS
+    get() = IMAGE_EXTENSIONS + VIDEO_EXTENSIONS + AUDIO_EXTENSIONS
 
 /**
  * Formats **Coil** cannot read, and the grid draws with `AsyncImage`.
