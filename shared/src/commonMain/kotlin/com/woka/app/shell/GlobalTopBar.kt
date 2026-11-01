@@ -34,9 +34,10 @@ private val COMPACT_BELOW = 620.dp
  *   controls.
  *
  * **No Back for history.** It went with the dock: the tree and the path are the
- * navigation. The `<` drawn here is only an overlay's way out — the viewer and the
+ * navigation. A `<` drawn here is either an overlay's way out — the viewer and the
  * editor set [TopBarAccessoriesState.backActionOverride] — which a file launched
- * from Explorer, on a window with nothing else in it, still needs.
+ * from Explorer, on a window with nothing else in it, still needs; or, with no
+ * overlay, [FolderUpButton]: up one folder, never back in time.
  *
  * Search and Settings step aside while an overlay holds the centre, as the dock did
  * under the viewer: the viewer and the editor speak for the whole bar.
@@ -88,6 +89,7 @@ fun GlobalTopBar(
                     // both answer "what is this screen". The name yields to an overlay
                     // that has taken the centre; the editor's Revert wants the slot then.
                     if (currentPath != null && !overlay) {
+                        if (topBarAccessories.backActionOverride == null) FolderUpButton(currentPath)
                         ToolbarTitle(currentPath)
                     } else {
                         topBarAccessories.leadingAccessory?.invoke()

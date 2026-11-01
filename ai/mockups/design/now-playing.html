@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Woka — Now Playing</title>
+<style>
+/* ---------- tokens (same as sidebar-redesign.html) ---------- */
+:root{
+  --page:#08090C;
+  --win:#0E1015;
+  --side:#13161C;
+  --raise:#1A1E26;
+  --hover:rgba(255,255,255,.05);
+  --sep:rgba(255,255,255,.07);
+  --text:#F2F2F5;
+  --text2:#9A9FAA;
+  --text3:#5E6370;
+  --accent:#0A84FF;
+  --accent-soft:rgba(10,132,255,.16);
+  --folder:#FF9F0A;
+  --danger:#FF453A;
+  --glass:rgba(22,25,32,.72);
+  --shadow:0 30px 80px rgba(0,0,0,.6);
+  --float-shadow:0 12px 32px rgba(0,0,0,.45);
+  --tile-ring:rgba(255,255,255,.06);
+}
+.light{
+  --page:#D9DBE0;
+  --win:#FFFFFF;
+  --side:#F2F2F7;
+  --raise:#FFFFFF;
+  --hover:rgba(0,0,0,.045);
+  --sep:rgba(60,60,67,.13);
+  --text:#1C1C1E;
+  --text2:#6C6C72;
+  --text3:#A1A1A8;
+  --accent:#007AFF;
+  --accent-soft:rgba(0,122,255,.13);
+  --glass:rgba(255,255,255,.78);
+  --shadow:0 30px 70px rgba(0,0,0,.18);
+  --float-shadow:0 12px 30px rgba(0,0,0,.16);
+  --tile-ring:rgba(0,0,0,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:var(--page);color:var(--text);
+  padding:28px 16px 60px;transition:background .25s}
+.wrap{max-width:1360px;margin:0 auto}
+svg{display:block}
+
+/* ---------- demo controls (not part of the app) ---------- */
+.demo{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+.demo h1{font-size:15px;font-weight:700;margin-right:10px}
+.demo label{font-size:11px;color:var(--text3);font-weight:650;margin-right:-4px}
+.dseg{display:flex;background:var(--raise);border:1px solid var(--sep);border-radius:9px;padding:2px}
+.dseg button{border:0;background:none;color:var(--text2);font-weight:600;font-size:12px;font-family:inherit;
+  padding:5px 11px;border-radius:7px;cursor:pointer}
+.dseg button.on{background:var(--accent);color:#fff}
+
+/* ---------- window ---------- */
+.app{display:flex;height:640px;border-radius:12px;overflow:hidden;background:var(--win);
+  border:1px solid var(--sep);box-shadow:var(--shadow);position:relative;transition:background .25s}
+
+/* ---------- sidebar ---------- */
+.side{width:236px;flex:none;background:var(--side);border-right:1px solid var(--sep);
+  display:flex;flex-direction:column;transition:margin .25s cubic-bezier(.2,.8,.2,1),background .25s}
+.app.collapsed .side{margin-left:-236px}
+.side-top{height:52px;display:flex;align-items:center;gap:8px;padding:0 12px 0 18px}
+.logo{width:20px;height:20px;border-radius:6px;background:linear-gradient(135deg,var(--accent),#5E5CE6);
+  display:grid;place-items:center;color:#fff;font-size:11px;font-weight:700}
+.side-top .name{font-size:13px;font-weight:650;flex:1}
+.side-scroll{flex:1;overflow-y:auto;padding:4px 10px 10px}
+.sec{font-size:11px;font-weight:650;color:var(--text3);padding:14px 8px 5px}
+.row{height:30px;display:flex;align-items:center;gap:8px;padding:0 8px;border-radius:7px;cursor:pointer;
+  font-size:13px;position:relative}
+.row:hover{background:var(--hover)}
+.row.sel{background:var(--accent-soft)}
+.row .ico{width:16px;height:16px;color:var(--folder);flex:none}
+.row.sel .ico{color:var(--accent)}
+.row .lbl{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.side-foot{border-top:1px solid var(--sep);padding:8px 10px}
+.side-foot .row{color:var(--text2)}
+.side-foot .row .ico{color:var(--text2)}
+
+/* ---------- Now Playing row: above Link Folder… ---------- */
+/* equal 8 dp above and below: centred between the two separators */
+.np{padding:8px 10px;border-top:1px solid var(--sep)}
+.np[hidden]{display:none}
+.nprow{height:44px;display:flex;align-items:center;gap:9px;padding:0 6px 0 6px;border-radius:9px;cursor:pointer;
+  position:relative}
+/* no hover fill: the row already sits in its own block (the author, 2026-11-01) */
+.nprow .t{flex:1;min-width:0}
+.nprow .t b{display:block;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nprow .t span{display:block;font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nprow .x{opacity:0}
+.nprow:hover .x{opacity:1}
+
+/* cover: the track's art, a video poster, or the placeholder */
+.cover{width:32px;height:32px;border-radius:6px;flex:none;position:relative;overflow:hidden;
+  box-shadow:0 0 0 1px var(--tile-ring)}
+.art{position:absolute;inset:0}
+.art.music{background:linear-gradient(135deg,#FF375F 0%,#BF5AF2 55%,#5E5CE6 100%)}
+.art.music::after{content:"";position:absolute;inset:22%;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,0,0,.35) 0 18%,transparent 19%),rgba(255,255,255,.14)}
+.art.video{background:linear-gradient(160deg,#2C3E50 0%,#4B6075 45%,#C49A6C 46%,#7A5C3E 100%)}
+.art.none{background:var(--raise);display:grid;place-items:center;color:var(--text3)}
+.art.none svg{width:46%;height:46%}
+/* the poster of a PiP video is 16:9; the square crops its middle */
+
+/* small round buttons shared by row and capsule */
+.rb{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;color:var(--text);flex:none;
+  cursor:pointer;transition:background .15s,opacity .15s}
+.rb:hover{background:var(--hover)}
+.rb svg{width:13px;height:13px}
+.rb.x{color:var(--text3)}
+.rb.x svg{width:10px;height:10px}
+.rb.x:hover{color:var(--text)}
+
+/* ---------- main ---------- */
+.main{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
+.bar{height:52px;flex:none;display:flex;align-items:center;gap:6px;padding:0 0 0 10px}
+.ib{width:30px;height:28px;border-radius:7px;display:grid;place-items:center;color:var(--text2);cursor:pointer;flex:none}
+.ib:hover{background:var(--hover);color:var(--text)}
+.ib svg{width:15px;height:15px}
+.ib.gone{display:none}
+.bar h2{font-size:15px;font-weight:650;margin-left:6px;flex:1}
+.winc{display:flex;flex:none}
+.winc i{width:44px;height:52px;display:grid;place-items:center;color:var(--text2);font-style:normal;font-size:12px}
+.content{flex:1;overflow:hidden;padding:6px 22px 22px;position:relative}
+.h3{font-size:12px;font-weight:650;color:var(--text2);margin:10px 2px 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:3px}
+.tile{aspect-ratio:1;border-radius:3px}
+
+/* the viewer / editor stand-ins drawn over the content */
+.cover-screen{position:absolute;inset:0;display:none;place-items:center;font-size:12px;color:var(--text3);
+  background:var(--win)}
+.cover-screen .frame{width:70%;aspect-ratio:16/10;border-radius:10px;display:grid;place-items:center;
+  background:var(--raise);box-shadow:0 0 0 1px var(--tile-ring);text-align:center;line-height:1.6}
+.app[data-screen="viewer-other"] .cover-screen,
+.app[data-screen="viewer-this"] .cover-screen,
+.app[data-screen="editor"] .cover-screen{display:grid}
+
+/* ---------- the bubble and its capsule ---------- */
+/* .bub is a fixed 48×48 anchor in the corner; .pill grows out of it, away from the edge */
+.bub{position:absolute;z-index:30;width:48px;height:48px;cursor:grab;touch-action:none;user-select:none;
+  transition:left .32s cubic-bezier(.2,.8,.2,1),top .32s cubic-bezier(.2,.8,.2,1),opacity .2s,transform .2s}
+.pill{position:absolute;top:0;left:0;height:48px;min-width:48px;border-radius:24px;display:flex;align-items:center;
+  background:var(--glass);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);
+  border:1px solid var(--sep);box-shadow:var(--float-shadow)}
+.bub.right .pill{left:auto;right:0}
+.bub.drag{transition:opacity .2s;cursor:grabbing;transform:scale(1.04)}
+.bub.off{opacity:0;pointer-events:none;transform:scale(.85)}
+.bub .cover{width:40px;height:40px;border-radius:50%;margin:3px;box-shadow:none}
+.bub .state{position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.28);color:#fff}
+.bub .state svg{width:14px;height:14px}
+/* progress ring around the cover */
+.ring{position:absolute;left:0;top:0;width:46px;height:46px;pointer-events:none}
+.ring circle{fill:none;stroke-width:2}
+.ring .bg{stroke:var(--sep)}
+.ring .fg{stroke:var(--accent);stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%}
+/* capsule: hidden parts collapse to zero width until hover */
+.bub .more{display:flex;align-items:center;gap:2px;max-width:0;opacity:0;overflow:hidden;
+  transition:max-width .26s cubic-bezier(.2,.8,.2,1),opacity .18s}
+.bub:hover .more,.bub.pin-open .more{max-width:260px;opacity:1}
+.bub:hover .state,.bub.pin-open .state{opacity:0}
+.bub .more .t{width:150px;padding:0 6px 0 5px;cursor:pointer}
+.bub .more .t b{display:block;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bub .more .t span{display:block;font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bub .more .rb:last-child{margin-right:8px}
+.bub.right .pill{flex-direction:row-reverse}
+.bub.right .more{flex-direction:row-reverse}
+.bub.right .more .rb:last-child{margin-right:0;margin-left:8px}
+.bub.right .more .t{text-align:right}
+
+/* corner targets shown while dragging */
+.slot{position:absolute;z-index:29;width:48px;height:48px;border-radius:24px;border:1.5px dashed var(--sep);
+  opacity:0;transition:opacity .15s,border-color .15s}
+.app.dragging .slot{opacity:1}
+.slot.near{border-color:var(--accent)}
+
+/* the flight between row and corner */
+.ghost{position:absolute;z-index:40;border-radius:6px;overflow:hidden;pointer-events:none;
+  transition:left .3s cubic-bezier(.2,.8,.2,1),top .3s cubic-bezier(.2,.8,.2,1),width .3s,height .3s,border-radius .3s}
+
+.toast{position:absolute;left:50%;top:64px;transform:translate(-50%,-8px);opacity:0;z-index:50;
+  font-size:12px;padding:7px 12px;border-radius:9px;background:var(--glass);backdrop-filter:blur(20px);
+  border:1px solid var(--sep);box-shadow:var(--float-shadow);transition:opacity .2s,transform .2s;pointer-events:none}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* ---------- spec + notes ---------- */
+.spec{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-top:26px}
+.note{background:var(--raise);border:1px solid var(--sep);border-radius:12px;padding:15px 17px}
+.note h4{font-size:13.5px;font-weight:650;margin-bottom:6px}
+.note p,.note li{font-size:12.5px;color:var(--text2);line-height:1.55}
+.note ul{padding-left:16px}
+.note code{font-size:11.5px;color:var(--text)}
+.note.ask{border-color:rgba(255,159,10,.4)}
+.note.ask h4{color:var(--folder)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="demo">
+  <h1>Now Playing</h1>
+  <label>Theme</label>
+  <div class="dseg" data-k="theme"><button class="on" data-v="dark">Dark</button><button data-v="light">Light</button></div>
+  <label>Source</label>
+  <div class="dseg" data-k="src"><button class="on" data-v="audio">Audio</button><button data-v="noart">Audio, no cover</button><button data-v="pip">PiP video</button><button data-v="none">Empty</button></div>
+  <label>Sidebar</label>
+  <div class="dseg" data-k="side"><button class="on" data-v="open">Open</button><button data-v="hidden">Hidden</button></div>
+  <label>Screen</label>
+  <div class="dseg" data-k="screen"><button class="on" data-v="folder">Folder</button><button data-v="viewer-other">Viewer, other file</button><button data-v="viewer-this">Viewer, this track</button><button data-v="editor">Editor</button></div>
+</div>
+
+<div class="app" id="app" data-screen="folder">
+  <aside class="side">
+    <div class="side-top"><div class="logo">W</div><div class="name">Woka</div></div>
+    <div class="side-scroll">
+      <div class="sec">Folders</div>
+      <div class="row"><svg class="ico" viewBox="0 0 16 16"><path fill="currentColor" d="M1.5 4A1.5 1.5 0 0 1 3 2.5h3.2l1.5 1.5H13A1.5 1.5 0 0 1 14.5 5.5v6A1.5 1.5 0 0 1 13 13H3a1.5 1.5 0 0 1-1.5-1.5z"/></svg><span class="lbl">Photos</span></div>
+      <div class="row sel"><svg class="ico" viewBox="0 0 16 16"><path fill="currentColor" d="M1.5 4A1.5 1.5 0 0 1 3 2.5h3.2l1.5 1.5H13A1.5 1.5 0 0 1 14.5 5.5v6A1.5 1.5 0 0 1 13 13H3a1.5 1.5 0 0 1-1.5-1.5z"/></svg><span class="lbl">Music</span></div>
+      <div class="row"><svg class="ico" viewBox="0 0 16 16"><path fill="currentColor" d="M1.5 4A1.5 1.5 0 0 1 3 2.5h3.2l1.5 1.5H13A1.5 1.5 0 0 1 14.5 5.5v6A1.5 1.5 0 0 1 13 13H3a1.5 1.5 0 0 1-1.5-1.5z"/></svg><span class="lbl">Movies</span></div>
+    </div>
+    <div class="np" id="np">
+      <div class="nprow" id="nprow" title="Open">
+        <div class="cover" id="rowCover"><div class="art music"></div></div>
+        <div class="t"><b class="name">Nightcall</b><span class="sub">Kavinsky</span></div>
+        <div class="rb pp" title="Pause"></div>
+        <div class="rb x" title="Stop"></div>
+      </div>
+    </div>
+    <div class="side-foot">
+      <div class="row"><svg class="ico" viewBox="0 0 16 16"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M8 3v10M3 8h10"/></svg><span class="lbl">Link Folder…</span></div>
+    </div>
+  </aside>
+
+  <section class="main">
+    <div class="bar">
+      <div class="ib gone" id="showSide" title="Show sidebar"><svg viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="13" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M6 2.5v11" stroke="currentColor" stroke-width="1.3"/></svg></div>
+      <h2>Music</h2>
+      <div class="winc"><i>—</i><i>☐</i><i>✕</i></div>
+    </div>
+    <div class="content" id="content">
+      <div class="h3">Media</div>
+      <div class="grid" id="grid"></div>
+      <div class="cover-screen" id="screenNote"><div class="frame" id="screenText"></div></div>
+    </div>
+  </section>
+
+  <div class="slot" data-c="tl"></div><div class="slot" data-c="tr"></div>
+  <div class="slot" data-c="bl"></div><div class="slot" data-c="br"></div>
+
+  <div class="bub off" id="bub"><div class="pill">
+    <div style="position:relative;flex:none">
+      <svg class="ring" viewBox="0 0 46 46"><circle class="bg" cx="23" cy="23" r="22"/><circle class="fg" id="ringFg" cx="23" cy="23" r="22"/></svg>
+      <div class="cover" id="bubCover"><div class="art music"></div></div>
+      <div class="state" id="bubState"></div>
+    </div>
+    <div class="more">
+      <div class="t" title="Open"><b class="name">Nightcall</b><span class="sub">Kavinsky</span></div>
+      <div class="rb pp" title="Pause"></div>
+      <div class="rb x" title="Stop"></div>
+    </div>
+  </div></div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<div class="spec">
+  <div class="note"><h4>Row — sidebar open</h4><ul>
+    <li>Sits above <code>Link Folder…</code>, its own block with a 1&nbsp;dp top separator. Present only while the slot holds something.</li>
+    <li>44&nbsp;dp tall, radius 9; cover 32&nbsp;dp, radius 6; name 13&nbsp;sp semibold, second line 11&nbsp;sp <code>text3</code>.</li>
+    <li>Second line: the artist from tags, else the folder name; for PiP — <code>Picture in Picture</code>.</li>
+    <li>Play/pause always shown; <code>×</code> on hover only. Click anywhere else opens.</li>
+    <li>No hover fill on the row — it already sits in its own block.</li>
+  </ul></div>
+  <div class="note"><h4>Bubble — sidebar hidden</h4><ul>
+    <li>48&nbsp;dp, glass (<code>glass</code> + 28 blur), 1&nbsp;dp <code>sep</code> border. Cover 40&nbsp;dp round.</li>
+    <li>At rest it shows state on the cover: pause glyph when paused, bars when playing — no button at rest, because a desktop pointer always hovers before it clicks.</li>
+    <li>2&nbsp;dp ring = position in the track (accent). PiP video: the same ring.</li>
+    <li>16&nbsp;dp from the window edges; the top corners start under the 52&nbsp;dp title bar.</li>
+  </ul></div>
+  <div class="note"><h4>Capsule — hover</h4><ul>
+    <li>Grows away from its edge: rightwards in a left corner, leftwards in a right one, 260&nbsp;ms.</li>
+    <li>Name + second line (click → open), play/pause, <code>×</code>. <code>×</code> stops and empties the slot.</li>
+  </ul></div>
+  <div class="note"><h4>Drag and the flight</h4><ul>
+    <li>Drag anywhere, release → snaps to the nearest corner, 320&nbsp;ms. Dashed targets show while dragging. The corner is saved.</li>
+    <li>A press that moves &lt; 4&nbsp;dp is a click, not a drag (the PiP lesson from the verification pass).</li>
+    <li>Hiding the sidebar flies the row's cover to the corner, showing it flies back — 300&nbsp;ms, alongside the sidebar's 250&nbsp;ms.</li>
+  </ul></div>
+  <div class="note"><h4>Hidden</h4><ul>
+    <li>Slot empty; the viewer open on the slot's own file; fullscreen video; the editor open — and back the moment it closes.</li>
+    <li>In the viewer on another file it stays.</li>
+  </ul></div>
+  <div class="note"><h4>Settled with the author, 2026-11-01</h4><ul>
+    <li>Progress ring on the bubble — kept.</li>
+    <li><code>×</code> in the row on hover, as in the capsule — kept.</li>
+    <li>At-rest state glyph (bars / pause) — kept.</li>
+    <li>Row hover fill — removed.</li>
+  </ul></div>
+</div>
+</div>
+
+<script>
+const ICON = {
+  play:'<svg viewBox="0 0 14 14"><path fill="currentColor" d="M3.5 2.2v9.6a.6.6 0 0 0 .9.5l7.6-4.8a.6.6 0 0 0 0-1L4.4 1.7a.6.6 0 0 0-.9.5z"/></svg>',
+  pause:'<svg viewBox="0 0 14 14"><rect x="3" y="2" width="2.8" height="10" rx=".8" fill="currentColor"/><rect x="8.2" y="2" width="2.8" height="10" rx=".8" fill="currentColor"/></svg>',
+  x:'<svg viewBox="0 0 10 10"><path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+  bars:'<svg viewBox="0 0 14 14"><rect x="2" y="5" width="2" height="7" rx="1" fill="currentColor"><animate attributeName="height" values="7;3;7" dur=".9s" repeatCount="indefinite"/><animate attributeName="y" values="5;9;5" dur=".9s" repeatCount="indefinite"/></rect><rect x="6" y="2" width="2" height="10" rx="1" fill="currentColor"><animate attributeName="height" values="10;5;10" dur="1.1s" repeatCount="indefinite"/><animate attributeName="y" values="2;7;2" dur="1.1s" repeatCount="indefinite"/></rect><rect x="10" y="6" width="2" height="6" rx="1" fill="currentColor"><animate attributeName="height" values="6;9;6" dur=".8s" repeatCount="indefinite"/><animate attributeName="y" values="6;3;6" dur=".8s" repeatCount="indefinite"/></rect></svg>',
+  note:'<svg viewBox="0 0 16 16"><path fill="currentColor" d="M6 12.2V4.1l7-1.6v7.9a2 2 0 1 1-1.3-1.9V4.9L7.3 5.9v6.4A2 2 0 1 1 6 12.2z"/></svg>'
+};
+const SRC = {
+  audio:{art:'music',name:'Nightcall',sub:'Kavinsky'},
+  noart:{art:'none',name:'04 - Untitled.flac',sub:'Music'},
+  pip:{art:'video',name:'2160p Green Book.mkv',sub:'Picture in Picture'}
+};
+const S = {theme:'dark',src:'audio',side:'open',screen:'folder',playing:true,corner:'bl',pos:.32};
+const $ = id => document.getElementById(id);
+const app = $('app'), bub = $('bub');
+const EDGE = 16, BAR = 52, SIZE = 48;
+
+// grid of placeholder tiles
+const hues = [210,330,30,260,160,10,190,280,45,120,350,230];
+$('grid').innerHTML = hues.map(h=>`<div class="tile" style="background:linear-gradient(135deg,hsl(${h} 45% 42%),hsl(${h+40} 40% 22%))"></div>`).join('');
+
+function art(el, kind){ el.innerHTML = `<div class="art ${kind}">${kind==='none'?ICON.note:''}</div>`; }
+
+function cornerXY(c){
+  const W = app.clientWidth, H = app.clientHeight;
+  const x = c[1]==='l' ? EDGE : W - EDGE - bub.offsetWidth;
+  const y = c[0]==='t' ? BAR + EDGE - 4 : H - EDGE - SIZE;
+  return {x,y};
+}
+function slotXY(c){
+  const W = app.clientWidth, H = app.clientHeight;
+  return {x: c[1]==='l' ? EDGE : W-EDGE-SIZE, y: c[0]==='t' ? BAR+EDGE-4 : H-EDGE-SIZE};
+}
+function placeSlots(){ document.querySelectorAll('.slot').forEach(s=>{const p=slotXY(s.dataset.c);s.style.left=p.x+'px';s.style.top=p.y+'px';}); }
+function place(){
+  bub.classList.toggle('right', S.corner[1]==='r');
+  const p = cornerXY(S.corner); bub.style.left=p.x+'px'; bub.style.top=p.y+'px';
+}
+
+function bubbleVisible(){
+  return S.src!=='none' && S.side==='hidden' && S.screen!=='viewer-this' && S.screen!=='editor';
+}
+
+function render(){
+  document.body.classList.toggle('light', S.theme==='light');
+  app.classList.toggle('collapsed', S.side==='hidden');
+  $('showSide').classList.toggle('gone', S.side!=='hidden');
+  app.dataset.screen = S.screen;
+  $('screenText').innerHTML = {
+    'viewer-other':'Viewer — another file<br><b>bubble stays</b>',
+    'viewer-this':'Viewer — the track that is playing<br><b>bubble hidden</b>',
+    'editor':'Editor<br><b>bubble hidden, back on leaving</b>'}[S.screen] || '';
+  const src = SRC[S.src];
+  $('np').hidden = S.src==='none';
+  if (src){
+    art($('rowCover'), src.art); art($('bubCover'), src.art);
+    document.querySelectorAll('.name').forEach(e=>e.textContent=src.name);
+    document.querySelectorAll('.sub').forEach(e=>e.textContent=src.sub);
+  }
+  document.querySelectorAll('.pp').forEach(e=>{e.innerHTML=S.playing?ICON.pause:ICON.play;e.title=S.playing?'Pause':'Play';});
+  document.querySelectorAll('.x').forEach(e=>e.innerHTML=ICON.x);
+  $('bubState').innerHTML = S.playing ? ICON.bars : ICON.pause;
+  bub.classList.toggle('off', !bubbleVisible());
+  ring(); place(); placeSlots();
+}
+function ring(){
+  const c = 2*Math.PI*22; const fg=$('ringFg');
+  fg.style.strokeDasharray=c; fg.style.strokeDashoffset=c*(1-S.pos);
+}
+setInterval(()=>{ if(S.playing && S.src!=='none'){ S.pos=(S.pos+.004)%1; ring(); } },200);
+
+function toast(t){ const e=$('toast'); e.textContent=t; e.classList.add('show'); clearTimeout(toast.h); toast.h=setTimeout(()=>e.classList.remove('show'),1600); }
+function open(){ toast(S.src==='pip' ? 'PiP window brought to the front' : 'Opens Music › Nightcall in the viewer'); }
+
+// the flight between the row's cover and the corner
+function fly(toHidden){
+  if (S.src==='none' || S.screen==='viewer-this' || S.screen==='editor') return;
+  const a = app.getBoundingClientRect(), r = $('rowCover').getBoundingClientRect();
+  const from = toHidden ? {x:r.left-a.left,y:r.top-a.top,s:32,rad:6} : null;
+  const cp = cornerXY(S.corner); const bx = S.corner[1]==='l' ? cp.x+4 : cp.x+bub.offsetWidth-44;
+  const corner = {x:bx,y:cp.y+4,s:40,rad:20};
+  const g = document.createElement('div'); g.className='ghost'; g.innerHTML=$('rowCover').innerHTML;
+  const start = toHidden ? from : corner;
+  Object.assign(g.style,{left:start.x+'px',top:start.y+'px',width:start.s+'px',height:start.s+'px',borderRadius:start.rad+'px'});
+  app.appendChild(g); bub.classList.add('off');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    let end = corner;
+    if (!toHidden){ const rr=$('rowCover').getBoundingClientRect(); end={x:rr.left-a.left,y:rr.top-a.top,s:32,rad:6}; }
+    Object.assign(g.style,{left:end.x+'px',top:end.y+'px',width:end.s+'px',height:end.s+'px',borderRadius:end.rad+'px'});
+  }));
+  setTimeout(()=>{ g.remove(); render(); },310);
+}
+
+// demo segment controls
+document.querySelectorAll('.dseg').forEach(seg=>seg.addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  seg.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+  const k=seg.dataset.k, v=b.dataset.v, was=S[k]; S[k]=v;
+  if (k==='side' && was!==v){ app.classList.toggle('collapsed', v==='hidden'); $('showSide').classList.toggle('gone', v!=='hidden'); fly(v==='hidden'); return; }
+  render();
+}));
+$('showSide').addEventListener('click',()=>{ S.side='open'; document.querySelector('[data-k=side] [data-v=open]').click(); });
+
+// row and capsule actions
+document.addEventListener('click',e=>{
+  if (e.target.closest('.pp')){ S.playing=!S.playing; render(); return; }
+  if (e.target.closest('.x')){ S.src='none'; document.querySelector('[data-k=src] [data-v=none]').click(); return; }
+  if (e.target.closest('.nprow') || e.target.closest('.bub .t')) open();
+});
+
+// drag between corners, snap to the nearest
+let drag=null;
+bub.addEventListener('pointerdown',e=>{
+  if (e.target.closest('.rb') || e.target.closest('.t')) return;
+  const a=app.getBoundingClientRect();
+  drag={dx:e.clientX-bub.offsetLeft,dy:e.clientY-bub.offsetTop,sx:e.clientX,sy:e.clientY,moved:false,a};
+  bub.setPointerCapture(e.pointerId);
+});
+bub.addEventListener('pointermove',e=>{
+  if(!drag) return;
+  if(!drag.moved && Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)<4) return;
+  drag.moved=true; bub.classList.add('drag'); app.classList.add('dragging');
+  bub.style.left=(e.clientX-drag.dx)+'px'; bub.style.top=(e.clientY-drag.dy)+'px';
+  const n=nearest(); document.querySelectorAll('.slot').forEach(s=>s.classList.toggle('near',s.dataset.c===n));
+});
+bub.addEventListener('pointerup',()=>{
+  if(!drag) return;
+  if(drag.moved){ S.corner=nearest(); } else { open(); }
+  drag=null; bub.classList.remove('drag'); app.classList.remove('dragging'); place();
+});
+function nearest(){
+  const cx=bub.offsetLeft+SIZE/2, cy=bub.offsetTop+SIZE/2;
+  return (cy<app.clientHeight/2?'t':'b')+(cx<app.clientWidth/2?'l':'r');
+}
+window.addEventListener('resize',()=>{ place(); placeSlots(); });
+render();
+</script>
+</body>
+</html>
