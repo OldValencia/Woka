@@ -19,7 +19,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.editor.shell.EditorTokens
-import com.woka.feature.viewer.shell.slider.MediaSliderStyle
 import com.woka.feature.viewer.video.formatTime
 
 /** `DockItem`'s own target, which is what the transport reads as. */
@@ -29,29 +28,11 @@ private val TRANSPORT = 26.dp
 private val READOUT_WIDTH = 92.dp
 
 /**
- * The three small pieces [VideoEditorBand] is made of, apart because that file reached the
- * size mandate. The seam is the usual one: the band is a *layout and a seek*, and these
- * are what it lays out — the same cut `MediaSlider` and `MediaSliderTrack` already make.
+ * The two small pieces [VideoEditorBand] is made of besides the strip, apart because that
+ * file reached the size mandate. The seam is the usual one: the band is a *layout*, and
+ * these are what it lays out. The third piece, the slider's style, left with the slider
+ * when the strip replaced it (ME-210).
  */
-
-/**
- * White rather than the accent, matching the inspector's sliders: **the accent marks
- * selection, and a track marks level**. `Theme.viewer.onScrim*`, because this sits on a
- * scrim over the picture.
- *
- * **The unplayed track is `onScrimHover`, not `onScrimSecondary`** (2026-09-03). The
- * secondary is a *text* colour — #CDCDD2, near-white — and as a track it drew a solid
- * pale line that the played half was indistinguishable from: only the knob said where
- * the play head was. 8 % white is what the mockup's `--on-scrim-hov` is and what the
- * inspector's own `DetentSlider` track uses; `MediaSliderTrack` lightens it further under
- * the pointer, which is the affordance doing the work instead of the resting state.
- */
-@Composable
-internal fun bandSliderStyle() = MediaSliderStyle(
-    activeColor = Theme.viewer.onScrim,
-    inactiveColor = Theme.viewer.onScrimHover,
-    thumbColor = Theme.viewer.onScrim
-)
 
 /**
  * **A `Box` that centres, not a sized `BasicText`** (2026-09-03). Given only a `size`, the
@@ -94,7 +75,3 @@ internal fun Readout(position: () -> Long, duration: Long) {
         )
     )
 }
-
-/** Zero for a file whose duration has not been read yet — never a division by it. */
-internal fun fractionOf(position: Long, duration: Long): Float =
-    if (duration <= 0L) 0f else (position.toFloat() / duration).coerceIn(0f, 1f)

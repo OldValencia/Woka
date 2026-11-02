@@ -11,10 +11,13 @@ Umbrella, and the data-model argument this rests on: [`../video-editor.md`](../v
 
 ## 1. Status
 
-No tickets written. Every block is in [the shared backlog](../backlog.md) §210.
+| Ticket | Title | State |
+|---|---|---|
+| [ME-215](tickets/ME-215-this-clip.md) | This Clip: a tool on one stretch of the film | **specified 2026-11-02**, not started — next |
+| [ME-210](tickets/ME-210-cut-the-film-on-the-strip.md) | Cut the film on the strip — folds in ME-211…ME-214 | **done 2026-11-01**, build and tests green; **not yet looked at on screen** — drag, handle trims and the filmstrip want a by-hand pass |
 
-Blocked on [`foundation/`](../../../implemented/video-editor/foundation/foundation.md) — there is no band to draw in until ME-201
-lands, and no engine to fold a timeline stage.
+Every other block is in [the shared backlog](../backlog.md) §210. Joins stall for one seek each
+until ME-232.
 
 ---
 

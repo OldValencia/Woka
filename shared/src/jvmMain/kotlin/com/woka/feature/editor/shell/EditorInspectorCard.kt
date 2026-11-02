@@ -69,7 +69,11 @@ internal fun EditorInspectorCard(
         ) { plateAlpha ->
             EditorInspector(
                 title = activeTool.manifest.title,
-                footnote = activeTool.footnote(paramsOf(document, activeTool, engine.sourceSize), frame),
+                // The tool's own line, then the medium's word on it (`EditorEngine.toolNote`).
+                footnote = listOfNotNull(
+                    activeTool.footnote(paramsOf(document, activeTool, engine.sourceSize), frame),
+                    engine.toolNote(activeTool.manifest.id)
+                ).joinToString(" · ").ifEmpty { null },
                 // The dock is the ceiling: a card sizes to its content and stops
                 // there, so Styles' fourteen squares reach the rail's width while
                 // Transform's four buttons stay compact — the reason this was a

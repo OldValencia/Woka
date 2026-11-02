@@ -19,8 +19,12 @@ import androidx.compose.ui.input.key.Key
  * The two jobs coincide today and the ticket says they may. If they ever diverge,
  * the fold gets its own rank and this keeps placement — do not silently reorder
  * the enum to fix a rail layout, because that changes what images come out.
+ *
+ * **[Time] was prepended, not inserted** (ME-210): prepending keeps every existing
+ * relative rank, so no image comes out differently, and it is the only correct rank — a
+ * cut decides which frames exist before anything decides what they look like.
  */
-enum class ToolDomain { Geometry, Color, Annotate, Output }
+enum class ToolDomain { Time, Geometry, Color, Annotate, Output }
 
 /**
  * How a tool's controls turn into history (§3.4).

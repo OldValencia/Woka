@@ -1,5 +1,6 @@
 package com.woka.feature.editor.engine.video
 
+import com.woka.core.ui.image.AppliedVideoEdits
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditLayers
 import com.woka.feature.editor.core.EditSaveResult
@@ -70,6 +71,8 @@ internal class VideoEditorWrites(
         if (result is EditSaveResult.Saved) {
             stamp = SourceStamp.of(file)
             evictCachesFor(file)
+            // The viewer underneath, its slider and the grid re-read the film (ME-284).
+            AppliedVideoEdits.changed()
         }
         return result
     }

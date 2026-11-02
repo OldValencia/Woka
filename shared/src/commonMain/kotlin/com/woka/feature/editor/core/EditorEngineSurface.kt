@@ -47,10 +47,10 @@ interface EditorEngineSurface {
      *
      * **It names no player and no clip**, which is the constraint the whole seam exists
      * for (§3.3): the moment the shell can name either, every file that touches one
-     * becomes a video ticket.
+     * becomes a video ticket. What it writes, it writes through [edits] (ME-210).
      */
     @Composable
-    fun Timeline(document: EditDocument, modifier: Modifier) = Unit
+    fun Timeline(document: EditDocument, edits: EditorTimelineScope, modifier: Modifier) = Unit
 
     /**
      * "Start or stop whatever is moving on the canvas", raised by a click on it.

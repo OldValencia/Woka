@@ -32,11 +32,11 @@ object MediaThumbnails {
     }
 
     suspend fun loadThumbnail(item: MediaItem, frameIndex: Int = 0): ImageBitmap? {
-        ImageBitmapCache[ImageBitmapCache.key(item.file.absolutePath, frameIndex)]?.let { return it }
+        ImageBitmapCache[ImageBitmapCache.key(item.file.absolutePath, frameIndex)]?.let { return editedPoster(item, it) }
         return withContext(ImageBitmapCache.ioDispatcher) {
             decoded(fallback = null, report = true) {
                 when (item) {
-                    is MediaItem.Video -> VideoThumbnailExtractor.load(item)
+                    is MediaItem.Video -> VideoThumbnailExtractor.load(item)?.let { editedPoster(item, it) }
                     is MediaItem.Audio -> AudioCover.load(item.file)
                     else -> ImageLoader.load(item.file, frameIndex)
                 }
@@ -58,7 +58,7 @@ object MediaThumbnails {
         withContext(ImageBitmapCache.ioDispatcher) {
             decoded(fallback = null, report = true) {
                 when (item) {
-                    is MediaItem.Video -> VideoThumbnailExtractor.load(item)
+                    is MediaItem.Video -> VideoThumbnailExtractor.load(item)?.let { editedPoster(item, it) }
                     is MediaItem.Audio -> AudioCover.load(item.file)
                     else -> StillPreview.load(item.file, frameIndex)
                 }
@@ -144,4 +144,4 @@ private inline fun <T> decoded(fallback: T, report: Boolean, body: () -> T): T =
     } catch (e: Exception) {
         if (report) e.printStackTrace()
         fallback
-    }
+}

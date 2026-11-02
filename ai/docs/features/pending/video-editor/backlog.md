@@ -55,40 +55,12 @@ the next folder will meet the same walls:
 
 ## 210 — Timeline
 
-### ME-210 — The clip list and a trim that only trims
-`ToolDomain.Time`, prepended to the enum. One `Single` tool owning one `ObjectParam`: an ordered list
-of clips, each with a stable minted id, a source range, and the two fields the strip's layout needs.
-`stage()` returns a `ToolStage` that is not a `RasterStage`, which the raster fold already drops.
-Trimming the ends only; everything else is a later block.
-*Depends on ME-206.*
+### ME-210…ME-214 — promoted 2026-11-01 as one ticket
+[`timeline/tickets/ME-210-cut-the-film-on-the-strip.md`](timeline/tickets/ME-210-cut-the-film-on-the-strip.md),
+status in [`timeline/`](timeline/timeline.md)'s table. ME-211…ME-214 are folded in and not reused.
 
-### ME-211 — The filmstrip is the seek preview's cells
-Lay `SeekPreviewSource`'s 240 px keyframe-only cells along the strip, through `SeekPreviewCache`, one
-run per clip in timeline order. Nothing new decodes, and nothing decodes on the UI thread. The
-expanded (76 dp) state of the band.
-*Depends on ME-210.*
-
-### ME-212 — Split at the play head
-An `ActionParam` in the inspector and a ✂ on the play head; one entry becomes two at the play head's
-millisecond, with no keyframe consulted. Undo is one entry per split.
-*Depends on ME-210.*
-
-### ME-213 — Select, delete, duplicate
-Selection is a clip and it lives in the strip; the inspector's actions read it through the same
-channel markup's rows already use. Delete closes the hole, duplicate lands beside the original with a
-new id. Both disabled with no selection, and the `Delete` key has to be shared with markup's own.
-*Depends on ME-212.*
-
-### ME-214 — Reorder by dragging
-Drag a clip along the row; the others slide; the drop is one history entry. No gaps, ever, and no
-position anybody can get wrong.
-*Depends on ME-213.*
-
-### ME-215 — The clip scope switch, and a layer that travels
-`EditScope` unchanged, `EditLayers` keyed on the clip id, the switch reading **All Clips / This
-Clip**. Deleting a clip removes its layer, duplicating copies it under the new id, re-ordering does
-nothing to it. `EditorFrames.allowsPerFrame` answers true for a video with more than one clip.
-*Depends on ME-214.*
+### ME-215 — promoted 2026-11-02
+[`timeline/tickets/ME-215-this-clip.md`](timeline/tickets/ME-215-this-clip.md).
 
 ### ME-216 — Speed per clip
 A field on the clip entry, ¼×–4×, with a detent at 1×. It changes the clip's length on the strip and
@@ -130,11 +102,8 @@ whether both decode at all at 4K. Print a table, record it here with the date. T
 the whole folder.
 *Depends on ME-201.*
 
-### ME-231 — Timeline time and source time
-Two pure functions over the clip list, in `commonMain`, unit-tested, with speed and freeze folded in.
-Every off-by-one in the feature will live here. `currentPositionMs` stays a source position and the
-timeline position is derived.
-*Depends on ME-210.*
+### ME-231 — done 2026-11-01 inside ME-210
+Without speed and freeze; status in [`playback/`](playback/playback.md)'s table.
 
 ### ME-232 — The pre-rolling decoder and the hand-off
 Start the second decoder a measured margin before a join, into a queue of two or three frames, switch
@@ -214,17 +183,15 @@ is re-planned instead of promoted.
 draw the same held frame, with no decode and no chain rebuild per option per recomposition.
 *Depends on ME-260.*
 
-### ME-262 — Resize declares the render's output size
-Keep the tool, its slider and its `Output` position; its stage is ignored by the canvas and read only
-by the renderer, and its footnote says when it applies.
-*Depends on ME-291.*
+### ME-262 — done 2026-11-02, in ME-291
+The author chose *render only*: the render reads Resize through the fold, the viewer ignores it, and
+the inspector says "Applies when you render the video" (`EditorEngine.toolNote`).
 
-### ME-263 — Markup that appears, holds and fades
-A sibling `ObjectParam` on `MarkupTool` keyed by shape id, holding `(atMs, holdMs, fadeMs)`; no
-`MarkupShape` variant is touched and no existing wire format changes. A shape with no entry is on for
-the whole video. One alpha function in `commonMain`, called by the canvas and by the renderer so the
-two cannot disagree.
-*Depends on ME-215.*
+### ME-263 — promoted 2026-11-02
+[`picture/tickets/ME-263-markup-appears-holds-fades.md`](picture/tickets/ME-263-markup-appears-holds-fades.md).
+
+### ME-268 — new, promoted 2026-11-02
+[`picture/tickets/ME-268-an-area-for-a-look.md`](picture/tickets/ME-268-an-area-for-a-look.md) — rectangle and ellipse areas.
 
 ### ME-265 — Auto-enhance in one tap
 `AdjustAuto` (ME-167) measures **the frame at the play head, once, when the button is pressed** — not
@@ -277,11 +244,9 @@ A trailing chunk plus the four-byte `RIFF` size at offset 4. `WebpRecipe` alread
 and is the thing to read before writing this.
 *Depends on ME-282.*
 
-### ME-284 — Every reader folds
-The viewer's frame, the grid poster, PiP and the seek preview all decode the original and fold the
-recipe — **including the cuts**, by reusing ME-232's clip walk rather than growing a second one. A
-viewer that applied the crop and ignored the cut would be worse than one that ignored both.
-*Depends on ME-232, ME-288.*
+### ME-284 — promoted 2026-11-02
+[`save/tickets/ME-284-every-reader-folds.md`](save/tickets/ME-284-every-reader-folds.md), status in
+[`save/`](save/save.md)'s table. Built on ME-210's walk rules, not on ME-232, which does not exist yet.
 
 ### ME-285 — Duration, the slider and the watch record
 A trim changes how long the file is. The slider and the readout must show the edited length; the
@@ -306,31 +271,10 @@ it does today. `SaveEviction`'s poster key already changes with the write, so no
 
 ## 290 — Render
 
-### ME-290 — Probe: can JavaCV copy packets?
-`FFmpegFrameRecorder` writes frames; a stream copy is the packet-level API and nothing here has
-exercised it. Read ME-181's KDoc first — it carries the trap it cost to find. If the answer is no,
-either the copy path runs the ffmpeg binary as a process, reversing that decision for one path, or
-every render re-encodes and the size promise is kept by encoding well.
-*Depends on ME-201.*
-
-### ME-291 — The all-copy render
-A document holding only cuts, reorders and audio gain: copy every segment and concatenate, with a new
-non-clobbering name beside the source and never an overwrite. Lossless, near-instant, and smaller
-than the source by exactly what was cut. A cut boundary that is not on a keyframe demotes the whole
-render to ME-292 and the banner says so.
-*Depends on ME-290, ME-231.*
-
-### ME-292 — The all-encode render
-Any pixel work at all, so every segment is re-encoded: the source's container, codec and resolution,
-the quality target measured off the input's own bitrate, and the same `RasterRecipe` replayed at scale
-1.0 that a still's save already replays. Markup alpha comes from ME-263's shared function.
-*Depends on ME-291, ME-263.*
-
-### ME-293 — Progress, cancel, and outliving the editor
-`FrameExportStatus`'s shape — a global, an `onProgress(done, total)`, `StatusPill` through
-`StatusBanners` — plus the two things a frame export never needed: a cancel, and an answer for a
-render still running when the window closes.
-*Depends on ME-292.*
+### ME-290…ME-293 — done 2026-11-01
+ME-290 the probe, ME-291 the render with ME-292 and ME-293's progress and cancel folded in —
+[`render/tickets/ME-291-render-video.md`](render/tickets/ME-291-render-video.md). ME-293's
+*a render still running when the window closes* is answered by a scratch file deleted on exit.
 
 ### ME-294 — This frame as a photo
 The current frame at coded resolution, through the recipe, written beside the video. The still save
@@ -351,13 +295,6 @@ palettegen/paletteuse over the same document, so it is a render *target* and not
 *Depends on ME-292.*
 
 ---
-
-### VF-104 — "Save as MP4" for formats nothing else opens (from video-formats, 2026-11-01)
-A context-menu action on `rm`, `rmvb`, `amv`, `mtv`, `dav`, `bik`, `thp`, `rpl`, `nsv`,
-`xesc`…: a copy beside the original as MP4 through the bundled FFmpeg — stream copy where MP4 can hold
-the codec (H.264 from `dav`), re-encode to H.264 with `libopenh264` + AAC otherwise. Moved here
-because Woka has no video encode path before this folder's render work, and a second one is not wanted —
-build it on that path; the LGPL build has no x264, so openh264 is the only H.264 encoder.
 
 ## 300 — The shared shell
 
@@ -414,7 +351,7 @@ Recorded so none of it is re-proposed:
 - **A project holding several files**, a clip library, tracks. Cutting within one file
   ([`../video-editor.md`](video-editor.md) §3.2) covers the brief; a sequence across files has
   nowhere to live and every assumption in §3 stops holding.
-- **Transitions, keyframed parameter animation, layers, masks, chroma key, stabilisation.**
+- **Transitions, keyframed parameter animation, layers, brush masks, chroma key, stabilisation.**
 - **Subtitle editing.** The viewer owns subtitles and the editor does not touch them.
 - **Render presets, format choice, bitrate fields.** `Render video…` asks nothing, by decision.
 - **More than one external audio track**, equalisation, compression, ducking.

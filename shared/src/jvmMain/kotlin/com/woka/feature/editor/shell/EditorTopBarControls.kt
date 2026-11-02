@@ -21,7 +21,8 @@ import androidx.compose.ui.unit.dp
 import com.woka.core.ui.theme.Theme
 
 /**
- * The two button shapes the editor puts in the shell's top bar.
+ * The plain button shape the editor puts in the shell's top bar; the filled `Done ▾` is
+ * `DoneButton.kt`'s, split off when its menu and caret outgrew this file.
  *
  * **`Theme.colors`, not `Theme.viewer.onScrim*`.** These used to live on the editor's
  * own bar, which was a scrim over the photograph; they now sit in the app's top bar,
@@ -68,37 +69,6 @@ internal fun TopBarButton(
                 },
                 fontSize = EditorTokens.TopBar.subtitleStyle,
                 fontWeight = FontWeight.SemiBold
-            )
-        )
-    }
-}
-
-/**
- * The one affirmative action, so the one filled control.
- *
- * Its label is **dark**. The accent is `#FF9F0A`: white on it measures 2.06 : 1 and
- * near-black 8.28 (ME-102), so a light label here would be the least readable text on
- * the screen rather than the most.
- */
-@Composable
-internal fun DoneButton(onDone: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .height(EditorTokens.TopBar.controlHeight)
-            .clip(RoundedCornerShape(EditorTokens.TopBar.doneRadius))
-            .background(Theme.colors.accentEditor)
-            .pointerHoverIcon(PointerIcon.Hand)
-            .clickable(onClick = onDone)
-            .padding(EditorTokens.TopBar.donePadding)
-            .testTag("editor-done"),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        BasicText(
-            text = "Done",
-            style = TextStyle(
-                color = Color(0xFF1C1C1E),
-                fontSize = EditorTokens.TopBar.subtitleStyle,
-                fontWeight = FontWeight.Bold
             )
         )
     }

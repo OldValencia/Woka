@@ -8,16 +8,11 @@ import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.MediaKind
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
-import com.woka.feature.editor.core.EditLayers
-import com.woka.feature.editor.core.EditSaveResult
-import com.woka.feature.editor.core.EditScope
 import com.woka.feature.editor.core.EditorEngine
+import com.woka.feature.editor.core.EditorTimelineScope
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.engine.image.RasterRecipe
-import com.woka.feature.editor.engine.image.fold
 import com.woka.feature.viewer.video.engine.probe.HdrInfo
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
@@ -33,6 +28,9 @@ import java.io.File
  * byte of the media data — the same road a `heic` takes, reached by two extensions in
  * `carrierFor` and made affordable on a 4 GB file by ME-280's in-place write.
  *
+ * **What it writes is [VideoEditorOutputs]'** — the save, the revert and the render —
+ * split out when the render pushed this file past the size mandate.
+ *
  * [recipe] is `internal` and absent from [EditorEngine] for the same reason the image
  * engine's is (§3.3): the moment the shell can name a raster type, every file that
  * touches one becomes a video ticket.
@@ -42,7 +40,7 @@ internal class VideoEditorEngine(
     private val registry: EditorToolRegistry,
     /** Passed in, never re-derived: the factory has already asked. */
     override val capability: EditCapability
-) : EditorEngine {
+) : VideoEditorOutputs(file, registry, capability) {
 
     override val kind = MediaKind.Video
 
@@ -60,8 +58,9 @@ internal class VideoEditorEngine(
     /** Owned here so `Surface` and `Thumbnail` share one decoder — see the holder. */
     private val playback = VideoPlayerHolder()
 
+    /** The picture as the canvas draws it — Resize left to the render (`previewFold`). */
     internal fun recipe(document: EditDocument): RasterRecipe =
-        fold(document, registry, sourceSize)
+        previewFold(document, registry, sourceSize)
 
     /** The frame the recipe produces — a crop's dimensions, not the source's. */
     override fun drawnSize(document: EditDocument): IntSize = recipe(document).outputSize
@@ -103,8 +102,8 @@ internal class VideoEditorEngine(
      * fills, so there is one decoder behind the picture, the strip and every thumbnail.
      */
     @Composable
-    override fun Timeline(document: EditDocument, modifier: Modifier) =
-        VideoEditorBand(playback, modifier)
+    override fun Timeline(document: EditDocument, edits: EditorTimelineScope, modifier: Modifier) =
+        VideoEditorBand(playback, document, edits, modifier, sourceSize)
 
     @Composable
     override fun Thumbnail(document: EditDocument, modifier: Modifier) {
@@ -117,20 +116,4 @@ internal class VideoEditorEngine(
 
     /** What the file carries, so a second sitting continues the first (ME-288). */
     override fun storedDocument(): EditDocument = storedVideoDocument(file)
-
-    /** What a write does to the file, and the stamp it carries — see `VideoEditorWrites`. */
-    private val writes = VideoEditorWrites(file, capability)
-
-    override suspend fun save(layers: EditLayers): EditSaveResult =
-        withContext(Dispatchers.IO) { writes.save(layers) }
-
-    /**
-     * **Both parameters are ignored, and the interface licenses it**: a video timeline has
-     * no frame to key on, so the scope switch never appears for one.
-     *
-     * The `Done ▾` menu this enables, and the reason it prints on a container with no
-     * carrier, are ME-286's. This is the red button telling the truth.
-     */
-    override suspend fun revert(scope: EditScope, frameIndex: Int): EditSaveResult =
-        withContext(Dispatchers.IO) { writes.revert() }
 }

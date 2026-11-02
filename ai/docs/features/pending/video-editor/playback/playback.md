@@ -11,7 +11,11 @@ offered on 2026-09-03 and turned down.
 
 ## 1. Status
 
-No tickets written. Blocks in [the shared backlog](../backlog.md) §230.
+| Ticket | Title | State |
+|---|---|---|
+| ME-231 | Timeline time and source time | **done 2026-11-01, without speed and freeze** (they do not exist yet). Built inside [ME-210](../timeline/tickets/ME-210-cut-the-film-on-the-strip.md): `ClipTimeline.kt` in `commonMain`, `ClipTimelineTest`. The interim seek-at-every-join walk (`ClipWalk`) is what ME-232 replaces |
+
+Every other block is in [the shared backlog](../backlog.md) §230.
 
 Depends on [`timeline/`](../timeline/timeline.md) for a document with more than one clip in it, and
 on [`foundation/`](../../../implemented/video-editor/foundation/foundation.md) for a canvas to present into.

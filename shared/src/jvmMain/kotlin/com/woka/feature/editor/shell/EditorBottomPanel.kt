@@ -20,6 +20,7 @@ import com.woka.feature.editor.core.EditorEngine
 import com.woka.feature.editor.core.EditorSession
 import com.woka.feature.editor.core.EditorTool
 import com.woka.feature.editor.core.EditorToolRegistry
+import com.woka.feature.editor.core.ToolDomain
 import com.woka.feature.editor.core.ToolOp
 
 /**
@@ -57,6 +58,15 @@ internal fun BoxScope.EditorBottomPanel(
     // Owned here because this is the one place that has both the card and the room
     // beside it — see `InspectorAccessory`.
     val accessory = remember { InspectorAccessory() }
+    // The band's own selection, outliving every rebuilt scope (ME-210) — and apart from
+    // the canvas's, because a clip id is not a shape id.
+    val clipSelection = remember(session) { ToolSelection() }
+    val timeline = EditorTimelineScopeImpl(
+        session = session,
+        tools = tools,
+        selection = clipSelection,
+        editing = activeTool?.manifest?.domain == ToolDomain.Time
+    )
 
     Column(
         modifier = Modifier
@@ -93,7 +103,7 @@ internal fun BoxScope.EditorBottomPanel(
         //
         // No new token: the column's own `spacedBy` gives the gap. No branch on media
         // either — a still's engine does not override this and draws nothing.
-        engine.Timeline(document, Modifier)
+        engine.Timeline(document, timeline, Modifier)
         EditorRail(
             tools = tools,
             activeToolId = activeToolId,

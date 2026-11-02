@@ -80,6 +80,7 @@ object Icons {
         // New macOS style icons
         val ChevronDown = Res.drawable.chevron_down
         val Editor = Res.drawable.square_and_pencil
+        val Trim = Res.drawable.scissors
         val Crop = Res.drawable.crop
         val Adjust = Res.drawable.slash_circle
         val Navigation = Res.drawable.photo_on_rectangle_angled

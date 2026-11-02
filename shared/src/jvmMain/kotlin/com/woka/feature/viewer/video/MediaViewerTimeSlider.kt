@@ -32,16 +32,23 @@ fun MediaViewerTimeSlider(
     // to stay put: a pointer parked on the seek bar is the UI being read, not idle.
     onHoverChange: (Boolean) -> Unit = {}
 ) {
+    // The result's time when `Done` cut the film (ME-285) — see `ResultClock`.
+    val sourceMs = durationMs
+    val clock = rememberResultClock(videoState)
+    val shownMs = clock?.totalMs ?: sourceMs
+    val shown = { clock?.toTimeline(position()) ?: position() }
+    val seekShown = { ms: Long -> seekOnResult(videoState, clock, ms) }
+
     // Null unless there is a video with a known duration. Owns two grabbers and one
     // low-priority thread; see the package for why previews can never outrank the
     // picture.
-    val preview = rememberSeekPreview(videoState, durationMs)
+    val preview = rememberSeekPreview(videoState, sourceMs)
     val previewAspect = videoState?.previewAspect()
     // Tone-mapped when the stream is HDR, exactly as the played frame is.
     val previewPainter = rememberPreviewPainter(videoState, preview?.shown)
     // One shape for both labels and the tooltip, taken from the file rather than
     // from each value — see `MediaViewerTimeLabel`.
-    val withHours = usesHours(durationMs)
+    val withHours = usesHours(shownMs)
 
     Row(
         modifier = modifier,
@@ -50,9 +57,9 @@ fun MediaViewerTimeSlider(
     ) {
         // Deliberately the player's own position, not the drag target: while
         // scrubbing the label holds and the tooltip shows where the release lands.
-        TimeLabel(withHours = withHours, position = position)
+        TimeLabel(withHours = withHours, position = shown)
 
-        if (durationMs >= 6000L) {
+        if (shownMs >= 6000L) {
             SkipButton(
                 icon = Icons.Static.SkipBackward5,
                 contentDescription = "Skip back 5s",
@@ -68,8 +75,8 @@ fun MediaViewerTimeSlider(
             value = {
                 if (isDragging) {
                     sliderValue
-                } else if (durationMs > 0) {
-                    (position().toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
+                } else if (shownMs > 0) {
+                    (shown().toFloat() / shownMs.toFloat()).coerceIn(0f, 1f)
                 } else {
                     0f
                 }
@@ -83,12 +90,12 @@ fun MediaViewerTimeSlider(
             },
             onValueChangeFinished = {
                 if (isDragging) {
-                    videoState?.seek((sliderValue * durationMs).toLong())
+                    seekShown((sliderValue * shownMs).toLong())
                     videoState?.resumeAfterSeek()
                     isDragging = false
                 }
             },
-            tooltipText = { formatTime((it * durationMs).toLong(), withHours) },
+            tooltipText = { formatTime((it * shownMs).toLong(), withHours) },
             // The aspect is supplied only once something has been shown, so a file
             // that never produces a still keeps a plain pill rather than a permanent
             // empty hole — that field is what turns the pill into a frame window.
@@ -98,14 +105,14 @@ fun MediaViewerTimeSlider(
             ),
             onTooltipPositionChange = { fraction ->
                 onHoverChange(fraction != null)
-                preview?.request(fraction?.let { (it * durationMs).toLong() })
+                preview?.request(fraction?.let { clock.sourceOf((it * shownMs).toLong()) })
             },
-            segments = chapterSegments(videoState?.tracks?.chapters.orEmpty(), durationMs),
+            segments = if (clock == null) chapterSegments(videoState?.tracks?.chapters.orEmpty(), sourceMs) else emptyList(),
             style = defaultMediaSliderStyle(),
             modifier = Modifier.weight(1f)
         )
 
-        if (durationMs >= 6000L) {
+        if (shownMs >= 6000L) {
             SkipButton(
                 icon = Icons.Static.SkipForward5,
                 contentDescription = "Skip forward 5s",
@@ -114,7 +121,7 @@ fun MediaViewerTimeSlider(
             )
         }
 
-        TrailingTimeLabel(withHours = withHours, durationMs = durationMs, position = position)
+        TrailingTimeLabel(withHours = withHours, durationMs = shownMs, position = shown)
     }
 }
 

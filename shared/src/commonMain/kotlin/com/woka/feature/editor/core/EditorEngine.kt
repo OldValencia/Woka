@@ -90,4 +90,25 @@ interface EditorEngine : EditorEngineSurface, EditorEnginePicture {
         scope: EditScope = EditScope.AllFrames,
         frameIndex: Int = 0
     ): EditSaveResult = EditSaveResult.NothingToDo
+
+    /**
+     * A line the medium adds under tool [toolId]'s inspector, or null — Resize on a film,
+     * which changes nothing on screen and only sizes a render (ME-262, decided by the author
+     * 2026-11-02). The engine says it because the tool cannot know what it is open on.
+     */
+    fun toolNote(toolId: String): String? = null
+
+    /** What `Done ▾` offers beside `Done` (ME-291). Empty — a plain `Done` — for a still. */
+    val exports: List<EditorExport> get() = emptyList()
+
+    /**
+     * Writes [layers] out through [export], as a **new** file; the source is never touched.
+     * [progress] is called with 0..1 from whatever thread does the work. Cancellable: a
+     * cancelled export leaves nothing behind. Defaulted to nothing, like [revert].
+     */
+    suspend fun export(
+        export: EditorExport,
+        layers: EditLayers,
+        progress: (Float) -> Unit
+    ): EditSaveResult = EditSaveResult.NothingToDo
 }

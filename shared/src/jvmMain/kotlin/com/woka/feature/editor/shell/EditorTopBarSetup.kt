@@ -61,6 +61,7 @@ internal fun EditorTopBarSetup(
     val curUndo by rememberUpdatedState(onUndo)
     val curRedo by rememberUpdatedState(onRedo)
     val curDone by rememberUpdatedState(onDone)
+    val curChoices by rememberUpdatedState(LocalDoneChoices.current)
 
     // Where the edited mark went when the file name left the top bar: the pill has no
     // room for a word, and Information is the panel that already answers "what is this
@@ -108,7 +109,8 @@ internal fun EditorTopBarSetup(
                 canRedo = curCanRedo,
                 onUndo = { curUndo() },
                 onRedo = { curRedo() },
-                onDone = { curDone() }
+                onDone = { curDone() },
+                choices = curChoices
             )
         }
         accessories.backActionOverride = { curLeave() }
@@ -131,7 +133,8 @@ private fun EditorActions(
     canRedo: Boolean,
     onUndo: () -> Unit,
     onRedo: () -> Unit,
-    onDone: () -> Unit
+    onDone: () -> Unit,
+    choices: DoneChoices
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -139,6 +142,6 @@ private fun EditorActions(
     ) {
         TopBarButton("↶", "editor-undo", enabled = canUndo, onClick = onUndo)
         TopBarButton("↷", "editor-redo", enabled = canRedo, onClick = onRedo)
-        DoneButton(onDone)
+        DoneButton(onDone, choices)
     }
 }

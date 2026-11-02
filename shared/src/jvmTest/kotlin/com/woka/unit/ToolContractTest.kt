@@ -71,8 +71,10 @@ class ToolContractTest {
         // correct order: a crop must still clip an arrow drawn before it, and a
         // resize must be the last thing before encoding (§3.4). Reordering this
         // enum for a rail layout changes what images come out — hence the test.
+        // Time is first since ME-210: a cut decides which frames exist at all.
         assertEquals(
             listOf(
+                ToolDomain.Time,
                 ToolDomain.Geometry,
                 ToolDomain.Color,
                 ToolDomain.Annotate,

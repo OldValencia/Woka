@@ -4,9 +4,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.engine.video.EDITOR_BAND_TAG
 import com.woka.feature.editor.engine.video.VideoEditorBand
 import com.woka.feature.editor.engine.video.VideoPlayerHolder
+import com.woka.support.FixtureTimeline
 import com.woka.support.MainDispatcherRule
 import com.woka.support.awaitTrue
 import com.woka.support.episodeTwoFile
@@ -34,8 +36,9 @@ import kotlin.test.assertTrue
  * one from the corpus.
  *
  * **What is deliberately not asserted here is the drag.** A scrub is a pointer gesture
- * over a slider whose travel is measured in pixels, and an assertion about where a swipe
- * landed tests the test's arithmetic more than the band's. It is on the by-hand list.
+ * over a strip whose travel is measured in pixels, and an assertion about where a swipe
+ * landed tests the test's arithmetic more than the band's. It is on the by-hand list;
+ * the strip's own buttons are `ClipStripUiTest`'s.
  */
 @OptIn(ExperimentalCoroutinesApi::class, ExperimentalTestApi::class)
 class VideoBandUiTest {
@@ -72,7 +75,7 @@ class VideoBandUiTest {
         val duration = holder.state!!.durationMs
 
         onUi {
-            setContent { VideoEditorBand(holder, Modifier) }
+            setContent { VideoEditorBand(holder, EditDocument(), FixtureTimeline(editing = false), Modifier) }
             waitForIdle()
 
             onNodeWithTag(EDITOR_BAND_TAG).assertExists()
@@ -89,7 +92,7 @@ class VideoBandUiTest {
         assertFalse(player.isPlaying, "the holder did not open paused")
 
         onUi {
-            setContent { VideoEditorBand(holder, Modifier) }
+            setContent { VideoEditorBand(holder, EditDocument(), FixtureTimeline(editing = false), Modifier) }
             waitForIdle()
 
             onNodeWithTag("editor-band-transport").performClick()

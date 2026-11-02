@@ -1,6 +1,7 @@
 package com.woka.feature.editor.shell
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -112,30 +113,34 @@ internal fun EditorHost(
             canvasKeys = canvasKeys
         )
 
-        EditorScreen(
-            session = session,
-            engine = engine,
-            registry = dependencies.registry,
-            canvasKeys = canvasKeys,
-            onCancel = actions.leave,
-            onDone = actions.done,
-            canRevert = actions.canRevert,
-            onRevert = actions.askRevert,
-            frameControls = EditorFrameControls(
-                frames = engine.frames,
-                scope = editScope,
-                frameIndex = frameIndex,
-                // Leaving All Frames fixes what was made there as the shared layer, so a
-                // frame reached afterwards still shows it (2026-09-02).
-                // The switch moves what is *shown*, not only what a save means: leaving
-                // All Frames fixes the layer, entering it puts the frame's own work aside
-                // and shows the layer alone (2026-09-02).
-                onScopeChange = { picked ->
-                    if (picked == EditScope.SingleFrame) session.rebase() else session.detachFrame()
-                    editScope = picked
-                },
-                onSelectFrame = actions.selectFrame
+        // `Done ▾`'s other entries (ME-291), read by the bar through `LocalDoneChoices`.
+        val exports = exportAction(engine, session, file, editScope, onClose, onSaved)
+        CompositionLocalProvider(LocalDoneChoices provides DoneChoices(engine.exports, exports)) {
+            EditorScreen(
+                session = session,
+                engine = engine,
+                registry = dependencies.registry,
+                canvasKeys = canvasKeys,
+                onCancel = actions.leave,
+                onDone = actions.done,
+                canRevert = actions.canRevert,
+                onRevert = actions.askRevert,
+                frameControls = EditorFrameControls(
+                    frames = engine.frames,
+                    scope = editScope,
+                    frameIndex = frameIndex,
+                    // Leaving All Frames fixes what was made there as the shared layer, so a
+                    // frame reached afterwards still shows it (2026-09-02).
+                    // The switch moves what is *shown*, not only what a save means: leaving
+                    // All Frames fixes the layer, entering it puts the frame's own work aside
+                    // and shows the layer alone (2026-09-02).
+                    onScopeChange = { picked ->
+                        if (picked == EditScope.SingleFrame) session.rebase() else session.detachFrame()
+                        editScope = picked
+                    },
+                    onSelectFrame = actions.selectFrame
+                )
             )
-        )
+        }
     }
 }

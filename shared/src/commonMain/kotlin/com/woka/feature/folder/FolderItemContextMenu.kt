@@ -14,6 +14,8 @@ import com.woka.core.utils.openDirectoryPicker
 import com.woka.feature.editor.VIDEO_EDITING_ENABLED
 import com.woka.feature.editor.core.EditorEngineFactory
 import com.woka.feature.editor.isEditable
+import com.woka.feature.editor.offersMp4Copy
+import com.woka.feature.editor.saveAsMp4
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -64,6 +66,13 @@ internal fun FolderItemContextMenu(
 
     if (item is MediaItem.Video) {
         WatchedMenuItem(target, watch, viewModel, dismiss)
+    }
+    // A copy that plays anywhere, for the films only Woka can open (VF-104).
+    if (item is MediaItem.Video && offersMp4Copy(item.file)) {
+        DropdownItem("Save as MP4") {
+            dismiss()
+            saveAsMp4(target) { viewModel.refresh() }
+        }
     }
 
     // Only for the formats that can hold more than one picture — on a JPEG it
