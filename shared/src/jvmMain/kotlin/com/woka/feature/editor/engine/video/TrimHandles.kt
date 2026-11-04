@@ -47,8 +47,8 @@ internal fun TrimmedEnds(
     if (clips.isEmpty()) return
     val first = clips.first()
     val last = clips.last()
-    if (geometry.lead.width > 0f) Trimmed(TrimClip("lead", 0L, first.fromMs), geometry.lead, cells)
-    if (geometry.tail.width > 0f) Trimmed(TrimClip("tail", last.toMs, durationMs), geometry.tail, cells)
+    if (geometry.lead.width > 0f) Trimmed(TrimClip("lead", 0L, first.fromMs), geometry.lead, cells, geometry.viewPx)
+    if (geometry.tail.width > 0f) Trimmed(TrimClip("tail", last.toMs, durationMs), geometry.tail, cells, geometry.viewPx)
     handlesOf(clips, selectedId).forEach { handle ->
         val moved = if (drag?.handle == handle) drag.deltaMs * geometry.pxPerMs else 0f
         val edge = handle.x(geometry)
@@ -73,13 +73,14 @@ private fun Shade(leftPx: Float, widthPx: Float) {
 }
 
 @Composable
-private fun Trimmed(range: TrimClip, span: ClipSpan, cells: FilmstripCells?) {
+private fun Trimmed(range: TrimClip, span: ClipSpan, cells: FilmstripCells?, viewPx: Float) {
     val density = LocalDensity.current
+    val shown = span.visibleIn(viewPx) ?: return
     val modifier = Modifier
-        .offset { IntOffset(span.left.roundToInt(), 0) }
-        .width(with(density) { span.width.toDp() })
+        .offset { IntOffset(shown.left.roundToInt(), 0) }
+        .width(with(density) { shown.width.toDp() })
         .fillMaxHeight()
-    ClipTile(range, cells, showRange = false, selected = false, carried = false, modifier = modifier)
+    ClipTile(range, cells, false, false, false, modifier = modifier, fullWidthPx = span.width, shiftPx = shown.left - span.left)
     Box(modifier.clip(RoundedCornerShape(CLIP_RADIUS)).background(DIMMED))
 }
 

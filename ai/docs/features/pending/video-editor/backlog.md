@@ -66,16 +66,12 @@ status in [`timeline/`](timeline/timeline.md)'s table. ME-211…ME-214 are folde
 [`timeline/tickets/ME-216-speed-per-clip.md`](timeline/tickets/ME-216-speed-per-clip.md) — with
 ME-234's speed half (the pacer and `atempo`) folded in.
 
-### ME-217 — Freeze-frame
-A clip whose source range is a point, plus a hold. One entry in the list, one repeated thumbnail, and
-one branch where duration is computed.
-*Depends on ME-216.*
+### ME-217 — promoted and done 2026-11-04
+[`timeline/tickets/ME-217-freeze-frame.md`](timeline/tickets/ME-217-freeze-frame.md) — with
+ME-234's freeze half folded in.
 
-### ME-218 — The strip zooms
-Thirty minutes in 600 px is three seconds per pixel and a two-second cut is unmakeable. Zoom around
-the play head, or a magnifier over it — the choice is the author's and it should be made with the
-strip in front of them.
-*Depends on ME-211.*
+### ME-218 — promoted and done 2026-11-04
+[`timeline/tickets/ME-218-the-strip-zooms.md`](timeline/tickets/ME-218-the-strip-zooms.md).
 
 ### ME-219 — Frame-accurate stepping
 `←` / `→` step one frame, a modifier steps one second, and the readout shows the frame as well as the
@@ -125,11 +121,8 @@ the open question.
 
 ## 240 — Audio
 
-### ME-240 — Mute, volume and fades
-One manifest and four `ParamSpec`s, with no UI code at all — the acceptance test of the tool
-architecture. Under **All Clips** it is the whole video; under **This Clip** it is one clip's layer.
-Fades are linear and stated in seconds.
-*Depends on ME-215.*
+### ME-240 — promoted and done 2026-11-04
+[`audio/tickets/ME-240-mute-volume-fades.md`](audio/tickets/ME-240-mute-volume-fades.md).
 
 ### ME-241 — The waveform
 One audio-decode pass per file producing min/max peaks per column, cached on path plus length plus

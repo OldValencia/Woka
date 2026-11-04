@@ -20,6 +20,9 @@ import com.woka.feature.editor.tools.trim.totalMs
  * stay where they were, dimmed, and since kept plus trimmed is the whole source, a trim
  * moves the handle and nothing else.
  *
+ * **Zoomed, it lays the film across several strip-widths and scrolls** (ME-218): every x
+ * it answers is already on screen, so the gestures and the play head need not know.
+ *
  * Pure, and built per layout rather than remembered: a dozen clips are a dozen additions,
  * and a stale geometry under a pointer is the bug a cache here would invite.
  */
@@ -30,21 +33,38 @@ internal class StripGeometry(
     /** Source trimmed off the first clip's start, drawn dimmed before it — [trimmedEnds]. */
     private val leadMs: Long = 0L,
     /** Source trimmed off the last clip's end, drawn dimmed after it. */
-    private val tailMs: Long = 0L
+    private val tailMs: Long = 0L,
+    /**
+     * A fixed scale (ME-218), or null to fit the whole film in [widthPx]. Zoomed, the scale is
+     * pixels per millisecond and not a multiple of the fit: a hold dragged longer would
+     * otherwise rescale the whole strip under the pointer (reported 2026-11-04).
+     */
+    scale: Float? = null,
+    /** How far the laid-out content is moved left, so every x answered is on screen. */
+    private val scrollPx: Float = 0f
 ) {
     private val totalMs = clips.totalMs() + leadMs + tailMs
 
-    private val usablePx = (widthPx - gapPx * (clips.size - 1)).coerceAtLeast(0f)
+    private val fitPx = (widthPx - gapPx * (clips.size - 1)).coerceAtLeast(0f)
+
+    /** The scale that fits the whole film — what a zoom is measured against. */
+    val fitPxPerMs = if (totalMs <= 0L) 0f else fitPx / totalMs
 
     /** One scale for the whole strip — what makes a drag's pixels and its milliseconds agree. */
-    val pxPerMs = if (totalMs <= 0L) 0f else usablePx / totalMs
+    val pxPerMs = scale ?: fitPxPerMs
+
+    private val usablePx = totalMs * pxPerMs
+
+    /** The strip's own width, and the whole laid-out film's, zoomed. */
+    val viewPx: Float = widthPx
+    val contentPx: Float = usablePx + gapPx * (clips.size - 1).coerceAtLeast(0)
 
     /** The dimmed stretch before the first clip; zero wide when nothing is trimmed there. */
-    val lead = ClipSpan(0f, leadMs * pxPerMs)
+    val lead = ClipSpan(-scrollPx, leadMs * pxPerMs)
 
     /** Every clip's left edge and width, in list order. */
     val spans: List<ClipSpan> = buildList {
-        var x = lead.width
+        var x = lead.right
         clips.forEach { clip ->
             val width = clip.lengthMs * pxPerMs
             add(ClipSpan(x, width))
@@ -53,16 +73,18 @@ internal class StripGeometry(
     }
 
     /** The dimmed stretch after the last clip. */
-    val tail = ClipSpan(spans.lastOrNull()?.right ?: lead.width, tailMs * pxPerMs)
+    val tail = ClipSpan(spans.lastOrNull()?.right ?: lead.right, tailMs * pxPerMs)
 
     /** The x a timeline position is drawn at — the play head's place. */
     fun xOf(timelineMs: Long): Float {
         val at = clips.atTimeline(timelineMs) ?: return 0f
         val clip = clips[at.index]
         val span = spans[at.index]
-        // Source time across a source span: a fast clip is narrow and still covers its range.
-        if (clip.sourceLengthMs <= 0L) return span.left
-        return span.left + span.width * (at.sourceMs - clip.fromMs) / clip.sourceLengthMs
+        // Timeline time across the span — true at any speed, and through a freeze's hold,
+        // where the source does not move at all (ME-216, ME-217).
+        if (clip.lengthMs <= 0L) return span.left
+        val into = (timelineMs - clips.startOf(at.index)).coerceIn(0L, clip.lengthMs)
+        return span.left + span.width * into / clip.lengthMs
     }
 
     /**
@@ -97,6 +119,17 @@ internal class StripGeometry(
 /** One clip's place in the strip, in pixels from the strip's left edge. */
 internal data class ClipSpan(val left: Float, val width: Float) {
     val right: Float get() = left + width
+
+    /**
+     * The part of this span inside a strip [viewPx] wide, or null when none of it is (ME-218).
+     * A zoomed clip can be hundreds of thousands of pixels wide — past what a layout can
+     * measure — so only this part is ever composed.
+     */
+    fun visibleIn(viewPx: Float): ClipSpan? {
+        val from = left.coerceAtLeast(0f)
+        val to = right.coerceAtMost(viewPx)
+        return if (to > from) ClipSpan(from, to - from) else null
+    }
 }
 
 /**

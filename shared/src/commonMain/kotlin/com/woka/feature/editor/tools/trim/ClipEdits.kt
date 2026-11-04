@@ -82,11 +82,12 @@ fun List<TrimClip>.join(id: String): List<TrimClip> {
     val index = indexOfFirst { it.id == id }.takeIf { it >= 0 } ?: return this
     val clip = this[index]
     val right = getOrNull(index + 1)
-    if (right != null && right.fromMs == clip.toMs && right.speed == clip.speed) {
+    if (clip.isFreeze) return this
+    if (right != null && !right.isFreeze && right.fromMs == clip.toMs && right.speed == clip.speed) {
         return take(index) + clip.copy(toMs = right.toMs) + drop(index + 2)
     }
     val left = getOrNull(index - 1)
-    if (left != null && left.toMs == clip.fromMs && left.speed == clip.speed) {
+    if (left != null && !left.isFreeze && left.toMs == clip.fromMs && left.speed == clip.speed) {
         return take(index - 1) + left.copy(toMs = clip.toMs) + drop(index + 1)
     }
     return this
@@ -103,4 +104,33 @@ fun List<TrimClip>.cutsNothing(durationMs: Long): Boolean =
 fun List<TrimClip>.withSpeed(id: String, speed: Float): List<TrimClip> =
     if (none { it.id == id && it.speed != speed }) this
     else map { if (it.id == id) it.copy(speed = speed) else it }
+
+/** A freeze's first length: two seconds, the mockup's (ME-217). */
+const val FREEZE_HOLD_MS = 2_000L
+
+/**
+ * The longest a freeze may be held — ten minutes. It was thirty seconds, picked for no reason
+ * the author could be given (2026-11-04); this is only a guard against a runaway drag.
+ */
+const val FREEZE_MAX_MS = 10 * 60_000L
+
+/**
+ * A freeze of the frame under [timelineMs], [FREEZE_HOLD_MS] long, inserted there under
+ * [newId] (ME-217). Inside a clip it splits it first, the halves keeping its speed and look;
+ * on a join it goes between. Unchanged when the play head stands on a freeze already.
+ */
+fun List<TrimClip>.freezeAt(timelineMs: Long, newId: String, splitId: String): List<TrimClip> {
+    val at = atTimeline(timelineMs) ?: return this
+    if (this[at.index].isFreeze) return this
+    val cut = split(timelineMs, splitId)
+    // Split: between the halves. Not split (a join, or too near an edge): before that clip.
+    val insertAt = if (cut.size > size) at.index + 1 else at.index
+    val freeze = TrimClip(newId, at.sourceMs, at.sourceMs, cut.nextKey(), holdMs = FREEZE_HOLD_MS)
+    return cut.take(insertAt) + freeze + cut.drop(insertAt)
+}
+
+/** Freeze [id] held for [holdMs], kept between a tenth of a second and [FREEZE_MAX_MS]. */
+fun List<TrimClip>.withHold(id: String, holdMs: Long): List<TrimClip> = map { clip ->
+    if (clip.id != id || !clip.isFreeze) clip else clip.copy(holdMs = holdMs.coerceIn(MIN_CLIP_MS, FREEZE_MAX_MS))
+}
 

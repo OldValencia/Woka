@@ -58,4 +58,8 @@ internal class EditorTimelineScopeImpl(
     override fun copyLayer(from: Int, to: Int) = session.copyFrame(from, to)
 
     override fun hasOwnLook(key: Int): Boolean = session.ownOpsOf(key).isNotEmpty()
+
+    override fun ownOps(key: Int): List<ToolOp> = session.ownOpsOf(key)
+
+    override val openClip: Int? get() = session.frame.takeIf { perClip }
 }

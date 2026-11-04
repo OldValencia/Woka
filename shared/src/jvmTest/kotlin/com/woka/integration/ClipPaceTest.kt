@@ -1,6 +1,8 @@
 package com.woka.integration
 
+import com.woka.feature.viewer.video.engine.releaseClipGain
 import com.woka.feature.viewer.video.engine.releaseClipPace
+import com.woka.feature.viewer.video.engine.setClipGain
 import com.woka.feature.viewer.video.engine.setClipPace
 import com.woka.feature.viewer.video.engine.setPlaybackSpeed
 import com.woka.support.episodeTwoFile
@@ -52,6 +54,19 @@ class ClipPaceTest {
         assertEquals(4f, player.playbackSpeed)
         player.releaseClipPace(staying)
         assertEquals(1f, player.playbackSpeed)
+    }
+
+    /** ME-240: the edit's gain has an owner too, for the same two-copies reason. */
+    @Test
+    fun `a leaving owner cannot reset the gain a newer one set`() = onPlayer(episodeTwoFile()) { player ->
+        val leaving = Any()
+        val staying = Any()
+        player.setClipGain(0f, leaving)
+        player.setClipGain(0.5f, staying)
+        player.releaseClipGain(leaving)
+        assertEquals(0.5f, player.edit.gain)
+        player.releaseClipGain(staying)
+        assertEquals(1f, player.edit.gain)
     }
 }
 

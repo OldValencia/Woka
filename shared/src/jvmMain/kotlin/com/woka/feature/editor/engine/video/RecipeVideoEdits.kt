@@ -9,6 +9,7 @@ import com.woka.core.data.StillColorInfo
 import com.woka.core.data.mediaKind
 import com.woka.core.ui.image.AppliedVideoEdit
 import com.woka.core.ui.image.EditedClock
+import com.woka.core.ui.image.SoundMix
 import com.woka.core.ui.image.SourceRange
 import com.woka.core.ui.image.VideoEdits
 import com.woka.feature.editor.core.EditorToolRegistry
@@ -19,6 +20,7 @@ import com.woka.feature.editor.engine.image.scaledBy
 import com.woka.feature.editor.engine.video.render.isIdentity
 import com.woka.feature.editor.recipe.EditRecipe
 import com.woka.feature.editor.save.renderAtNativeScale
+import com.woka.feature.editor.tools.sound.SoundTool
 import com.woka.feature.editor.tools.trim.TrimTool
 import com.woka.feature.viewer.video.engine.probe.HdrInfo
 import java.io.File
@@ -55,13 +57,13 @@ internal class RecipeVideoEdits(private val registry: EditorToolRegistry) : Vide
         val sourceSize = codedFrameSize(file)
         if (sourceSize == IntSize.Zero) return null
         val base = EditDocument(payload.ops)
-        val ranges = TrimTool.clipsIn(base).orEmpty().map { SourceRange(it.fromMs, it.toMs, it.key, it.speed) }
+        val ranges = TrimTool.clipsIn(base).orEmpty().map { SourceRange(it.fromMs, it.toMs, it.key, it.speed, it.holdMs, SoundTool.mixIn(payload.frames[it.key]?.ops.orEmpty())) }
         // One recipe per layer the cut draws (ME-215); an uncut film is clip 0 alone.
         val keys = ranges.map { it.key }.ifEmpty { listOf(0) }.distinct()
         val recipes = keys.associateWith { key ->
             previewFold(payload.documentFor(key), registry, sourceSize).takeUnless { it.isIdentity(sourceSize) }
         }
-        return FoldedVideoEdit(EditedClock(ranges), sourceSize, recipes)
+        return FoldedVideoEdit(EditedClock(ranges), sourceSize, recipes, SoundTool.mixIn(payload.ops))
     }
 }
 
@@ -69,7 +71,8 @@ private class FoldedVideoEdit(
     override val clock: EditedClock,
     private val sourceSize: IntSize,
     /** By clip layer key; a null value is a clip drawn as decoded — cuts alone (ME-215). */
-    private val recipes: Map<Int, RasterRecipe?>
+    private val recipes: Map<Int, RasterRecipe?>,
+    override val wholeSound: SoundMix?
 ) : AppliedVideoEdit {
 
     /** The playing clip's recipe, read off [clock] so a join recomposes the reader. */

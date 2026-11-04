@@ -5,6 +5,7 @@ import com.woka.feature.editor.tools.trim.TrimTool
 import com.woka.feature.editor.tools.trim.atTimeline
 import com.woka.feature.editor.tools.trim.delete
 import com.woka.feature.editor.tools.trim.duplicate
+import com.woka.feature.editor.tools.trim.freezeAt
 import com.woka.feature.editor.tools.trim.join
 import com.woka.feature.editor.tools.trim.split
 import com.woka.feature.editor.tools.trim.wholeSource
@@ -60,6 +61,22 @@ internal fun StripState.joinSelected(id: String) {
     val kept = after.firstOrNull { it.id == id } ?: clips.getOrNull(clips.indexOfFirst { it.id == id } - 1)
     apply(after)
     edits.select(kept?.id)
+}
+
+/**
+ * A freeze of the frame under the play head, two seconds long (ME-217) — the ❄ on the play
+ * head. The clip it was cut from lends its look to the freeze and to its own new half. **The
+ * selection is left alone** (the author, 2026-11-04): what was selected stays selected.
+ */
+internal fun StripState.freezeAtPlayHead() {
+    val at = walk.timelineMs(clips, player.currentPositionMs)
+    val source = clips.getOrNull(clips.atTimelineIndex(at))
+    val after = clips.freezeAt(at, newClipId(), newClipId())
+    if (after == clips) return
+    apply(after)
+    after.filter { clip -> clips.none { it.id == clip.id } }.forEach { new ->
+        source?.let { edits.copyLayer(it.key, new.key) }
+    }
 }
 
 /** Selects [clip] and opens its layer, under This Clip (ME-215). */

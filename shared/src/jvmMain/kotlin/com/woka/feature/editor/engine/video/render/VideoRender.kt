@@ -6,6 +6,7 @@ import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.core.ToolOp
 import com.woka.feature.editor.engine.image.fold
+import com.woka.feature.editor.tools.sound.SoundTool
 import com.woka.feature.editor.tools.trim.TrimClip
 import com.woka.feature.editor.tools.trim.TrimTool
 import com.woka.feature.editor.tools.trim.wholeSource
@@ -50,8 +51,10 @@ internal fun renderVideo(
         val recipes = clips.map { it.key }.distinct()
             .associateWith { key -> fold(EditDocument(document.ops + looks(key)), registry, sourceSize) }
         val pixelWork = recipes.values.any { !it.isIdentity(sourceSize) }
-        // A clip at another speed is retimed, which a packet copy cannot do (ME-216).
-        val copies = !pixelWork && copiesInto(source.extension) && clips.all { it.speed == 1f } &&
+        // A gain, a mute or a fade changes every sample, which a packet copy cannot (ME-240).
+        val sound = renderSoundOf(document, looks, clips)
+        // A clip at another speed, or a freeze, is retimed — which a packet copy cannot do.
+        val copies = !pixelWork && sound == null && copiesInto(source.extension) && clips.all { it.speed == 1f && !it.isFreeze } &&
             clips.all { clip -> probe.keyframesMs.any { it in clip.fromMs..clip.fromMs + KEYFRAME_SLACK_MS } }
         val target = renderTargetBeside(source, renderExtension(source.extension, copies))
         scratch = scratchBeside(target)
@@ -60,7 +63,7 @@ internal fun renderVideo(
             copyClips(source, scratch, format, clips, alive, progress)
         } else {
             val pictures = if (pixelWork) recipes.mapValues { RecipePicture(sourceSize, it.value) } else emptyMap()
-            encodeClips(source, scratch, format, clips, { clip -> pictures[clip.key] }, alive, progress)
+            encodeClips(source, scratch, format, clips, { clip -> pictures[clip.key] }, alive, progress, sound)
         }
         if (!alive()) {
             scratch.delete()
@@ -132,3 +135,12 @@ private fun <T> withGrabber(file: File, block: (FFmpegFrameGrabber) -> T): T {
         runCatching { grabber.release() }
     }
 }
+
+/** The edit's sound for a render, or null when neither the film nor any clip has any. */
+private fun renderSoundOf(document: EditDocument, looks: (Int) -> List<ToolOp>, clips: List<TrimClip>): RenderSound? {
+    val whole = SoundTool.mixIn(document.ops)
+    val own = clips.map { it.key }.distinct().associateWith { SoundTool.mixIn(looks(it)) }
+    if (whole == null && own.values.all { it == null }) return null
+    return RenderSound(whole, { clip -> own[clip.key] }, clips.sumOf { it.lengthMs })
+}
+

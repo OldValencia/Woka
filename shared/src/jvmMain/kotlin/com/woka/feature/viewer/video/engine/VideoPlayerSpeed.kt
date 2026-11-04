@@ -11,7 +11,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import org.bytedeco.javacv.FFmpegFrameGrabber
-import java.util.WeakHashMap
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -24,7 +23,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 /** The user's own speed — the player's control and the settings (§6). */
 fun VideoPlayerState.setPlaybackSpeed(speed: Float) {
-    userSpeed = PlaybackSpeed.snap(speed)
+    edit.userSpeed = PlaybackSpeed.snap(speed)
     applySpeed()
 }
 
@@ -38,8 +37,8 @@ fun VideoPlayerState.setPlaybackSpeed(speed: Float) {
  * two inputs cannot be raced.
  */
 fun VideoPlayerState.setClipPace(pace: Float, owner: Any = this) {
-    paceOwners[this] = owner
-    clipPace = pace
+    edit.paceOwner = owner
+    edit.clipPace = pace
     applySpeed()
 }
 
@@ -49,17 +48,15 @@ fun VideoPlayerState.setClipPace(pace: Float, owner: Any = this) {
  * leaving copy's reset landed after the new copy's 4× — the film played at 1× until reopened.
  */
 fun VideoPlayerState.releaseClipPace(owner: Any) {
-    if (paceOwners[this] !== owner) return
-    paceOwners.remove(this)
-    clipPace = 1f
+    if (edit.paceOwner !== owner) return
+    edit.paceOwner = null
+    edit.clipPace = 1f
     applySpeed()
 }
 
-/** Who set each player's pace last; weak, so a closed player is not held. Main thread only. */
-private val paceOwners = WeakHashMap<VideoPlayerState, Any>()
 
 private fun VideoPlayerState.applySpeed() {
-    val speed = (userSpeed * clipPace).coerceIn(CLIP_SPEED_MIN, CLIP_SPEED_MAX)
+    val speed = (edit.userSpeed * edit.clipPace).coerceIn(CLIP_SPEED_MIN, CLIP_SPEED_MAX)
     if (speed == playbackSpeed) return
     playbackSpeed = speed
     generation.requestSpeedChange()

@@ -26,13 +26,16 @@ internal sealed interface StripDrag {
     data class Reorder(val id: String, override val from: List<TrimClip>) : StripDrag
 
     /**
-     * A clip's edge, moved [deltaMs] in source time so far — negative to the left. The
-     * layout stays [from]'s until release, and the moved stretch is shaded on it.
+     * A clip's edge, moved [deltaMs] so far — negative to the left. **The strip re-flows live**
+     * (reported 2026-11-04: neighbours that did not move made the drag unreadable) at the
+     * [scale] of the press, scrolled so the edge stays under the pointer at [x].
      */
     data class Edge(
         val handle: StripHandle,
         override val from: List<TrimClip>,
-        val deltaMs: Long = 0L
+        val deltaMs: Long = 0L,
+        val scale: Float = 0f,
+        val x: Float = 0f
     ) : StripDrag
 }
 

@@ -71,7 +71,8 @@ internal class VideoEditorEngine(
     override fun previewMatrix(document: EditDocument): Matrix = recipe(document).matrix
 
     override fun togglePlayback() {
-        playback.state?.let { it.isPlaying = !it.isPlaying }
+        // Through the walk, so Space pauses a freeze's hold as well as the player (ME-217).
+        playback.state?.let { playback.walk.toggle(it) }
     }
 
     /**

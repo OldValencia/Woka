@@ -95,10 +95,13 @@ class ClipStripUiTest {
             onNodeWithTag("editor-strip-split").performClick()
             waitForIdle()
 
-            // The first clip is the left third of the strip.
+            // A click on the body only seeks (2026-11-04); the clip's tab is what selects it.
             onNodeWithTag(CLIP_STRIP_TAG).performTouchInput { click(centerLeft.copy(x = width * 0.1f)) }
             waitForIdle()
-            assertNotNull(edits.selectedId, "a click on a clip selected nothing")
+            assertNull(edits.selectedId, "a click on a clip's body selected it")
+            onNodeWithTag("editor-clip-tab-source").performClick()
+            waitForIdle()
+            assertNotNull(edits.selectedId, "the clip's tab selected nothing")
 
             onNodeWithTag("editor-clip-delete").performClick()
             waitForIdle()

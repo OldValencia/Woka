@@ -96,7 +96,8 @@ private fun excerptSpans(lengthUs: Long, kept: List<SourceRange>): List<LongRang
     val clock = EditedClock(kept)
     return POSITIONS.map { at ->
         val (index, sourceMs) = clock.toSource((clock.totalMs * at).toLong())
-        sourceMs * 1000L..kept[index].toMs * 1000L
+        // A freeze's one frame still has to be grabbed: a span of one frame, not none (ME-217).
+        sourceMs * 1000L..maxOf(kept[index].toMs, kept[index].fromMs + 40L) * 1000L
     }
 }
 

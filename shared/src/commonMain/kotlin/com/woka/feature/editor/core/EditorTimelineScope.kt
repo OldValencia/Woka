@@ -52,4 +52,10 @@ interface EditorTimelineScope {
 
     /** Whether layer [key] carries a look of its own, for the tile's dot. */
     fun hasOwnLook(key: Int): Boolean = false
+
+    /** Layer [key]'s own ops — its look and its sound (ME-240). */
+    fun ownOps(key: Int): List<ToolOp> = emptyList()
+
+    /** The clip being edited under This Clip, whose own ops are in the document; null otherwise. */
+    val openClip: Int? get() = null
 }

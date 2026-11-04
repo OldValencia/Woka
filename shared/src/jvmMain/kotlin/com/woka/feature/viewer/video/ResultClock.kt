@@ -32,6 +32,8 @@ internal fun seekOnResult(player: VideoPlayerState?, clock: EditedClock?, ms: Lo
     }
     val (index, sourceMs) = clock.toSource(ms)
     clock.index = index
+    // Into a freeze: its frame, and how far into its hold (ME-217).
+    clock.heldMs = if (clock.ranges[index].isFreeze) (ms - clock.startOf(index)).coerceAtLeast(0L) else 0L
     player?.seek(sourceMs)
 }
 

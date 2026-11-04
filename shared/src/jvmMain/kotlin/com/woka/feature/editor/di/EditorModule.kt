@@ -16,6 +16,7 @@ import com.woka.feature.editor.tools.filter.FilterTool
 import com.woka.feature.editor.tools.hdr.HdrTool
 import com.woka.feature.editor.tools.markup.MarkupTool
 import com.woka.feature.editor.tools.resize.ResizeTool
+import com.woka.feature.editor.tools.sound.SoundTool
 import com.woka.feature.editor.tools.transform.TransformTool
 import com.woka.feature.editor.tools.trim.TrimTool
 import org.koin.core.qualifier.named
@@ -55,6 +56,7 @@ val editorModule = module {
     single<EditorTool>(named(ResizeTool.manifest.id)) { ResizeTool }
     single<EditorTool>(named(HdrTool.manifest.id)) { HdrTool }
     single<EditorTool>(named(TrimTool.manifest.id)) { TrimTool }
+    single<EditorTool>(named(SoundTool.manifest.id)) { SoundTool }
 
     // `getAll` is what makes declaring a tool the only step in joining the set.
     // `single`, because the registry's per-kind flows are built once and every

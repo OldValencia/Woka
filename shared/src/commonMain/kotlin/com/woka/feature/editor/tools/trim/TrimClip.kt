@@ -39,13 +39,22 @@ data class TrimClip(
      * layer because it changes the clip's **length**, and the strip has to be drawable from
      * the list alone (`timeline.md` §3.2).
      */
-    val speed: Float = 1f
+    val speed: Float = 1f,
+    /**
+     * A freeze-frame's hold (ME-217): a clip whose range is the single frame at [fromMs],
+     * held for this long. Zero is an ordinary clip — `timeline.md`'s "a clip whose source
+     * range is a point, plus a hold", so the list, the strip, the drag and the delete all
+     * work on it unchanged.
+     */
+    val holdMs: Long = 0L
 ) {
-    /** How much of the source the clip spans. */
+    val isFreeze: Boolean get() = holdMs > 0L
+
+    /** How much of the source the clip spans — nothing, for a freeze. */
     val sourceLengthMs: Long get() = (toMs - fromMs).coerceAtLeast(0L)
 
-    /** How long it lasts on the timeline — the source span at its [speed]. */
-    val lengthMs: Long get() = (sourceLengthMs / speed).toLong()
+    /** How long it lasts on the timeline — the hold, or the source span at its [speed]. */
+    val lengthMs: Long get() = if (isFreeze) holdMs else (sourceLengthMs / speed).toLong()
 }
 
 /** The quick speeds the clip bar offers as one click each, slowest first (ME-216). */

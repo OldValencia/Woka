@@ -3,6 +3,8 @@ package com.woka.core.ui.image
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
 /**
@@ -24,6 +26,16 @@ class EditedClock(val ranges: List<SourceRange>) {
     /** Which of [ranges] the player is in. Written by the walk, read by the slider. */
     var index by mutableIntStateOf(0)
 
+    /**
+     * How far into a freeze the result is, and whether its hold runs (ME-217) — the walk's
+     * own time, since the player stands on one frame and its position cannot say.
+     */
+    var heldMs by mutableLongStateOf(0L)
+    var holding by mutableStateOf(false)
+
+    /** Where range [i] starts on the result. */
+    fun startOf(i: Int): Long = ranges.take(i).sumOf { it.lengthMs }
+
     /** How long the result is. */
     val totalMs: Long = ranges.sumOf { it.lengthMs }
 
@@ -31,8 +43,9 @@ class EditedClock(val ranges: List<SourceRange>) {
     fun toTimeline(sourceMs: Long): Long {
         if (ranges.isEmpty()) return sourceMs
         val current = index.coerceIn(0, ranges.lastIndex)
-        val start = ranges.take(current).sumOf { it.lengthMs }
+        val start = startOf(current)
         val range = ranges[current]
+        if (range.isFreeze) return start + heldMs
         return start + ((sourceMs - range.fromMs) / range.speed).toLong().coerceIn(0L, range.lengthMs)
     }
 
@@ -45,7 +58,10 @@ class EditedClock(val ranges: List<SourceRange>) {
         var start = 0L
         ranges.forEachIndexed { i, range ->
             val length = range.lengthMs
-            if (timelineMs < start + length) return i to range.fromMs + ((timelineMs - start).coerceAtLeast(0L) * range.speed).toLong()
+            if (timelineMs < start + length) {
+                val into = if (range.isFreeze) 0L else ((timelineMs - start).coerceAtLeast(0L) * range.speed).toLong()
+                return i to range.fromMs + into
+            }
             start += length
         }
         return ranges.lastIndex to ranges.last().toMs

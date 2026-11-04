@@ -12,6 +12,7 @@ import com.woka.feature.editor.tools.trim.move
 import com.woka.feature.editor.tools.trim.startOf
 import com.woka.feature.editor.tools.trim.trimEnd
 import com.woka.feature.editor.tools.trim.trimStart
+import com.woka.feature.editor.tools.trim.withHold
 import com.woka.feature.viewer.video.engine.pauseForSeek
 import com.woka.feature.viewer.video.engine.resumeAfterSeek
 import kotlin.math.abs
@@ -35,6 +36,7 @@ import kotlin.math.abs
  */
 internal fun Modifier.stripGestures(
     state: StripState,
+    zoom: StripZoom,
     editing: Boolean,
     widthPx: Float,
     gapPx: Float,
@@ -42,16 +44,22 @@ internal fun Modifier.stripGestures(
 ) = pointerInput(state, editing, widthPx) {
         awaitEachGesture {
             val down = awaitFirstDown()
-            down.consume()
             if (state.clips.isEmpty()) return@awaitEachGesture
             val (lead, tail) = trimmedEnds(state.clips, state.durationMs, editing)
-            val geometry = StripGeometry(state.clips, widthPx, gapPx, lead, tail)
+            val geometry = StripGeometry(state.clips, widthPx, gapPx, lead, tail, zoom.scale, zoom.scrollPx)
+            val head = geometry.xOf(state.walk.timelineMs(state.clips, state.player.currentPositionMs))
+            // ✂ and ❄ take their own clicks; the strip must not move the play head under them.
+            if (editing && state.drag == null && onPlayHeadAction(down.position, head, widthPx)) return@awaitEachGesture
+            down.consume()
             if (!editing) return@awaitEachGesture scrub(state, geometry, down)
             val handle = handlesOf(state).minByOrNull { abs(down.position.x - it.x(geometry)) }
-            if (handle != null && abs(down.position.x - handle.x(geometry)) <= handlePx) {
-                edge(state, geometry, down, handle)
-            } else {
-                pickOrCarry(state, geometry, down)
+            val toHandle = handle?.let { abs(down.position.x - it.x(geometry)) } ?: Float.MAX_VALUE
+            // The play head is grabbed in Trim too (2026-11-04), unless an edge is nearer.
+            val toHead = abs(down.position.x - head)
+            when {
+                handle != null && toHandle <= handlePx && toHandle <= toHead -> edge(state, geometry, down, handle)
+                toHead <= handlePx -> scrub(state, geometry, down)
+                else -> pickOrCarry(state, geometry, down)
             }
         }
     }
@@ -70,7 +78,7 @@ private suspend fun AwaitPointerEventScope.scrub(state: StripState, geometry: St
 }
 
 /**
- * Selects on a click; carries on a drag. The slot is read off the layout the drag began
+ * Seeks on a click; selects and carries on a drag. The slot is read off the layout the drag began
  * on (`StripGeometry.dropIndex`), and the live list shows the clip already in it — the
  * mockup's "the others have already slid".
  */
@@ -79,11 +87,12 @@ private suspend fun AwaitPointerEventScope.pickOrCarry(state: StripState, geomet
     val index = geometry.indexAt(down.position.x) ?: return
     val id = from[index].id
     val moved = awaitHorizontalTouchSlopOrCancellation(down.id) { change, _ -> change.consume() }
-    state.edits.select(id)
+    // A click on the body seeks and only seeks — the clip's tab selects (2026-11-04).
     if (moved == null || from.size < 2) {
         state.walk.seekTo(state.player, from, geometry.timelineAt(down.position.x))
         return
     }
+    state.edits.select(id)
     state.drag = StripDrag.Reorder(id, from)
     var last = from
     horizontalDrag(moved.id) { change ->
@@ -96,8 +105,8 @@ private suspend fun AwaitPointerEventScope.pickOrCarry(state: StripState, geomet
 }
 
 /**
- * Drags one clip's edge. The scale is the strip's at the press — milliseconds per pixel of
- * the layout the drag began on, which stays put until release — and the picture follows
+ * Drags one clip's edge. The scale is the strip's at the press, and the strip keeps it until
+ * release while it re-flows around the edge (`ClipStrip`) — and the picture follows
  * the edge, paused, so the frame the cut will start or end on is the one on the canvas
  * when the button is released.
  */
@@ -111,19 +120,23 @@ private suspend fun AwaitPointerEventScope.edge(
     val clip = from[handle.index]
     val span = geometry.spans[handle.index]
     if (span.width <= 0f) return
-    // Source milliseconds per pixel: an edge moves the clip's range, whatever its speed.
-    val msPerPx = clip.sourceLengthMs / span.width
+    // Source milliseconds per pixel: an edge moves the clip's range, whatever its speed. A
+    // freeze's edge moves its hold instead, in timeline milliseconds (ME-217).
+    val msPerPx = (if (clip.isFreeze) clip.lengthMs else clip.sourceLengthMs) / span.width
     val player = state.player
     player.pauseForSeek()
-    state.drag = StripDrag.Edge(handle, from)
+    state.drag = StripDrag.Edge(handle, from, 0L, geometry.pxPerMs, down.position.x)
     var last = from
     horizontalDrag(down.id) { change ->
         change.consume()
         val delta = ((change.position.x - down.position.x) * msPerPx).toLong()
-        val next = if (handle.leading) from.trimStart(clip.id, clip.fromMs + delta)
-        else from.trimEnd(clip.id, clip.toMs + delta, state.durationMs)
+        val next = when {
+            clip.isFreeze -> from.withHold(clip.id, clip.holdMs + if (handle.leading) -delta else delta)
+            handle.leading -> from.trimStart(clip.id, clip.fromMs + delta)
+            else -> from.trimEnd(clip.id, clip.toMs + delta, state.durationMs)
+        }
         val moved = next[handle.index].let { if (handle.leading) it.fromMs - clip.fromMs else it.toMs - clip.toMs }
-        state.drag = StripDrag.Edge(handle, from, moved)
+        state.drag = StripDrag.Edge(handle, from, moved, geometry.pxPerMs, change.position.x)
         if (next != last) state.preview(next)
         last = next
         val start = next.startOf(handle.index)

@@ -67,3 +67,15 @@ internal fun RasterRecipe.isIdentity(sourceSize: IntSize): Boolean =
         paints.isEmpty()
 
 private val IDENTITY = Matrix().values
+
+/** H.264 in 4:2:0 wants both sides even; a crop to an odd width loses its last column. */
+internal data class EvenSize(val width: Int, val height: Int)
+
+internal fun evenSize(width: Int, height: Int) =
+    EvenSize((width - width % 2).coerceAtLeast(2), (height - height % 2).coerceAtLeast(2))
+
+/** What a frame looks like after the recipe, at the encoder's size. */
+internal interface FramePicture {
+    val outputSize: EvenSize
+    fun draw(frame: Frame): Frame
+}

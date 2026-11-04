@@ -62,7 +62,13 @@ internal fun ClipTile(
     carried: Boolean,
     /** The clip carries a look of its own — ME-157's dot, on a film's clip (ME-215). */
     ownLook: Boolean = false,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /**
+     * The whole clip's width when this tile draws only the part on screen, and how far into
+     * it that part starts (ME-218) — so a zoomed tile shows the stills of its own stretch.
+     */
+    fullWidthPx: Float = 0f,
+    shiftPx: Float = 0f
 ) {
     val shape = RoundedCornerShape(CLIP_RADIUS)
     Box(
@@ -75,7 +81,7 @@ internal fun ClipTile(
         val loading = remember { mutableStateOf(true) }
         val phase = rememberShimmer(loading.value)
         Canvas(Modifier.fillMaxSize()) {
-            val missing = drawStills(clip, cells, phase.value)
+            val missing = drawStills(clip, cells, phase.value, fullWidthPx.takeIf { it > 0f } ?: size.width, shiftPx)
             if (missing != loading.value) loading.value = missing
         }
         if (showRange) {
@@ -85,7 +91,7 @@ internal fun ClipTile(
                 style = TextStyle(color = Color.White.copy(alpha = 0.85f), fontSize = 9.5.sp)
             )
         }
-        ClipBadges(ownLook = ownLook, speed = clip.speed)
+        ClipBadges(ownLook = ownLook, speed = clip.speed, holdMs = clip.holdMs)
     }
 }
 
@@ -93,19 +99,21 @@ internal fun ClipTile(
  * Stills at the strip's own height and the frame's 16:9, each cropped to its slot rather
  * than squeezed, and each showing the source instant under its own middle.
  */
-private fun DrawScope.drawStills(clip: TrimClip, cells: FilmstripCells?, phase: Float): Boolean {
+private fun DrawScope.drawStills(clip: TrimClip, cells: FilmstripCells?, phase: Float, fullWidth: Float, shift: Float): Boolean {
     drawRect(UNLOADED)
     val tileHeight = size.height
     val tileWidth = tileHeight * 16f / 9f
-    if (size.width <= 0f || tileWidth <= 0f) return false
+    if (size.width <= 0f || tileWidth <= 0f || fullWidth <= 0f) return false
     var missing = false
-    val count = ceil(size.width / tileWidth).toInt()
+    // Slots are placed on the whole clip and drawn shifted, so only the ones on screen run.
+    val firstSlot = (shift / tileWidth).toInt()
+    val lastSlot = ceil((shift + size.width) / tileWidth).toInt()
     clipRect {
-        for (j in 0 until count) {
-            val x = j * tileWidth
-            val atMs = clip.fromMs + (clip.sourceLengthMs * ((x + tileWidth / 2f) / size.width)).toLong()
+        for (j in firstSlot until lastSlot) {
+            val x = j * tileWidth - shift
+            val atMs = clip.fromMs + (clip.sourceLengthMs * ((j * tileWidth + tileWidth / 2f) / fullWidth)).toLong()
             // The slot's own stretch of source, so a still already decoded inside it is used.
-            val spanMs = (clip.sourceLengthMs * (tileWidth / size.width)).toLong()
+            val spanMs = (clip.sourceLengthMs * (tileWidth / fullWidth)).toLong()
             val still = cells?.stillAt(atMs.coerceAtMost(clip.toMs), spanMs)
             if (still != null) {
                 val crop = centredCrop(still.width, still.height, tileWidth / tileHeight)
@@ -121,7 +129,7 @@ private fun DrawScope.drawStills(clip: TrimClip, cells: FilmstripCells?, phase: 
                 missing = true
                 drawShimmer(x, Size(tileWidth, tileHeight), phase)
             }
-            if (j > 0) drawRect(CELL_SEAM, topLeft = Offset(x, 0f), size = Size(1f, tileHeight))
+            if (j > 0 && x >= 0f) drawRect(CELL_SEAM, topLeft = Offset(x, 0f), size = Size(1f, tileHeight))
         }
     }
     return missing

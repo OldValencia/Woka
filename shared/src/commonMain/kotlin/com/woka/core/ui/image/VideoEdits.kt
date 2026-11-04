@@ -50,6 +50,9 @@ interface AppliedVideoEdit {
 
     /** The grid's poster, edited; [poster] itself when the picture is untouched. */
     fun poster(poster: ImageBitmap): ImageBitmap
+
+    /** What the edit does to the whole film's sound (ME-240), or null for nothing. */
+    val wholeSound: SoundMix? get() = null
 }
 
 /**
@@ -57,9 +60,20 @@ interface AppliedVideoEdit {
  * playing at [speed] (ME-216).
  */
 @Immutable
-data class SourceRange(val fromMs: Long, val toMs: Long, val key: Int = 0, val speed: Float = 1f) {
+data class SourceRange(
+    val fromMs: Long,
+    val toMs: Long,
+    val key: Int = 0,
+    val speed: Float = 1f,
+    /** A freeze's hold (ME-217): the frame at [fromMs], shown this long. */
+    val holdMs: Long = 0L,
+    /** This clip's own sound (ME-240), or null for none. */
+    val sound: SoundMix? = null
+) {
+    val isFreeze: Boolean get() = holdMs > 0L
+
     /** How long it lasts on the result. */
-    val lengthMs: Long get() = ((toMs - fromMs) / speed).toLong()
+    val lengthMs: Long get() = if (isFreeze) holdMs else ((toMs - fromMs) / speed).toLong()
 }
 
 /** No editor in the graph: no film carries an edit. */

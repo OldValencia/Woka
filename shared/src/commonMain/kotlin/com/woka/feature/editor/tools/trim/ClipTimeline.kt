@@ -34,7 +34,11 @@ fun List<TrimClip>.atTimeline(timelineMs: Long): ClipPosition? {
     val clamped = timelineMs.coerceIn(0L, totalMs())
     forEachIndexed { index, clip ->
         val end = start + clip.lengthMs
-        if (clamped < end) return ClipPosition(index, clip.fromMs + ((clamped - start) * clip.speed).toLong())
+        if (clamped < end) {
+            // A freeze shows its one frame for the whole hold (ME-217).
+            val into = if (clip.isFreeze) 0L else ((clamped - start) * clip.speed).toLong()
+            return ClipPosition(index, clip.fromMs + into)
+        }
         start = end
     }
     return ClipPosition(lastIndex, last().toMs)
@@ -52,6 +56,8 @@ fun List<TrimClip>.timelineOf(index: Int, sourceMs: Long): Long {
  */
 fun List<TrimClip>.clipOf(sourceMs: Long, hint: Int): Int? {
     getOrNull(hint)?.let { if (sourceMs in it.fromMs until it.toMs) return hint }
+    // A freeze spans no source: the walk holding one is still in it (ME-217).
+    getOrNull(hint)?.takeIf { it.isFreeze }?.let { return hint }
     return indexOfFirst { sourceMs in it.fromMs until it.toMs }.takeIf { it >= 0 }
 }
 

@@ -13,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -68,8 +69,10 @@ internal fun VideoEditorBand(
     val duration = player?.durationMs ?: 0L
     val clips = TrimTool.clipsIn(document) ?: wholeSource(duration)
     val walk = holder.walk
+    val zoom = remember(holder) { StripZoom() }
     val cells = rememberFilmstrip(holder.state?.file, duration, codedSize)
     if (player != null && duration > 0L) WalkClips(player, walk, clips)
+    if (player != null && duration > 0L) MixClipSound(player, walk, clips, document, edits)
 
     Row(
         modifier = modifier
@@ -77,18 +80,20 @@ internal fun VideoEditorBand(
             .clip(RoundedCornerShape(EditorTokens.Rail.containerRadius))
             .background(Theme.viewer.popoverScrim)
             .padding(horizontal = BAND_PADDING, vertical = EditorTokens.Rail.containerPadding)
+            .bandZoomWheel(zoom)
             .testTag(EDITOR_BAND_TAG),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(BAND_GAP)
     ) {
-        Transport(playing = player?.isPlaying == true) {
-            player?.let { it.isPlaying = !it.isPlaying }
+        Transport(playing = player?.let { walk.isPlaying(it) } == true) {
+            player?.let { walk.toggle(it) }
         }
         if (player != null && duration > 0L) {
-            ClipStrip(player, walk, clips, cells, edits, duration, Modifier.weight(1f))
+            ClipStrip(player, walk, clips, cells, edits, duration, zoom, Modifier.weight(1f))
         } else {
             Spacer(Modifier.weight(1f))
         }
+        ZoomPill(zoom)
         Readout(
             position = { player?.let { walk.timelineMs(clips, it.currentPositionMs) } ?: 0L },
             duration = clips.totalMs()
@@ -112,6 +117,16 @@ private fun WalkClips(player: VideoPlayerState, walk: ClipWalk, clips: List<Trim
     }
     LaunchedEffect(player, walk) {
         snapshotFlow { player.isPlaying }.collect { playing -> if (playing) walk.onPlay(player, current) }
+    }
+    // A freeze's hold runs on the frame clock while the player stands still (ME-217).
+    LaunchedEffect(player, walk, walk.holding) {
+        if (!walk.holding) return@LaunchedEffect
+        var last = withFrameMillis { it }
+        while (walk.holding) {
+            val now = withFrameMillis { it }
+            walk.tick(player, current, now - last)
+            last = now
+        }
     }
     // The clip being played sets the pace, picture and sound (ME-216).
     val speed = clips.getOrNull(walk.index)?.speed ?: 1f

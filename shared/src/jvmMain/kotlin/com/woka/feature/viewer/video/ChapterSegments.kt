@@ -37,6 +37,8 @@ internal fun chapterSegmentsOnResult(chapters: List<MediaChapter>, ranges: List<
     val pieces = ranges.flatMap { range ->
         val start = offset
         offset += range.lengthMs
+        // A freeze spans no source and so no chapter: it is drawn as track, unlabelled (ME-217).
+        if (range.isFreeze) return@flatMap listOf(SliderSegment(start.toFloat() / total, offset.toFloat() / total))
         chapters.mapNotNull { chapter ->
             val from = maxOf(chapter.startMs, range.fromMs)
             val to = minOf(chapter.endMs, range.toMs)

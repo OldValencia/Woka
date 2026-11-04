@@ -3,10 +3,13 @@ package com.woka.feature.editor.engine.video
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.woka.feature.editor.tools.trim.TrimClip
 import com.woka.feature.editor.tools.trim.atTimeline
 import com.woka.feature.editor.tools.trim.clipOf
+import com.woka.feature.editor.tools.trim.startOf
 import com.woka.feature.editor.tools.trim.timelineOf
 import com.woka.feature.editor.tools.trim.totalMs
 import com.woka.feature.viewer.video.engine.VideoPlayerState
@@ -40,15 +43,39 @@ internal class ClipWalk {
     var index by mutableIntStateOf(0)
         private set
 
+    /**
+     * How far into a freeze the play head is, and whether its hold is running (ME-217). A
+     * freeze shows one frame with the player paused, so its time is the walk's own, advanced
+     * by [tick] — the source position cannot move through it.
+     */
+    var heldMs by mutableLongStateOf(0L)
+        private set
+    var holding by mutableStateOf(false)
+        private set
+    private var frozen = false
+
+    /** Whether the result is playing — the player, or a running hold. */
+    fun isPlaying(player: VideoPlayerState): Boolean = player.isPlaying || holding
+
+    /** Play/pause for the band's button and Space: a hold pauses itself, not the player. */
+    fun toggle(player: VideoPlayerState) {
+        if (frozen) holding = !holding else player.isPlaying = !player.isPlaying
+    }
+
     /** Where the play head is on the timeline, derived from the player's source position. */
-    fun timelineMs(clips: List<TrimClip>, sourceMs: Long): Long =
-        clips.timelineOf(index.coerceIn(0, clips.lastIndex.coerceAtLeast(0)), sourceMs)
+    fun timelineMs(clips: List<TrimClip>, sourceMs: Long): Long {
+        val at = index.coerceIn(0, clips.lastIndex.coerceAtLeast(0))
+        if (clips.getOrNull(at)?.isFreeze == true) return clips.startOf(at) + heldMs
+        return clips.timelineOf(at, sourceMs)
+    }
 
     /** Puts the play head at [timelineMs], which may be inside any clip. */
     fun seekTo(player: VideoPlayerState, clips: List<TrimClip>, timelineMs: Long) {
         val at = clips.atTimeline(timelineMs) ?: return
-        index = at.index
-        player.seek(at.sourceMs)
+        val wasPlaying = isPlaying(player)
+        enter(player, clips, at.index, wasPlaying)
+        if (frozen) heldMs = (timelineMs - clips.startOf(at.index)).coerceAtLeast(0L)
+        else player.seek(at.sourceMs)
     }
 
     /**
@@ -58,11 +85,14 @@ internal class ClipWalk {
      * - **A position outside the current clip** — a list edit took it away, or the file
      *   opened at 0 with the first clip starting later — moves to where it belongs: the
      *   clip that holds it, or the start of the nearest one.
-     * - **The end of a clip** seeks to the next one's start, or pauses at the end of the
-     *   timeline, which is where the last frame stays on screen.
+     * - **The end of a clip** moves to the next one, or pauses at the end of the timeline,
+     *   which is where the last frame stays on screen. A freeze ends in [tick] instead.
      */
     fun onPosition(player: VideoPlayerState, clips: List<TrimClip>, sourceMs: Long) {
         if (clips.isEmpty()) return
+        // Re-read every time: an edit may have taken the freeze away from under the walk.
+        frozen = clips.getOrNull(index)?.isFreeze == true
+        if (frozen) return
         val current = clips.clipOf(sourceMs, index)
         if (current == null) {
             index = index.coerceIn(0, clips.lastIndex)
@@ -72,12 +102,15 @@ internal class ClipWalk {
         index = current
         val clip = clips[index]
         if (!player.isPlaying || sourceMs < clip.toMs - JOIN_TOLERANCE_MS) return
-        if (index < clips.lastIndex) {
-            index += 1
-            player.seek(clips[index].fromMs)
-        } else {
-            player.isPlaying = false
-        }
+        if (index < clips.lastIndex) enter(player, clips, index + 1, playing = true) else player.isPlaying = false
+    }
+
+    /** [elapsedMs] more of a running hold; at its end, on to the next clip or the end. */
+    fun tick(player: VideoPlayerState, clips: List<TrimClip>, elapsedMs: Long) {
+        val clip = clips.getOrNull(index)?.takeIf { it.isFreeze } ?: return
+        heldMs = (heldMs + elapsedMs).coerceAtMost(clip.holdMs)
+        if (heldMs < clip.holdMs) return
+        if (index < clips.lastIndex) enter(player, clips, index + 1, playing = true) else holding = false
     }
 
     /**
@@ -87,5 +120,17 @@ internal class ClipWalk {
     fun onPlay(player: VideoPlayerState, clips: List<TrimClip>) {
         val atEnd = timelineMs(clips, player.currentPositionMs) >= clips.totalMs() - JOIN_TOLERANCE_MS * 2
         if (atEnd && clips.isNotEmpty()) seekTo(player, clips, 0L)
+    }
+
+    /** Clip [to] becomes current: a freeze parks the player on its frame and holds. */
+    private fun enter(player: VideoPlayerState, clips: List<TrimClip>, to: Int, playing: Boolean) {
+        index = to
+        heldMs = 0L
+        val clip = clips[to]
+        frozen = clip.isFreeze
+        holding = frozen && playing
+        if (frozen) player.isPlaying = false
+        player.seek(clip.fromMs)
+        if (!frozen && playing) player.isPlaying = true
     }
 }

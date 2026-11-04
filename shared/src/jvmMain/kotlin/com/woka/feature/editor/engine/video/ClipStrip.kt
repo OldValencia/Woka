@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -14,6 +15,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntOffset
@@ -46,7 +48,7 @@ internal const val CLIP_STRIP_TAG = "editor-clip-strip"
  * **What is laid out is what the document says**, and with Trim open the source trimmed off
  * either end is laid out beside it, dimmed (`StripGeometry`, [TrimmedEnds]): it is still in
  * the file, and since kept plus trimmed is the whole source, an outer handle lands where
- * it was let go. An edge drag holds the layout it began on until release.
+ * it was let go. An edge drag re-flows the strip live around the edge (ME-218).
  */
 @Composable
 internal fun ClipStrip(
@@ -56,15 +58,15 @@ internal fun ClipStrip(
     cells: FilmstripCells?,
     edits: EditorTimelineScope,
     durationMs: Long,
+    zoom: StripZoom,
     modifier: Modifier = Modifier
 ) {
     val state = remember(player, walk) { StripState(player, walk) }
     SideEffect { state.refresh(clips, edits, durationMs) }
     val height by animateDpAsState(if (edits.editing) FILM_EDITING else FILM_RESTING)
     val drag = state.drag
-    // An edge drag keeps the layout it began on, so the strip does not re-flow under the
-    // handle; everything else lays out the document as it stands.
-    val laidOut = (drag as? StripDrag.Edge)?.from ?: clips
+    // The document as it stands, always — an edge drag re-flows it live (`edgeLayout`).
+    val laidOut = clips
     val (lead, tail) = trimmedEnds(laidOut, durationMs, edits.editing)
     val selectedId = edits.selectedId?.takeIf { id -> clips.any { it.id == id } }
     // Entering This Clip opens the clip already picked, or the one under the play head.
@@ -78,17 +80,33 @@ internal fun ClipStrip(
         val density = LocalDensity.current
         val widthPx = constraints.maxWidth.toFloat()
         val gapPx = with(density) { JOIN_GAP.toPx() }
-        val geometry = StripGeometry(laidOut, widthPx, gapPx, lead, tail)
+        val layout: StripLayout = { scale, scroll -> StripGeometry(laidOut, widthPx, gapPx, lead, tail, scale, scroll) }
+        val carry = remember { EdgeCarry() }
+        val geometry = carry.layout(drag as? StripDrag.Edge, layout, zoom)
+        SideEffect {
+            zoom.layoutNow = layout
+            zoom.playHeadMsNow = { walk.timelineMs(laidOut, player.currentPositionMs) }
+            carry.release(drag as? StripDrag.Edge, zoom, layout)
+        }
+        FollowPlayHead(player, walk, laidOut, zoom, layout)
         val gestures = Modifier.stripGestures(
             state = state,
+            zoom = zoom,
             editing = edits.editing,
             widthPx = widthPx,
             gapPx = gapPx,
             handlePx = with(density) { HANDLE_REACH.toPx() }
         )
-        Box(gestures.resetOnRightClick { state.resetCut() }.fillMaxSize()) {
+        Box(
+            gestures.resetOnRightClick { state.resetCut() }
+                .stripZoomWheel(zoom, layout)
+                .clipToBounds()
+                .fillMaxSize()
+        ) {
             laidOut.forEachIndexed { index, clip ->
                 val span = geometry.spans[index]
+                // Only the part on screen is composed (ME-218): a zoomed clip outgrows a layout.
+                val shown = span.visibleIn(widthPx) ?: return@forEachIndexed
                 ClipTile(
                     clip = clip,
                     cells = cells,
@@ -97,26 +115,33 @@ internal fun ClipStrip(
                     ownLook = edits.hasOwnLook(clip.key),
                     carried = (drag as? StripDrag.Reorder)?.id == clip.id,
                     modifier = Modifier
-                        .offset { IntOffset(span.left.roundToInt(), 0) }
-                        .width(with(density) { span.width.toDp() })
+                        .offset { IntOffset(shown.left.roundToInt(), 0) }
+                        .width(with(density) { shown.width.toDp() })
                         .fillMaxHeight()
+                        .padding(bottom = if (edits.editing) CLIP_TAB_HEIGHT else 0.dp),
+                    fullWidthPx = span.width,
+                    shiftPx = shown.left - span.left
                 )
                 if (edits.editing && clip.id == selectedId && drag == null) {
                     ClipBar(
                         canDelete = clips.size > 1,
-                        anchorX = span.left + span.width / 2f,
+                        // Over the part of the clip on screen, so a zoom does not carry it off.
+                        anchorX = shown.left + shown.width / 2f,
                         onDelete = { state.deleteSelected(selectedId) },
                         onDuplicate = { state.duplicateSelected(selectedId) },
                         onJoin = { state.joinSelected(selectedId) }.takeIf { clips.join(selectedId) != clips },
                         speed = clip.speed,
-                        onSpeed = { speed -> state.apply(clips.withSpeed(selectedId, speed)) }
+                        // A freeze has no speed (ME-217).
+                        onSpeed = { speed: Float -> state.apply(clips.withSpeed(selectedId, speed)) }.takeIf { !clip.isFreeze }
                     )
                 }
             }
-            if (edits.editing) TrimmedEnds(geometry, laidOut, cells, durationMs, selectedId, drag as? StripDrag.Edge)
-            PlayHead(player, walk, laidOut, geometry, splitting = edits.editing && drag == null) {
+            if (edits.editing) TrimmedEnds(geometry, laidOut, cells, durationMs, selectedId, null)
+            PlayHead(player, walk, laidOut, geometry, edits.editing && drag == null, onFreeze = { state.freezeAtPlayHead() }) {
                 state.splitAtPlayHead()
             }
+            if (edits.editing) ClipTabs(laidOut, geometry, selectedId) { edits.select(it) }
+            ZoomOverview(zoom, geometry)
         }
     }
 }
