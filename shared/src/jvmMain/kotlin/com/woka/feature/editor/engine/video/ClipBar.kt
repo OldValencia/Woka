@@ -48,7 +48,14 @@ private val BAR_LIFT = 9.dp
  * the gesture itself.
  */
 @Composable
-internal fun ClipBar(canDelete: Boolean, anchorX: Float, onDelete: () -> Unit, onDuplicate: () -> Unit) {
+internal fun ClipBar(
+    canDelete: Boolean,
+    anchorX: Float,
+    onDelete: () -> Unit,
+    onDuplicate: () -> Unit,
+    /** Null when no neighbour continues this clip in the source — nothing to join. */
+    onJoin: (() -> Unit)? = null
+) {
     val lift = with(LocalDensity.current) { BAR_LIFT.roundToPx() }
     val position = remember(anchorX, lift) { AboveAnchor(anchorX.roundToInt(), lift) }
     Popup(popupPositionProvider = position) {
@@ -63,6 +70,7 @@ internal fun ClipBar(canDelete: Boolean, anchorX: Float, onDelete: () -> Unit, o
         ) {
             BarAction("Delete", Theme.colors.danger, enabled = canDelete, tag = "editor-clip-delete", onClick = onDelete)
             BarAction("Duplicate", Theme.viewer.onScrim, enabled = true, tag = "editor-clip-duplicate", onClick = onDuplicate)
+            BarAction("Join", Theme.viewer.onScrim, enabled = onJoin != null, tag = "editor-clip-join", onClick = onJoin ?: {})
         }
     }
 }

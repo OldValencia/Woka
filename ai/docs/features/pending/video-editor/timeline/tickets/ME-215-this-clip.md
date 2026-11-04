@@ -45,3 +45,31 @@
   viewer after `Done`, and in a render.
 - Deleting the clip removes its layer, duplicating copies it, reordering keeps it.
 - `./gradlew.bat :shared:build` green.
+
+## Built — 2026-11-04
+
+As shaped, with three decisions the ticket did not make:
+
+- **Under This Clip the strip only picks the clip** (the author's choice): Trim, ✂, delete,
+  duplicate and drag wait for All Clips. In the session a frame's document is the shared layer
+  plus its own, so a cut made under This Clip would have landed in that clip's layer.
+- **Only a clip's look is its own** — Adjust, Filters, Markup. Crop, Transform and Resize stay
+  the whole video's (`unavailableIn`, "Frame size is the whole video's"): one film has one frame
+  size, and per-clip geometry would hand the render, the viewer and the canvas clips of
+  different sizes. Reopen if a per-clip crop is wanted; it means scaling into a common frame.
+- **A film opens on no clip** (`NO_CLIP`, `EditorEngine.openingFrame`), so This Clip on clip 0
+  reads clip 0's stored look instead of returning early from `moveToFrame`.
+
+Pieces: `TrimClip.key` and `nextKey`; `EditorSessionClips.kt` (`ownOpsOf`, `copyFrame`);
+`EditorTimelineScope.perClip/focus/copyLayer/hasOwnLook`; `EditorFrames.clips` and the
+All Clips / This Clip words; `ClipLooks` (the canvas draws the clip under the play head);
+`VideoEditorClips` (split from the engine); per-key recipes in `RecipeVideoEdits` and in the
+render; Revert under This Clip removes that clip's look only; `Done` drops looks of deleted
+clips. `EditorScreen`'s canvas moved to `EditorCanvasLayer` for size.
+
+Tests: `unit/ClipEditsTest` (keys), `unit/EditorSessionClipsTest`, `integration/VideoRenderTest`
+(one clip tinted), `integration/VideoEditsReaderTest` (a look on its clip alone).
+`EditorFrameScopeUiTest` and `EditorFrameStripUiTest` now start Koin themselves — they relied
+on another class having run first. **Not yet by hand.** Known gap: the hover reel draws every
+excerpt with the look of the clip the viewer last played.
+

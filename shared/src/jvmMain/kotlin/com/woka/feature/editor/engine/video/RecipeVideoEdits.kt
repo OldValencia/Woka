@@ -12,6 +12,7 @@ import com.woka.core.ui.image.EditedClock
 import com.woka.core.ui.image.SourceRange
 import com.woka.core.ui.image.VideoEdits
 import com.woka.feature.editor.core.EditorToolRegistry
+import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.engine.image.RasterRecipe
 import com.woka.feature.editor.engine.image.RecipePainter
 import com.woka.feature.editor.engine.image.scaledBy
@@ -50,21 +51,30 @@ internal class RecipeVideoEdits(private val registry: EditorToolRegistry) : Vide
     }
 
     private fun foldFile(file: File): AppliedVideoEdit? {
-        val document = EditRecipe.documentIn(file, 0)?.takeIf { !it.isEmpty } ?: return null
+        val payload = EditRecipe.read(file)?.takeIf { !it.isEmpty } ?: return null
         val sourceSize = codedFrameSize(file)
         if (sourceSize == IntSize.Zero) return null
-        val ranges = TrimTool.clipsIn(document).orEmpty().map { SourceRange(it.fromMs, it.toMs) }
-        val recipe = previewFold(document, registry, sourceSize)
-        return FoldedVideoEdit(EditedClock(ranges), sourceSize, recipe.takeUnless { it.isIdentity(sourceSize) })
+        val base = EditDocument(payload.ops)
+        val ranges = TrimTool.clipsIn(base).orEmpty().map { SourceRange(it.fromMs, it.toMs, it.key) }
+        // One recipe per layer the cut draws (ME-215); an uncut film is clip 0 alone.
+        val keys = ranges.map { it.key }.ifEmpty { listOf(0) }.distinct()
+        val recipes = keys.associateWith { key ->
+            previewFold(payload.documentFor(key), registry, sourceSize).takeUnless { it.isIdentity(sourceSize) }
+        }
+        return FoldedVideoEdit(EditedClock(ranges), sourceSize, recipes)
     }
 }
 
 private class FoldedVideoEdit(
     override val clock: EditedClock,
     private val sourceSize: IntSize,
-    /** Null when the edit is cuts alone and the picture is drawn as decoded. */
-    private val recipe: RasterRecipe?
+    /** By clip layer key; a null value is a clip drawn as decoded — cuts alone (ME-215). */
+    private val recipes: Map<Int, RasterRecipe?>
 ) : AppliedVideoEdit {
+
+    /** The playing clip's recipe, read off [clock] so a join recomposes the reader. */
+    private val recipe: RasterRecipe?
+        get() = recipes[clock.ranges.getOrNull(clock.index)?.key ?: 0]
 
     override fun painter(frame: ImageBitmap, color: StillColorInfo, moving: Boolean): Painter? {
         val recipe = recipe ?: return null
@@ -73,8 +83,9 @@ private class FoldedVideoEdit(
         return RecipePainter(frame, sourceSize, recipe.copy(source = hdr))
     }
 
+    /** The first clip's look — the cover, until ME-287 lets the author choose one. */
     override fun poster(poster: ImageBitmap): ImageBitmap {
-        val recipe = recipe ?: return poster
+        val recipe = recipes[clock.ranges.firstOrNull()?.key ?: 0] ?: return poster
         val factor = poster.width.toFloat() / sourceSize.width
         return runCatching {
             renderAtNativeScale(poster, IntSize(poster.width, poster.height), recipe.scaledBy(factor))

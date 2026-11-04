@@ -22,7 +22,7 @@ private const val MAX_BITRATE = 60_000_000
 private const val AUDIO_BITRATE = 192_000
 
 /**
- * The encode path of a render (ME-292): every clip decoded, drawn through [picture] when
+ * The encode path of a render (ME-292): every clip decoded, drawn through its picture when
  * there is pixel work, and encoded once into a fresh H.264 + AAC stream.
  *
  * **libopenh264**, because ME-290 measured it: the LGPL build has no x264, NVENC needs a
@@ -40,17 +40,19 @@ internal fun encodeClips(
     target: File,
     format: String,
     clips: List<TrimClip>,
-    picture: FramePicture?,
+    /** Each clip's picture (ME-215) — one frame size for all, since geometry is the film's. */
+    pictureOf: (TrimClip) -> FramePicture?,
     alive: () -> Boolean,
     progress: (Float) -> Unit
 ) {
     val grabber = FFmpegFrameGrabber(source).apply { pixelFormat = AV_PIX_FMT_RGBA }
     try {
         grabber.start()
+        val picture = clips.firstNotNullOfOrNull(pictureOf)
         val size = picture?.outputSize ?: evenSize(grabber.imageWidth, grabber.imageHeight)
         val recorder = encodeRecorder(grabber, target, format, size, sourceBitrate(grabber, source))
         try {
-            recordClips(grabber, recorder, clips, picture, alive, progress)
+            recordClips(grabber, recorder, clips, pictureOf, alive, progress)
         } finally {
             recorder.stop()
             recorder.release()
@@ -84,7 +86,7 @@ private fun recordClips(
     grabber: FFmpegFrameGrabber,
     recorder: FFmpegFrameRecorder,
     clips: List<TrimClip>,
-    picture: FramePicture?,
+    pictureOf: (TrimClip) -> FramePicture?,
     alive: () -> Boolean,
     progress: (Float) -> Unit
 ) {
@@ -92,6 +94,7 @@ private fun recordClips(
     val totalUs = clips.sumOf { it.lengthMs } * 1000L
     var baseUs = 0L
     for (clip in clips) {
+        val picture = pictureOf(clip)
         val fromUs = clip.fromMs * 1000L
         val untilUs = clip.toMs * 1000L
         grabber.setTimestamp(fromUs)

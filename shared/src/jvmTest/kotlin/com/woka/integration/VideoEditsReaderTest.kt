@@ -83,6 +83,20 @@ class VideoEditsReaderTest {
         assertNull(edit.painter(ImageBitmap(64, 36), StillColorInfo.Sdr, moving = true))
     }
 
+    /** ME-215: clip 1's own look is drawn while clip 1 plays, and not while clip 0 does. */
+    @Test
+    fun `a clip's own look is drawn on that clip alone`() = onFilm { film, edits ->
+        val cuts = TrimTool.opFor(listOf(TrimClip("a", 0L, 1_000L), TrimClip("b", 2_000L, 3_000L, key = 1)))
+        val layers = EditLayers(EditDocument(listOf(cuts)), mapOf(1 to EditDocument(listOf(ToolOp("tint")))), setOf(1))
+        assertIs<EditSaveResult.Saved>(recordRecipe(film, layers, SourceStamp.of(film)))
+
+        val edit = assertNotNull(edits.editOf(film))
+        val frame = ImageBitmap(64, 36)
+        assertNull(edit.painter(frame, StillColorInfo.Sdr, moving = true), "clip 0 drew clip 1's look")
+        edit.clock.index = 1
+        assertNotNull(edit.painter(frame, StillColorInfo.Sdr, moving = true), "clip 1's look is not drawn")
+    }
+
     @Test
     fun `the poster is drawn through the edit`() = onFilm { film, edits ->
         save(film, EditDocument(ops = listOf(ToolOp("tint"))))

@@ -44,7 +44,7 @@ internal fun convertToMp4(source: File, alive: () -> Boolean, progress: (Float) 
         }
         val clips = wholeSource(probe.durationMs)
         if (probe.copies) copyWhole(source, scratch, probe.durationMs, alive, progress)
-        else encodeClips(source, scratch, "mp4", clips, null, alive, progress)
+        else encodeClips(source, scratch, "mp4", clips, { null }, alive, progress)
         if (!alive()) {
             scratch.delete()
             return EditSaveResult.NothingToDo

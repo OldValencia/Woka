@@ -76,7 +76,7 @@ internal fun EditorHost(
     // The engine is still keyed on the frame — it draws one frame's pixels — but the
     // session is not, so it is told to look elsewhere rather than rebuilt. **After the
     // switch is declared**, because what a frame change means depends on it.
-    LaunchedEffect(frameIndex) { session.moveToFrame(frameIndex, editScope) }
+    LaunchedEffect(frameIndex) { session.moveToFrame(engine.openingFrame(frameIndex), editScope) }
 
     EditorPresenceEffect(engine, session, file.name, editScope, onClose, onSaved)
 

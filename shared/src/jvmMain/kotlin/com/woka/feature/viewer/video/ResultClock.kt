@@ -13,8 +13,8 @@ import com.woka.feature.viewer.video.engine.seek
  *
  * **The same instance the walk moves** — it is cached with the folded edit — so the play
  * head is placed by the range the walk says it is in. Re-read when a save moves
- * `AppliedVideoEdits.generation`. Chapters are source time and are left off a cut
- * film by the caller rather than drawn in the wrong places.
+ * `AppliedVideoEdits.generation`. Chapters are source time; the caller lays them on the
+ * result (`chapterSegmentsOnResult`).
  */
 @Composable
 internal fun rememberResultClock(player: VideoPlayerState?): EditedClock? {

@@ -1,7 +1,7 @@
 package com.woka.feature.editor.engine.video
 
 import androidx.compose.ui.unit.IntSize
-import com.woka.feature.editor.core.EditDocument
+import com.woka.feature.editor.core.EditPayload
 import com.woka.feature.editor.recipe.EditRecipe
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import java.io.File
@@ -44,16 +44,11 @@ internal fun codedFrameSize(file: File): IntSize = runCatching {
 }.getOrDefault(IntSize.Zero)
 
 /**
- * What the file carries, so a second sitting continues the first (ME-288).
- *
- * **Frame 0 is the only frame a video has**, as far as an edit is concerned: a container
- * holding several pictures is a still's problem (ME-156), and a video's position is time
- * rather than an index — which is why `EditorFrames()` is left at its one-picture default
- * and the frame band never appears. So the payload's base slot is the whole answer, and
- * `storedDocumentIn` and `storedBase` inherit it from `storedDocument`.
+ * What the file carries, so a second sitting continues the first (ME-288) — the whole
+ * payload since ME-215: [EditPayload.ops] is the shared layer every clip draws, and
+ * [EditPayload.frames] holds each clip's own look under its layer key.
  *
  * Nothing throws: a payload written by a later build reads as no edit rather than
  * refusing to open the file, which is `EditRecipe`'s own line.
  */
-internal fun storedVideoDocument(file: File): EditDocument =
-    EditRecipe.documentIn(file, 0) ?: EditDocument()
+internal fun storedVideoPayload(file: File): EditPayload = EditRecipe.read(file) ?: EditPayload()

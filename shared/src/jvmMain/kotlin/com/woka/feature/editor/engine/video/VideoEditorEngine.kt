@@ -10,8 +10,10 @@ import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditorEngine
 import com.woka.feature.editor.core.EditorTimelineScope
+import com.woka.feature.editor.core.LocalClipLooks
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.engine.image.RasterRecipe
+import com.woka.feature.editor.tools.trim.TrimTool
 import com.woka.feature.viewer.video.engine.probe.HdrInfo
 import java.io.File
 
@@ -40,7 +42,7 @@ internal class VideoEditorEngine(
     private val registry: EditorToolRegistry,
     /** Passed in, never re-derived: the factory has already asked. */
     override val capability: EditCapability
-) : VideoEditorOutputs(file, registry, capability) {
+) : VideoEditorClips(file, registry, capability) {
 
     override val kind = MediaKind.Video
 
@@ -88,8 +90,11 @@ internal class VideoEditorEngine(
     @Composable
     override fun Surface(document: EditDocument, modifier: Modifier) {
         val colour = streamColour
-        val recipe = remember(document, sourceSize, colour) {
-            recipe(document).copy(source = hdrStageFor(colour))
+        // The clip under the play head draws through its own layer (ME-215).
+        val key = TrimTool.clipsIn(document)?.getOrNull(playback.walk.index)?.key ?: 0
+        val shown = LocalClipLooks.current?.documentFor(document, key) ?: document
+        val recipe = remember(shown, sourceSize, colour) {
+            recipe(shown).copy(source = hdrStageFor(colour))
         }
         // **The document says when a drag is in flight** and the canvas only needs the
         // answer: `pending` is set by `preview` and cleared by `commit`, so one boolean
@@ -113,7 +118,4 @@ internal class VideoEditorEngine(
         }
         VideoEditorThumbnail(playback, sourceSize, recipe, modifier)
     }
-
-    /** What the file carries, so a second sitting continues the first (ME-288). */
-    override fun storedDocument(): EditDocument = storedVideoDocument(file)
 }

@@ -23,7 +23,14 @@ data class TrimClip(
     /** Where the clip starts, in source milliseconds. */
     val fromMs: Long,
     /** Where it ends, exclusive, in source milliseconds. */
-    val toMs: Long
+    val toMs: Long,
+    /**
+     * Which per-clip layer this clip draws (ME-215): the `EditLayers` / `EditPayload.frames`
+     * key, an `Int` because that machinery is keyed on one. 0 is the whole-file clip's, so a
+     * film cut before ME-215 keeps reading as it did. Split and duplicate mint a fresh key
+     * and copy the layer onto it; a reorder touches nothing, so a look follows its clip.
+     */
+    val key: Int = 0
 ) {
     val lengthMs: Long get() = (toMs - fromMs).coerceAtLeast(0L)
 }

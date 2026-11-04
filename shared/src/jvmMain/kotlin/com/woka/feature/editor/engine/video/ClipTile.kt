@@ -3,11 +3,16 @@ package com.woka.feature.editor.engine.video
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,6 +62,8 @@ internal fun ClipTile(
     showRange: Boolean,
     selected: Boolean,
     carried: Boolean,
+    /** The clip carries a look of its own — ME-157's dot, on a film's clip (ME-215). */
+    ownLook: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val shape = RoundedCornerShape(CLIP_RADIUS)
@@ -66,12 +73,24 @@ internal fun ClipTile(
             .clip(shape)
             .then(if (selected) Modifier.border(SELECTED_OUTLINE, Theme.colors.accentEditor, shape) else Modifier)
     ) {
-        Canvas(Modifier.fillMaxSize()) { drawStills(clip, cells) }
+        // A slot still decoding shimmers (2026-11-04); the draw says whether any is left.
+        val loading = remember { mutableStateOf(true) }
+        val phase = rememberShimmer(loading.value)
+        Canvas(Modifier.fillMaxSize()) {
+            val missing = drawStills(clip, cells, phase.value)
+            if (missing != loading.value) loading.value = missing
+        }
         if (showRange) {
             BasicText(
                 text = "${formatTime(clip.fromMs)} – ${formatTime(clip.toMs)}",
                 modifier = Modifier.align(Alignment.BottomStart).padding(start = 5.dp, bottom = 3.dp),
                 style = TextStyle(color = Color.White.copy(alpha = 0.85f), fontSize = 9.5.sp)
+            )
+        }
+        if (ownLook) {
+            Box(
+                Modifier.align(Alignment.TopEnd).padding(4.dp).size(6.dp)
+                    .background(Theme.colors.accentEditor, CircleShape)
             )
         }
     }
@@ -81,17 +100,20 @@ internal fun ClipTile(
  * Stills at the strip's own height and the frame's 16:9, each cropped to its slot rather
  * than squeezed, and each showing the source instant under its own middle.
  */
-private fun DrawScope.drawStills(clip: TrimClip, cells: FilmstripCells?) {
+private fun DrawScope.drawStills(clip: TrimClip, cells: FilmstripCells?, phase: Float): Boolean {
     drawRect(UNLOADED)
     val tileHeight = size.height
     val tileWidth = tileHeight * 16f / 9f
-    if (size.width <= 0f || tileWidth <= 0f) return
+    if (size.width <= 0f || tileWidth <= 0f) return false
+    var missing = false
     val count = ceil(size.width / tileWidth).toInt()
     clipRect {
         for (j in 0 until count) {
             val x = j * tileWidth
             val atMs = clip.fromMs + (clip.lengthMs * ((x + tileWidth / 2f) / size.width)).toLong()
-            val still = cells?.stillAt(atMs.coerceAtMost(clip.toMs))
+            // The slot's own stretch of source, so a still already decoded inside it is used.
+            val spanMs = (clip.lengthMs * (tileWidth / size.width)).toLong()
+            val still = cells?.stillAt(atMs.coerceAtMost(clip.toMs), spanMs)
             if (still != null) {
                 val crop = centredCrop(still.width, still.height, tileWidth / tileHeight)
                 drawImage(
@@ -101,10 +123,15 @@ private fun DrawScope.drawStills(clip: TrimClip, cells: FilmstripCells?) {
                     dstOffset = IntOffset(x.toInt(), 0),
                     dstSize = IntSize(ceil(tileWidth).toInt(), tileHeight.toInt())
                 )
+            } else if (cells != null) {
+                // Only while something is decoding it; with no decoder there is nothing to wait for.
+                missing = true
+                drawShimmer(x, Size(tileWidth, tileHeight), phase)
             }
             if (j > 0) drawRect(CELL_SEAM, topLeft = Offset(x, 0f), size = Size(1f, tileHeight))
         }
     }
+    return missing
 }
 
 /** The centred part of a [width] × [height] still that has the slot's [aspect]. */

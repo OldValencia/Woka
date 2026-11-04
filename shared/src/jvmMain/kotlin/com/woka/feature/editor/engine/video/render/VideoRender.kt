@@ -4,6 +4,7 @@ import androidx.compose.ui.unit.IntSize
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditorToolRegistry
+import com.woka.feature.editor.core.ToolOp
 import com.woka.feature.editor.engine.image.fold
 import com.woka.feature.editor.tools.trim.TrimClip
 import com.woka.feature.editor.tools.trim.TrimTool
@@ -35,6 +36,8 @@ private const val KEYFRAME_SLACK_MS = 16L
 internal fun renderVideo(
     source: File,
     document: EditDocument,
+    /** Each clip's own look on top of [document], by layer key (ME-215). */
+    looks: (Int) -> List<ToolOp>,
     registry: EditorToolRegistry,
     sourceSize: IntSize,
     alive: () -> Boolean,
@@ -44,8 +47,9 @@ internal fun renderVideo(
     return try {
         val probe = probeSource(source)
         val clips = TrimTool.clipsIn(document) ?: wholeSource(probe.durationMs)
-        val recipe = fold(document, registry, sourceSize)
-        val pixelWork = !recipe.isIdentity(sourceSize)
+        val recipes = clips.map { it.key }.distinct()
+            .associateWith { key -> fold(EditDocument(document.ops + looks(key)), registry, sourceSize) }
+        val pixelWork = recipes.values.any { !it.isIdentity(sourceSize) }
         val copies = !pixelWork && copiesInto(source.extension) &&
             clips.all { clip -> probe.keyframesMs.any { it in clip.fromMs..clip.fromMs + KEYFRAME_SLACK_MS } }
         val target = renderTargetBeside(source, renderExtension(source.extension, copies))
@@ -54,8 +58,8 @@ internal fun renderVideo(
         if (copies) {
             copyClips(source, scratch, format, clips, alive, progress)
         } else {
-            val picture = if (pixelWork) RecipePicture(sourceSize, recipe) else null
-            encodeClips(source, scratch, format, clips, picture, alive, progress)
+            val pictures = if (pixelWork) recipes.mapValues { RecipePicture(sourceSize, it.value) } else emptyMap()
+            encodeClips(source, scratch, format, clips, { clip -> pictures[clip.key] }, alive, progress)
         }
         if (!alive()) {
             scratch.delete()

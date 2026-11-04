@@ -88,7 +88,8 @@ internal fun EditorHostControls(
         session = session,
         scope = scope,
         editScope = { editScope },
-        frameIndex = { frameIndex }
+        // The session's frame, not the door's: a film's open clip moves on the strip (ME-215).
+        frameIndex = { session.frame }
     ) { reverted ->
         // Only an all-frames revert empties the file. A single-frame one takes a layer
         // off and leaves the base, so the file still carries something to remove.
@@ -119,7 +120,7 @@ internal fun EditorHostControls(
                 // over work that belongs to the *shared* layer, and pressing it then did
                 // nothing visible — a Single Frame revert removes a frame's own half.
                 EditScope.SingleFrame ->
-                    frameIndex in engine.frames.overridden || ownOps.isNotEmpty()
+                    session.frame in engine.frames.overridden || ownOps.isNotEmpty()
             }
         )
     )

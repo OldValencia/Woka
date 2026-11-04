@@ -35,6 +35,10 @@ internal const val FRAME_SCOPE_TAG = "editor-frame-scope"
 private const val ALL_FRAMES = "All Frames"
 private const val SINGLE_FRAME = "Single Frame"
 
+/** A film's words for the same two scopes (ME-215, `video-editor.md` §3.3). */
+private const val ALL_CLIPS = "All Clips"
+private const val THIS_CLIP = "This Clip"
+
 /**
  * Who the edit is for, for a file holding more than one picture (ME-156).
  *
@@ -63,13 +67,12 @@ internal fun EditorFrameScopeStrip(
             .testTag(FRAME_SCOPE_TAG),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        val (all, single) = if (frames.clips) ALL_CLIPS to THIS_CLIP else ALL_FRAMES to SINGLE_FRAME
         SegmentedControl(
-            options = listOf(ALL_FRAMES, SINGLE_FRAME),
-            selected = if (scope == EditScope.SingleFrame) SINGLE_FRAME else ALL_FRAMES,
+            options = listOf(all, single),
+            selected = if (scope == EditScope.SingleFrame) single else all,
             onSelect = { chosen ->
-                onScopeChange(
-                    if (chosen == SINGLE_FRAME) EditScope.SingleFrame else EditScope.AllFrames
-                )
+                onScopeChange(if (chosen == single) EditScope.SingleFrame else EditScope.AllFrames)
             },
             colors = SegmentedControlDefaults.onScrim
         )
@@ -93,6 +96,9 @@ internal fun EditorFrameScopeStrip(
  * this very save, so naming it would report the user's own document as a loss.
  */
 private fun consequenceOf(frames: EditorFrames, scope: EditScope, frameIndex: Int): String {
+    if (frames.clips) {
+        return if (scope == EditScope.SingleFrame) "Applies to the clip picked below" else "Applies to every clip"
+    }
     if (scope == EditScope.SingleFrame) return "Applies to frame ${frameIndex + 1} only"
     val replaced = frames.overridden.count { it != frameIndex }
     return when (replaced) {

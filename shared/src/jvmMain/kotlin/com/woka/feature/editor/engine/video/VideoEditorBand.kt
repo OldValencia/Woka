@@ -66,7 +66,7 @@ internal fun VideoEditorBand(
     val player = holder.state
     val duration = player?.durationMs ?: 0L
     val clips = TrimTool.clipsIn(document) ?: wholeSource(duration)
-    val walk = remember(player) { ClipWalk() }
+    val walk = holder.walk
     val cells = rememberFilmstrip(holder.state?.file, duration, codedSize)
     if (player != null && duration > 0L) WalkClips(player, walk, clips)
 

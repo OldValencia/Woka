@@ -27,6 +27,8 @@ internal fun BoxScope.EditorFrameBand(controls: EditorFrameControls, file: File)
         onScopeChange = controls.onScopeChange,
         modifier = Modifier.align(Alignment.TopCenter)
     )
+    // A film's clips are chosen on its own band, under the picture (ME-215).
+    if (controls.frames.clips) return
     EditorFrameStrip(
         file = file,
         frameIndex = controls.frameIndex,
@@ -44,4 +46,4 @@ internal fun BoxScope.EditorFrameBand(controls: EditorFrameControls, file: File)
  * coordinate space must not move (ME-116's zoom fidelity depends on it).
  */
 internal fun canvasInsetFor(controls: EditorFrameControls?): Dp =
-    if (controls != null) FRAME_STRIP_WIDTH else 0.dp
+    if (controls != null && !controls.frames.clips) FRAME_STRIP_WIDTH else 0.dp

@@ -37,4 +37,19 @@ interface EditorTimelineScope {
 
     /** Drops the operation in flight — a drag that ended where it started. */
     fun cancel()
+
+    /**
+     * **This Clip** is on (ME-215): the strip only chooses the clip the picture tools edit,
+     * and cuts nothing — a cut is the whole video's, so Trim waits for All Clips.
+     */
+    val perClip: Boolean get() = false
+
+    /** Opens clip layer [key] for editing; the session's own move, under This Clip. */
+    fun focus(key: Int) {}
+
+    /** Gives layer [to] the look of layer [from] — a split's new half, a duplicate. */
+    fun copyLayer(from: Int, to: Int) {}
+
+    /** Whether layer [key] carries a look of its own, for the tile's dot. */
+    fun hasOwnLook(key: Int): Boolean = false
 }

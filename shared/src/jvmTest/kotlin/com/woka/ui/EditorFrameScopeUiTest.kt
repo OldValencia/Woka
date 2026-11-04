@@ -19,10 +19,12 @@ import com.woka.support.EditorUnderShell
 import com.woka.support.FixtureTool
 import com.woka.support.MainDispatcherRule
 import com.woka.support.onEditor
+import com.woka.support.startKoinOnce
 import com.woka.support.onUi
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Rule
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 private const val SCOPE_TAG = "editor-frame-scope"
@@ -40,6 +42,10 @@ class EditorFrameScopeUiTest {
 
     @get:Rule
     val mainDispatcher = MainDispatcherRule(UnconfinedTestDispatcher())
+
+    /** The pill inside the editor's top bar resolves its settings from Koin. */
+    @BeforeTest
+    fun koin() = startKoinOnce()
 
     private val tool = FixtureTool(id = "adjust", domain = ToolDomain.Color)
 

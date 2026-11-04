@@ -2,12 +2,17 @@ package com.woka.feature.editor.engine.video
 
 import com.woka.core.ui.image.AppliedVideoEdits
 import com.woka.feature.editor.core.EditCapability
+import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditLayers
 import com.woka.feature.editor.core.EditSaveResult
+import com.woka.feature.editor.core.EditScope
 import com.woka.feature.editor.engine.image.recordRecipe
 import com.woka.feature.editor.engine.image.revertRecipe
 import com.woka.feature.editor.save.SourceStamp
 import com.woka.feature.editor.save.evictCachesFor
+import com.woka.feature.editor.tools.trim.TrimClip
+import com.woka.feature.editor.tools.trim.TrimTool
+import com.woka.feature.editor.tools.trim.WHOLE_SOURCE_ID
 import java.io.File
 
 /**
@@ -49,7 +54,7 @@ internal class VideoEditorWrites(
      */
     fun save(layers: EditLayers): EditSaveResult = afterWriting(
         when (capability) {
-            EditCapability.Recorded -> recordRecipe(file, layers, stamp)
+            EditCapability.Recorded -> recordRecipe(file, layers.onlyLiveClips(storedVideoPayload(file).frames.keys), stamp)
             else -> EditSaveResult.Failed(
                 "${file.extension.uppercase()} videos cannot keep an edit yet."
             )
@@ -58,13 +63,11 @@ internal class VideoEditorWrites(
 
     /**
      * Back to as shot — the box removed and nothing else, since the media data was never
-     * rewritten in the first place.
-     *
-     * It takes no scope and no frame, and the interface licenses that: a video timeline has
-     * no frame to key on, so `EditorFrames()` stays at one picture, the scope switch never
-     * appears, and `revertRecipe`'s own defaults are the only meaning available.
+     * rewritten in the first place. Under This Clip, only that clip's look goes and the
+     * cut and the shared layer stay (ME-215): `revertRecipe`'s frame road, keyed on the clip.
      */
-    fun revert(): EditSaveResult = afterWriting(revertRecipe(file))
+    fun revert(scope: EditScope = EditScope.AllFrames, key: Int = 0): EditSaveResult =
+        afterWriting(revertRecipe(file, scope, key))
 
     /** The two things that follow any successful write, shared by both of them. */
     private fun afterWriting(result: EditSaveResult): EditSaveResult {
@@ -76,4 +79,17 @@ internal class VideoEditorWrites(
         }
         return result
     }
+}
+
+/**
+ * [EditLayers] keeping only the looks of clips the cut still holds (ME-215): a deleted
+ * clip's layer — this sitting's or one the file already [stored] — is marked touched and
+ * left out, so the file loses its key rather than carrying a look nothing draws.
+ */
+private fun EditLayers.onlyLiveClips(stored: Set<Int>): EditLayers {
+    val keys = (TrimTool.clipsIn(base) ?: listOf(TrimClip(WHOLE_SOURCE_ID, 0L, 0L))).map { it.key }.toSet()
+    // A cut reset or joined back to the whole film is no edit, and is not written as one —
+    // or the file stays marked edited with nothing to show for it (reported 2026-11-04).
+    val cut = base.copy(ops = base.ops.filterNot { it.toolId == TrimTool.manifest.id && TrimTool.clipsIn(EditDocument(listOf(it))) == null })
+    return copy(base = cut, frames = frames.filterKeys { it in keys }, touched = touched + frames.keys + stored - keys)
 }

@@ -19,8 +19,11 @@ import com.woka.support.scaleRed
 import com.woka.support.withTempStorageRoot
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_RGBA
+import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.junit.Rule
 import java.io.File
+import java.nio.ByteBuffer
 import java.nio.file.Files
 import kotlin.math.abs
 import kotlin.test.Test
@@ -58,7 +61,7 @@ class VideoRenderTest {
     )
 
     private fun render(source: File, document: EditDocument, registry: EditorToolRegistry): File {
-        val result = renderVideo(source, document, registry, size, alive = { true }, progress = {})
+        val result = renderVideo(source, document, { emptyList() }, registry, size, alive = { true }, progress = {})
         return File(assertIs<EditSaveResult.Saved>(result, "the render failed: $result").path)
     }
 
@@ -93,9 +96,43 @@ class VideoRenderTest {
         assertTrue(abs(readBack(first).durationMs - 4_000L) <= 150L, "the whole film was not rendered")
     }
 
+    /** ME-215: the look is clip 1's own, so only clip 1's frames come out redder. */
+    @Test
+    fun `a clip's own look renders on that clip alone`() = onClip { source, registry ->
+        val clips = listOf(TrimClip("a", 0L, 1_000L), TrimClip("b", 2_000L, 3_000L, key = 1))
+        val document = EditDocument(ops = listOf(TrimTool.opFor(clips)))
+        val looks = { key: Int -> if (key == 1) listOf(ToolOp("tint")) else emptyList() }
+        val result = renderVideo(source, document, looks, registry, size, alive = { true }, progress = {})
+        val out = File(assertIs<EditSaveResult.Saved>(result, "the render failed: $result").path)
+        val plain = redOverGreen(out, 500L)
+        val tinted = redOverGreen(out, 1_500L)
+        assertTrue(tinted > plain * 1.2, "clip 1 is not redder than clip 0: $plain vs $tinted")
+    }
+
+    /** Mean red over mean green of the frame at [atMs]. */
+    private fun redOverGreen(file: File, atMs: Long): Double {
+        val grabber = FFmpegFrameGrabber(file).apply { pixelFormat = AV_PIX_FMT_RGBA }
+        try {
+            grabber.start()
+            grabber.setTimestamp(atMs * 1000L)
+            val frame = generateSequence { grabber.grabImage() }.first { it.image != null }
+            val bytes = frame.image[0] as ByteBuffer
+            var red = 0L
+            var green = 0L
+            for (at in 0 until bytes.limit() - 3 step 4) {
+                red += bytes.get(at).toInt() and 0xFF
+                green += bytes.get(at + 1).toInt() and 0xFF
+            }
+            return red.toDouble() / green.coerceAtLeast(1L)
+        } finally {
+            grabber.stop()
+            grabber.release()
+        }
+    }
+
     @Test
     fun `a cancelled render leaves nothing behind`() = onClip { source, registry ->
-        val result = renderVideo(source, cuts(0L to 3_000L), registry, size, alive = { false }, progress = {})
+        val result = renderVideo(source, cuts(0L to 3_000L), { emptyList() }, registry, size, alive = { false }, progress = {})
         assertEquals(EditSaveResult.NothingToDo, result)
         assertEquals(listOf("clip.mp4"), source.parentFile.listFiles()!!.map { it.name })
     }

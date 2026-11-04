@@ -42,7 +42,8 @@ interface AppliedVideoEdit {
     /**
      * [frame] drawn through the edit, at the edit's own size — a crop's proportions, not
      * the frame's — or null when the edit changes nothing on the picture (a cut alone),
-     * so the viewer keeps its own painter. [color] and [moving] are the viewer's own
+     * so the viewer keeps its own painter. The clip is the one [clock] is in (ME-215), so a
+     * look that is one clip's own draws there and nowhere else. [color] and [moving] are the viewer's own
      * answers, for the HDR pass that has to run before the edit grades anything.
      */
     fun painter(frame: ImageBitmap, color: StillColorInfo, moving: Boolean): Painter?
@@ -51,9 +52,9 @@ interface AppliedVideoEdit {
     fun poster(poster: ImageBitmap): ImageBitmap
 }
 
-/** A stretch of the source, `[fromMs, toMs)`. */
+/** A stretch of the source, `[fromMs, toMs)`, drawing clip layer [key]'s look (ME-215). */
 @Immutable
-data class SourceRange(val fromMs: Long, val toMs: Long)
+data class SourceRange(val fromMs: Long, val toMs: Long, val key: Int = 0)
 
 /** No editor in the graph: no film carries an edit. */
 private object NoVideoEdits : VideoEdits {

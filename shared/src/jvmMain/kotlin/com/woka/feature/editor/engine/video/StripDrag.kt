@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import com.woka.feature.editor.core.EditorTimelineScope
 import com.woka.feature.editor.tools.trim.TrimClip
 import com.woka.feature.editor.tools.trim.TrimTool
+import com.woka.feature.editor.tools.trim.cutsNothing
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 
 /**
@@ -100,13 +101,16 @@ internal class StripState(val player: VideoPlayerState, val walk: ClipWalk) {
     fun finish(last: List<TrimClip>) {
         val started = drag?.from
         drag = null
-        if (started != null && last != started) edits.commit() else edits.cancel()
+        if (started == null || last == started) return edits.cancel()
+        // Dragged back to the whole film: written as no cut, not as one long clip.
+        if (last.cutsNothing(durationMs)) edits.preview(TrimTool.opFor(emptyList()))
+        edits.commit()
     }
 
     /** A one-shot edit from a button: previewed and committed as one step. */
     fun apply(next: List<TrimClip>) {
         if (next == clips) return
-        edits.preview(TrimTool.opFor(next))
+        edits.preview(TrimTool.opFor(if (next.cutsNothing(durationMs)) emptyList() else next))
         edits.commit()
     }
 }

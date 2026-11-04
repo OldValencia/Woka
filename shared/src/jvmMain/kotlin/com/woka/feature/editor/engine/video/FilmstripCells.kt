@@ -10,8 +10,11 @@ import androidx.compose.ui.unit.IntSize
 import com.woka.feature.viewer.video.engine.preview.SeekPreviewGrid
 import com.woka.feature.viewer.video.engine.preview.SeekPreviewSource
 import java.io.File
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
+import kotlin.math.abs
+import java.util.concurrent.PriorityBlockingQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * The filmstrip's stills — the seek preview's own cells, laid along the strip (ME-211).
@@ -30,11 +33,18 @@ import java.util.concurrent.Executors
  * lesson `RememberSeekPreview` already records.
  */
 @Stable
-internal class FilmstripCells(file: File, durationMs: Long, codedSize: IntSize) {
+internal class FilmstripCells(file: File, private val durationMs: Long, codedSize: IntSize) {
 
     private val grid = SeekPreviewGrid(durationMs)
     private val source = SeekPreviewSource(file, true, codedSize.width, codedSize.height)
-    private val executor: ExecutorService = Executors.newSingleThreadExecutor(::filmstripThread)
+    /**
+     * **Coarse first** (2026-11-04): every fourth cell is decoded before the ones between, so
+     * the whole strip shows pictures early and the gaps shimmer until they land. One thread
+     * still; a priority queue in front of it, ordered by pass and then by request.
+     */
+    private val executor =
+        ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, PriorityBlockingQueue(), ::filmstripThread)
+    private val requested = AtomicLong()
     private val stills = mutableStateMapOf<Int, ImageBitmap>()
     private val asked = HashSet<Int>()
     private val empty = mutableStateMapOf<Int, Boolean>()
@@ -48,22 +58,55 @@ internal class FilmstripCells(file: File, durationMs: Long, codedSize: IntSize) 
      * with a keyframe a second, the cell at 25.5 s — and the last keyframe *is* the honest
      * picture for that stretch, since nothing later can be shown without a full decode.
      */
-    fun stillAt(sourceMs: Long): ImageBitmap? {
+    fun stillAt(sourceMs: Long, spanMs: Long = 0L): ImageBitmap? {
         if (!grid.isUsable) return null
         var cell = grid.cellOf(sourceMs)
         while (cell > 0 && empty[cell] == true) cell--
         stills[cell]?.let { return it }
+        nearby(cell, sourceMs, spanMs)?.let { return it }
         if (asked.add(cell)) {
-            executor.execute {
+            executor.execute(CellTask(passOf(cell), requested.getAndIncrement()) {
                 val still = source.frameAt(grid.midpointOf(cell))
                 if (still != null) stills[cell] = still else empty[cell] = true
-            }
+            })
         }
         return null
     }
 
+    /**
+     * A still already decoded **inside the slot asking** — [spanMs] of source around
+     * [sourceMs] — nearest first, so the slot is not decoded a second time (the author,
+     * 2026-11-04: the resting strip has just decoded the frames Trim's wider slots want, a
+     * cell or two away). Null when nothing in the slot has landed, and the cell is asked for.
+     */
+    private fun nearby(cell: Int, sourceMs: Long, spanMs: Long): ImageBitmap? {
+        if (spanMs <= 0L) return null
+        val from = grid.cellOf(sourceMs - spanMs / 2)
+        val to = grid.cellOf(sourceMs + spanMs / 2)
+        return (from..to).sortedBy { abs(it - cell) }.firstNotNullOfOrNull { stills[it] }
+    }
+
+    /**
+     * Which pass decodes [cell]: the coarse one, the fill, or **last of all** for the film's
+     * final cell. Past the last keyframe a keyframes-only grab reads to the end of the file —
+     * measured 2026-11-04 at 10.5 s on a 7 GB `mkv`, for nothing — and with one thread every
+     * cell queued behind it waited those ten seconds too.
+     */
+    private fun passOf(cell: Int): Int = when {
+        cell >= lastCell -> 2
+        cell % COARSE_STEP == 0 -> 0
+        else -> 1
+    }
+
+    private val lastCell = grid.cellOf(durationMs)
+
+    /**
+     * Cells not yet started are dropped, then the source closes behind the one running —
+     * still on the decode thread, and as a [CellTask] because the queue orders nothing else.
+     */
     fun close() {
-        executor.execute { source.close() }
+        executor.queue.clear()
+        executor.execute(CellTask(-1, 0L) { source.close() })
         executor.shutdown()
     }
 }
@@ -76,6 +119,15 @@ internal fun rememberFilmstrip(file: File?, durationMs: Long, codedSize: IntSize
     DisposableEffect(cells) { onDispose { cells.close() } }
     return cells
 }
+
+/** One cell's decode, ordered coarse pass first, then by when it was asked for. */
+private class CellTask(val pass: Int, val order: Long, val work: () -> Unit) : Runnable, Comparable<CellTask> {
+    override fun run() = work()
+    override fun compareTo(other: CellTask): Int = compareValuesBy(this, other, { it.pass }, { it.order })
+}
+
+/** The coarse pass: one cell in this many is decoded before any of the rest. */
+private const val COARSE_STEP = 4
 
 private fun filmstripThread(runnable: Runnable): Thread =
     Thread(runnable, "woka-filmstrip").apply {

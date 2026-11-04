@@ -23,14 +23,15 @@ const val MIN_CLIP_MS = 100L
 /**
  * Splits the clip under [timelineMs] in two at that millisecond, with **no keyframe
  * consulted** (`timeline.md` §3.3). The left half keeps the old id, so a selection on it
- * stays where the user was looking; the right half takes [newId].
+ * stays where the user was looking; the right half takes [newId] and a fresh layer key,
+ * onto which the caller copies the left half's look (ME-215).
  */
 fun List<TrimClip>.split(timelineMs: Long, newId: String): List<TrimClip> {
     val at = atTimeline(timelineMs) ?: return this
     val clip = this[at.index]
     if (at.sourceMs - clip.fromMs < MIN_CLIP_MS || clip.toMs - at.sourceMs < MIN_CLIP_MS) return this
     val left = clip.copy(toMs = at.sourceMs)
-    val right = TrimClip(newId, at.sourceMs, clip.toMs)
+    val right = TrimClip(newId, at.sourceMs, clip.toMs, nextKey())
     return take(at.index) + left + right + drop(at.index + 1)
 }
 
@@ -38,10 +39,10 @@ fun List<TrimClip>.split(timelineMs: Long, newId: String): List<TrimClip> {
 fun List<TrimClip>.delete(id: String): List<TrimClip> =
     if (size <= 1) this else filterNot { it.id == id }
 
-/** A copy of clip [id] under [newId], immediately after the original. */
+/** A copy of clip [id] under [newId] and a fresh layer key, immediately after the original. */
 fun List<TrimClip>.duplicate(id: String, newId: String): List<TrimClip> {
     val index = indexOfFirst { it.id == id }.takeIf { it >= 0 } ?: return this
-    val copy = this[index].copy(id = newId)
+    val copy = this[index].copy(id = newId, key = nextKey())
     return take(index + 1) + copy + drop(index + 1)
 }
 
@@ -67,3 +68,32 @@ fun List<TrimClip>.trimEnd(id: String, toMs: Long, durationMs: Long): List<TrimC
     if (clip.id != id) clip
     else clip.copy(toMs = toMs.coerceIn(clip.fromMs + MIN_CLIP_MS, durationMs))
 }
+
+/** A layer key no clip holds yet (ME-215). */
+fun List<TrimClip>.nextKey(): Int = (maxOfOrNull { it.key } ?: 0) + 1
+
+/**
+ * Clip [id] joined back to the neighbour that continues it in the source — the right one
+ * first, then the left — undoing a split (reported 2026-11-04: nothing could). The clip
+ * that comes first keeps its id and its look. Unchanged when neither neighbour continues it.
+ */
+fun List<TrimClip>.join(id: String): List<TrimClip> {
+    val index = indexOfFirst { it.id == id }.takeIf { it >= 0 } ?: return this
+    val clip = this[index]
+    val right = getOrNull(index + 1)
+    if (right != null && right.fromMs == clip.toMs) {
+        return take(index) + clip.copy(toMs = right.toMs) + drop(index + 2)
+    }
+    val left = getOrNull(index - 1)
+    if (left != null && left.toMs == clip.fromMs) {
+        return take(index - 1) + left.copy(toMs = clip.toMs) + drop(index + 1)
+    }
+    return this
+}
+
+/**
+ * Whether this list cuts nothing — one clip from the start to [durationMs]. Written as no
+ * cut at all, so a film split and joined back is not left marked as edited.
+ */
+fun List<TrimClip>.cutsNothing(durationMs: Long): Boolean =
+    isEmpty() || (size == 1 && first().fromMs <= 0L && first().toMs >= durationMs)

@@ -1,6 +1,7 @@
 package com.woka.feature.editor.shell
 
 import androidx.compose.runtime.Stable
+import com.woka.feature.editor.core.EditScope
 import com.woka.feature.editor.core.EditorSession
 import com.woka.feature.editor.core.EditorTimelineScope
 import com.woka.feature.editor.core.EditorTool
@@ -8,6 +9,9 @@ import com.woka.feature.editor.core.ToolCardinality
 import com.woka.feature.editor.core.ToolOp
 import com.woka.feature.editor.core.cancelPending
 import com.woka.feature.editor.core.commit
+import com.woka.feature.editor.core.copyFrame
+import com.woka.feature.editor.core.moveToFrame
+import com.woka.feature.editor.core.ownOpsOf
 import com.woka.feature.editor.core.preview
 
 /**
@@ -26,7 +30,8 @@ internal class EditorTimelineScopeImpl(
     private val session: EditorSession,
     private val tools: List<EditorTool>,
     private val selection: ToolSelection,
-    override val editing: Boolean
+    override val editing: Boolean,
+    override val perClip: Boolean = false
 ) : EditorTimelineScope {
 
     override val selectedId: String? get() = selection.id
@@ -45,4 +50,12 @@ internal class EditorTimelineScopeImpl(
     }
 
     override fun cancel() = session.cancelPending()
+
+    override fun focus(key: Int) {
+        if (perClip) session.moveToFrame(key, EditScope.SingleFrame)
+    }
+
+    override fun copyLayer(from: Int, to: Int) = session.copyFrame(from, to)
+
+    override fun hasOwnLook(key: Int): Boolean = session.ownOpsOf(key).isNotEmpty()
 }

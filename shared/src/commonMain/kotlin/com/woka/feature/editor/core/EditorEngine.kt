@@ -60,6 +60,24 @@ interface EditorEngine : EditorEngineSurface, EditorEnginePicture {
     fun storedBase(): EditDocument = storedDocument()
 
     /**
+     * The frame the session stands on when the door asked for [requested] — the request
+     * itself for a still; `NO_CLIP` for a film, which opens on its shared layer (ME-215).
+     */
+    fun openingFrame(requested: Int): Int = requested
+
+    /**
+     * [frames] as [document] has them — a film's clip count moves with every split, so the
+     * scope switch asks per document. A still's frames are the file's, and do not move.
+     */
+    fun framesIn(document: EditDocument): EditorFrames = frames
+
+    /**
+     * Rail entries that mean nothing in [scope], with the reason the rail shows — on a
+     * film, Trim under This Clip: a cut is the whole video's (ME-215). Empty for a still.
+     */
+    fun unavailableIn(scope: EditScope): Map<String, String> = emptyMap()
+
+    /**
      * Writes [document] into the file that was opened — the only save there is
      * (§5). Nothing is chosen: no target, no name, no confirmation.
      *

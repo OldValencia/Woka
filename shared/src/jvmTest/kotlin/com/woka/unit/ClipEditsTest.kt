@@ -3,7 +3,9 @@ package com.woka.unit
 import com.woka.feature.editor.tools.trim.MIN_CLIP_MS
 import com.woka.feature.editor.tools.trim.TrimClip
 import com.woka.feature.editor.tools.trim.delete
+import com.woka.feature.editor.tools.trim.cutsNothing
 import com.woka.feature.editor.tools.trim.duplicate
+import com.woka.feature.editor.tools.trim.join
 import com.woka.feature.editor.tools.trim.move
 import com.woka.feature.editor.tools.trim.split
 import com.woka.feature.editor.tools.trim.trimEnd
@@ -12,6 +14,7 @@ import com.woka.feature.editor.tools.trim.wholeSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertSame
+import kotlin.test.assertTrue
 
 /**
  * The strip's edits as list functions (ME-210, ME-212…ME-214) — and above all the cases
@@ -73,4 +76,27 @@ class ClipEditsTest {
         assertEquals(40_000L, whole.trimEnd("source", 55_000L, 40_000L).single().toMs)
         assertEquals(MIN_CLIP_MS, whole.trimEnd("source", 0L, 40_000L).single().toMs)
     }
+
+    /** ME-215: a look is keyed on the clip, so each new clip gets a key nobody holds. */
+    @Test
+    fun `split and duplicate mint fresh layer keys, a move keeps them`() {
+        val cut = whole.split(10_000L, "b").split(20_000L, "c")
+        assertEquals(listOf(0, 1, 2), cut.map { it.key })
+        val copied = cut.duplicate("b", "d")
+        assertEquals(3, copied.first { it.id == "d" }.key)
+        assertEquals(listOf(0, 2, 1, 3), copied.move("c", 1).map { it.key })
+    }
+
+    /** Reported 2026-11-04: a split could not be taken back except by undo. */
+    @Test
+    fun `join puts a split back together, to either side`() {
+        val cut = whole.split(10_000L, "b").split(20_000L, "c")
+        // The first of the two keeps its id: `source` swallows `b`, and `c` goes into `b`.
+        assertEquals(listOf("source", "c"), cut.join("source").map { it.id }, "joined to the right")
+        assertEquals(listOf("source", "b"), cut.join("c").map { it.id }, "joined to the left")
+        assertTrue(cut.join("b").join("source").cutsNothing(40_000L), "two joins are the whole film")
+        val moved = cut.move("c", 0)
+        assertSame(moved, moved.join("c"), "a clip moved away from its source neighbour joins nothing")
+    }
 }
+

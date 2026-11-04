@@ -57,6 +57,8 @@ internal fun Modifier.stripGestures(
     }
 
 private suspend fun AwaitPointerEventScope.scrub(state: StripState, geometry: StripGeometry, down: PointerInputChange) {
+    // **This Clip** (ME-215): the click also picks the clip whose look is being edited.
+    if (state.edits.perClip) geometry.indexAt(down.position.x)?.let { state.focus(state.clips[it]) }
     val player = state.player
     player.pauseForSeek()
     state.walk.seekTo(player, state.clips, geometry.timelineAt(down.position.x))

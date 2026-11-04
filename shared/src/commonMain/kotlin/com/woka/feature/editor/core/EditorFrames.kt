@@ -25,7 +25,12 @@ data class EditorFrames(
     /** Which scope the open frame was last written in, so a reopen continues it. */
     val storedScope: EditScope = EditScope.AllFrames,
     /** Frame indices the file carries an override for. */
-    val overridden: Set<Int> = emptySet()
+    val overridden: Set<Int> = emptySet(),
+    /**
+     * The frames are a film's **clips** (ME-215): the switch reads All Clips / This Clip,
+     * the strip picks the clip, and there is no frame strip down the side — the band does it.
+     */
+    val clips: Boolean = false
 ) {
 
     /**

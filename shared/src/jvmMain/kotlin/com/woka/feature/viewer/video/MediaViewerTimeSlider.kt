@@ -107,7 +107,9 @@ fun MediaViewerTimeSlider(
                 onHoverChange(fraction != null)
                 preview?.request(fraction?.let { clock.sourceOf((it * shownMs).toLong()) })
             },
-            segments = if (clock == null) chapterSegments(videoState?.tracks?.chapters.orEmpty(), sourceMs) else emptyList(),
+            segments = videoState?.tracks?.chapters.orEmpty().let { chapters ->
+                if (clock == null) chapterSegments(chapters, sourceMs) else chapterSegmentsOnResult(chapters, clock.ranges)
+            },
             style = defaultMediaSliderStyle(),
             modifier = Modifier.weight(1f)
         )

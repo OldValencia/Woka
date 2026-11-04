@@ -47,6 +47,8 @@ internal fun BoxScope.EditorBottomPanel(
     activeToolId: String?,
     skipped: List<ToolOp>,
     unavailable: Map<String, String>,
+    /** This Clip on a film (ME-215): the strip picks a clip and cuts nothing. */
+    perClip: Boolean = false,
     /** What the canvas has selected — read live, see `ParamRows`. */
     selectedId: () -> String?,
     onSelectTool: (String) -> Unit
@@ -65,7 +67,8 @@ internal fun BoxScope.EditorBottomPanel(
         session = session,
         tools = tools,
         selection = clipSelection,
-        editing = activeTool?.manifest?.domain == ToolDomain.Time
+        editing = activeTool?.manifest?.domain == ToolDomain.Time && !perClip,
+        perClip = perClip
     )
 
     Column(
