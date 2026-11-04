@@ -89,7 +89,11 @@ line so it is visible rather than merely felt. Held modifier suppresses it.
 
 ## 230 — Playback
 
-### ME-230 — Probe: two decoders, one file
+### ME-230 — done 2026-11-04
+Measured; table and verdict at the end of [`playback/`](playback/playback.md). Two 4K decoders run at
+~60 fps each; the pre-roll lead is the keyframe distance, up to ~2.2 s on a long-GOP stream.
+
+### ME-230 — Probe: two decoders, one file (as written)
 Before any of §3.2's design: open a second `FFmpegFrameGrabber` on a file the player already has
 open, after `tracksProbed`, and measure the seek-and-decode-to-position cost on 1080p and 2160p, and
 whether both decode at all at 4K. Print a table, record it here with the date. This is the gate on
@@ -99,23 +103,32 @@ the whole folder.
 ### ME-231 — done 2026-11-01 inside ME-210
 Without speed and freeze; status in [`playback/`](playback/playback.md)'s table.
 
-### ME-232 — The pre-rolling decoder and the hand-off
-Start the second decoder a measured margin before a join, into a queue of two or three frames, switch
-the presenter at the boundary, then re-point the idle decoder at the clip after next. `FrameRetention`
-has to keep working with frames arriving from two sources.
-*Depends on ME-230, ME-231.*
+### ME-232 — promoted 2026-11-04
+[`playback/tickets/ME-232-joins-without-a-stall.md`](playback/tickets/ME-232-joins-without-a-stall.md),
+status in [`playback/`](playback/playback.md)'s table. Re-cut against ME-230's numbers: a pool of up
+to four lanes at four threads, pre-rolling as soon as a lane is free, the engine owning the list.
+ME-234's remainder — pace and holds in the engine rather than the walks — is folded into it.
 
 ### ME-233 — Sound across a join
-One `SourceDataLine` for the session, fed from whichever audio decoder is current — never closed and
-reopened, because that is an audible click. The audio pre-roll has to be deeper than the video's, and
-by how much is a measurement.
+After ME-232 the picture hands off and the sound re-seeks its one audio grabber, flushing the line: a
+short gap at every join. One `SourceDataLine` for the session, never flushed at a join, fed from
+audio lanes pre-rolled beside the video ones — an audio-only grabber seeks in milliseconds, so the
+lane can be decoded ahead into a buffer of the next range's first ~300 ms rather than parked. The
+splice wants a few-millisecond crossfade or it clicks; whether `atempo` rebuilt for a range at
+another speed clicks too is the open measurement.
 *Depends on ME-232.*
 
-### ME-234 — Speed and freeze in the pacer
-The presenter divides its pacing by the current clip's speed and the audio runs `atempo` at it; a
-freeze presents one frame for its hold. Whether rebuilding the tempo filter at a join is audible is
-the open question.
-*Depends on ME-216, ME-233.*
+### ME-235 — Ranges shorter than the pool can reach
+Four lanes cover a run of ranges as long as each is at least the lead divided by three — ~0.75 s on
+a long-GOP stream, ~0.15 s on an ordinary one (`playback.md` "Pool size"). A range shorter than that,
+in a run of such, is decoded whole into memory ahead of time at the drawn size (~140 MB for 0.7 s at
+1920 wide) and presented from there, holding no lane. The threshold comes from the lead the lanes
+actually measure while pre-rolling, not from a constant.
+*Depends on ME-232.*
+
+### ME-234 — folded, id retained
+Speed half into ME-216, freeze half into ME-217, the rest — pace and holds owned by the engine — into
+ME-232.
 
 ---
 
