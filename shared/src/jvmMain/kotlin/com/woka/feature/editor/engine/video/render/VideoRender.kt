@@ -50,7 +50,8 @@ internal fun renderVideo(
         val recipes = clips.map { it.key }.distinct()
             .associateWith { key -> fold(EditDocument(document.ops + looks(key)), registry, sourceSize) }
         val pixelWork = recipes.values.any { !it.isIdentity(sourceSize) }
-        val copies = !pixelWork && copiesInto(source.extension) &&
+        // A clip at another speed is retimed, which a packet copy cannot do (ME-216).
+        val copies = !pixelWork && copiesInto(source.extension) && clips.all { it.speed == 1f } &&
             clips.all { clip -> probe.keyframesMs.any { it in clip.fromMs..clip.fromMs + KEYFRAME_SLACK_MS } }
         val target = renderTargetBeside(source, renderExtension(source.extension, copies))
         scratch = scratchBeside(target)

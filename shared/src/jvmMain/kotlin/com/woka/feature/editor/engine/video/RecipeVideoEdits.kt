@@ -55,7 +55,7 @@ internal class RecipeVideoEdits(private val registry: EditorToolRegistry) : Vide
         val sourceSize = codedFrameSize(file)
         if (sourceSize == IntSize.Zero) return null
         val base = EditDocument(payload.ops)
-        val ranges = TrimTool.clipsIn(base).orEmpty().map { SourceRange(it.fromMs, it.toMs, it.key) }
+        val ranges = TrimTool.clipsIn(base).orEmpty().map { SourceRange(it.fromMs, it.toMs, it.key, it.speed) }
         // One recipe per layer the cut draws (ME-215); an uncut film is clip 0 alone.
         val keys = ranges.map { it.key }.ifEmpty { listOf(0) }.distinct()
         val recipes = keys.associateWith { key ->

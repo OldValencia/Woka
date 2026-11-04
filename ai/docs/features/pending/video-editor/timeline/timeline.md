@@ -13,6 +13,7 @@ Umbrella, and the data-model argument this rests on: [`../video-editor.md`](../v
 
 | Ticket | Title | State |
 |---|---|---|
+| [ME-216](tickets/ME-216-speed-per-clip.md) | Speed per clip | **done 2026-11-04**, build and tests green — *awaiting the by-hand pass* |
 | [ME-215](tickets/ME-215-this-clip.md) | This Clip: a tool on one stretch of the film | **done 2026-11-04**, build and tests green — *awaiting the by-hand pass* |
 | [ME-210](tickets/ME-210-cut-the-film-on-the-strip.md) | Cut the film on the strip — folds in ME-211…ME-214 | **done 2026-11-01**, build and tests green; **not yet looked at on screen** — drag, handle trims and the filmstrip want a by-hand pass |
 

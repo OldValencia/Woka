@@ -92,11 +92,14 @@ private fun recordClips(
 ) {
     val start = containerStartUs(grabber)
     val totalUs = clips.sumOf { it.lengthMs } * 1000L
+    val pace = RenderPace(recorder)
     var baseUs = 0L
     for (clip in clips) {
         val picture = pictureOf(clip)
         val fromUs = clip.fromMs * 1000L
         val untilUs = clip.toMs * 1000L
+        // A clip's speed retimes its picture and its sound (ME-216, `RenderPace`).
+        val tempo = clipTempo(grabber, clip.speed)
         grabber.setTimestamp(fromUs)
         while (alive()) {
             val frame = grabber.grab() ?: break
@@ -104,15 +107,16 @@ private fun recordClips(
             if (atUs >= untilUs && frame.image != null) break
             if (atUs < fromUs || atUs >= untilUs) continue
             if (frame.image != null) {
-                recorder.timestamp = baseUs + (atUs - fromUs)
-                recorder.record(picture?.draw(frame) ?: frame, AV_PIX_FMT_RGBA)
-                if (totalUs > 0) progress((baseUs + atUs - fromUs).toFloat() / totalUs)
+                val outUs = baseUs + ((atUs - fromUs) / clip.speed).toLong()
+                pace.place(picture?.draw(frame) ?: frame, outUs) { recorder.record(it, AV_PIX_FMT_RGBA) }
+                if (totalUs > 0) progress(outUs.toFloat() / totalUs)
             } else if (frame.samples != null) {
-                recorder.record(frame)
+                recordSound(recorder, tempo, frame)
             }
         }
+        tempo?.let { runCatching { it.stop(); it.release() } }
         if (!alive()) return
-        baseUs += untilUs - fromUs
+        baseUs += clip.lengthMs * 1000L
     }
 }
 

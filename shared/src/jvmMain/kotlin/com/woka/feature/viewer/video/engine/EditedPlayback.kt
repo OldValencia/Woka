@@ -1,7 +1,9 @@
 package com.woka.feature.viewer.video.engine
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import com.woka.core.ui.image.EditedClock
 import kotlin.math.abs
@@ -27,6 +29,14 @@ private const val JOIN_TOLERANCE_MS = 20L
 fun PlayEditedRanges(player: VideoPlayerState, clock: EditedClock) {
     val ranges = clock.ranges
     if (ranges.isEmpty()) return
+    // A range's own pace (ME-216), multiplied into the user's speed by the player; back to
+    // 1 when the edit goes — a Revert, another file.
+    // Owned by this composition: a copy of the frame leaving after `Done` must not reset the
+    // pace the copy replacing it has just set (`releaseClipPace`).
+    val pace = ranges.getOrNull(clock.index)?.speed ?: 1f
+    val owner = remember { Any() }
+    LaunchedEffect(player, pace) { player.setClipPace(pace, owner) }
+    DisposableEffect(player) { onDispose { player.releaseClipPace(owner) } }
     LaunchedEffect(player, clock) {
         // Where the walk itself stopped at the end: play pressed *there* starts again from
         // the first range — the viewer's own rule for a film that has ended — while a seek

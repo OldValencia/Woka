@@ -21,7 +21,7 @@ internal class AudioTempoFilter(
     speed: Float
 ) {
     private val filter: FFmpegFrameFilter? = try {
-        FFmpegFrameFilter("atempo=$speed", channels).apply {
+        FFmpegFrameFilter(atempoChain(speed), channels).apply {
             this.sampleFormat = AV_SAMPLE_FMT_S16
             this.sampleRate = this@AudioTempoFilter.sampleRate
             start()
@@ -65,3 +65,20 @@ internal class AudioTempoFilter(
         }
     }
 }
+
+/**
+ * `atempo` for [speed], chained where one instance cannot reach it: a single `atempo` takes
+ * 0.5 at the slowest, so a clip's ¼× (ME-216) is two halvings. Shared with the render, which
+ * has to change a clip's sound by exactly what the preview did.
+ */
+internal fun atempoChain(speed: Float): String {
+    val steps = mutableListOf<Float>()
+    var left = speed
+    while (left < 0.5f) {
+        steps += 0.5f
+        left /= 0.5f
+    }
+    steps += left
+    return steps.joinToString(",") { "atempo=$it" }
+}
+

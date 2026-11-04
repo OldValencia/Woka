@@ -111,7 +111,8 @@ private suspend fun AwaitPointerEventScope.edge(
     val clip = from[handle.index]
     val span = geometry.spans[handle.index]
     if (span.width <= 0f) return
-    val msPerPx = clip.lengthMs / span.width
+    // Source milliseconds per pixel: an edge moves the clip's range, whatever its speed.
+    val msPerPx = clip.sourceLengthMs / span.width
     val player = state.player
     player.pauseForSeek()
     state.drag = StripDrag.Edge(handle, from)

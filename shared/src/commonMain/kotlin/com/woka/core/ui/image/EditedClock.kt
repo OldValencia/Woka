@@ -25,15 +25,15 @@ class EditedClock(val ranges: List<SourceRange>) {
     var index by mutableIntStateOf(0)
 
     /** How long the result is. */
-    val totalMs: Long = ranges.sumOf { it.toMs - it.fromMs }
+    val totalMs: Long = ranges.sumOf { it.lengthMs }
 
     /** Where source [sourceMs] sits on the result, inside the range the walk is in. */
     fun toTimeline(sourceMs: Long): Long {
         if (ranges.isEmpty()) return sourceMs
         val current = index.coerceIn(0, ranges.lastIndex)
-        val start = ranges.take(current).sumOf { it.toMs - it.fromMs }
+        val start = ranges.take(current).sumOf { it.lengthMs }
         val range = ranges[current]
-        return start + (sourceMs - range.fromMs).coerceIn(0L, range.toMs - range.fromMs)
+        return start + ((sourceMs - range.fromMs) / range.speed).toLong().coerceIn(0L, range.lengthMs)
     }
 
     /**
@@ -44,8 +44,8 @@ class EditedClock(val ranges: List<SourceRange>) {
         if (ranges.isEmpty()) return 0 to timelineMs
         var start = 0L
         ranges.forEachIndexed { i, range ->
-            val length = range.toMs - range.fromMs
-            if (timelineMs < start + length) return i to range.fromMs + (timelineMs - start).coerceAtLeast(0L)
+            val length = range.lengthMs
+            if (timelineMs < start + length) return i to range.fromMs + ((timelineMs - start).coerceAtLeast(0L) * range.speed).toLong()
             start += length
         }
         return ranges.lastIndex to ranges.last().toMs

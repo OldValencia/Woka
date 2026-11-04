@@ -3,9 +3,7 @@ package com.woka.feature.editor.engine.video
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -87,12 +85,7 @@ internal fun ClipTile(
                 style = TextStyle(color = Color.White.copy(alpha = 0.85f), fontSize = 9.5.sp)
             )
         }
-        if (ownLook) {
-            Box(
-                Modifier.align(Alignment.TopEnd).padding(4.dp).size(6.dp)
-                    .background(Theme.colors.accentEditor, CircleShape)
-            )
-        }
+        ClipBadges(ownLook = ownLook, speed = clip.speed)
     }
 }
 
@@ -110,9 +103,9 @@ private fun DrawScope.drawStills(clip: TrimClip, cells: FilmstripCells?, phase: 
     clipRect {
         for (j in 0 until count) {
             val x = j * tileWidth
-            val atMs = clip.fromMs + (clip.lengthMs * ((x + tileWidth / 2f) / size.width)).toLong()
+            val atMs = clip.fromMs + (clip.sourceLengthMs * ((x + tileWidth / 2f) / size.width)).toLong()
             // The slot's own stretch of source, so a still already decoded inside it is used.
-            val spanMs = (clip.lengthMs * (tileWidth / size.width)).toLong()
+            val spanMs = (clip.sourceLengthMs * (tileWidth / size.width)).toLong()
             val still = cells?.stillAt(atMs.coerceAtMost(clip.toMs), spanMs)
             if (still != null) {
                 val crop = centredCrop(still.width, still.height, tileWidth / tileHeight)

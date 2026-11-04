@@ -23,6 +23,7 @@ import com.woka.feature.editor.core.EditorTimelineScope
 import com.woka.feature.editor.tools.trim.TrimClip
 import com.woka.feature.editor.tools.trim.atTimeline
 import com.woka.feature.editor.tools.trim.join
+import com.woka.feature.editor.tools.trim.withSpeed
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import kotlin.math.roundToInt
 
@@ -106,7 +107,9 @@ internal fun ClipStrip(
                         anchorX = span.left + span.width / 2f,
                         onDelete = { state.deleteSelected(selectedId) },
                         onDuplicate = { state.duplicateSelected(selectedId) },
-                        onJoin = { state.joinSelected(selectedId) }.takeIf { clips.join(selectedId) != clips }
+                        onJoin = { state.joinSelected(selectedId) }.takeIf { clips.join(selectedId) != clips },
+                        speed = clip.speed,
+                        onSpeed = { speed -> state.apply(clips.withSpeed(selectedId, speed)) }
                     )
                 }
             }

@@ -70,9 +70,11 @@ class VideoPlayerState(
     // or resume. The screen observes it to advance the folder playlist (§6).
     var reachedEnd by mutableStateOf(false)
 
-    // Playback speed (§6), 0.5×–2×. The presenter divides its frame pacing by it
-    // and the audio path runs an `atempo` filter so the pitch stays put.
+    // Playback speed (§6) — what the presenter and `atempo` run at: the user's own
+    // 0.5×–2× times an edited clip's pace (ME-216), both set in `VideoPlayerSpeed`.
     var playbackSpeed by mutableStateOf(PlaybackSpeed.NORMAL)
+    internal var userSpeed = PlaybackSpeed.NORMAL
+    internal var clipPace = 1f
 
     // True while the video grabber is being swapped onto another track (§2.3).
     // Re-opening a 4K HEVC stream and decoding back to the play head takes

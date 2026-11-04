@@ -60,8 +60,9 @@ internal class StripGeometry(
         val at = clips.atTimeline(timelineMs) ?: return 0f
         val clip = clips[at.index]
         val span = spans[at.index]
-        if (clip.lengthMs <= 0L) return span.left
-        return span.left + span.width * (at.sourceMs - clip.fromMs) / clip.lengthMs
+        // Source time across a source span: a fast clip is narrow and still covers its range.
+        if (clip.sourceLengthMs <= 0L) return span.left
+        return span.left + span.width * (at.sourceMs - clip.fromMs) / clip.sourceLengthMs
     }
 
     /**

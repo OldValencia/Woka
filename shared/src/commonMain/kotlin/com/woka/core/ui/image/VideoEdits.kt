@@ -52,9 +52,15 @@ interface AppliedVideoEdit {
     fun poster(poster: ImageBitmap): ImageBitmap
 }
 
-/** A stretch of the source, `[fromMs, toMs)`, drawing clip layer [key]'s look (ME-215). */
+/**
+ * A stretch of the source, `[fromMs, toMs)`, drawing clip layer [key]'s look (ME-215) and
+ * playing at [speed] (ME-216).
+ */
 @Immutable
-data class SourceRange(val fromMs: Long, val toMs: Long, val key: Int = 0)
+data class SourceRange(val fromMs: Long, val toMs: Long, val key: Int = 0, val speed: Float = 1f) {
+    /** How long it lasts on the result. */
+    val lengthMs: Long get() = ((toMs - fromMs) / speed).toLong()
+}
 
 /** No editor in the graph: no film carries an edit. */
 private object NoVideoEdits : VideoEdits {

@@ -54,7 +54,10 @@ internal fun ClipBar(
     onDelete: () -> Unit,
     onDuplicate: () -> Unit,
     /** Null when no neighbour continues this clip in the source — nothing to join. */
-    onJoin: (() -> Unit)? = null
+    onJoin: (() -> Unit)? = null,
+    /** The clip's speed and how to change it (ME-216); null hides the chip. */
+    speed: Float = 1f,
+    onSpeed: ((Float) -> Unit)? = null
 ) {
     val lift = with(LocalDensity.current) { BAR_LIFT.roundToPx() }
     val position = remember(anchorX, lift) { AboveAnchor(anchorX.roundToInt(), lift) }
@@ -71,6 +74,7 @@ internal fun ClipBar(
             BarAction("Delete", Theme.colors.danger, enabled = canDelete, tag = "editor-clip-delete", onClick = onDelete)
             BarAction("Duplicate", Theme.viewer.onScrim, enabled = true, tag = "editor-clip-duplicate", onClick = onDuplicate)
             BarAction("Join", Theme.viewer.onScrim, enabled = onJoin != null, tag = "editor-clip-join", onClick = onJoin ?: {})
+            onSpeed?.let { ClipSpeedChip(speed, it) }
         }
     }
 }

@@ -31,19 +31,19 @@ internal fun chapterSegments(
  * (reported 2026-11-04 on a two-split `mkv`).
  */
 internal fun chapterSegmentsOnResult(chapters: List<MediaChapter>, ranges: List<SourceRange>): List<SliderSegment> {
-    val total = ranges.sumOf { it.toMs - it.fromMs }
+    val total = ranges.sumOf { it.lengthMs }
     if (chapters.isEmpty() || total <= 0L) return WHOLE_TRACK
     var offset = 0L
     val pieces = ranges.flatMap { range ->
         val start = offset
-        offset += range.toMs - range.fromMs
+        offset += range.lengthMs
         chapters.mapNotNull { chapter ->
             val from = maxOf(chapter.startMs, range.fromMs)
             val to = minOf(chapter.endMs, range.toMs)
             if (to <= from) return@mapNotNull null
             SliderSegment(
-                start = (start + from - range.fromMs).toFloat() / total,
-                end = (start + to - range.fromMs).toFloat() / total,
+                start = (start + (from - range.fromMs) / range.speed).toFloat() / total,
+                end = (start + (to - range.fromMs) / range.speed).toFloat() / total,
                 label = chapter.title
             )
         }

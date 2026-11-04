@@ -62,11 +62,9 @@ status in [`timeline/`](timeline/timeline.md)'s table. ME-211…ME-214 are folde
 ### ME-215 — promoted 2026-11-02
 [`timeline/tickets/ME-215-this-clip.md`](timeline/tickets/ME-215-this-clip.md).
 
-### ME-216 — Speed per clip
-A field on the clip entry, ¼×–4×, with a detent at 1×. It changes the clip's length on the strip and
-therefore where every clip after it sits. The pacer and the audio tempo are
-[`playback/`](playback/playback.md)'s halves of it.
-*Depends on ME-215.*
+### ME-216 — promoted and done 2026-11-04
+[`timeline/tickets/ME-216-speed-per-clip.md`](timeline/tickets/ME-216-speed-per-clip.md) — with
+ME-234's speed half (the pacer and `atempo`) folded in.
 
 ### ME-217 — Freeze-frame
 A clip whose source range is a point, plus a hold. One entry in the list, one repeated thumbnail, and

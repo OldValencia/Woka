@@ -28,6 +28,7 @@ import com.woka.feature.editor.tools.trim.TrimTool
 import com.woka.feature.editor.tools.trim.totalMs
 import com.woka.feature.editor.tools.trim.wholeSource
 import com.woka.feature.viewer.video.engine.VideoPlayerState
+import com.woka.feature.viewer.video.engine.setClipPace
 
 /** The whole band, so it lines up with the rail rather than with the picture. */
 private val BAND_WIDTH = 640.dp
@@ -112,4 +113,7 @@ private fun WalkClips(player: VideoPlayerState, walk: ClipWalk, clips: List<Trim
     LaunchedEffect(player, walk) {
         snapshotFlow { player.isPlaying }.collect { playing -> if (playing) walk.onPlay(player, current) }
     }
+    // The clip being played sets the pace, picture and sound (ME-216).
+    val speed = clips.getOrNull(walk.index)?.speed ?: 1f
+    LaunchedEffect(player, speed) { player.setClipPace(speed) }
 }

@@ -31,7 +31,7 @@ fun List<TrimClip>.split(timelineMs: Long, newId: String): List<TrimClip> {
     val clip = this[at.index]
     if (at.sourceMs - clip.fromMs < MIN_CLIP_MS || clip.toMs - at.sourceMs < MIN_CLIP_MS) return this
     val left = clip.copy(toMs = at.sourceMs)
-    val right = TrimClip(newId, at.sourceMs, clip.toMs, nextKey())
+    val right = clip.copy(id = newId, fromMs = at.sourceMs, key = nextKey())
     return take(at.index) + left + right + drop(at.index + 1)
 }
 
@@ -75,17 +75,18 @@ fun List<TrimClip>.nextKey(): Int = (maxOfOrNull { it.key } ?: 0) + 1
 /**
  * Clip [id] joined back to the neighbour that continues it in the source — the right one
  * first, then the left — undoing a split (reported 2026-11-04: nothing could). The clip
- * that comes first keeps its id and its look. Unchanged when neither neighbour continues it.
+ * that comes first keeps its id and its look. Unchanged when neither neighbour continues it
+ * at the same speed: one clip has one speed (ME-216).
  */
 fun List<TrimClip>.join(id: String): List<TrimClip> {
     val index = indexOfFirst { it.id == id }.takeIf { it >= 0 } ?: return this
     val clip = this[index]
     val right = getOrNull(index + 1)
-    if (right != null && right.fromMs == clip.toMs) {
+    if (right != null && right.fromMs == clip.toMs && right.speed == clip.speed) {
         return take(index) + clip.copy(toMs = right.toMs) + drop(index + 2)
     }
     val left = getOrNull(index - 1)
-    if (left != null && left.toMs == clip.fromMs) {
+    if (left != null && left.toMs == clip.fromMs && left.speed == clip.speed) {
         return take(index - 1) + left.copy(toMs = clip.toMs) + drop(index + 1)
     }
     return this
@@ -96,4 +97,10 @@ fun List<TrimClip>.join(id: String): List<TrimClip> {
  * cut at all, so a film split and joined back is not left marked as edited.
  */
 fun List<TrimClip>.cutsNothing(durationMs: Long): Boolean =
-    isEmpty() || (size == 1 && first().fromMs <= 0L && first().toMs >= durationMs)
+    isEmpty() || (size == 1 && first().fromMs <= 0L && first().toMs >= durationMs && first().speed == 1f)
+
+/** Clip [id] at [speed] (ME-216); unchanged when it already plays at it. */
+fun List<TrimClip>.withSpeed(id: String, speed: Float): List<TrimClip> =
+    if (none { it.id == id && it.speed != speed }) this
+    else map { if (it.id == id) it.copy(speed = speed) else it }
+

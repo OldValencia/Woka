@@ -96,6 +96,15 @@ class VideoRenderTest {
         assertTrue(abs(readBack(first).durationMs - 4_000L) <= 150L, "the whole film was not rendered")
     }
 
+    /** ME-216: two seconds at 2x render as one, encoded — a copy cannot retime. */
+    @Test
+    fun `a fast clip renders at its timeline length`() = onClip { source, registry ->
+        val fast = EditDocument(ops = listOf(TrimTool.opFor(listOf(TrimClip("a", 0L, 2_000L, speed = 2f)))))
+        val back = readBack(render(source, fast, registry))
+        assertTrue(back.firstDecodes, "the retimed render does not decode: $back")
+        assertTrue(abs(back.durationMs - 1_000L) <= 150L, "2 s at 2x is 1 s, not $back")
+    }
+
     /** ME-215: the look is clip 1's own, so only clip 1's frames come out redder. */
     @Test
     fun `a clip's own look renders on that clip alone`() = onClip { source, registry ->

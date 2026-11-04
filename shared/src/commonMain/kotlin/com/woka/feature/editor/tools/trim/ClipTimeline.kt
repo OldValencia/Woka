@@ -10,8 +10,8 @@ package com.woka.feature.editor.tools.trim
  *
  * Clips are butt-joined (`video-editor.md` §4.3 rule 2): clip *n* starts on the timeline
  * where clip *n − 1* ended, so the timeline has no gaps and no position of its own to
- * store. Speed and freeze will be folded in here when ME-216 and ME-217 give a clip a
- * length that is not its source range.
+ * store. A clip's speed (ME-216) is folded in here and nowhere else: the timeline runs at
+ * the source's pace divided by it.
  */
 
 /** How long the edited result is. */
@@ -34,7 +34,7 @@ fun List<TrimClip>.atTimeline(timelineMs: Long): ClipPosition? {
     val clamped = timelineMs.coerceIn(0L, totalMs())
     forEachIndexed { index, clip ->
         val end = start + clip.lengthMs
-        if (clamped < end) return ClipPosition(index, clip.fromMs + (clamped - start))
+        if (clamped < end) return ClipPosition(index, clip.fromMs + ((clamped - start) * clip.speed).toLong())
         start = end
     }
     return ClipPosition(lastIndex, last().toMs)
@@ -43,7 +43,7 @@ fun List<TrimClip>.atTimeline(timelineMs: Long): ClipPosition? {
 /** The inverse: where source [sourceMs] inside clip [index] sits on the timeline. */
 fun List<TrimClip>.timelineOf(index: Int, sourceMs: Long): Long {
     val clip = getOrNull(index) ?: return 0L
-    return startOf(index) + (sourceMs - clip.fromMs).coerceIn(0L, clip.lengthMs)
+    return startOf(index) + ((sourceMs - clip.fromMs) / clip.speed).toLong().coerceIn(0L, clip.lengthMs)
 }
 
 /**

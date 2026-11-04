@@ -11,6 +11,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import org.bytedeco.javacv.FFmpegFrameGrabber
+import java.util.WeakHashMap
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -21,16 +22,55 @@ import kotlin.time.Duration.Companion.milliseconds
  * exception — see [AudioTempoFilter].
  */
 
+/** The user's own speed — the player's control and the settings (§6). */
 fun VideoPlayerState.setPlaybackSpeed(speed: Float) {
-    val snapped = PlaybackSpeed.snap(speed)
-    if (snapped == playbackSpeed) return
-    playbackSpeed = snapped
+    userSpeed = PlaybackSpeed.snap(speed)
+    applySpeed()
+}
+
+/**
+ * An edited clip's pace while it plays (ME-216): ¼× to 4×, **multiplied into** the user's
+ * speed rather than written over it, and never persisted — it is the film's, not the user's.
+ *
+ * Two owners writing one value was the bug the author reported 2026-11-04: the viewer set
+ * the settings' speed and the edit set the clip's, and whichever effect ran last won — 1×
+ * after `Done`, 4× after Revert, right only after leaving and coming back. One value made of
+ * two inputs cannot be raced.
+ */
+fun VideoPlayerState.setClipPace(pace: Float, owner: Any = this) {
+    paceOwners[this] = owner
+    clipPace = pace
+    applySpeed()
+}
+
+/**
+ * Back to the user's own speed — **only if [owner] set the pace last**. Measured 2026-11-04:
+ * after `Done` the viewer's frame is composed twice over one player for a moment, and the
+ * leaving copy's reset landed after the new copy's 4× — the film played at 1× until reopened.
+ */
+fun VideoPlayerState.releaseClipPace(owner: Any) {
+    if (paceOwners[this] !== owner) return
+    paceOwners.remove(this)
+    clipPace = 1f
+    applySpeed()
+}
+
+/** Who set each player's pace last; weak, so a closed player is not held. Main thread only. */
+private val paceOwners = WeakHashMap<VideoPlayerState, Any>()
+
+private fun VideoPlayerState.applySpeed() {
+    val speed = (userSpeed * clipPace).coerceIn(CLIP_SPEED_MIN, CLIP_SPEED_MAX)
+    if (speed == playbackSpeed) return
+    playbackSpeed = speed
     generation.requestSpeedChange()
     // The presenter's baseline was anchored under the old speed; without a rebase
     // every incoming frame would read as wildly early or late right after the
     // change and get dropped or slept on.
     generation.requestPresenterRebase()
 }
+
+private const val CLIP_SPEED_MIN = 0.25f
+private const val CLIP_SPEED_MAX = 4f
 
 /**
  * End of stream. Only Repeat File loops here — Repeat Folder means "play the next
