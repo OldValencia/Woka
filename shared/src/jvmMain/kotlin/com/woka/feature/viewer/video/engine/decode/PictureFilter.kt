@@ -106,6 +106,23 @@ internal class PictureFilter {
         graph?.close()
         graph = null
     }
+
+    /** A decoder lane's filter takes the player's settings before its first open (ME-232). */
+    fun mirror(main: PictureFilter) {
+        deinterlaceEnabled = main.deinterlaceEnabled
+        seen = main.seen
+    }
+
+    /**
+     * Trades graphs with a lane's filter at a hand-off (ME-232): each graph stays with the
+     * grabber it was built on, and the grabbers are what changed hands.
+     */
+    fun swapGraphWith(other: PictureFilter) {
+        graph = other.graph.also { other.graph = graph }
+        grabber = other.grabber.also { other.grabber = grabber }
+        outWidth = other.outWidth.also { other.outWidth = outWidth }
+        outHeight = other.outHeight.also { other.outHeight = outHeight }
+    }
 }
 
 /**

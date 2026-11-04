@@ -1,10 +1,7 @@
 package com.woka.feature.viewer.video.engine.decode
 
 import com.woka.feature.viewer.video.engine.VideoPlayerState
-import com.woka.feature.viewer.video.engine.audio.startAudioDecodeLoop
-import com.woka.feature.viewer.video.engine.probe.HdrInfo
 
-import androidx.compose.ui.graphics.ImageBitmap
 import com.woka.feature.viewer.video.engine.recordPresentedFrame
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -15,33 +12,8 @@ import kotlin.math.abs
 // band where nothing is late enough to rebase but everything is late enough to drop.
 private const val MAX_DROPS_IN_A_ROW = 10
 
-/** A decoded video frame tagged with the seek generation it was produced under. */
-internal data class VideoFrame(
-    val bitmap: ImageBitmap,
-    val tsMs: Long,
-    val generation: Int,
-    val hdrInfo: HdrInfo? = null,
-    // Last, with a default, so the end-of-stream marker in VideoPlayerSpeed.kt —
-    // which carries a 1x1 placeholder that nothing retains — stays as it was.
-    val id: Long = 0L
-)
-
-internal fun VideoPlayerState.startPlayback() {
-    // Each queued frame owns a full-size Skia raster — 33MB at 4K — freed only
-    // once the collector reaches its small Java wrapper. 60 of those is up to 2GB
-    // of native memory in flight; 8 still absorbs ~330ms of decoder jitter.
-    val videoChannel = Channel<VideoFrame>(capacity = 8)
-    val audioChannel = Channel<ByteArray>(capacity = 500)
-
-    // A file with no picture has a clock in place of the decoder and presenter (AP-003).
-    if (isAudioOnly) {
-        startAudioClockLoop()
-    } else {
-        startPresenterLoop(videoChannel)
-        startDecoderLoop(videoChannel)
-    }
-    startAudioDecodeLoop(audioChannel)
-}
+/** The frame period a join is scheduled by, until two frames have shown the film's own. */
+private const val DEFAULT_STEP_MS = 40L
 
 internal fun VideoPlayerState.startPresenterLoop(videoChannel: Channel<VideoFrame>) {
     presenterJob = scope.launch(Dispatchers.Default) {
@@ -49,8 +21,10 @@ internal fun VideoPlayerState.startPresenterLoop(videoChannel: Channel<VideoFram
         var firstVideoTsMs = -1L
         var lastPauseTimeMs = 0L
         var droppedInARow = 0
+        var stepMs = DEFAULT_STEP_MS
+        var lastShownTsMs = -1L
 
-        for ((bitmap, frameTsMs, frameGeneration, hdrInfo, frameId) in videoChannel) {
+        for ((bitmap, frameTsMs, frameGeneration, hdrInfo, frameId, joinIndex, heldFromMs) in videoChannel) {
             // Drop frames decoded before the latest seek so they can't overwrite
             // the post-seek position/frame with stale data.
             if (frameGeneration != generation.seek) continue
@@ -59,6 +33,10 @@ internal fun VideoPlayerState.startPresenterLoop(videoChannel: Channel<VideoFram
                 isPlaying = false
                 currentPositionMs = durationMs
                 reachedEnd = true // the playlist layer decides what plays next (§6)
+                continue
+            }
+            if (frameTsMs == END_OF_EDIT_TS) {
+                stopAtEditEnd()
                 continue
             }
             while (!isPlaying || isSeeking) {
@@ -77,12 +55,19 @@ internal fun VideoPlayerState.startPresenterLoop(videoChannel: Channel<VideoFram
             // took is not playback time, so rebase rather than bill it to these
             // frames as lateness — otherwise they get dropped to "catch up" and the
             // picture stalls until the decoder claws the gap back at ~1.07x.
+            if (joinIndex >= 0) paceJoin(joinIndex)
             if (generation.consumePresenterRebase()) {
                 firstVideoTsMs = -1L
                 // A grabber swap is not the machine struggling (§health).
                 health.suspendMeasuring()
             }
 
+            // A join (ME-232) is due one frame after the last shown, not now — and its
+            // timestamps jump, so it starts a schedule of its own.
+            if (joinIndex >= 0) {
+                firstVideoTsMs = frameTsMs
+                startPlayTimeMs = System.nanoTime() / 1_000_000L + (stepMs / playbackSpeed).toLong()
+            }
             if (firstVideoTsMs == -1L) {
                 firstVideoTsMs = frameTsMs
                 startPlayTimeMs = System.nanoTime() / 1_000_000L
@@ -143,6 +128,13 @@ internal fun VideoPlayerState.startPresenterLoop(videoChannel: Channel<VideoFram
             currentFrameHdrInfo = hdrInfo
             currentFrameId = frameId
             recordPresentedFrame() // the one hot-path cost of §health
+            if (joinIndex >= 0) {
+                presentJoin(joinIndex, heldFromMs, frameTsMs)
+                if (isFreezeRange(joinIndex)) holdFreeze(joinIndex, heldFromMs, frameGeneration)
+            } else if (frameTsMs > lastShownTsMs && lastShownTsMs >= 0) {
+                stepMs = (frameTsMs - lastShownTsMs).coerceIn(1L, DEFAULT_STEP_MS * 3)
+            }
+            lastShownTsMs = frameTsMs
         }
     }
 }

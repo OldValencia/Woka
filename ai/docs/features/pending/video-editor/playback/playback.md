@@ -15,7 +15,7 @@ offered on 2026-09-03 and turned down.
 |---|---|---|
 | ME-231 | Timeline time and source time | **done 2026-11-01, without speed and freeze** (they do not exist yet). Built inside [ME-210](../timeline/tickets/ME-210-cut-the-film-on-the-strip.md): `ClipTimeline.kt` in `commonMain`, `ClipTimelineTest`. The interim seek-at-every-join walk (`ClipWalk`) is what ME-232 replaces |
 | ME-230 | Probe: two decoders, one file | **done 2026-11-04** — two 4K decoders run at ~60 fps each against 24 needed; a join today stalls 0.2–1.9 s; the pre-roll lead is up to ~2.2 s, not 300 ms. Table at the end of this file; probe `jvmTest/probe/JoinDecodeProbe.kt` |
-| [ME-232](tickets/ME-232-joins-without-a-stall.md) | Joins without a stall — lane pool, engine-owned list, decoder threads 4 | **promoted 2026-11-04**, not started |
+| [ME-232](tickets/ME-232-joins-without-a-stall.md) | Joins without a stall — lane pool, engine-owned list, decoder threads 4 | **built 2026-11-05**, tests green; **not yet looked at by hand** |
 
 Every other block is in [the shared backlog](../backlog.md) §230.
 

@@ -50,6 +50,7 @@ internal fun VideoPlayerState.startAudioDecodeLoop(audioChannel: Channel<ByteArr
             var audioSeekGen = generation.seek
             var audioDelayGen = generation.audioDelay
             var audioSpeedGen = generation.speed
+            var audioJoinGen = edit.joins.audioJoin
             var audioTsMs = 0L // last decoded audio position; drives sync, unlike the
             // grabber's timestamp which is stale right after a seek.
             while (isActive) {
@@ -88,6 +89,15 @@ internal fun VideoPlayerState.startAudioDecodeLoop(audioChannel: Channel<ByteArr
                     audioSpeedGen = generation.speed
                     tempo = audioReseek(grabber, audioTimeFor(currentPositionMs), audioChannel, tempo)
                     audioTsMs = audioTimeFor(currentPositionMs)
+                    continue
+                }
+                // The picture joined another kept range without a seek (ME-232); the
+                // sound follows it there. The short gap this leaves is ME-233's.
+                if (audioJoinGen != edit.joins.audioJoin) {
+                    audioJoinGen = edit.joins.audioJoin
+                    val target = audioTimeFor(edit.joins.audioJoinMs)
+                    tempo = audioReseek(grabber, target, audioChannel, tempo)
+                    audioTsMs = target
                     continue
                 }
                 // isReloadingVideo: a video-track swap re-decodes for seconds (§2.3).

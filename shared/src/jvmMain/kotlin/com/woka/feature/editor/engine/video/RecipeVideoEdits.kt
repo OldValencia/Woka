@@ -18,6 +18,7 @@ import com.woka.feature.editor.engine.image.RasterRecipe
 import com.woka.feature.editor.engine.image.RecipePainter
 import com.woka.feature.editor.engine.image.scaledBy
 import com.woka.feature.editor.engine.video.render.isIdentity
+import com.woka.feature.editor.tools.trim.TrimClip
 import com.woka.feature.editor.recipe.EditRecipe
 import com.woka.feature.editor.save.renderAtNativeScale
 import com.woka.feature.editor.tools.sound.SoundTool
@@ -57,7 +58,7 @@ internal class RecipeVideoEdits(private val registry: EditorToolRegistry) : Vide
         val sourceSize = codedFrameSize(file)
         if (sourceSize == IntSize.Zero) return null
         val base = EditDocument(payload.ops)
-        val ranges = TrimTool.clipsIn(base).orEmpty().map { SourceRange(it.fromMs, it.toMs, it.key, it.speed, it.holdMs, SoundTool.mixIn(payload.frames[it.key]?.ops.orEmpty())) }
+        val ranges = TrimTool.clipsIn(base).orEmpty().map { it.toSourceRange(SoundTool.mixIn(payload.frames[it.key]?.ops.orEmpty())) }
         // One recipe per layer the cut draws (ME-215); an uncut film is clip 0 alone.
         val keys = ranges.map { it.key }.ifEmpty { listOf(0) }.distinct()
         val recipes = keys.associateWith { key ->
@@ -96,3 +97,7 @@ private class FoldedVideoEdit(
         }.getOrDefault(poster)
     }
 }
+
+/** A clip as the player's kept range (ME-232) — the viewer's vocabulary for the editor's clip. */
+internal fun TrimClip.toSourceRange(sound: SoundMix? = null): SourceRange =
+    SourceRange(fromMs, toMs, key, speed, holdMs, sound)

@@ -29,7 +29,7 @@ internal class VideoPlayerHolder {
         private set
 
     /** Which clip is playing — the strip moves it, the canvas draws that clip's look (ME-215). */
-    val walk = ClipWalk()
+    val walk = ClipWalk { state }
 
     /**
      * Idempotent per file, so a recomposition does not open a second decoder.

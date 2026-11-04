@@ -8,12 +8,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.snapshotFlow
-import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,7 +26,8 @@ import com.woka.feature.editor.tools.trim.TrimTool
 import com.woka.feature.editor.tools.trim.totalMs
 import com.woka.feature.editor.tools.trim.wholeSource
 import com.woka.feature.viewer.video.engine.VideoPlayerState
-import com.woka.feature.viewer.video.engine.setClipPace
+import com.woka.feature.viewer.video.engine.playRanges
+import com.woka.feature.viewer.video.engine.releaseRanges
 
 /** The whole band, so it lines up with the rail rather than with the picture. */
 private val BAND_WIDTH = 640.dp
@@ -102,33 +100,12 @@ internal fun VideoEditorBand(
 }
 
 /**
- * Keeps the player inside the clip list: every reported position goes through
- * `ClipWalk.onPosition`, every edit of the list re-checks where the play head is, and a
- * press of play at the end of the result starts it again from the first clip.
+ * Hands the clip list to the player as its kept ranges (ME-232), again on every edit of it.
+ * The player joins them, holds a freeze and stops at the end on its own; the walk only
+ * reads where it is. The list goes back when the band leaves.
  */
 @Composable
 private fun WalkClips(player: VideoPlayerState, walk: ClipWalk, clips: List<TrimClip>) {
-    val current by rememberUpdatedState(clips)
-    LaunchedEffect(player, walk) {
-        snapshotFlow { player.currentPositionMs }.collect { walk.onPosition(player, current, it) }
-    }
-    LaunchedEffect(player, walk, clips) {
-        walk.onPosition(player, clips, player.currentPositionMs)
-    }
-    LaunchedEffect(player, walk) {
-        snapshotFlow { player.isPlaying }.collect { playing -> if (playing) walk.onPlay(player, current) }
-    }
-    // A freeze's hold runs on the frame clock while the player stands still (ME-217).
-    LaunchedEffect(player, walk, walk.holding) {
-        if (!walk.holding) return@LaunchedEffect
-        var last = withFrameMillis { it }
-        while (walk.holding) {
-            val now = withFrameMillis { it }
-            walk.tick(player, current, now - last)
-            last = now
-        }
-    }
-    // The clip being played sets the pace, picture and sound (ME-216).
-    val speed = clips.getOrNull(walk.index)?.speed ?: 1f
-    LaunchedEffect(player, speed) { player.setClipPace(speed) }
+    LaunchedEffect(player, walk, clips) { player.playRanges(clips.map { it.toSourceRange() }, walk) }
+    DisposableEffect(player, walk) { onDispose { player.releaseRanges(walk) } }
 }

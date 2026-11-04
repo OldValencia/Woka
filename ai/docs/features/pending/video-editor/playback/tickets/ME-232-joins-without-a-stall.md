@@ -114,3 +114,30 @@ nothing hands off to shows nothing.
 - **By hand, the author:** S02E01 cut into five ranges in the editor and in the viewer — no frozen
   picture at any join.
 - `./gradlew.bat :shared:build` green; the anti-FQN grep clean on every edited file.
+
+## Built — 2026-11-05
+
+Where the build left the steps, read against the tree:
+
+- **One parked picture per lane, not two.** The grabber is left just after it and the next frame
+  decodes in 11–25 ms against a 41 ms frame; a second would hold 8–33 MB a lane for nothing.
+- **State lives in `EditPlayback.joins`** (`EditJoins`, in `EditRanges.kt`) — `VideoPlayerState`
+  is untouched — and so does the `audioJoin` counter, which kept `PlaybackGeneration` at its size.
+- **The presenter owns what is on screen**: a join frame (`VideoFrame.joinIndex`) applies the
+  range's pace before it is scheduled, then its index, the play head and the audio join once shown.
+  **A freeze holds in the presenter**, not the decode loop — the loop runs up to eight frames ahead
+  of the screen, so a hold counted there started early. The loop meanwhile sits on a full channel,
+  so `holdEnded` makes it rebase its `FramePacer`, which would otherwise skip four frames after
+  every freeze.
+- Splits for the size mandate: `VideoFrame` moved to `decode/PresenterJoins.kt`, `startPlayback` and
+  a new `startVideoGrabber` to `VideoPlayerDecodeStart.kt`, `relocate`/`seekToStart` to
+  `join/RangeLocator.kt`, the no-lane fallback `landHere` to `join/LanePool.kt`. `PictureFilter`
+  gained `mirror` and `swapGraphWith` (the ticket's `mirrorOf` / `adopt`).
+- `unit/LanePoolTest` covers the planner as pure functions (`upcomingStarts`, `continues`) rather
+  than through fake lanes. `integration/JoinHandOffTest`: a lane parks on its range's first frame;
+  three ranges cut off keyframes play in order with no frame from a cut and no still picture over
+  200 ms; a freeze holds 1 s ± 0.2; Pause in it stretches it by the pause. A temporary trace showed
+  all six joins in those tests taken from a lane, landing exactly on the range start; removed.
+
+**Not yet by hand.** Not checked: the 4K joins on S02E01 the ticket names, and how a lane opening
+for the first time competes with playback on a slower machine.

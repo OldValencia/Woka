@@ -19,6 +19,9 @@ internal class EditPlayback {
     @Volatile
     var gain = 1f
     var gainOwner: Any? = null
+
+    /** The kept ranges and where in them the player is (ME-232). */
+    val joins = EditJoins()
 }
 
 /**

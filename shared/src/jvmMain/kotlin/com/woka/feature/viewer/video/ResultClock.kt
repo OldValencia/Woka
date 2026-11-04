@@ -6,6 +6,7 @@ import com.woka.core.ui.image.AppliedVideoEdits
 import com.woka.core.ui.image.EditedClock
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.engine.seek
+import com.woka.feature.viewer.video.engine.seekInRanges
 
 /**
  * The slider's clock for a film `Done` cut (ME-285, reported 2026-11-02: a film trimmed
@@ -34,7 +35,7 @@ internal fun seekOnResult(player: VideoPlayerState?, clock: EditedClock?, ms: Lo
     clock.index = index
     // Into a freeze: its frame, and how far into its hold (ME-217).
     clock.heldMs = if (clock.ranges[index].isFreeze) (ms - clock.startOf(index)).coerceAtLeast(0L) else 0L
-    player?.seek(sourceMs)
+    player?.seekInRanges(index, if (clock.ranges[index].isFreeze) clock.heldMs else sourceMs)
 }
 
 /** The source millisecond under result position [ms]; [ms] itself for an uncut film. */
