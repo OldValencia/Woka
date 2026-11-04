@@ -6,11 +6,11 @@ import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.core.ToolOp
 import com.woka.feature.editor.engine.image.fold
+import com.woka.feature.editor.engine.video.hdrStageFor
 import com.woka.feature.editor.tools.sound.SoundTool
 import com.woka.feature.editor.tools.trim.TrimClip
 import com.woka.feature.editor.tools.trim.TrimTool
 import com.woka.feature.editor.tools.trim.wholeSource
-import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.FFmpegFrameRecorder
 import java.io.File
 import java.nio.file.Files
@@ -50,6 +50,9 @@ internal fun renderVideo(
         val clips = TrimTool.clipsIn(document) ?: wholeSource(probe.durationMs)
         val recipes = clips.map { it.key }.distinct()
             .associateWith { key -> fold(EditDocument(document.ops + looks(key)), registry, sourceSize) }
+        // A PQ or HLG film is tone mapped by the canvas's own stage (`hdrStageFor`), so an
+        // encode that would otherwise pass frames through draws every one of them.
+        val hdr = hdrStageFor(probe.hdr)
         val pixelWork = recipes.values.any { !it.isIdentity(sourceSize) }
         // A gain, a mute or a fade changes every sample, which a packet copy cannot (ME-240).
         val sound = renderSoundOf(document, looks, clips)
@@ -62,7 +65,8 @@ internal fun renderVideo(
         if (copies) {
             copyClips(source, scratch, format, clips, alive, progress)
         } else {
-            val pictures = if (pixelWork) recipes.mapValues { RecipePicture(sourceSize, it.value) } else emptyMap()
+            val drawn = pixelWork || hdr != null
+            val pictures = if (drawn) recipes.mapValues { RecipePicture(sourceSize, it.value.copy(source = hdr)) } else emptyMap()
             encodeClips(source, scratch, format, clips, { clip -> pictures[clip.key] }, alive, progress, sound)
         }
         if (!alive()) {
@@ -102,37 +106,6 @@ private fun copyClips(
     } finally {
         recorder.stop()
         recorder.release()
-    }
-}
-
-private class SourceProbe(val durationMs: Long, val keyframesMs: List<Long>, val format: String)
-
-private fun probeSource(source: File): SourceProbe = withGrabber(source) { grabber ->
-    SourceProbe(grabber.lengthInTime / 1000L, keyframesMs(grabber), grabber.format.orEmpty())
-}
-
-/**
- * The muxer for [extension]. Named explicitly where it matters, because the grabber's own
- * format is a list — `mov,mp4,m4a,3gp,3g2,mj2` — and its first entry is not always the
- * file's (ME-290).
- */
-private fun containerFormat(extension: String, probed: String): String = when (extension.lowercase()) {
-    "mp4", "m4v" -> "mp4"
-    "mov" -> "mov"
-    "mkv" -> "matroska"
-    "webm" -> "webm"
-    "avi" -> "avi"
-    else -> probed.substringBefore(',').ifEmpty { "mp4" }
-}
-
-private fun <T> withGrabber(file: File, block: (FFmpegFrameGrabber) -> T): T {
-    val grabber = FFmpegFrameGrabber(file)
-    try {
-        grabber.start()
-        return block(grabber)
-    } finally {
-        runCatching { grabber.stop() }
-        runCatching { grabber.release() }
     }
 }
 

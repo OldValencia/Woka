@@ -3,6 +3,7 @@ package com.woka.support
 import com.woka.core.data.SettingsRepository
 import com.woka.core.data.SettingsRepositoryImpl
 import com.woka.core.data.WokaStorage
+import java.io.IOException
 
 /** Distinctive enough that no test could set it by accident. */
 private const val PROBE_THEME = "woka-writer-ready-probe"
@@ -27,7 +28,7 @@ fun SettingsRepository.awaitWriterReady(timeoutMs: Long = 10_000L) {
     while (System.currentTimeMillis() < deadline) {
         setTheme(PROBE_THEME)
         val landed = waitFor(400L) {
-            WokaStorage.settingsFile.isFile && WokaStorage.settingsFile.readText().contains(PROBE_THEME)
+            settingsText().contains(PROBE_THEME)
         }
         if (landed) {
             setTheme(original)
@@ -46,5 +47,17 @@ fun onSettingsDisk(block: (SettingsRepositoryImpl) -> Unit) = withTempStorageRoo
 
 /** Waits for [contains] to appear in the settings file the store actually wrote. */
 fun awaitSettingsWrite(contains: String) = awaitTrue("settings.json to contain '$contains'") {
-    WokaStorage.settingsFile.isFile && WokaStorage.settingsFile.readText().contains(contains)
+    settingsText().contains(contains)
+}
+
+/**
+ * The file as it stands, or empty while the writer is replacing it. Windows refuses an
+ * open for the instant `replaceAtomically` moves the temp file over the target — a
+ * sharing violation, `FileNotFoundException` — and a poll that throws there fails the
+ * test instead of asking again 10 ms later.
+ */
+private fun settingsText(): String = try {
+    if (WokaStorage.settingsFile.isFile) WokaStorage.settingsFile.readText() else ""
+} catch (_: IOException) {
+    ""
 }

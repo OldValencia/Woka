@@ -130,9 +130,8 @@ window closes has to be answered the way ME-125 answered a save in flight.
 - **What quality target actually lands "no bigger"** on a light edit. Measured off the input's
   bitrate is the plan; whether that is per-stream, per-segment or a global average is a number
   somebody has to try on real files.
-- **HDR through a render.** A PQ source re-encoded without its transfer characteristics tagged is a
-  visibly wrong file. This is where the HDR tool may come back ([`picture/`](../picture/picture.md)
-  §4), and it is unanswered.
+- ~~**HDR through a render.**~~ Answered 2026-11-04 — see the decision log: an encode tone maps
+  through the canvas's own stage, a copy keeps the source's HDR.
 - **Where the rendered file goes** — beside the source, or a folder of its own. Beside is consistent
   with everything else Woka writes.
 - **Whether a render can be queued** while another is running. One at a time is the honest first
@@ -150,6 +149,7 @@ window closes has to be answered the way ME-125 answered a save in flight.
 | 2026-09-03 | Per-segment hybrid copy/encode? | **No — all-copy or all-encode, for now** | Splicing a copied and an encoded segment into one track means a parameter-set change some players refuse. It is a refinement with a probe in front of it (§3.2) |
 | 2026-09-03 | What happens when a cut is not on a keyframe? | **The whole render demotes to the encode path, and says so** | Moving the boundary would change the result the user approved, which is exactly what not snapping the cut was for (§3.2) |
 | 2026-09-03 | Process or in-process ffmpeg? | **In-process, following ME-181 — unless the copy path cannot be reached that way** | ME-181 is a working precedent against the bundled build; the copy path is the one thing that may force the other answer (§3.4) |
+| 2026-11-04 | HDR through a render? | **An encode tone maps to SDR with the canvas's own stage; a copy keeps the source's HDR** | Author's call, "as in Woka": `hdrStageFor` in `RasterRecipe.source`, the same shader and `ASSUMED_WHITE_POINT` as the viewer, so the file matches the preview (§3.3). A cuts-only copy carries the stream's colour tags with its packets and stays HDR, losslessly. Test: `VideoRenderHdrTest` |
 
 ---
 
