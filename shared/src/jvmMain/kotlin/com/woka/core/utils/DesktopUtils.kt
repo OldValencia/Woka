@@ -1,14 +1,17 @@
 package com.woka.core.utils
 
+import java.awt.Desktop
 import java.awt.FileDialog
 import java.awt.Frame
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor
+import java.awt.datatransfer.StringSelection
 import java.awt.datatransfer.Transferable
 import java.awt.datatransfer.UnsupportedFlavorException
 import java.io.File
 import java.io.FilenameFilter
 import javax.swing.JFileChooser
+import kotlin.concurrent.thread
 
 actual fun openDirectoryPicker(title: String, initialDirectory: String?): String? {
     val chooser = JFileChooser()
@@ -82,5 +85,34 @@ actual fun copyFilesToClipboard(paths: List<String>) {
         Toolkit.getDefaultToolkit().systemClipboard.setContents(transferable, null)
     } catch (e: Exception) {
         e.printStackTrace()
+    }
+}
+
+actual fun copyTextToClipboard(text: String) {
+    try {
+        val selection = StringSelection(text)
+        Toolkit.getDefaultToolkit().systemClipboard.setContents(selection, selection)
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
+
+/**
+ * `Desktop.open` on a directory hands it to the system's own folder handler. Off the UI
+ * thread, because the shell call can take a beat on a cold Explorer.
+ */
+actual fun openInFileManager(path: String) {
+    val folder = File(path)
+    if (!folder.isDirectory) return
+    thread(isDaemon = true, name = "woka-open-folder") {
+        runCatching { Desktop.getDesktop().open(folder) }.onFailure { it.printStackTrace() }
+    }
+}
+
+actual val fileManagerName: String = System.getProperty("os.name").orEmpty().lowercase().let { os ->
+    when {
+        "win" in os -> "Explorer"
+        "mac" in os -> "Finder"
+        else -> "File Manager"
     }
 }

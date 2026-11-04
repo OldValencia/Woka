@@ -15,6 +15,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Rule
 import java.io.File
+import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -58,13 +59,19 @@ class EditorEntryTest {
     }
 
     @Test
-    fun `and one without is not, until its carrier lands`() = withFactory { factory ->
-        // **Narrowed by ME-288.** Every video was editable while a capability existed
-        // whose whole meaning was "no save yet"; now the container is asked, and Matroska
-        // has no slot until ME-282 writes one. The refusal belongs at the menu rather than
-        // at `Done` — the line moved forward for eight image formats in 2026-08-19.
-        val video = SampleMedia.file("WokaSample.S01E02.2160p.HDR.TEST.mkv")
-        assertFalse(isEditable(factory, video.absolutePath))
+    fun `and one without a carrier still opens, to render`() = withFactory { factory ->
+        // **Reversed twice.** ME-288 greyed an `mkv` because it had nowhere to keep an
+        // edit; ME-282 gave it one, and ME-289 opens every other video too — `Done ▾` is
+        // then `Render video…` alone. An `flv` has no carrier, and its capability is a
+        // question about the container, so an empty file answers it truthfully.
+        val dir = Files.createTempDirectory("woka-entry").toFile()
+        try {
+            val flv = File(dir, "clip.flv").apply { writeBytes(ByteArray(0)) }
+            assertTrue(isEditable(factory, SampleMedia.file("WokaSample.S01E02.2160p.HDR.TEST.mkv").absolutePath))
+            assertTrue(isEditable(factory, flv.absolutePath))
+        } finally {
+            dir.deleteRecursively()
+        }
     }
 
     @Test

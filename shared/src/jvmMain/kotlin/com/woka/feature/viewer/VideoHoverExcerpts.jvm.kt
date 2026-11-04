@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.woka.core.data.StillColorInfo
+import com.woka.core.ui.image.AppliedVideoEdits
 import com.woka.feature.viewer.shell.rememberFramePainter
 import com.woka.feature.viewer.video.engine.preview.hoverExcerpts
 import kotlinx.coroutines.delay
@@ -45,11 +46,16 @@ actual fun VideoHoverExcerpts(file: File, modifier: Modifier) {
     var segment by remember(file) { mutableIntStateOf(0) }
     var progress by remember(file) { mutableFloatStateOf(0f) }
 
+    // **Through the film's edit** (ME-284), as the viewer and the poster are: a save moves
+    // the generation, and the reel restarts on the result's ranges and draws its look.
+    val generation = AppliedVideoEdits.generation
+    val edit = remember(file, generation) { AppliedVideoEdits.editOf(file) }
+
     // Collected on the composition's thread, so every write below is a main-thread
     // write; the decoding happens upstream, on the reel's own thread.
-    LaunchedEffect(file) {
+    LaunchedEffect(file, edit) {
         delay(HOVER_DELAY_MS.milliseconds)
-        hoverExcerpts(file).collect { excerpt ->
+        hoverExcerpts(file, edit?.clock?.ranges.orEmpty()).collect { excerpt ->
             color = excerpt.color
             segment = excerpt.index
             excerpt.frames.forEachIndexed { i, next ->
@@ -62,8 +68,9 @@ actual fun VideoHoverExcerpts(file: File, modifier: Modifier) {
 
     val shown = frame ?: return
     Box(modifier = modifier) {
+        val edited = remember(shown, color, edit) { edit?.painter(shown, color, moving = true) }
         Image(
-            painter = rememberFramePainter(shown, color, moving = true),
+            painter = edited ?: rememberFramePainter(shown, color, moving = true),
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop

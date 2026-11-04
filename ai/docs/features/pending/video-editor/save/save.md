@@ -16,8 +16,9 @@ Umbrella: [`../video-editor.md`](../video-editor.md) §3.5 and §5. Ticket ids: 
 | [ME-280](tickets/ME-280-a-tail-carrier-writes-in-place.md) | A tail carrier writes in place | **done 2026-09-04** |
 | [ME-288](tickets/ME-288-mp4-and-mov-carry-an-edit.md) | mp4 and mov carry an edit, and `Preview` is deleted | **done 2026-09-04** — and **invisible outside the editor until ME-284**: reported by the author the same day, who edited an `mp4`, saw `Done` succeed, and found the change in the editor and in no other part of Woka |
 | [ME-281](tickets/ME-281-does-anything-else-tolerate-the-box.md) | Probe: does anything else tolerate the box? | **done 2026-09-04** — the gate opened: VLC, Windows Photos and Woka all play an edited `mp4` and `mov` unchanged |
-| [ME-289](tickets/ME-289-an-mkv-edit-that-does-nothing.md) | An mkv's Edit that does nothing | **specified 2026-11-02** — analysed, not fixed; before ME-282 |
-| [ME-282](tickets/ME-282-a-matroska-carrier.md) | A Matroska carrier | **← NEXT.** Specified 2026-09-04, not started. It is what gives an `mkv` its `Edit` entry back |
+| [ME-289](tickets/ME-289-an-mkv-edit-that-does-nothing.md) | An mkv's Edit that does nothing | **done 2026-11-04** — `EditCapability.RenderOnly`: every video with no carrier opens the editor and `Done` is `Render video…`; a refused target says why |
+| [ME-282](tickets/ME-282-a-matroska-carrier.md) | A Matroska carrier | **done 2026-11-04** — by hand: Woka and VLC play it as before |
+| [ME-283](tickets/ME-283-a-riff-carrier-for-avi.md) | A RIFF carrier for avi | **done 2026-11-04** — by hand: Woka and VLC play it as before |
 | [ME-284](tickets/ME-284-every-reader-folds.md) | Every reader folds — with ME-285's slider and readout | **done 2026-11-02** — viewer, PiP and grid poster draw the edit and play the cuts; the slider and time show the result's length. Watch record and chapters still source time. Not yet by hand |
 
 Everything else is a block in [the shared backlog](../backlog.md) §280, where no state is

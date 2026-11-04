@@ -57,6 +57,10 @@ internal fun EditorKeyEffect(
 
     DisposableEffect(globalShortcuts) {
         val previous = globalShortcuts.onPreviewKey
+        val previousOwnsWindow = globalShortcuts.ownsWindow
+        // **The window's keys too**, not only the focused subtree's: the editor owns the
+        // keyboard while it is open, and a click on the picture leaves focus nowhere.
+        globalShortcuts.ownsWindow = true
         globalShortcuts.onPreviewKey = handler@{ event ->
             if (event.type != KeyEventType.KeyDown) return@handler false
             // **Everything through, while a tool is taking typed input** (ME-145). This
@@ -87,7 +91,10 @@ internal fun EditorKeyEffect(
                 else -> false
             }
         }
-        onDispose { globalShortcuts.onPreviewKey = previous }
+        onDispose {
+            globalShortcuts.onPreviewKey = previous
+            globalShortcuts.ownsWindow = previousOwnsWindow
+        }
     }
 }
 

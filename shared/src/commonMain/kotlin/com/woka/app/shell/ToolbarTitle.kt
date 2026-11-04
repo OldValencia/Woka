@@ -1,19 +1,31 @@
 package com.woka.app.shell
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.woka.app.AppDependencies
 import com.woka.app.collectField
 import com.woka.app.navigation.Screen
+import com.woka.core.ui.components.ContextMenuPopup
+import com.woka.core.ui.components.FolderPathItems
 import com.woka.core.ui.icons.Icons
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.folder.parentWithinRoot
@@ -42,19 +54,39 @@ fun FolderUpButton(path: String) {
  * The open folder's name, as the toolbar's title (`.title h2`): one line, cut with
  * an ellipsis when the controls beside it need the room. A drive root has no name
  * of its own, so it shows its path.
+ *
+ * **A click opens `Open in Explorer` and `Copy Path`** (`FolderPathItems`). Either
+ * button: the title does nothing else on a click, and the sidebar's rows answer the
+ * same question on a right-click.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ToolbarTitle(path: String) {
     val name = remember(path) { File(path).name.ifEmpty { path } }
-    BasicText(
-        name,
-        modifier = Modifier.padding(start = 6.dp),
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-        style = TextStyle(
-            color = Theme.colors.textPrimary,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.SemiBold
+    var menuAt by remember(path) { mutableStateOf<IntOffset?>(null) }
+    Box {
+        BasicText(
+            name,
+            modifier = Modifier
+                .padding(start = 6.dp)
+                .pointerHoverIcon(PointerIcon.Hand)
+                .onPointerEvent(PointerEventType.Release) { event ->
+                    val at = event.changes.first().position
+                    menuAt = IntOffset(at.x.toInt() + 2, at.y.toInt() + 2)
+                }
+                .testTag("toolbar-title"),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            style = TextStyle(
+                color = Theme.colors.textPrimary,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold
+            )
         )
-    )
+        menuAt?.let { offset ->
+            ContextMenuPopup(offset = offset, onDismiss = { menuAt = null }) {
+                FolderPathItems(path) { menuAt = null }
+            }
+        }
+    }
 }

@@ -50,51 +50,6 @@ internal interface RecipeCarrier {
 internal enum class RecipeWindow { Head, Tail }
 
 /**
- * A carrier whose slot is the **last thing in the file**, and can therefore be written
- * without copying it (ME-280).
- *
- * `EditRecipe.write` used to read the whole file, splice, and hand the array to
- * `writeAtomically`. For a 4 GB video that is an `OutOfMemoryError` *and* 4 GB of writes
- * to change three hundred bytes; with these three members it becomes a `setLength` back
- * over the old box and an append, O(payload).
- *
- * **Why giving up atomicity is correct here and nowhere else.** Our box sits after every
- * media box in the file, so nothing before the append is read, moved or rewritten: a
- * write that dies halfway leaves the picture data byte-identical and, at worst, a
- * truncated trailing box — which this interface's parent already reads as "no recipe",
- * because nothing here throws. A **head** carrier is the opposite: a JPEG's segment sits
- * *before* the image data and a half-written head is a destroyed photograph. Head
- * carriers therefore keep `writeAtomically`, and this is not a general relaxation of that
- * rule.
- *
- * Still bytes, never files — [RecipeCarrier]'s own contract — so the seeking lives beside
- * `EditRecipe` in `RecipeInPlace.kt` and every case here is an array literal in a test.
- */
-internal interface TailRecipeCarrier : RecipeCarrier {
-
-    override val window: RecipeWindow get() = RecipeWindow.Tail
-
-    /**
-     * Where our box sits inside [tail], or null when there is not one.
-     *
-     * A range rather than a start, because the caller has to know whether the box ends
-     * where the **file** does: one that does not is a box with somebody else's bytes
-     * after it, and truncating to its start would delete their data.
-     */
-    fun boxIn(tail: ByteArray): IntRange?
-
-    /** Whether [head] is a container this carrier can extend at all. */
-    fun accepts(head: ByteArray): Boolean
-
-    /**
-     * The bytes to append, or null when [payload] is larger than the window a reader
-     * reads — the same refusal [with] makes, from the same code, so the two paths cannot
-     * build a different box.
-     */
-    fun box(payload: String): ByteArray?
-}
-
-/**
  * [truncated] is what lets a reader work from the head of a file instead of all of
  * it. A walk that reaches the end of its window without finding either a recipe or
  * the start of the picture data has not answered the question — it ran out — and
@@ -113,8 +68,8 @@ internal class RecipeScan(
  * each other. **Null is bucket B or C** (§5.1), never an error.
  *
  * `bmp` is the only **still** with no slot at all — every other picture Woka lists carries
- * its own edit. Since ME-288 bucket C also holds the three video containers that have no
- * carrier yet: `mkv` and `webm` wait for ME-282, `avi` for ME-283.
+ * its own edit. A video with no carrier here is `RenderOnly` (ME-289): it edits, and
+ * leaves through `Render video…`.
  */
 internal fun carrierFor(file: File): RecipeCarrier? =
     when (file.extension.lowercase()) {
@@ -128,6 +83,10 @@ internal fun carrierFor(file: File): RecipeCarrier? =
         // `livephoto.mov`, which opens `\0\0\0\x14ftypqt  `. An older QuickTime file with
         // no `ftyp` at all is refused by `IsoBmffRecipe.accepts` rather than corrupted.
         "mp4", "mov" -> IsoBmffRecipe
+        // A top-level EBML element after a Segment of known size (ME-282).
+        "mkv", "webm" -> MatroskaRecipe
+        // A chunk at the end of the `RIFF`, its size rewritten at offset 4 (ME-283).
+        "avi" -> AviRecipe
         // Extended by us when it arrives simple (ME-137) — the last of bucket B.
         "webp" -> WebpRecipe
         // A private tag in a rebuilt IFD0, both spellings, every page (ME-139).

@@ -232,17 +232,12 @@ status in [`save/`](save/save.md)'s table. It is where `EditCapability.Preview` 
 status in [`save/`](save/save.md)'s table. The probe writes the files; the four programs have to
 be opened by hand, so it stays open until its § *Measured* is filled in.
 
-### ME-282 — promoted 2026-09-04, and it is **next**
+### ME-282 — promoted 2026-09-04, done 2026-11-04
 [`save/tickets/ME-282-a-matroska-carrier.md`](save/tickets/ME-282-a-matroska-carrier.md), status
-in [`save/`](save/save.md)'s table. Written and not started. The corpus was measured while writing
-it: the `Segment` declares a known size and ends exactly at EOF, so candidate 1 — an unknown
-top-level element appended after it — holds, and candidates 2 and 3 stay fallbacks nobody has to
-write.
+in [`save/`](save/save.md)'s table.
 
-### ME-283 — A RIFF carrier for avi
-A trailing chunk plus the four-byte `RIFF` size at offset 4. `WebpRecipe` already does RIFF surgery
-and is the thing to read before writing this.
-*Depends on ME-282.*
+### ME-283 — promoted and done 2026-11-04
+[`save/tickets/ME-283-a-riff-carrier-for-avi.md`](save/tickets/ME-283-a-riff-carrier-for-avi.md).
 
 ### ME-284 — promoted 2026-11-02
 [`save/tickets/ME-284-every-reader-folds.md`](save/tickets/ME-284-every-reader-folds.md), status in

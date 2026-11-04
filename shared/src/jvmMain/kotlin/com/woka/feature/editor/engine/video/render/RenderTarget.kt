@@ -57,6 +57,16 @@ internal fun renderExtension(extension: String, copies: Boolean): String {
 
 private val ENCODE_KEEPS = setOf("mp4", "mov", "m4v", "mkv")
 
+/**
+ * Whether a copy may write the source's own container. Since ME-289 every video reaches
+ * the render — a `RenderOnly` `bik` or `thp` included — and the bundled ffmpeg has no
+ * muxer for half of that long tail, so a copy is kept to the containers ME-290 measured
+ * plus their two siblings, and everything else is encoded into `mp4`.
+ */
+internal fun copiesInto(extension: String): Boolean = extension.lowercase() in COPY_KEEPS
+
+private val COPY_KEEPS = setOf("mp4", "mov", "m4v", "mkv", "webm", "avi")
+
 /** The one entry the video engine adds to `Done ▾` — the mockup's words (state 9). */
 internal val RenderVideo = EditorExport(
     id = "render-video",

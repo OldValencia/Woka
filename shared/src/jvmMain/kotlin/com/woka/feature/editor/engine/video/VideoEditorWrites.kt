@@ -42,10 +42,10 @@ internal class VideoEditorWrites(
      * `ImageEditorEngine.save` does. Two merge implementations would disagree, and the one
      * that lost would lose somebody's edit.
      *
-     * The `else` is a container ME-282 or ME-283 has not reached yet. It is unreachable
-     * through the UI — the factory builds no engine for one — and answered with a sentence
-     * rather than an `error()`, because a save that throws is the one failure §4.5's banner
-     * cannot describe.
+     * The `else` is `RenderOnly` (ME-289): a container with nowhere to keep the edit. The
+     * bar offers `Render video…` in `Done`'s place, so only the quit dialog's `Save` lands
+     * here — answered with a sentence rather than an `error()`, because a save that throws
+     * is the one failure §4.5's banner cannot describe.
      */
     fun save(layers: EditLayers): EditSaveResult = afterWriting(
         when (capability) {

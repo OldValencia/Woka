@@ -36,7 +36,10 @@ fun MainShell(
     val canvasOverride = remember { CanvasOverrideState() }
     val openSearch by rememberUpdatedState(onOpenSearch)
     DisposableEffect(Unit) {
-        WindowKeys.handler = { shellKey(it, openSearch) }
+        WindowKeys.handler = { event ->
+            shellKey(event, openSearch) ||
+                (globalShortcuts.ownsWindow && globalShortcuts.onPreviewKey?.invoke(event) == true)
+        }
         onDispose { WindowKeys.handler = null }
     }
 

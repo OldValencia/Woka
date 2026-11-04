@@ -74,7 +74,7 @@ independently and ship independently.
 | # | Folder | What it owns | State |
 |---|---|---|---|
 | — | [`foundation/`](../../implemented/video-editor/foundation/foundation.md) | An `EditorEngine` for `MediaKind.Video`: the player's frame drawn through the recipe, HDR in the chain, frame retention, playback on the canvas, the timeline seam | **shipped 2026-09-03** — ME-201, ME-206, ME-207, ME-205; confirmed on screen |
-| **1** | [`save/`](save/save.md) | `Done`: a recipe inside a video container, written without copying the file, folded by every reader | not started |
+| **1** | [`save/`](save/save.md) | `Done`: a recipe inside a video container, written without copying the file, folded by every reader | **started** — mp4/mov/mkv/webm/avi carry an edit, every reader folds (ME-284); ME-285…287 left |
 | **2** | [`timeline/`](timeline/timeline.md) | The strip and the document behind it: trim, split, select, delete, reorder, per-clip scope, speed, freeze-frame | **started** — ME-210 done 2026-11-01 |
 | **3** | [`playback/`](playback/playback.md) | Playing an *edited* timeline seamlessly — the pre-rolling second decoder, and the audio that follows it | **started** — ME-231 done 2026-11-01; joins still stall |
 | **4** | [`audio/`](audio/audio.md) | Mute, volume and fades per clip; detach; an external track; extract to a file | not started |

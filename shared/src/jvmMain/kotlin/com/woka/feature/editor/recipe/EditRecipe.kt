@@ -86,7 +86,7 @@ internal object EditRecipe {
         encoded: String
     ): Result<Unit>? {
         val head = file.leading(HEAD_PROBE) ?: return null
-        if (!carrier.accepts(head)) {
+        if (!carrier.accepts(head) || !carrier.fits(head, file.length())) {
             return failure("${file.extension.uppercase()} files cannot carry an edit.")
         }
         val box = carrier.box(encoded)
@@ -132,8 +132,5 @@ internal object EditRecipe {
         return carrier.scan(whole).payload
     }
 }
-
-/** Enough for a container's magic — `ftyp` sits at offset 4 in every ISOBMFF file. */
-private const val HEAD_PROBE = 8
 
 private fun failure(reason: String): Result<Unit> = Result.failure(IllegalArgumentException(reason))

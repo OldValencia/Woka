@@ -77,8 +77,10 @@ internal fun BoxScope.EditorBottomPanel(
     ) {
         // Bucket B, for the whole session: the cost of `Done` on a format with no
         // carrier is stated before the work, never after it (§4.5).
-        if (engine.capability == EditCapability.Destructive) {
-            EditorNoHistoryNotice()
+        when (engine.capability) {
+            EditCapability.Destructive -> EditorNoHistoryNotice()
+            EditCapability.RenderOnly -> EditorRenderOnlyNotice(session.media.file.extension)
+            else -> Unit
         }
         // Above the inspector and independent of it: the warning has to be visible
         // whether or not a tool happens to be open.

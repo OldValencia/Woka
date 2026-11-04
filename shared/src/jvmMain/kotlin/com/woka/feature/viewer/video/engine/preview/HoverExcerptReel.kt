@@ -2,6 +2,8 @@ package com.woka.feature.viewer.video.engine.preview
 
 import androidx.compose.ui.graphics.ImageBitmap
 import com.woka.core.data.StillColorInfo
+import com.woka.core.ui.image.EditedClock
+import com.woka.core.ui.image.SourceRange
 import com.woka.feature.viewer.video.engine.decode.toComposeBitmap
 import com.woka.feature.viewer.video.engine.sync.grabImageAt
 import com.woka.feature.viewer.video.engine.sync.lengthMs
@@ -16,6 +18,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_RGBA
 import org.bytedeco.javacv.FFmpegFrameGrabber
+import org.bytedeco.javacv.Frame
 import java.io.File
 import kotlin.math.roundToInt
 
@@ -52,23 +55,24 @@ internal class Excerpt(
  * may leave at any moment.
  *
  * Cancelling the collector closes the grabber on its own thread, in the `finally`.
+ * [kept] is a cut film's ranges (ME-284); empty plays the file as shot.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-internal fun hoverExcerpts(file: File): Flow<Excerpt> = flow {
+internal fun hoverExcerpts(file: File, kept: List<SourceRange> = emptyList()): Flow<Excerpt> = flow {
     val grabber = openGrabber(file) ?: return@flow
     try {
         val fps = grabber.frameRate.takeIf { it.isFinite() && it > 1.0 } ?: 24.0
         val count = (EXCERPT_SECONDS * fps).roundToInt()
         val frameMs = (1000.0 / fps).roundToInt().toLong()
         val color = grabber.readStreamHdrInfo().let { StillColorInfo(it.transfer, it.isWideGamut) }
-        val length = grabber.lengthMs(file) * 1000L
+        val spans = excerptSpans(grabber.pictureLengthUs(file), kept)
         val turns = grabber.clockwiseTurns // upright, as the player shows it (VF-105)
         while (true) {
-            POSITIONS.forEachIndexed { index, at ->
-                val first = grabber.grabImageAt((length * at).toLong())
-                    ?.toComposeBitmap()
-                    ?.rotatedClockwise(turns)
-                val rest = generateSequence { grabber.grabImage()?.toComposeBitmap()?.rotatedClockwise(turns) }
+            spans.forEachIndexed { index, span ->
+                // Converted at once: the grabber hands back the same `Frame` every time.
+                fun Frame.inSpan() = takeIf { it.timestamp < span.last }?.toComposeBitmap()?.rotatedClockwise(turns)
+                val first = grabber.grabImageAt(span.first)?.inSpan()
+                val rest = generateSequence { grabber.grabImage()?.inSpan() }
                     .take(count - 1)
                     .toList()
                 val frames = listOfNotNull(first) + rest
@@ -81,6 +85,37 @@ internal fun hoverExcerpts(file: File): Flow<Excerpt> = flow {
         grabber.release()
     }
 }.buffer(1).flowOn(Dispatchers.IO.limitedParallelism(1))
+
+/**
+ * Where each excerpt starts and the source time it must stop before, in µs. An unedited
+ * film runs on past a position; a cut one (ME-284) samples the **result** and stops at the
+ * end of the kept range it landed in, so the reel never shows what was cut away.
+ */
+private fun excerptSpans(lengthUs: Long, kept: List<SourceRange>): List<LongRange> {
+    if (kept.isEmpty()) return POSITIONS.map { at -> (lengthUs * at).toLong()..Long.MAX_VALUE }
+    val clock = EditedClock(kept)
+    return POSITIONS.map { at ->
+        val (index, sourceMs) = clock.toSource((clock.totalMs * at).toLong())
+        sourceMs * 1000L..kept[index].toMs * 1000L
+    }
+}
+
+/**
+ * The **picture's** length, the stream the reel plays: a container's own duration is the
+ * longest of its streams, and an `avi` muxed with AAC declared 26 s of sound over 10 s of
+ * video (2026-11-04) — so excerpts three to five fell past the last frame and the reel
+ * stopped after two. The container's answer is the fallback when the stream states none.
+ */
+private fun FFmpegFrameGrabber.pictureLengthUs(file: File): Long {
+    val stream = formatContext?.takeIf { videoStream in 0 until it.nb_streams() }?.streams(videoStream)
+    val base = stream?.time_base()
+    val own = if (stream != null && base != null && base.den() > 0 && stream.duration() > 0) {
+        stream.duration() * 1_000_000L * base.num() / base.den()
+    } else {
+        0L
+    }
+    return own.takeIf { it > 0 } ?: (lengthMs(file) * 1000L)
+}
 
 /**
  * Opened twice: once to learn the picture's shape, then at [OUT_WIDTH] with that

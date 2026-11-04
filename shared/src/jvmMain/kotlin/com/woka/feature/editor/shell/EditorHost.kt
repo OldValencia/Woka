@@ -43,9 +43,8 @@ private class EditorDependencies : KoinComponent {
  * the editor — the engine, the document, the session, the frame — rather than acting
  * on it, which is why every `remember` below is keyed and none of them is a verb.
  *
- * A target the factory refuses closes immediately rather than showing an empty shell.
- * Both doors already ask [isEditable] before opening one, so this is the case where the
- * file changed between the menu opening and the click landing.
+ * A target the factory refuses closes immediately, with the reason in the notice strip
+ * (ME-289) rather than as an empty shell or a silent close.
  */
 @Composable
 internal fun EditorHost(
@@ -61,7 +60,7 @@ internal fun EditorHost(
     }
 
     if (engine == null) {
-        LaunchedEffect(target) { onClose() }
+        EditorRefusedEffect(target.path, onClose)
         return
     }
 
@@ -101,6 +100,11 @@ internal fun EditorHost(
         onClose = onClose,
         onSaved = onSaved
     ) { actions ->
+        // `Done ▾`'s other entries (ME-291), read by the bar through `LocalDoneChoices`; on
+        // a film that cannot keep the edit the render takes `Done`'s place (ME-289).
+        val exports = exportAction(engine, session, file, editScope, onClose, onSaved)
+        val choices = doneChoicesOf(engine, exports)
+        val done = choices.instead ?: actions.done
         EditorKeyEffect(
             globalShortcuts = LocalGlobalShortcuts.current,
             canUndo = canUndo,
@@ -108,21 +112,19 @@ internal fun EditorHost(
             onCancel = actions.leave,
             onUndo = session::undo,
             onRedo = session::redo,
-            onDone = actions.done,
+            onDone = done,
             onTogglePlayback = engine::togglePlayback,
             canvasKeys = canvasKeys
         )
 
-        // `Done ▾`'s other entries (ME-291), read by the bar through `LocalDoneChoices`.
-        val exports = exportAction(engine, session, file, editScope, onClose, onSaved)
-        CompositionLocalProvider(LocalDoneChoices provides DoneChoices(engine.exports, exports)) {
+        CompositionLocalProvider(LocalDoneChoices provides choices) {
             EditorScreen(
                 session = session,
                 engine = engine,
                 registry = dependencies.registry,
                 canvasKeys = canvasKeys,
                 onCancel = actions.leave,
-                onDone = actions.done,
+                onDone = done,
                 canRevert = actions.canRevert,
                 onRevert = actions.askRevert,
                 frameControls = EditorFrameControls(

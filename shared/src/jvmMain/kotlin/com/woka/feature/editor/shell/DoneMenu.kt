@@ -27,6 +27,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import com.woka.core.ui.components.MenuSurface
 import com.woka.core.ui.theme.Theme
+import com.woka.feature.editor.core.EditCapability
+import com.woka.feature.editor.core.EditorEngine
 import com.woka.feature.editor.core.EditorExport
 
 /** `video-editor.html` state 9's menu is wider than a context menu: each entry has a line of cost. */
@@ -42,9 +44,21 @@ private val MENU_WIDTH = 260.dp
  * everything else.
  */
 @Immutable
-internal class DoneChoices(val exports: List<EditorExport>, val onExport: (EditorExport) -> Unit)
+internal class DoneChoices(
+    val exports: List<EditorExport>,
+    val onExport: (EditorExport) -> Unit,
+    /** False for `RenderOnly` (ME-289): the file cannot keep the edit, so `Done` gives way. */
+    val keeps: Boolean = true
+) {
+    /** What the button does in `Done`'s place — the first export — or null where `Done` stays. */
+    val instead: (() -> Unit)?
+        get() = exports.firstOrNull()?.takeIf { !keeps }?.let { export -> { onExport(export) } }
+}
 
-internal val LocalDoneChoices = staticCompositionLocalOf { DoneChoices(emptyList()) {} }
+internal fun doneChoicesOf(engine: EditorEngine, onExport: (EditorExport) -> Unit) =
+    DoneChoices(engine.exports, onExport, keeps = engine.capability != EditCapability.RenderOnly)
+
+internal val LocalDoneChoices = staticCompositionLocalOf { DoneChoices(emptyList(), {}) }
 
 /**
  * The menu under the caret: `Done`, a divider, then each export — every entry with the

@@ -16,6 +16,8 @@ import com.woka.support.StageTool
 import com.woka.support.episodeTwoFile
 import com.woka.support.toolOp
 import com.woka.support.withFoldRegistry
+import java.io.File
+import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -52,19 +54,30 @@ class VideoEditorEngineTest {
     }
 
     /**
-     * **The visible half of ME-288.** A Matroska container has no slot yet, so the refusal
-     * happens at the menu rather than at `Done` — the line `EditorEngineFactoryImpl`'s own
-     * KDoc holds for the eight image formats it moved forward in 2026-08-19. ME-282 gives
-     * it a carrier and this answer changes back.
+     * **ME-282 and ME-289, together.** An `mkv` whose `Segment` ends at EOF has a carrier and
+     * answers `Recorded`; the same bytes with the size made "unknown" — a streamed file —
+     * are refused by the carrier at the door and answer `RenderOnly`, as does an `flv` with
+     * no carrier at all. Both of those still get an engine: they leave through a render.
      */
     @Test
-    fun `a video without one answers Unavailable and gets no engine`() =
+    fun `an mkv answers Recorded, a streamed one and an flv RenderOnly`() =
         withFoldRegistry(emptyList()) { registry, _ ->
             val factory = EditorEngineFactoryImpl(registry)
-            val path = episodeTwoFile().absolutePath
+            val dir = Files.createTempDirectory("woka-capability").toFile()
+            try {
+                val bytes = episodeTwoFile().readBytes()
+                // The Segment's size VINT sits at offset 44 in the corpus header (ME-282).
+                val streamed = bytes.copyOf().also { for (at in 45..51) it[at] = 0xFF.toByte() }
+                val streamedFile = File(dir, "streamed.mkv").apply { writeBytes(streamed) }
+                val flv = File(dir, "clip.flv").apply { writeBytes(ByteArray(0)) }
 
-            assertEquals(EditCapability.Unavailable, factory.capability(path))
-            assertNull(factory.create(path), "an mkv was given an editor it cannot save from")
+                assertEquals(EditCapability.Recorded, factory.capability(episodeTwoFile().absolutePath))
+                assertEquals(EditCapability.RenderOnly, factory.capability(streamedFile.absolutePath))
+                assertEquals(EditCapability.RenderOnly, factory.capability(flv.absolutePath))
+                assertNotNull(factory.create(flv.absolutePath), "a render-only video was given no editor")
+            } finally {
+                dir.deleteRecursively()
+            }
         }
 
     @Test

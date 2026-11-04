@@ -39,7 +39,7 @@ import org.jetbrains.compose.resources.painterResource
  * the screen rather than the most.
  */
 @Composable
-internal fun DoneButton(onDone: () -> Unit, choices: DoneChoices = DoneChoices(emptyList()) {}) {
+internal fun DoneButton(onDone: () -> Unit, choices: DoneChoices = DoneChoices(emptyList(), {})) {
     var menuOpen by remember { mutableStateOf(false) }
     Row(
         modifier = Modifier
@@ -48,11 +48,14 @@ internal fun DoneButton(onDone: () -> Unit, choices: DoneChoices = DoneChoices(e
             .background(Theme.colors.accentEditor),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        DoneLabel("Done", "editor-done", Modifier.padding(EditorTokens.TopBar.donePadding), onDone)
+        // **A film that cannot keep the edit** (ME-289) gets the render in `Done`'s place —
+        // mockup state 9's one-entry menu, as the button itself. [onDone] already renders.
+        val label = if (choices.keeps) "Done" else choices.exports.firstOrNull()?.title ?: "Done"
+        DoneLabel(label, "editor-done", Modifier.padding(EditorTokens.TopBar.donePadding), onDone)
         // **`Done ▾` only where there is something beside `Done`** (§4.5): a still has no
         // export, and a caret that opened a one-entry menu would be a second way to press
         // the same button.
-        if (choices.exports.isNotEmpty()) {
+        if (choices.keeps && choices.exports.isNotEmpty()) {
             DoneCaret { menuOpen = true }
             if (menuOpen) DoneMenu(choices, onDone) { menuOpen = false }
         }

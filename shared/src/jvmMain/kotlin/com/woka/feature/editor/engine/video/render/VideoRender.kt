@@ -46,7 +46,8 @@ internal fun renderVideo(
         val clips = TrimTool.clipsIn(document) ?: wholeSource(probe.durationMs)
         val recipe = fold(document, registry, sourceSize)
         val pixelWork = !recipe.isIdentity(sourceSize)
-        val copies = !pixelWork && clips.all { clip -> probe.keyframesMs.any { it in clip.fromMs..clip.fromMs + KEYFRAME_SLACK_MS } }
+        val copies = !pixelWork && copiesInto(source.extension) &&
+            clips.all { clip -> probe.keyframesMs.any { it in clip.fromMs..clip.fromMs + KEYFRAME_SLACK_MS } }
         val target = renderTargetBeside(source, renderExtension(source.extension, copies))
         scratch = scratchBeside(target)
         val format = containerFormat(target.extension, probe.format)

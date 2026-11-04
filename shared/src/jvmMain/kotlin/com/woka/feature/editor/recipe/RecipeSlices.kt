@@ -34,6 +34,14 @@ private const val HEAD_BYTES = 512 * 1024
  */
 internal const val TAIL_WINDOW = 64 * 1024
 
+/**
+ * What a tail carrier's `accepts` is handed (ME-282). An ISOBMFF magic sits at a fixed
+ * offset, but a Matroska `Segment`'s size follows a variable-length EBML header — 35
+ * bytes in the corpus, and the length is the file's own business. One read of 4 KB covers
+ * any header a muxer writes.
+ */
+internal const val HEAD_PROBE = 4096
+
 internal fun File.slice(window: RecipeWindow): ByteArray? = when (window) {
     RecipeWindow.Head -> head()
     RecipeWindow.Tail -> tail()
