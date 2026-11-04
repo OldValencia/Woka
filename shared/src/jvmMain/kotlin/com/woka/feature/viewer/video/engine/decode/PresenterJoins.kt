@@ -75,9 +75,11 @@ internal fun VideoPlayerState.paceJoin(index: Int) {
     Snapshot.withMutableSnapshot { setClipPace(range.speed, edit.joins) }
 }
 
-/** A join on screen: which range, where the play head is, and the sound sent after it. */
+/**
+ * A join on screen: which range, and where the play head is. The sound is not told — it
+ * walks the ranges itself, ahead of the picture, and has spliced already (ME-233).
+ */
 internal fun VideoPlayerState.presentJoin(index: Int, heldFromMs: Long, frameTsMs: Long) {
     showRange(index, heldFromMs)
     currentPositionMs = frameTsMs
-    edit.joins.requestAudioJoin(frameTsMs)
 }

@@ -51,25 +51,6 @@ internal class EditJoins {
     @Volatile
     var holdEnded = false
 
-    /**
-     * Bumped when the presenter shows a join: the picture moved to another range without a
-     * seek, so the audio loop re-seeks to [audioJoinMs] without waiting on
-     * `isVideoAtSeekTarget`, which no seek will ever satisfy.
-     */
-    @Volatile
-    var audioJoin = 0
-        private set
-
-    @Volatile
-    var audioJoinMs = 0L
-        private set
-
-    /** Target first, then the counter, as `PlaybackGeneration.requestSeek` does. */
-    fun requestAudioJoin(toMs: Long) {
-        audioJoinMs = toMs
-        audioJoin++
-    }
-
     val active: Boolean get() = ranges.isNotEmpty()
 }
 

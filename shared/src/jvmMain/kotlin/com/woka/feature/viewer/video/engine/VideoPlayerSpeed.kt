@@ -124,6 +124,8 @@ internal fun VideoPlayerState.audioReseek(
     tempo: AudioTempoFilter?
 ): AudioTempoFilter? {
     audioSeekTo(grabber, targetMs, audioChannel)
+    // A cut film's sound starts again in the range the picture is in (ME-233).
+    if (edit.joins.active) edit.audio.follow(this, targetMs + audioDelayMs)
     tempo?.close()
     return buildTempoFilter(grabber)
 }

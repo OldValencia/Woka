@@ -1,6 +1,7 @@
 package com.woka.feature.viewer.video.engine
 
 import com.woka.core.data.PlaybackSpeed
+import com.woka.feature.viewer.video.engine.audio.AudioRanges
 
 /**
  * What an **edit** does to playback, apart from what the user does (ME-216, ME-240): the
@@ -22,6 +23,9 @@ internal class EditPlayback {
 
     /** The kept ranges and where in them the player is (ME-232). */
     val joins = EditJoins()
+
+    /** Where in them the sound is, ahead of the picture, and its splices (ME-233). */
+    val audio = AudioRanges()
 }
 
 /**

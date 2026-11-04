@@ -109,14 +109,10 @@ status in [`playback/`](playback/playback.md)'s table. Re-cut against ME-230's n
 to four lanes at four threads, pre-rolling as soon as a lane is free, the engine owning the list.
 ME-234's remainder — pace and holds in the engine rather than the walks — is folded into it.
 
-### ME-233 — Sound across a join
-After ME-232 the picture hands off and the sound re-seeks its one audio grabber, flushing the line: a
-short gap at every join. One `SourceDataLine` for the session, never flushed at a join, fed from
-audio lanes pre-rolled beside the video ones — an audio-only grabber seeks in milliseconds, so the
-lane can be decoded ahead into a buffer of the next range's first ~300 ms rather than parked. The
-splice wants a few-millisecond crossfade or it clicks; whether `atempo` rebuilt for a range at
-another speed clicks too is the open measurement.
-*Depends on ME-232.*
+### ME-233 — promoted and built 2026-11-05
+[`playback/tickets/ME-233-sound-across-a-join.md`](playback/tickets/ME-233-sound-across-a-join.md),
+status in [`playback/`](playback/playback.md)'s table. Re-cut by a measurement: an audio seek costs
+1–11 ms, so no audio lanes — the one audio grabber splices to the sample with a 5 ms ramp.
 
 ### ME-235 — Ranges shorter than the pool can reach
 Four lanes cover a run of ranges as long as each is at least the lead divided by three — ~0.75 s on
