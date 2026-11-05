@@ -21,9 +21,10 @@ import com.woka.feature.viewer.video.engine.skipBy
  */
 
 /**
- * `←`/`→` — **file**, not frame. A burst is still one item in the folder, and
- * making the arrows step frames would leave no way to leave the file. With Alt
- * they seek the video instead, as they always have.
+ * `←`/`→` — **YouTube's keys** (the author, 2026-11-05): on a film or a track they seek
+ * ±5 s, and `Alt` moves to the next file; on a picture they move to the next file, with
+ * or without `Alt`. They are **file**, never frame, on a still: a burst is one item in the
+ * folder, and stepping its frames would leave no way out of it (`PageUp`/`PageDown` do).
  */
 internal fun handleArrowKey(
     event: KeyEvent,
@@ -35,11 +36,9 @@ internal fun handleArrowKey(
     onNavigate: (direction: Int, newId: String) -> Unit
 ): Boolean {
     if (event.type != KeyEventType.KeyDown) return true
-    if (event.isAltPressed) {
-        videoState?.let {
-            it.skipBy(step * 5000L)
-            onSkip(step)
-        }
+    if (videoState != null && !event.isAltPressed) {
+        videoState.skipBy(step * 5000L)
+        onSkip(step)
         return true
     }
     val index = mediaItems.indexOfFirst { it.file.absolutePath == currentId }

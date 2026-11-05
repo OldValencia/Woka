@@ -46,7 +46,7 @@ fun stepPicture(pictureMs: Double, frames: Long, totalMs: Long, fps: Double): Do
 /** Where to seek so that the picture at [pictureMs] is the one shown. */
 fun seekTargetOf(pictureMs: Double): Long = ceil(pictureMs - MARGIN_MS).toLong().coerceAtLeast(0L)
 
-/** The frames in one second, for an `Alt` step. */
+/** The frames in one second, for a bare arrow's step. */
 fun framesPerSecond(fps: Double): Long = fps.roundToLong().coerceAtLeast(1L)
 
 /**

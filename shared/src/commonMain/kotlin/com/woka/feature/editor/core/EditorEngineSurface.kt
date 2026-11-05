@@ -63,8 +63,8 @@ interface EditorEngineSurface {
     fun togglePlayback() = Unit
 
     /**
-     * "Move the play head one frame", or one second when [bySecond] — `←`/`→` and `Alt`
-     * (ME-219). Answers whether it moved anything, so a medium with no time leaves the
+     * "Move the play head one frame", or one second when [bySecond] — `Alt+←`/`→` and the
+     * bare arrows (ME-219). Answers whether it moved anything, so a medium with no time leaves the
      * arrows to whoever had them: defaulted to `false`, and a still is unchanged.
      */
     fun stepPlayHead(direction: Int, bySecond: Boolean): Boolean = false

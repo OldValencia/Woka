@@ -74,9 +74,11 @@ ME-234's freeze half folded in.
 [`timeline/tickets/ME-218-the-strip-zooms.md`](timeline/tickets/ME-218-the-strip-zooms.md).
 
 ### ME-219 — done 2026-11-05 without a ticket, checked by the author
-`←` / `→` step one frame of the result, `Alt` one second (the viewer's skip modifier); `❙◀` `▶❙`
-flank the band's transport, and the readout is `m:ss:ff` (`FrameSteps.kt`, `FrameStepsTest`). The
-viewer's ±5 s buttons name `Alt+←/→` in a tooltip.
+`←` / `→` step one second of the result and `Alt+←` / `→` one frame — YouTube's arrows, the
+author's call the same day, after the first cut had them the other way round; `❙◀` `▶❙` flank
+the band's transport, and the readout is `m:ss:ff` (`FrameSteps.kt`, `FrameStepsTest`). The
+viewer moved with it: on a film the arrows seek ±5 s and `Alt` changes file, on a picture they
+change file; the ±5 s and ‹ › buttons name their keys in a tooltip.
 
 ### ME-220 — Snapping
 The play head, and a dragged clip or sound edge, snap within a few pixels to: clip joins, the ends of

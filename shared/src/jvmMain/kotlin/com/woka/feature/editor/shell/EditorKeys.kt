@@ -41,7 +41,10 @@ internal fun EditorKeyEffect(
      * clock (ME-207). **Defaulted**, so the image editor is unchanged.
      */
     onTogglePlayback: () -> Unit = {},
-    /** `←`/`→` a frame, with `Alt` a second (ME-219); `false` leaves the key unconsumed. */
+    /**
+     * `←`/`→` a second, with `Alt` a frame (ME-219; YouTube's arrows, the author 2026-11-05);
+     * `false` leaves the key unconsumed.
+     */
     onStep: (direction: Int, bySecond: Boolean) -> Boolean = { _, _ -> false },
     /**
      * The open canvas tool's `Delete`, through the editor's one keyboard slot (ME-114).
@@ -92,8 +95,8 @@ internal fun EditorKeyEffect(
                 // button keeps focus after it is clicked — so an unconsumed space
                 // re-activated the last tool instead of pausing the video.
                 event.key == Key.Spacebar -> consume { curTogglePlayback() }
-                event.key == Key.DirectionLeft -> curStep(-1, event.isAltPressed)
-                event.key == Key.DirectionRight -> curStep(1, event.isAltPressed)
+                event.key == Key.DirectionLeft -> curStep(-1, !event.isAltPressed)
+                event.key == Key.DirectionRight -> curStep(1, !event.isAltPressed)
                 else -> false
             }
         }

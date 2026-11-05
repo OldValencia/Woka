@@ -41,7 +41,7 @@ private val HIT_PADDING = 4.dp
 internal fun SkipButton(
     icon: DrawableResource,
     contentDescription: String,
-    /** The key that does the same — `Alt+←` — shown on hover, since nothing else says it. */
+    /** The key that does the same — `←` — shown on hover, since nothing else says it. */
     shortcut: String,
     enabled: Boolean,
     onClick: () -> Unit

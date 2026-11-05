@@ -79,7 +79,8 @@ fun MediaViewerToolbar(
             MediaViewerPrevButton(
                 animationProgress = animationProgress,
                 onPrev = onPrev,
-                modifier = Modifier.align(Alignment.CenterStart).padding(start = navStartInset)
+                modifier = Modifier.align(Alignment.CenterStart).padding(start = navStartInset),
+                playing = currentItem?.isPlayable == true
             )
         }
 
@@ -87,7 +88,8 @@ fun MediaViewerToolbar(
             MediaViewerNextButton(
                 animationProgress = animationProgress,
                 onNext = onNext,
-                modifier = Modifier.align(Alignment.CenterEnd)
+                modifier = Modifier.align(Alignment.CenterEnd),
+                playing = currentItem?.isPlayable == true
             )
         }
         

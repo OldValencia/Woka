@@ -72,13 +72,13 @@ internal fun Transport(playing: Boolean, onToggle: () -> Unit) {
 }
 
 /**
- * One frame back or forward, either side of [Transport] (ME-219). The keys do the same and
- * Alt makes them a second; the tooltip says so, because nothing else on screen does.
+ * One frame back or forward, either side of [Transport] (ME-219). `Alt` and the arrows do
+ * the same, and the bare arrows a second; the tooltip says so, because nothing else does.
  */
 @Composable
 internal fun FrameStep(direction: Int, onStep: () -> Unit) {
     val back = direction < 0
-    ViewerTooltip(if (back) "Previous frame  ←   ·   Alt+←  1 s back" else "Next frame  →   ·   Alt+→  1 s on") {
+    ViewerTooltip(if (back) "Previous frame  Alt+←   ·   ←  1 s back" else "Next frame  Alt+→   ·   →  1 s on") {
         Box(
             modifier = Modifier
                 .size(STEP_WIDTH, TRANSPORT)
