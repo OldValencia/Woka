@@ -185,10 +185,8 @@ measurement is one audio pass — the same pass ME-241 already makes for the wav
 Crop, Transform, Adjust and Filters work on a video — on the canvas, per clip through This Clip
 (ME-215) and in a render. Checked by hand rather than through the per-tool tests the block named.
 
-### ME-261 — Filter-strip thumbnails from one held frame
-`PreviewChoiceParam` asks the engine for a `Thumbnail` per option — fourteen for Styles. They must all
-draw the same held frame, with no decode and no chain rebuild per option per recomposition.
-*Depends on ME-260.*
+### ME-261 — dropped 2026-11-05, id retained
+The author does not want filter-strip thumbnails for video.
 
 ### ME-262 — done 2026-11-02, in ME-291
 The author chose *render only*: the render reads Resize through the fold, the viewer ignores it, and
@@ -200,12 +198,9 @@ the inspector says "Applies when you render the video" (`EditorEngine.toolNote`)
 ### ME-268 — new, promoted 2026-11-02
 [`picture/tickets/ME-268-an-area-for-a-look.md`](picture/tickets/ME-268-an-area-for-a-look.md) — rectangle and ellipse areas.
 
-### ME-265 — Auto-enhance in one tap
-`AdjustAuto` (ME-167) measures **the frame at the play head, once, when the button is pressed** — not
-per frame, which would make the suggestion move while the video plays — and writes an All-Clips
-Adjust op. It goes in the Adjust card's existing header-action slot, so there is no new control type
-and no new rail entry. This is also the answer to `picture/` §4's open question about `stats`.
-*Depends on ME-260.*
+### ME-265 — dropped 2026-11-05, id retained
+The editor already has auto-enhance, and the author judged a better one is not reachable without a
+learned model.
 
 ### ME-266 — dropped 2026-11-05, id retained
 Crop already offers 1:1, 4:3, 3:2 and 16:9 (`CropAspect`), and its Orientation switch turns any of
@@ -251,9 +246,12 @@ in [`save/`](save/save.md)'s table.
 [`save/`](save/save.md)'s table. Built on ME-210's walk rules, not on ME-232, which does not exist yet.
 
 ### ME-285 — Duration, the slider and the watch record
-A trim changes how long the file is. The slider and the readout must show the edited length; the
-watch record stores `positionMs` against `durationMs` and can now point past the end; probed chapters
-are in source time and may have been re-ordered or cut away.
+A trim changes how long the file is. The slider and the readout already show the edited length
+(ME-284). **The watch record: decided by the author 2026-11-05 — saving a video's edit resets the
+file to *not watched*.** An edited file is not one being watched, so nothing is clamped or mapped.
+**Chapters: decided by the author 2026-11-05 — an edited file shows none.** They are probed in source
+time and may have been re-ordered or cut away; editing chapters is a separate feature planned for
+1.0.9, and until then they are hidden rather than mapped.
 *Depends on ME-284.*
 
 ### ME-286 — already built, recorded 2026-11-05
