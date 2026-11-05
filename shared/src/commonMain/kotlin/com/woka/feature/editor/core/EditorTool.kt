@@ -97,6 +97,13 @@ interface EditorTool : EditorToolPanel {
     ): ParamSet? = null
 
     /**
+     * [resolve]'s escape hatch widened to **time** (ME-287): where the play head of a medium
+     * that has one stands, in the result's milliseconds, at the moment of the click. Null
+     * means nothing to rewrite — every tool but `Cover`.
+     */
+    fun atPlayHead(spec: ParamSpec<*>, params: ParamSet, playHeadMs: Long): ParamSet? = null
+
+    /**
      * One line the inspector prints under this tool's rows — `4000 × 3000 → 2000 × 1500`
      * for a resize (ME-110), nothing for everything else.
      *

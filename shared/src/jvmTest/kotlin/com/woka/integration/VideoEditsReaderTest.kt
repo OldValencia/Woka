@@ -13,8 +13,11 @@ import com.woka.feature.editor.core.ToolDomain
 import com.woka.feature.editor.core.ToolOp
 import com.woka.feature.editor.engine.image.RasterStage
 import com.woka.feature.editor.engine.image.recordRecipe
+import com.woka.feature.editor.core.ParamSet
 import com.woka.feature.editor.engine.video.RecipeVideoEdits
+import com.woka.feature.editor.engine.video.coverIn
 import com.woka.feature.editor.save.SourceStamp
+import com.woka.feature.editor.tools.cover.CoverTool
 import com.woka.feature.editor.tools.trim.TrimClip
 import com.woka.feature.editor.tools.trim.TrimTool
 import com.woka.probe.generateClip
@@ -104,5 +107,28 @@ class VideoEditsReaderTest {
         val drawn = assertNotNull(edits.editOf(film)).poster(poster)
         assertNotEquals(poster, drawn, "the tile would show the film as shot")
         assertEquals(64, drawn.toPixelMap().width)
+    }
+
+    /** ME-287: a timeline cover is read back in source time, through its own clip's look. */
+    @Test
+    fun `the chosen cover is a frame of the result`() = onFilm { film, edits ->
+        val cuts = TrimTool.opFor(listOf(TrimClip("a", 0L, 1_000L), TrimClip("b", 2_000L, 3_000L, key = 1)))
+        val cover = ToolOp(CoverTool.manifest.id, assertNotNull(CoverTool.atPlayHead(CoverTool.Use, ParamSet(), 1_500L)))
+        val layers = EditLayers(EditDocument(listOf(cuts, cover)), mapOf(1 to EditDocument(listOf(ToolOp("tint")))), setOf(1))
+        assertIs<EditSaveResult.Saved>(recordRecipe(film, layers, SourceStamp.of(film)))
+
+        val edit = assertNotNull(edits.editOf(film))
+        assertEquals(2_500L, edit.coverMs, "the cover is not where the play head was")
+        val poster = ImageBitmap(64, 36)
+        assertNotEquals(poster, edit.poster(poster), "the cover's clip did not lend it its look")
+    }
+
+    @Test
+    fun `a cover past a later trim stays inside the result, and Clear removes it`() {
+        val clips = listOf(TrimClip("a", 0L, 1_000L), TrimClip("b", 2_000L, 3_000L, key = 1))
+        assertEquals(2_999L to 1, coverIn(clips, 9_000L))
+        assertEquals(400L to 0, coverIn(emptyList(), 400L))
+        assertNull(CoverTool.atPlayHead(CoverTool.Clear, ParamSet(), 1_500L))
+        assertNull(CoverTool.coverIn(listOf(ToolOp(CoverTool.manifest.id, ParamSet().with(CoverTool.Clear, true)))))
     }
 }

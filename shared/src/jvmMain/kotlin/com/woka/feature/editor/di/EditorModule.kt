@@ -11,6 +11,7 @@ import com.woka.feature.editor.engine.EditorEngineFactoryImpl
 import com.woka.feature.editor.engine.image.RecipeStillEdits
 import com.woka.feature.editor.engine.video.RecipeVideoEdits
 import com.woka.feature.editor.tools.adjust.AdjustTool
+import com.woka.feature.editor.tools.cover.CoverTool
 import com.woka.feature.editor.tools.crop.CropTool
 import com.woka.feature.editor.tools.filter.FilterTool
 import com.woka.feature.editor.tools.hdr.HdrTool
@@ -57,6 +58,7 @@ val editorModule = module {
     single<EditorTool>(named(HdrTool.manifest.id)) { HdrTool }
     single<EditorTool>(named(TrimTool.manifest.id)) { TrimTool }
     single<EditorTool>(named(SoundTool.manifest.id)) { SoundTool }
+    single<EditorTool>(named(CoverTool.manifest.id)) { CoverTool }
 
     // `getAll` is what makes declaring a tool the only step in joining the set.
     // `single`, because the registry's per-kind flows are built once and every

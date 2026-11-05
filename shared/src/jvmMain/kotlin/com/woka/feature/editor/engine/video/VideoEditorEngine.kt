@@ -81,6 +81,9 @@ internal class VideoEditorEngine(
         return true
     }
 
+    override fun playHeadMs(): Long? =
+        playback.state?.let { playback.walk.timelineMs(playback.walk.clips, it.currentPositionMs) }
+
     /**
      * The stream's colour, and **not the frame's** (ME-205). `streamHdrInfo` is written
      * once per opened track and is stable by contract, which is what a memoised recipe

@@ -21,8 +21,11 @@ import com.woka.feature.editor.engine.video.render.isIdentity
 import com.woka.feature.editor.tools.trim.TrimClip
 import com.woka.feature.editor.recipe.EditRecipe
 import com.woka.feature.editor.save.renderAtNativeScale
+import com.woka.feature.editor.tools.cover.CoverTool
 import com.woka.feature.editor.tools.sound.SoundTool
 import com.woka.feature.editor.tools.trim.TrimTool
+import com.woka.feature.editor.tools.trim.atTimeline
+import com.woka.feature.editor.tools.trim.totalMs
 import com.woka.feature.viewer.video.engine.probe.HdrInfo
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
@@ -57,15 +60,27 @@ internal class RecipeVideoEdits(private val registry: EditorToolRegistry) : Vide
         val payload = EditRecipe.read(file)?.takeIf { !it.isEmpty } ?: return null
         val sourceSize = codedFrameSize(file)
         if (sourceSize == IntSize.Zero) return null
-        val base = EditDocument(payload.ops)
-        val ranges = TrimTool.clipsIn(base).orEmpty().map { it.toSourceRange(SoundTool.mixIn(payload.frames[it.key]?.ops.orEmpty())) }
+        val clips = TrimTool.clipsIn(EditDocument(payload.ops)).orEmpty()
+        val ranges = clips.map { it.toSourceRange(SoundTool.mixIn(payload.frames[it.key]?.ops.orEmpty())) }
         // One recipe per layer the cut draws (ME-215); an uncut film is clip 0 alone.
         val keys = ranges.map { it.key }.ifEmpty { listOf(0) }.distinct()
         val recipes = keys.associateWith { key ->
             previewFold(payload.documentFor(key), registry, sourceSize).takeUnless { it.isIdentity(sourceSize) }
         }
-        return FoldedVideoEdit(EditedClock(ranges), sourceSize, recipes, SoundTool.mixIn(payload.ops))
+        val cover = CoverTool.coverIn(payload.ops)?.let { coverIn(clips, it) }
+        return FoldedVideoEdit(EditedClock(ranges), sourceSize, recipes, SoundTool.mixIn(payload.ops), cover)
     }
+}
+
+/**
+ * The cover at timeline [atMs] as a source millisecond and the clip layer it is drawn
+ * through (ME-287). Clamped inside the result, so a later trim moves it rather than losing
+ * it (`save.md` §3.6); a freeze's cover is its one frame. Uncut, the two times are one.
+ */
+internal fun coverIn(clips: List<TrimClip>, atMs: Long): Pair<Long, Int> {
+    if (clips.isEmpty()) return atMs to 0
+    val at = clips.atTimeline(atMs.coerceAtMost(clips.totalMs() - 1L)) ?: return atMs to 0
+    return at.sourceMs to clips[at.index].key
 }
 
 private class FoldedVideoEdit(
@@ -73,8 +88,12 @@ private class FoldedVideoEdit(
     private val sourceSize: IntSize,
     /** By clip layer key; a null value is a clip drawn as decoded — cuts alone (ME-215). */
     private val recipes: Map<Int, RasterRecipe?>,
-    override val wholeSound: SoundMix?
+    override val wholeSound: SoundMix?,
+    /** The chosen cover's source millisecond and clip layer (ME-287), or null. */
+    private val cover: Pair<Long, Int>?
 ) : AppliedVideoEdit {
+
+    override val coverMs: Long? get() = cover?.first
 
     /** The playing clip's recipe, read off [clock] so a join recomposes the reader. */
     private val recipe: RasterRecipe?
@@ -87,9 +106,9 @@ private class FoldedVideoEdit(
         return RecipePainter(frame, sourceSize, recipe.copy(source = hdr))
     }
 
-    /** The first clip's look — the cover, until ME-287 lets the author choose one. */
+    /** The look of the clip the cover is in (ME-287), else the first clip's. */
     override fun poster(poster: ImageBitmap): ImageBitmap {
-        val recipe = recipes[clock.ranges.firstOrNull()?.key ?: 0] ?: return poster
+        val recipe = recipes[cover?.second ?: clock.ranges.firstOrNull()?.key ?: 0] ?: return poster
         val factor = poster.width.toFloat() / sourceSize.width
         return runCatching {
             renderAtNativeScale(poster, IntSize(poster.width, poster.height), recipe.scaledBy(factor))

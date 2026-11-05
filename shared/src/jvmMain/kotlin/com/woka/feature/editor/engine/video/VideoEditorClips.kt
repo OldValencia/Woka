@@ -8,6 +8,7 @@ import com.woka.feature.editor.core.EditorFrames
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.core.NO_CLIP
 import com.woka.feature.editor.core.ToolDomain
+import com.woka.feature.editor.tools.cover.CoverTool
 import com.woka.feature.editor.tools.trim.TrimTool
 import java.io.File
 
@@ -48,9 +49,11 @@ internal abstract class VideoEditorClips(
     override fun unavailableIn(scope: EditScope): Map<String, String> {
         if (scope != EditScope.SingleFrame) return emptyMap()
         return registry.tools(MediaKind.Video).value.mapNotNull { tool ->
-            when (tool.manifest.domain) {
-                ToolDomain.Time -> tool.manifest.id to "Cuts apply to the whole video"
-                ToolDomain.Geometry, ToolDomain.Output -> tool.manifest.id to "Frame size is the whole video's"
+            val domain = tool.manifest.domain
+            when {
+                tool == CoverTool -> tool.manifest.id to "The cover is the whole video's"
+                domain == ToolDomain.Time -> tool.manifest.id to "Cuts apply to the whole video"
+                domain == ToolDomain.Geometry || domain == ToolDomain.Output -> tool.manifest.id to "Frame size is the whole video's"
                 else -> null
             }
         }.toMap()

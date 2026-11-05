@@ -68,4 +68,10 @@ interface EditorEngineSurface {
      * arrows to whoever had them: defaulted to `false`, and a still is unchanged.
      */
     fun stepPlayHead(direction: Int, bySecond: Boolean): Boolean = false
+
+    /**
+     * Where the play head stands in the result, in milliseconds — what `Cover`'s button
+     * writes (ME-287). Null for a medium with no time, which is a still.
+     */
+    fun playHeadMs(): Long? = null
 }

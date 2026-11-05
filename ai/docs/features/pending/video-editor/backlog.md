@@ -257,13 +257,12 @@ time and may have been re-ordered or cut away; editing chapters is a separate fe
 Revert is in the top bar (`RevertDialog`), and a film whose container cannot carry an edit opens
 render-only, its `Done ▾` saying so (ME-289, `EditCapability.RenderOnly`).
 
-### ME-287 — Choose the cover
-One field in the recipe holding a **timeline** position, and the tile draws that frame **through the
-fold** — so a frozen first frame with a title on it appears on the grid tile, which is the point
-(§950). A tiny `Cover` tool in the `Output` group: one `ActionParam` for "use this frame", one to
-clear it, and a footnote naming the time in use. Absent, `VideoThumbnailHeuristics` keeps guessing as
-it does today. `SaveEviction`'s poster key already changes with the write, so nothing goes stale.
-*Depends on ME-284.*
+### ME-287 — done 2026-11-05 without a ticket, checked by the author
+`CoverTool` in `Output`: `Use this frame` writes the play head's timeline time through the new
+`EditorTool.atPlayHead` hook (`EditorEngineSurface.playHeadMs` → `PictureFacts`), `Pick
+automatically` clears it. `RecipeVideoEdits` maps it to source time, clamped inside the result, and
+`VideoThumbnailExtractor` takes the poster there instead of guessing; the poster is drawn through
+the cover's own clip's look. Under This Clip the tool says the cover is the whole video's.
 
 ---
 

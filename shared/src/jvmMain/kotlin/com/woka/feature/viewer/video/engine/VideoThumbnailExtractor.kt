@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.toComposeImageBitmap
 import com.woka.core.data.MediaItem
 import com.woka.core.data.WokaStorage
 import com.woka.core.data.markUsed
+import com.woka.core.ui.image.AppliedVideoEdits
 import com.woka.core.ui.image.ImageBitmapCache
 import com.woka.core.ui.image.encodeWebp
 import com.woka.feature.viewer.video.engine.sync.grabImageAt
@@ -81,13 +82,15 @@ internal object VideoThumbnailExtractor {
             grabber.pixelFormat = AV_PIX_FMT_BGR24
             grabber.start()
             val duration = grabber.lengthMs(file) * 1000L
-            val timestamps = buildTimestampCandidates(duration)
+            // The author's cover (ME-287) is taken as it is, dark or not; else the guess.
+            val chosen = AppliedVideoEdits.editOf(file)?.coverMs
+            val timestamps = chosen?.let { listOf(it * 1000L) } ?: buildTimestampCandidates(duration)
             var selectedImage: BufferedImage? = null
             val converter = Java2DFrameConverter()
             for (ts in timestamps) {
                 val candidate = grabFrameAt(grabber, converter, ts, duration) ?: continue
                 if (selectedImage == null) selectedImage = candidate
-                if (!isMonochrome(candidate)) {
+                if (chosen != null || !isMonochrome(candidate)) {
                     selectedImage = candidate
                     break
                 }

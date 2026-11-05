@@ -48,8 +48,17 @@ interface AppliedVideoEdit {
      */
     fun painter(frame: ImageBitmap, color: StillColorInfo, moving: Boolean): Painter?
 
-    /** The grid's poster, edited; [poster] itself when the picture is untouched. */
+    /**
+     * The grid's poster, edited — through the look of the clip [coverMs] falls in, else the
+     * first clip's; [poster] itself when the picture is untouched.
+     */
     fun poster(poster: ImageBitmap): ImageBitmap
+
+    /**
+     * The **source** millisecond of the cover the author chose (ME-287), for the poster to
+     * be taken there; null leaves the choice to the grid's own guess.
+     */
+    val coverMs: Long? get() = null
 
     /** What the edit does to the whole film's sound (ME-240), or null for nothing. */
     val wholeSound: SoundMix? get() = null
