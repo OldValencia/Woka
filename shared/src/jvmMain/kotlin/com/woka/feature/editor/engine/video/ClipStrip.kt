@@ -119,7 +119,7 @@ internal fun ClipStrip(
                 // Over the part of the clip on screen, so a zoom does not carry it off.
                 if (tabs && clip.id == selectedId && drag == null) SelectedClipBar(state, clips, clip, edits, shown.left + shown.width / 2f)
             }
-            if (edits.editing) TrimmedEnds(geometry, laidOut, cells, durationMs, selectedId, null)
+            if (edits.editing) TrimmedEnds(geometry, laidOut, durationMs, selectedId, null)
             PlayHead(player, walk, laidOut, geometry, edits.editing && drag == null, onFreeze = { state.freezeAtPlayHead() }) {
                 state.splitAtPlayHead()
             }

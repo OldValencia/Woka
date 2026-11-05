@@ -102,12 +102,15 @@ internal fun FrameStep(direction: Int, onStep: () -> Unit) {
  * to itself.
  *
  * **`m:ss:ff`, the frame inside its second** (ME-219), on the result's frame grid — so a
- * step moves the last field by one. The shape is the result's length's, not each value's,
- * so the row does not re-flow as the play head crosses an hour. Without a player, plain time.
+ * step moves the last field by one. Without a player, plain time.
+ *
+ * **The shape is the source's length's** — [sourceMs] — not the result's and not each value's
+ * (measured 2026-11-05): a trim taking the result under an hour narrowed the readout, the
+ * strip beside it widened mid-drag, and the width change cancelled the drag.
  */
 @Composable
-internal fun Readout(position: () -> Long, duration: Long, fps: Double?) {
-    val hours = usesHours(duration)
+internal fun Readout(position: () -> Long, duration: Long, fps: Double?, sourceMs: Long = duration) {
+    val hours = usesHours(sourceMs)
     val last = fps?.let { (frameCount(duration, it) - 1L).coerceAtLeast(0L) }
     BasicText(
         text = "${timecode(position(), fps, hours, last)} / ${timecode(duration, fps, hours, null)}",

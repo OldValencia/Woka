@@ -2,6 +2,7 @@ package com.woka.feature.editor.engine.video
 
 import androidx.compose.ui.unit.IntSize
 import com.woka.feature.editor.core.EditCapability
+import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditLayers
 import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditScope
@@ -12,6 +13,8 @@ import com.woka.feature.editor.core.ToolOp
 import com.woka.feature.editor.engine.video.render.RenderVideo
 import com.woka.feature.editor.engine.video.render.renderOnlyNote
 import com.woka.feature.editor.engine.video.render.renderVideo
+import com.woka.feature.editor.tools.trim.TrimTool
+import com.woka.feature.editor.tools.trim.totalMs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.job
 import kotlinx.coroutines.withContext
@@ -36,8 +39,19 @@ internal abstract class VideoEditorOutputs(
     /** What a write does to the file, and the stamp it carries — see `VideoEditorWrites`. */
     private val writes = VideoEditorWrites(file, capability)
 
-    override suspend fun save(layers: EditLayers): EditSaveResult =
-        withContext(Dispatchers.IO) { writes.save(layers) }
+    /**
+     * A save that **changes how long the film is** leaves it not watched (ME-285, the author
+     * 2026-11-05): its old resume point may be cut away. A look, a filter, markup or sound
+     * keeps the film as long as it was, and keeps the record.
+     */
+    override suspend fun save(layers: EditLayers): EditSaveResult = withContext(Dispatchers.IO) {
+        val before = resultLengthOf(file)
+        writes.save(layers).also { result ->
+            if (result is EditSaveResult.Saved && resultLengthOf(file) != before) {
+                registry.settingsRepository.clearWatchRecord(file.absolutePath)
+            }
+        }
+    }
 
     /** The whole edit under All Clips; one clip's look under This Clip (ME-215). */
     override suspend fun revert(scope: EditScope, frameIndex: Int): EditSaveResult =
@@ -68,3 +82,7 @@ internal abstract class VideoEditorOutputs(
         }
     }
 }
+
+/** How long the result [file] carries is, or null for no cut — the film as shot. */
+private fun resultLengthOf(file: File): Long? =
+    TrimTool.clipsIn(EditDocument(storedVideoPayload(file).ops))?.totalMs()

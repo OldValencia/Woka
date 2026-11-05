@@ -107,7 +107,8 @@ internal fun VideoEditorBand(
         Readout(
             position = { player?.let { walk.timelineMs(clips, it.currentPositionMs) } ?: 0L },
             duration = clips.totalMs(),
-            fps = player?.frameRate()
+            fps = player?.frameRate(),
+            sourceMs = duration
         )
     }
 }

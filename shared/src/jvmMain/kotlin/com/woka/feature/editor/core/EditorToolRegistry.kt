@@ -30,7 +30,8 @@ import kotlinx.coroutines.flow.stateIn
  */
 class EditorToolRegistry(
     private val declared: List<EditorTool>,
-    settingsRepository: SettingsRepository
+    /** Also what a film's `Done` resets the watch record through (ME-285). */
+    internal val settingsRepository: SettingsRepository
 ) {
 
     private val scope = CoroutineScope(Dispatchers.Main)

@@ -23,11 +23,14 @@ import kotlin.math.roundToInt
 /** `.handle`: 13 px in the mockup, 10 here because the reach, not the paint, is the target. */
 private val HANDLE = 10.dp
 
-/** `.film .dim`: what is outside the handles is still in the file, so it dims, not vanishes. */
+/** `.film .dim`: what an edge being dragged is taking away. */
 private val DIMMED = Color.Black.copy(alpha = 0.55f)
 
+/** What was trimmed off: a plain grey band, nothing to see there. */
+private val TRIMMED_OFF = Color.White.copy(alpha = 0.08f)
+
 /**
- * With Trim open: what was trimmed off either end, drawn as film and dimmed, and the
+ * With Trim open: what was trimmed off either end, drawn as a grey band, and the
  * handles — the timeline's outer ends and both edges of the selected clip (ME-210;
  * mockup state 2; reported 2026-11-02).
  *
@@ -39,7 +42,6 @@ private val DIMMED = Color.Black.copy(alpha = 0.55f)
 internal fun TrimmedEnds(
     geometry: StripGeometry,
     clips: List<TrimClip>,
-    cells: FilmstripCells?,
     durationMs: Long,
     selectedId: String?,
     drag: StripDrag.Edge?
@@ -47,8 +49,8 @@ internal fun TrimmedEnds(
     if (clips.isEmpty()) return
     val first = clips.first()
     val last = clips.last()
-    if (geometry.lead.width > 0f) Trimmed(TrimClip("lead", 0L, first.fromMs), geometry.lead, cells, geometry.viewPx)
-    if (geometry.tail.width > 0f) Trimmed(TrimClip("tail", last.toMs, durationMs), geometry.tail, cells, geometry.viewPx)
+    if (geometry.lead.width > 0f && first.fromMs > 0L) Trimmed(geometry.lead, geometry.viewPx)
+    if (geometry.tail.width > 0f && last.toMs < durationMs) Trimmed(geometry.tail, geometry.viewPx)
     handlesOf(clips, selectedId).forEach { handle ->
         val moved = if (drag?.handle == handle) drag.deltaMs * geometry.pxPerMs else 0f
         val edge = handle.x(geometry)
@@ -72,16 +74,23 @@ private fun Shade(leftPx: Float, widthPx: Float) {
     )
 }
 
+/**
+ * A trimmed-off stretch: **grey, with no frames** (the author, 2026-11-05) — it is not in the
+ * result, and pictures there read as if it were. Kept in the layout so a handle lands where
+ * it was let go.
+ */
 @Composable
-private fun Trimmed(range: TrimClip, span: ClipSpan, cells: FilmstripCells?, viewPx: Float) {
+private fun Trimmed(span: ClipSpan, viewPx: Float) {
     val density = LocalDensity.current
     val shown = span.visibleIn(viewPx) ?: return
-    val modifier = Modifier
-        .offset { IntOffset(shown.left.roundToInt(), 0) }
-        .width(with(density) { shown.width.toDp() })
-        .fillMaxHeight()
-    ClipTile(range, cells, false, false, false, modifier = modifier, fullWidthPx = span.width, shiftPx = shown.left - span.left)
-    Box(modifier.clip(RoundedCornerShape(CLIP_RADIUS)).background(DIMMED))
+    Box(
+        Modifier
+            .offset { IntOffset(shown.left.roundToInt(), 0) }
+            .width(with(density) { shown.width.toDp() })
+            .fillMaxHeight()
+            .clip(RoundedCornerShape(CLIP_RADIUS))
+            .background(TRIMMED_OFF)
+    )
 }
 
 @Composable

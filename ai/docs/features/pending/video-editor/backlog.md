@@ -253,14 +253,12 @@ in [`save/`](save/save.md)'s table.
 [`save/tickets/ME-284-every-reader-folds.md`](save/tickets/ME-284-every-reader-folds.md), status in
 [`save/`](save/save.md)'s table. Built on ME-210's walk rules, not on ME-232, which does not exist yet.
 
-### ME-285 — Duration, the slider and the watch record
-A trim changes how long the file is. The slider and the readout already show the edited length
-(ME-284). **The watch record: decided by the author 2026-11-05 — saving a video's edit resets the
-file to *not watched*.** An edited file is not one being watched, so nothing is clamped or mapped.
-**Chapters: decided by the author 2026-11-05 — an edited file shows none.** They are probed in source
-time and may have been re-ordered or cut away; editing chapters is a separate feature planned for
-1.0.9, and until then they are hidden rather than mapped.
-*Depends on ME-284.*
+### ME-285 — done 2026-11-05 without a ticket, checked by the author
+The slider and the readout already showed the edited length (ME-284). **The watch record:** a
+film's `Done` clears it **when it changes the result's length** — a cut, a speed, a freeze
+(`VideoEditorOutputs.save`, `VideoSaveWatchTest`); a look keeps it (the author, same day). **Chapters:** re-decided once the tree was read — the slider already lays them on
+the result (`chapterSegmentsOnResult`, ME-284), so only the ⚙ list goes, and only on a film that
+is cut: its rows seek in source time. Editing chapters is planned for 1.0.9.
 
 ### ME-286 — already built, recorded 2026-11-05
 Revert is in the top bar (`RevertDialog`), and a film whose container cannot carry an edit opens
