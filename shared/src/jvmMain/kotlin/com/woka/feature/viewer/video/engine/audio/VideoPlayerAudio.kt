@@ -58,11 +58,13 @@ internal fun VideoPlayerState.initAudio(
                         soundLine.start()
                         soundLineWasPaused = false
                     }
-                    setVolumeInternal(soundLine, lineLevel(volume))
+                    // The user's volume times the edit's gain (ME-240): mute, volume, fades.
+                    val level = volume * edit.gain
+                    setVolumeInternal(soundLine, lineLevel(level))
                     // Past 100 % the line is already at unity and the rest is gain
                     // applied here (`SoundBoost`). Below it this hands the buffer
                     // straight through, allocating nothing.
-                    val out = boosted(byteArray, boostFactor(volume))
+                    val out = boosted(byteArray, boostFactor(level))
                     soundLine.write(out, 0, out.size)
                 }
             } catch (e: CancellationException) {

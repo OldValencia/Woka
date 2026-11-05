@@ -43,6 +43,18 @@ internal suspend fun VideoPlayerState.deliverAudioFrame(
     return atMs
 }
 
+/** A frame through the edit's splice when the film is cut (ME-233), else the plain path. */
+internal suspend fun VideoPlayerState.deliverEditedOrNot(
+    grabber: FFmpegFrameGrabber,
+    frame: Frame,
+    tempo: AudioTempoFilter?,
+    audioChannel: Channel<ByteArray>,
+    fedUnder: Int
+): AudioStep {
+    if (edit.joins.active) return edit.audio.deliver(this, grabber, frame, tempo, audioChannel)
+    return AudioStep(tempo, deliverAudioFrame(grabber, frame, tempo, audioChannel, fedUnder))
+}
+
 internal suspend fun sendAudioSamples(samples: Array<Buffer>, audioChannel: Channel<ByteArray>) {
     audioChannel.send((samples[0] as ShortBuffer).toPcmBytes())
 }

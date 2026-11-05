@@ -1,8 +1,11 @@
 package com.woka.feature.editor.engine.video
 
 import androidx.compose.ui.unit.IntSize
-import com.woka.feature.editor.core.EditDocument
+import com.woka.core.data.StillColorInfo
+import com.woka.feature.editor.core.EditPayload
 import com.woka.feature.editor.recipe.EditRecipe
+import com.woka.feature.viewer.video.engine.probe.toColour
+import com.woka.feature.viewer.video.engine.track.readStreamHdrInfo
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import java.io.File
 
@@ -28,7 +31,18 @@ import java.io.File
  * zero-sized source, so a file that cannot be probed draws nothing instead of taking the
  * window down. It is the line `RecipeCarrier` holds for the same reason.
  */
-internal fun codedFrameSize(file: File): IntSize = runCatching {
+internal fun codedFrameSize(file: File): IntSize =
+    onHeader(file) { IntSize(it.imageWidth, it.imageHeight) } ?: IntSize.Zero
+
+/**
+ * The film's colour, for the HDR pill (ME-304) — through the same capped probe, because
+ * `readStillColor` runs `find_stream_info` over the whole of a film, which `sourceColor`
+ * would have done on the UI thread as the editor opened. SDR on any failure.
+ */
+internal fun codedColour(file: File): StillColorInfo =
+    onHeader(file) { it.readStreamHdrInfo().toColour() } ?: StillColorInfo.Sdr
+
+private fun <T> onHeader(file: File, read: (FFmpegFrameGrabber) -> T): T? = runCatching {
     val grabber = FFmpegFrameGrabber(file).apply {
         setOption("probesize", "2000000")
         setOption("analyzeduration", "1000000")
@@ -36,24 +50,19 @@ internal fun codedFrameSize(file: File): IntSize = runCatching {
     }
     try {
         grabber.start()
-        IntSize(grabber.imageWidth, grabber.imageHeight)
+        read(grabber)
     } finally {
         runCatching { grabber.stop() }
         runCatching { grabber.release() }
     }
-}.getOrDefault(IntSize.Zero)
+}.getOrNull()
 
 /**
- * What the file carries, so a second sitting continues the first (ME-288).
- *
- * **Frame 0 is the only frame a video has**, as far as an edit is concerned: a container
- * holding several pictures is a still's problem (ME-156), and a video's position is time
- * rather than an index — which is why `EditorFrames()` is left at its one-picture default
- * and the frame band never appears. So the payload's base slot is the whole answer, and
- * `storedDocumentIn` and `storedBase` inherit it from `storedDocument`.
+ * What the file carries, so a second sitting continues the first (ME-288) — the whole
+ * payload since ME-215: [EditPayload.ops] is the shared layer every clip draws, and
+ * [EditPayload.frames] holds each clip's own look under its layer key.
  *
  * Nothing throws: a payload written by a later build reads as no edit rather than
  * refusing to open the file, which is `EditRecipe`'s own line.
  */
-internal fun storedVideoDocument(file: File): EditDocument =
-    EditRecipe.documentIn(file, 0) ?: EditDocument()
+internal fun storedVideoPayload(file: File): EditPayload = EditRecipe.read(file) ?: EditPayload()

@@ -7,6 +7,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isAltPressed
 import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
@@ -41,6 +42,11 @@ internal fun EditorKeyEffect(
      */
     onTogglePlayback: () -> Unit = {},
     /**
+     * `←`/`→` a second, with `Alt` a frame (ME-219; YouTube's arrows, the author 2026-11-05);
+     * `false` leaves the key unconsumed.
+     */
+    onStep: (direction: Int, bySecond: Boolean) -> Boolean = { _, _ -> false },
+    /**
      * The open canvas tool's `Delete`, through the editor's one keyboard slot (ME-114).
      * Null when no such tool is open, which is every tool but Markup today.
      */
@@ -53,17 +59,22 @@ internal fun EditorKeyEffect(
     val curCanUndo by rememberUpdatedState(canUndo)
     val curCanRedo by rememberUpdatedState(canRedo)
     val curTogglePlayback by rememberUpdatedState(onTogglePlayback)
+    val curStep by rememberUpdatedState(onStep)
     val curCanvasKeys by rememberUpdatedState(canvasKeys)
 
     DisposableEffect(globalShortcuts) {
         val previous = globalShortcuts.onPreviewKey
+        val previousOwnsWindow = globalShortcuts.ownsWindow
+        // **The window's keys too**, not only the focused subtree's: the editor owns the
+        // keyboard while it is open, and a click on the picture leaves focus nowhere.
+        globalShortcuts.ownsWindow = true
         globalShortcuts.onPreviewKey = handler@{ event ->
             if (event.type != KeyEventType.KeyDown) return@handler false
             // **Everything through, while a tool is taking typed input** (ME-145). This
             // handler is previewed at the window root, before focus, so without this
             // `Backspace` deletes the shape being typed into and `Esc` closes the editor
             // out from under the field. The field handles both itself.
-            if (curCanvasKeys?.typing == true) return@handler false
+            if (curCanvasKeys?.yields(event.key) == true) return@handler false
             when {
                 event.key == Key.Escape -> consume { curCancel() }
                 event.isCtrlPressed && event.key == Key.S -> consume { curDone() }
@@ -84,10 +95,15 @@ internal fun EditorKeyEffect(
                 // button keeps focus after it is clicked — so an unconsumed space
                 // re-activated the last tool instead of pausing the video.
                 event.key == Key.Spacebar -> consume { curTogglePlayback() }
+                event.key == Key.DirectionLeft -> curStep(-1, !event.isAltPressed)
+                event.key == Key.DirectionRight -> curStep(1, !event.isAltPressed)
                 else -> false
             }
         }
-        onDispose { globalShortcuts.onPreviewKey = previous }
+        onDispose {
+            globalShortcuts.onPreviewKey = previous
+            globalShortcuts.ownsWindow = previousOwnsWindow
+        }
     }
 }
 

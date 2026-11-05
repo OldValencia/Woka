@@ -18,9 +18,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.editor.core.EditCapability
+import com.woka.feature.editor.core.EditScope
 import com.woka.feature.editor.core.EditorEngine
 import com.woka.feature.editor.core.EditorSession
 import com.woka.feature.editor.core.EditorToolRegistry
+import com.woka.feature.editor.core.NO_CLIP
+import com.woka.feature.editor.core.pickClip
 
 /**
  * The editor, whole.
@@ -83,21 +86,30 @@ internal fun EditorScreen(
         onDone = onDone
     )
 
+    // One `if`, and a photograph pays exactly this much for the frame band existing. A
+    // film's clips are counted on the document, which every split moves (ME-215).
+    val clipSelection by session.clipSelection.collectAsState()
+    val perFrame = frameControls?.let { it.copy(frames = engine.framesIn(document).takeIf { f -> f.clips } ?: it.frames) }
+        ?.takeIf { it.frames.allowsPerFrame }?.copy(selectedClip = engine.clipNumberOf(document, clipSelection))
+    val scope = perFrame?.scope ?: EditScope.AllFrames
+    val blocked = unavailable + engine.unavailableIn(scope)
+
     // A tool switched off in Settings leaves `tools`, and an inspector for a tool that
     // is gone would keep drawing controls whose writes the fold then skips. Clearing
     // here rather than in the click handler covers the case nobody clicked.
-    LaunchedEffect(tools) {
-        if (activeToolId != null && tools.none { it.manifest.id == activeToolId }) {
+    LaunchedEffect(tools, blocked) {
+        if (activeToolId != null && (tools.none { it.manifest.id == activeToolId } || activeToolId in blocked)) {
             activeToolId = null
         }
     }
 
     val activeTool = tools.firstOrNull { it.manifest.id == activeToolId }
+    // A whole-film tool opening clears a film's clip selection, as a step (ME-221).
+    LaunchedEffect(activeToolId) {
+        if (engine.frames.clips && clearsClipSelection(activeTool?.manifest?.domain)) session.pickClip(null, NO_CLIP)
+    }
     val canvasDocument = canvasDocumentFor(activeTool, document, peek.active)
     val skipped = skippedOps(document, registry, engine.kind)
-
-    // One `if`, and a photograph pays exactly this much for the frame band existing.
-    val perFrame = frameControls?.takeIf { it.frames.allowsPerFrame }
 
     Box(
         modifier = Modifier
@@ -107,28 +119,16 @@ internal fun EditorScreen(
             .background(Theme.colors.background)
             .testTag("editor-screen")
     ) {
-        EditorCanvasHost(
+        EditorCanvasLayer(
             engine = engine,
+            session = session,
+            tools = tools,
+            activeTool = activeTool,
             document = canvasDocument,
-            modifier = Modifier.fillMaxSize().padding(start = canvasInsetFor(perFrame)),
-            // Back to Fit whenever the tool changes: a crop opened at 100 % on a
-            // corner of the picture is a crop nobody can frame (§4.3).
-            resetKey = activeToolId,
-            // A `CanvasTool` draws over the medium and takes the pointer first; every
-            // other tool leaves this empty and the canvas pans as it always did.
-            overlay = { geometry ->
-                EditorCanvasOverlay(
-                    tools = tools,
-                    activeTool = activeTool,
-                    session = session,
-                    engine = engine,
-                    document = canvasDocument,
-                    geometry = geometry,
-                    canvasKeys = canvasKeys,
-                    selection = selection,
-                    peeking = peek.active
-                )
-            }
+            frameControls = perFrame,
+            canvasKeys = canvasKeys,
+            selection = selection,
+            peek = peek
         )
 
         if (perFrame != null) EditorFrameBand(perFrame, session.media.file)
@@ -142,7 +142,7 @@ internal fun EditorScreen(
             activeTool = activeTool,
             activeToolId = activeToolId,
             skipped = skipped,
-            unavailable = unavailable,
+            unavailable = blocked,
             selectedId = { selection.id },
             onSelectTool = { id -> activeToolId = if (activeToolId == id) null else id }
         )

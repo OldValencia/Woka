@@ -12,13 +12,13 @@ import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
+import com.woka.core.data.StillColorInfo
 import com.woka.core.data.TransferKind
 import com.woka.feature.editor.engine.image.RasterRecipe
 import com.woka.feature.editor.engine.image.RasterStage
 import com.woka.feature.editor.engine.image.drawRecipeImage
 import com.woka.feature.editor.engine.image.scaledBy
 import com.woka.feature.editor.engine.video.hdrStageFor
-import com.woka.feature.viewer.video.engine.probe.HdrInfo
 import org.jetbrains.skia.Bitmap
 import org.jetbrains.skia.RuntimeEffect
 import org.jetbrains.skia.Surface
@@ -128,13 +128,19 @@ class RasterSourceStageTest {
     fun `only a picture that needs managing gets a stage`() {
         assertNull(hdrStageFor(null), "a player that has not opened yet produced a stage")
         assertNull(
-            hdrStageFor(HdrInfo(TransferKind.SDR, isWideGamut = false)),
+            hdrStageFor(StillColorInfo(TransferKind.SDR, isWideGamut = false)),
             "an ordinary SDR frame produced a stage"
         )
-        val pq = assertNotNull(hdrStageFor(HdrInfo(TransferKind.PQ, isWideGamut = true)))
+        val pq = assertNotNull(hdrStageFor(StillColorInfo(TransferKind.PQ, isWideGamut = true)))
         // `vec2 scale` first, and **(1, 1)**: the chain samples in source coordinates,
         // so the painter's `intrinsicSize / drawSize` ratio would blow one corner up.
         assertEquals(listOf(1f, 1f, 1f, 1f, 11.2f), pq.uniforms)
         assertNull(pq.resolutionScale)
+    }
+
+    @Test
+    fun `the stage divides by the film's own white point`() {
+        val declared = assertNotNull(hdrStageFor(StillColorInfo(TransferKind.PQ, isWideGamut = true, whitePoint = 7.17f)))
+        assertEquals(7.17f, declared.uniforms.last(), "the film's MaxCLL did not reach the tone curve (ME-301)")
     }
 }

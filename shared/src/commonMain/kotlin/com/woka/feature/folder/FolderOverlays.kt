@@ -8,6 +8,7 @@ import kotlinx.coroutines.launch
 import java.io.File
 import com.woka.core.ui.components.ContextMenuPopup
 import com.woka.core.ui.components.DropdownItem
+import com.woka.core.ui.components.FolderPathItems
 import com.woka.core.ui.components.RenameDialog
 import com.woka.core.ui.components.ViewDensityMenu
 
@@ -75,6 +76,7 @@ fun FolderOverlays(
                 viewModel.pinFolder(path)
                 overlays.dismissBgContextMenu()
             }
+            FolderPathItems(path) { overlays.dismissBgContextMenu() }
             ViewDensityMenu(
                 layout = zoom.layout,
                 onSelect = { next -> if (next != zoom.layout) settingsRepo.setGridLayout(next) },

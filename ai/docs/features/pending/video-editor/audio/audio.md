@@ -10,7 +10,11 @@ Umbrella: [`../video-editor.md`](../video-editor.md) §4.4. Ticket ids: **ME-240
 
 ## 1. Status
 
-No tickets written. Blocks in [the shared backlog](../backlog.md) §240.
+| Ticket | Title | State |
+|---|---|---|
+| [ME-240](tickets/ME-240-mute-volume-fades.md) | Mute, volume and fades | **done 2026-11-04**, build and tests green — *awaiting the by-hand pass* |
+
+Every other block is in [the shared backlog](../backlog.md) §240.
 
 The first two blocks depend only on [`timeline/`](../timeline/timeline.md). The second row depends on
 [`playback/`](../playback/playback.md), because two sound sources at once is a change to the same

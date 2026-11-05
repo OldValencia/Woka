@@ -16,7 +16,10 @@ Umbrella: [`../video-editor.md`](../video-editor.md) §3.5 and §5. Ticket ids: 
 | [ME-280](tickets/ME-280-a-tail-carrier-writes-in-place.md) | A tail carrier writes in place | **done 2026-09-04** |
 | [ME-288](tickets/ME-288-mp4-and-mov-carry-an-edit.md) | mp4 and mov carry an edit, and `Preview` is deleted | **done 2026-09-04** — and **invisible outside the editor until ME-284**: reported by the author the same day, who edited an `mp4`, saw `Done` succeed, and found the change in the editor and in no other part of Woka |
 | [ME-281](tickets/ME-281-does-anything-else-tolerate-the-box.md) | Probe: does anything else tolerate the box? | **done 2026-09-04** — the gate opened: VLC, Windows Photos and Woka all play an edited `mp4` and `mov` unchanged |
-| [ME-282](tickets/ME-282-a-matroska-carrier.md) | A Matroska carrier | **← NEXT.** Specified 2026-09-04, not started. It is what gives an `mkv` its `Edit` entry back |
+| [ME-289](tickets/ME-289-an-mkv-edit-that-does-nothing.md) | An mkv's Edit that does nothing | **done 2026-11-04** — `EditCapability.RenderOnly`: every video with no carrier opens the editor and `Done` is `Render video…`; a refused target says why |
+| [ME-282](tickets/ME-282-a-matroska-carrier.md) | A Matroska carrier | **done 2026-11-04** — by hand: Woka and VLC play it as before |
+| [ME-283](tickets/ME-283-a-riff-carrier-for-avi.md) | A RIFF carrier for avi | **done 2026-11-04** — by hand: Woka and VLC play it as before |
+| [ME-284](tickets/ME-284-every-reader-folds.md) | Every reader folds — with ME-285's slider and readout | **done 2026-11-02** — viewer, PiP and grid poster draw the edit and play the cuts; the slider and time show the result's length. Watch record and chapters still source time. Not yet by hand |
 
 Everything else is a block in [the shared backlog](../backlog.md) §280, where no state is
 recorded. `save/` is **folder 1** of the build order ([`../video-editor.md`](../video-editor.md) §1a).
@@ -138,8 +141,8 @@ the result by construction, and clamped if a later edit shortens it.
   2026-09-04: yes.** It was the gate on this whole folder, and it opened: VLC, Windows Photos and
   Woka all play an edited `mp4` and `mov` unchanged, and the bundled ffmpeg re-decodes both. `Done`
   keeps its place as the default save and the `Done ▾` menu does not collapse (§5).
-- **What a resume position does after a trim.** Clamp, clear, or map through the clip list. The third
-  is correct and the most work.
+- ~~What a resume position does after a trim~~ — **answered by the author 2026-11-05: clear.** Saving
+  an edit resets the file to *not watched* (ME-285).
 - **Whether the grid marks an edited video.** Stills do not, and a cut is a bigger claim about a file
   than a colour tweak is.
 - ~~Whether a trim can orphan the frame the poster was taken from~~ — **answered by ME-287**: the
@@ -151,6 +154,8 @@ the result by construction, and clamped if a later edit shortens it.
 
 | Date | Question | Decision | Why |
 |---|---|---|---|
+| 2026-11-05 | What happens to chapters in an edited file? | **On a cut film the ⚙ list is hidden; the slider keeps them, laid on the result** | The author first chose *hidden*; reading the tree showed the slider already maps them (ME-284), and only the list seeks in source time. A look-only edit keeps both. Editing chapters is planned for 1.0.9 |
+| 2026-11-05 | What does a saved edit do to the watch record? | **Resets the file to *not watched* — only when the save changes the result's length** (refined the same day: a look is no reason to forget where a film was watched to) | The author: a file being edited is not ready to be watched, so clamping or mapping the old position answers a question nobody asks |
 | 2026-09-04 | Does anything else tolerate a `uuid` box on an `mp4`'s tail? | **Yes — the gate is open and `save/` proceeds as designed** | ME-281, measured. Our reader and the bundled ffmpeg both re-open the written files, and by hand VLC, Windows Photos and Woka play an edited `mp4` and `mov` exactly as before. This was §4's first open question and the one that could have collapsed `Done ▾` permanently; it did not, so ME-282 writes the Matroska carrier rather than re-planning the folder |
 | 2026-09-03 | Where does a video's recipe go? | **`mp4`/`mov` into the existing `uuid` box carrier; Matroska gets its own; `avi` follows `WebpRecipe`'s RIFF surgery** | Two of the five containers already have a shipped, tested carrier; the library is mixed, so Matroska is second and not later (§3.1) |
 | 2026-09-03 | Is a whole-file atomic replace acceptable? | **No — an in-place `setLength` plus append, for tail carriers only** | A whole copy of a 4 GB film to change 300 bytes is an OOM and 4 GB of writes. It is safe *only* because a tail box sits after all media data, so a failed write cannot damage the picture (§3.2) |

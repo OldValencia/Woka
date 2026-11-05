@@ -47,10 +47,10 @@ interface EditorEngineSurface {
      *
      * **It names no player and no clip**, which is the constraint the whole seam exists
      * for (§3.3): the moment the shell can name either, every file that touches one
-     * becomes a video ticket.
+     * becomes a video ticket. What it writes, it writes through [edits] (ME-210).
      */
     @Composable
-    fun Timeline(document: EditDocument, modifier: Modifier) = Unit
+    fun Timeline(document: EditDocument, edits: EditorTimelineScope, modifier: Modifier) = Unit
 
     /**
      * "Start or stop whatever is moving on the canvas", raised by a click on it.
@@ -61,4 +61,17 @@ interface EditorEngineSurface {
      * answer for a photograph — the click still happens and nothing moves.
      */
     fun togglePlayback() = Unit
+
+    /**
+     * "Move the play head one frame", or one second when [bySecond] — `Alt+←`/`→` and the
+     * bare arrows (ME-219). Answers whether it moved anything, so a medium with no time leaves the
+     * arrows to whoever had them: defaulted to `false`, and a still is unchanged.
+     */
+    fun stepPlayHead(direction: Int, bySecond: Boolean): Boolean = false
+
+    /**
+     * Where the play head stands in the result, in milliseconds — what `Cover`'s button
+     * writes (ME-287). Null for a medium with no time, which is a still.
+     */
+    fun playHeadMs(): Long? = null
 }

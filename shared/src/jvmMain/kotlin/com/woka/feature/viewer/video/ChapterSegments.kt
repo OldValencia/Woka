@@ -1,5 +1,6 @@
 package com.woka.feature.viewer.video
 
+import com.woka.core.ui.image.SourceRange
 import com.woka.feature.viewer.shell.slider.SliderSegment
 import com.woka.feature.viewer.shell.slider.WHOLE_TRACK
 import com.woka.feature.viewer.video.model.MediaChapter
@@ -21,4 +22,33 @@ internal fun chapterSegments(
             label = chapter.title
         )
     }
+}
+
+/**
+ * The chapters of a film `Done` cut (ME-284), laid on the **result**: each kept range
+ * shows the pieces of the chapters it holds, in the order the ranges play. A cut film used
+ * to draw no track at all — an empty list here meant no segment, so the bar vanished
+ * (reported 2026-11-04 on a two-split `mkv`).
+ */
+internal fun chapterSegmentsOnResult(chapters: List<MediaChapter>, ranges: List<SourceRange>): List<SliderSegment> {
+    val total = ranges.sumOf { it.lengthMs }
+    if (chapters.isEmpty() || total <= 0L) return WHOLE_TRACK
+    var offset = 0L
+    val pieces = ranges.flatMap { range ->
+        val start = offset
+        offset += range.lengthMs
+        // A freeze spans no source and so no chapter: it is drawn as track, unlabelled (ME-217).
+        if (range.isFreeze) return@flatMap listOf(SliderSegment(start.toFloat() / total, offset.toFloat() / total))
+        chapters.mapNotNull { chapter ->
+            val from = maxOf(chapter.startMs, range.fromMs)
+            val to = minOf(chapter.endMs, range.toMs)
+            if (to <= from) return@mapNotNull null
+            SliderSegment(
+                start = (start + (from - range.fromMs) / range.speed).toFloat() / total,
+                end = (start + (to - range.fromMs) / range.speed).toFloat() / total,
+                label = chapter.title
+            )
+        }
+    }
+    return pieces.ifEmpty { WHOLE_TRACK }
 }

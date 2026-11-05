@@ -19,7 +19,7 @@ package com.woka.feature.editor.core
 fun EditorSession.reset() {
     if (_document.value == openedWith) return
     _document.value = openedWith
-    _history.value = _history.value.push(openedWith)
+    record(openedWith)
 }
 
 /**
@@ -54,4 +54,6 @@ fun EditorSession.revertedToOriginal(scope: EditScope = EditScope.AllFrames) {
         _document.value = base
     }
     _history.value = EditorHistory.startingAt(_document.value)
+    // A film's line starts again here, as the file now stands (ME-221).
+    if (film.linear) _history.value = EditorHistory(listOf(_document.value), shots = listOf(shotNow()))
 }

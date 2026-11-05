@@ -49,8 +49,19 @@ internal fun Frame.toComposeBitmap(): ImageBitmap {
 internal fun VideoPlayerState.publishFrame(bitmap: ImageBitmap, hdrInfo: HdrInfo?) {
     Snapshot.withMutableSnapshot {
         currentFrame = bitmap
-        currentFrameHdrInfo = hdrInfo
+        showColour(hdrInfo)
     }
+}
+
+/**
+ * The colour of the frame going on screen — and, the first time a frame carries the film's
+ * white point, the stream's too (ME-301), in the same snapshot, so nothing draws the stream's
+ * colour without it once a frame has had it. The scene's peak stays off the stream (ME-305).
+ */
+internal fun VideoPlayerState.showColour(hdrInfo: HdrInfo?) {
+    currentFrameHdrInfo = hdrInfo
+    val stream = hdrInfo?.takeIf { it.whitePoint != null }?.copy(scenePeak = null) ?: return
+    if (stream != streamHdrInfo) streamHdrInfo = stream
 }
 
 internal fun setVolumeInternal(line: SourceDataLine, vol: Float) {

@@ -39,10 +39,10 @@ fun isEditable(factory: EditorEngineFactory, path: String): Boolean =
     runCatching { factory.capability(path) != EditCapability.Unavailable }.getOrDefault(false)
 
 /**
- * **The video editor is switched off, 2026-10-17** — paused by the author with
- * `foundation/` and part of `save/` shipped and the rest not started. The code and the
- * tickets stay; only the doors close. False removes Edit from a video in the grid's menu,
- * the viewer's pill and the viewer's right-click. The factory still answers for video, so
- * the engine's own tests keep running. Turning it back on is this line.
+ * **The video editor's doors, open again 2026-11-01** after a pause from 2026-10-17. They
+ * reopened with the timeline (trim, split, delete, duplicate, reorder) and `Render video…`
+ * shipped; `Done` keeps a cut in the file, but only the editor reads it until ME-284.
+ * False removes Edit from a video in the grid's menu, the viewer's pill and the viewer's
+ * right-click; the factory answers for video either way, so the engine's tests keep running.
  */
-const val VIDEO_EDITING_ENABLED = false
+const val VIDEO_EDITING_ENABLED = true

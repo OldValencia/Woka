@@ -37,5 +37,7 @@ internal data class PictureFacts(
      * a medium with no still to measure, and until the proxy has been decoded — which is
      * also the whole of the window in which there is no picture on screen to click about.
      */
-    val stats: SourceStats? = null
+    val stats: SourceStats? = null,
+    /** Where the play head stands, **read at the click** (ME-287); null for a still. */
+    val playHeadMs: () -> Long? = { null }
 )

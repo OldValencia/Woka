@@ -16,3 +16,15 @@ expect fun openFilePicker(
  * folder feature (commonMain) could not reach it.
  */
 expect fun copyFilesToClipboard(paths: List<String>)
+
+/** Puts [text] on the system clipboard as plain text — a folder's full path, for one. */
+expect fun copyTextToClipboard(text: String)
+
+/**
+ * Opens folder [path] in whatever the system uses for folders — Explorer on Windows,
+ * Finder on macOS, the desktop's own file manager elsewhere. Never throws.
+ */
+expect fun openInFileManager(path: String)
+
+/** What that program is called here, for a menu entry: "Explorer", "Finder", "File Manager". */
+expect val fileManagerName: String

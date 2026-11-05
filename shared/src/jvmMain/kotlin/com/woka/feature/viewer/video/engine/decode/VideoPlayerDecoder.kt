@@ -5,7 +5,6 @@ import com.woka.feature.viewer.video.engine.launchResumeSaver
 import com.woka.feature.viewer.video.engine.resumePositionMs
 import com.woka.feature.viewer.video.engine.saveResumePosition
 import com.woka.feature.viewer.video.engine.seek
-import com.woka.feature.viewer.video.engine.sync.lengthMs
 import com.woka.feature.viewer.video.engine.sync.videoSeekTo
 import com.woka.feature.viewer.video.engine.track.reopenVideoGrabber
 
@@ -18,6 +17,8 @@ import kotlin.time.Duration.Companion.milliseconds
 import com.woka.feature.viewer.video.engine.handleEndOfStream
 import com.woka.feature.viewer.video.engine.writeUiState
 import com.woka.feature.viewer.video.engine.track.readStreamHdrInfo
+import com.woka.feature.viewer.video.engine.probe.keptOn
+import com.woka.feature.viewer.video.engine.join.JoinStep
 
 /**
  * Decodes ONLY the video stream (audio runs on its own grabber, see
@@ -32,29 +33,11 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
         // Reassigned when the user switches video track (§2.3); `finally` always
         // tears down whichever grabber is current.
         var grabber = openVideoGrabber()
+        val pacer = FramePacer(frameRetention)
+        // Kept ranges played without a seek at each join (ME-232); idle with none set.
+        val joins = JoinStep(this@startDecoderLoop, videoChannel, pacer)
         try {
-            try {
-                grabber.start()
-            } catch (e: Exception) {
-                writeUiState { openFailed = true }
-                throw e
-            }
-            // A rotated stream needs the graph from its first picture (VF-105).
-            if (pictureFilter.open(grabber, renderScale.decodeWidth, renderScale.decodeHeight)) {
-                requestPictureReopen(grabber.videoStream)
-            }
-
-            var hdrInfo = grabber.readStreamHdrInfo()
-            val length = grabber.lengthMs(file)
-            // Snapshot state, written from `Dispatchers.IO` — it goes in a mutable
-            // snapshot or the recomposer's next global advance can drop it. A lost
-            // `durationMs` is a video that plays with no seek bar and no timecodes
-            // (`code-style/state.md`).
-            writeUiState {
-                streamHdrInfo = hdrInfo
-                durationMs = length
-            }
-
+            var hdrInfo = startVideoGrabber(grabber)
             probeTracksAndChapters(grabber)
 
             // Frames carry the generation they were decoded under; the presenter
@@ -62,7 +45,6 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
             var frameGeneration = generation.seek
             var videoSeekGen = generation.seek
             var durationChecked = durationMs > 0L
-            val pacer = FramePacer(frameRetention)
 
             // Resume (§4) goes through the ordinary seek path, and only after
             // videoSeekGen has been captured — set before it, the generation bump
@@ -74,10 +56,10 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
                 val reopenIndex = pendingVideoReopenIndex
                 if (reopenIndex != null) {
                     pendingVideoReopenIndex = null
+                    val stream = grabber.videoStream // a rescale keeps the film's white point (1.0.6 review)
                     grabber = reopenVideoGrabber(grabber, reopenIndex, videoChannel)
                     hdrInfo = grabber.readStreamHdrInfo()
-                    val reopened = hdrInfo
-                    writeUiState { streamHdrInfo = reopened }
+                    writeUiState { streamHdrInfo = hdrInfo.takeIf { grabber.videoStream == stream }?.keptOn(streamHdrInfo) ?: hdrInfo }
                     // The play head did not move, so no generation bump: the frame
                     // reopenVideoGrabber landed stays current and audio — parked on
                     // isReloadingVideo meanwhile — picks up from the same position.
@@ -92,18 +74,32 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
                     videoSeekTo(grabber, generation.targetMs, videoChannel, hdrInfo)
                     frameGeneration = generation.seek
                     generation.videoSeekComplete(videoSeekGen) // frame landed; audio may resume
+                    joins.afterSeek(generation.targetMs)
                     pacer.rebase()
                     continue
                 }
                 if (requestRescaleIfNeeded(grabber.videoStream)) continue
 
+                if (joins.idle()) {
+                    pacer.rebase()
+                    delay(20.milliseconds)
+                    continue
+                }
                 if (!isPlaying || isSeeking) {
                     pacer.rebase()
                     delay(50.milliseconds)
                     continue
                 }
 
+                joins.beforeGrab(grabber, frameGeneration, hdrInfo)?.let {
+                    grabber = it
+                    continue
+                }
                 val frame = grabber.grabFrame(false, true, true, false, false)
+                if (frame == null && joins.active) {
+                    grabber = joins.pastEnd(grabber, frameGeneration, hdrInfo)
+                    continue
+                }
                 if (frame == null) {
                     // The picture `bwdif` held back for a neighbour that never came.
                     pictureFilter.drain()?.let {
@@ -121,6 +117,11 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
                         durationChecked = true
                     }
                     val picture = pictureOf(grabber, frame) ?: continue
+                    val atMs = pictureTimeUs(grabber, picture) / 1000L
+                    joins.step(grabber, picture, atMs, frameGeneration, hdrInfo)?.let {
+                        grabber = it
+                        continue
+                    }
                     deliverPicture(grabber, picture, pacer, videoChannel, frameGeneration, hdrInfo)
                 }
             }
@@ -134,6 +135,7 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
             // Runs on cancellation too, which is what makes dispose() the moment a
             // closed file's position is written (§4).
             saveResumePosition()
+            withContext(NonCancellable) { joins.close() }
             tracksProbed.complete(Unit) // never leave the audio loop waiting if start() failed
             isReloadingVideo = false // a failed swap must not leave a stuck spinner
             pictureFilter.close()

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -20,6 +21,7 @@ import com.woka.feature.editor.core.EditorEngine
 import com.woka.feature.editor.core.EditorSession
 import com.woka.feature.editor.core.EditorTool
 import com.woka.feature.editor.core.EditorToolRegistry
+import com.woka.feature.editor.core.ToolDomain
 import com.woka.feature.editor.core.ToolOp
 
 /**
@@ -57,6 +59,15 @@ internal fun BoxScope.EditorBottomPanel(
     // Owned here because this is the one place that has both the card and the room
     // beside it — see `InspectorAccessory`.
     val accessory = remember { InspectorAccessory() }
+    // The band's selection is the session's (ME-221) — apart from the canvas's, because a
+    // clip id is not a shape id, and a step of history, because on a film it is the scope.
+    val clipSelection by session.clipSelection.collectAsState()
+    val timeline = EditorTimelineScopeImpl(
+        session = session,
+        tools = tools,
+        selected = clipSelection,
+        editing = activeTool?.manifest?.domain == ToolDomain.Time
+    )
 
     Column(
         modifier = Modifier
@@ -67,8 +78,10 @@ internal fun BoxScope.EditorBottomPanel(
     ) {
         // Bucket B, for the whole session: the cost of `Done` on a format with no
         // carrier is stated before the work, never after it (§4.5).
-        if (engine.capability == EditCapability.Destructive) {
-            EditorNoHistoryNotice()
+        when (engine.capability) {
+            EditCapability.Destructive -> EditorNoHistoryNotice()
+            EditCapability.RenderOnly -> EditorRenderOnlyNotice(session.media.file.extension)
+            else -> Unit
         }
         // Above the inspector and independent of it: the warning has to be visible
         // whether or not a tool happens to be open.
@@ -93,7 +106,7 @@ internal fun BoxScope.EditorBottomPanel(
         //
         // No new token: the column's own `spacedBy` gives the gap. No branch on media
         // either — a still's engine does not override this and draws nothing.
-        engine.Timeline(document, Modifier)
+        engine.Timeline(document, timeline, Modifier)
         EditorRail(
             tools = tools,
             activeToolId = activeToolId,

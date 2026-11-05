@@ -14,6 +14,7 @@ import com.woka.core.data.MediaKind
 import com.woka.core.data.StillColorInfo
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
+import com.woka.feature.editor.core.EditorTimelineScope
 import com.woka.feature.editor.core.EditLayers
 import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditScope
@@ -106,7 +107,7 @@ class FixtureEngine(
     }
 
     @Composable
-    override fun Timeline(document: EditDocument, modifier: Modifier) {
+    override fun Timeline(document: EditDocument, edits: EditorTimelineScope, modifier: Modifier) {
         timeline?.invoke()
     }
 

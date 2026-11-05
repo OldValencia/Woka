@@ -29,6 +29,13 @@ enum class EditCapability {
     Destructive,
 
     /**
+     * A video with no slot to keep the edit (ME-289): the editor opens and `Done ▾`
+     * offers `Render video…` alone, with the reason on screen. A video never re-encodes
+     * in place, so this is a film's bucket B — a new file beside it, never an overwrite.
+     */
+    RenderOnly,
+
+    /**
      * Neither. `Edit` is unavailable, with the reason in the menu.
      *
      * This is where the refusal belongs. Before 2026-08-19 every image format

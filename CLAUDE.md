@@ -72,6 +72,7 @@ com.woka/
         engine/ VideoPlayerState + the UI-facing command surface        (jvmMain)
           decode/ grabber, decode loop, pacer, presenter, renderScale
           audio/ · subtitle/ · track/ · sync/ (A/V offsets, seek) · probe/ (HDR, chapters)
+          join/ decoder lanes, their pool, the hand-off at a kept range's join (ME-232)
       pip/    PipManager, GlobalPipWindow, Pip*
     editor/   Phase 5, image + video behind one shell (`implemented/image-editor/`, `pending/video-editor/`)
       core/   media-agnostic: ParamSpec/ParamSet, ToolOp, EditDocument, EditorHistory,

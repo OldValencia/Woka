@@ -9,6 +9,7 @@ import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.engine.image.ImageEditorEngine
 import com.woka.feature.editor.engine.video.VideoEditorEngine
 import com.woka.feature.editor.recipe.carrierFor
+import com.woka.feature.editor.recipe.carriesHere
 import com.woka.feature.editor.save.formatFor
 import java.io.File
 
@@ -19,10 +20,10 @@ import java.io.File
  * disagreed with each other.
  *
  * **A video is asked the same question an image is** (ME-288): a container with a
- * carrier answers `Recorded` and one without answers `Unavailable`, which is what
- * retired the temporary `Preview` case ME-201 shipped. So an `mp4` or a `mov` keeps its
- * edit in a `uuid` box, and an `mkv`, `webm` or `avi` has no engine at all until ME-282
- * and ME-283 give it a slot — greyed in both doors rather than refused at `Done`.
+ * carrier answers `Recorded` and one without answers `RenderOnly`, which is what
+ * retired the temporary `Preview` case ME-201 shipped. An `mp4` or a `mov` keeps its edit
+ * in a `uuid` box, an `mkv`/`webm` in an EBML element (ME-282), an `avi` in a RIFF chunk
+ * (ME-283); every other video is `RenderOnly` (ME-289) and leaves through a render.
  *
  * `EditorEngineFactory` is a `commonMain` interface and this is its JVM half,
  * because a `commonMain` module cannot name `ImageEditorEngine` (`di.md`).
@@ -64,10 +65,14 @@ class EditorEngineFactoryImpl(
      * **One question wide, and `formatFor` is deliberately not the second** (ME-288).
      * Bucket B means "no slot, but Skia can re-encode the file in place", and there is no
      * such road for a video: re-encoding one produces a *new* file by decision, which is
-     * `render/` (§3.5). So a container with no carrier has nothing to offer and says so.
+     * `render/` (§3.5). So a container with no carrier offers that new file and nothing
+     * else (ME-289) — the editor opens, and `Done ▾` is `Render video…` alone.
+     *
+     * A carrier that refuses this particular file — a streamed Matroska, an OpenDML
+     * `avi` — is asked here too, so the answer is given at the door and not at `Done`.
      */
     private fun videoCapability(file: File): EditCapability =
-        if (carrierFor(file) != null) EditCapability.Recorded else EditCapability.Unavailable
+        if (carriesHere(file)) EditCapability.Recorded else EditCapability.RenderOnly
 
     /**
      * **Refusal moved forward, 2026-08-19.** This used to build an engine for all

@@ -86,6 +86,8 @@ internal fun VideoPlayerState.startAudioDecodeLoop(audioChannel: Channel<ByteArr
                 // it has to go along with the graph that produced it.
                 if (audioSpeedGen != generation.speed) {
                     audioSpeedGen = generation.speed
+                    // A join's pace the spliced sound already has (ME-233): nothing to redo.
+                    if (edit.joins.active && edit.audio.alreadyAt(this@startAudioDecodeLoop)) continue
                     tempo = audioReseek(grabber, audioTimeFor(currentPositionMs), audioChannel, tempo)
                     audioTsMs = audioTimeFor(currentPositionMs)
                     continue
@@ -93,7 +95,7 @@ internal fun VideoPlayerState.startAudioDecodeLoop(audioChannel: Channel<ByteArr
                 // isReloadingVideo: a video-track swap re-decodes for seconds (§2.3).
                 // Park instead of playing on, so sound doesn't run away from the
                 // frozen picture and then need a resync once the picture returns.
-                if (!isPlaying || isSeeking || isReloadingVideo || !hasAudio) {
+                if (!isPlaying || isSeeking || isReloadingVideo || !hasAudio || edit.audio.parked(this@startAudioDecodeLoop)) {
                     delay(20.milliseconds)
                     continue
                 }
@@ -104,7 +106,9 @@ internal fun VideoPlayerState.startAudioDecodeLoop(audioChannel: Channel<ByteArr
                     continue
                 }
 
-                val aheadMs = audioTsMs - audioTimeFor(currentPositionMs)
+                // On a cut film the two are compared on the result, since source time jumps at a join.
+                val aheadMs = if (edit.joins.active) edit.audio.aheadMs(this@startAudioDecodeLoop, audioTsMs)
+                else audioTsMs - audioTimeFor(currentPositionMs)
                 if (aheadMs > AUDIO_LEAD_MS) {          // decoded far enough ahead
                     delay(10.milliseconds)
                     continue
@@ -122,7 +126,9 @@ internal fun VideoPlayerState.startAudioDecodeLoop(audioChannel: Channel<ByteArr
                     delay(30.milliseconds)
                     continue
                 }
-                deliverAudioFrame(grabber, frame, tempo, audioChannel, audioSeekGen)?.let { audioTsMs = it }
+                val step = deliverEditedOrNot(grabber, frame, tempo, audioChannel, audioSeekGen)
+                tempo = step.tempo
+                step.atMs?.let { audioTsMs = it }
             }
         } catch (e: CancellationException) {
             throw e

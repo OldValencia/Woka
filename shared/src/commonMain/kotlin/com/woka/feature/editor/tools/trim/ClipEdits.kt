@@ -1,0 +1,141 @@
+package com.woka.feature.editor.tools.trim
+
+/**
+ * Every edit the strip makes, as a function from one clip list to the next (ME-210,
+ * ME-212, ME-213, ME-214).
+ *
+ * **Pure, and each returns the receiver unchanged when it has nothing to do** — a split on
+ * a join, a delete of the last clip, a move to where the clip already is. The strip
+ * compares the result with what it had and pushes no history entry for an equal list, so
+ * "nothing happened" is decided once, here, rather than by every gesture.
+ */
+
+/**
+ * The shortest clip any edit may leave, 100 ms.
+ *
+ * Shorter than a frame at 10 fps and longer than two at 30: a split this close to a join
+ * would produce a clip the strip cannot draw wider than its gap and nobody meant to make
+ * (`timeline.md` §5, the one-frame clip). A freeze-frame (ME-217) will be the only clip
+ * allowed below it.
+ */
+const val MIN_CLIP_MS = 100L
+
+/**
+ * Splits the clip under [timelineMs] in two at that millisecond, with **no keyframe
+ * consulted** (`timeline.md` §3.3). The left half keeps the old id, so a selection on it
+ * stays where the user was looking; the right half takes [newId] and a fresh layer key,
+ * onto which the caller copies the left half's look (ME-215).
+ */
+fun List<TrimClip>.split(timelineMs: Long, newId: String): List<TrimClip> {
+    val at = atTimeline(timelineMs) ?: return this
+    val clip = this[at.index]
+    if (at.sourceMs - clip.fromMs < MIN_CLIP_MS || clip.toMs - at.sourceMs < MIN_CLIP_MS) return this
+    val left = clip.copy(toMs = at.sourceMs)
+    val right = clip.copy(id = newId, fromMs = at.sourceMs, key = nextKey())
+    return take(at.index) + left + right + drop(at.index + 1)
+}
+
+/** Removes clip [id]; the hole closes by construction. The last clip is never removed. */
+fun List<TrimClip>.delete(id: String): List<TrimClip> =
+    if (size <= 1) this else filterNot { it.id == id }
+
+/** A copy of clip [id] under [newId] and a fresh layer key, immediately after the original. */
+fun List<TrimClip>.duplicate(id: String, newId: String): List<TrimClip> {
+    val index = indexOfFirst { it.id == id }.takeIf { it >= 0 } ?: return this
+    val copy = this[index].copy(id = newId, key = nextKey())
+    return take(index + 1) + copy + drop(index + 1)
+}
+
+/** Clip [id] taken out and re-inserted at [toIndex] of the list without it. */
+fun List<TrimClip>.move(id: String, toIndex: Int): List<TrimClip> {
+    val clip = firstOrNull { it.id == id } ?: return this
+    val rest = filterNot { it.id == id }
+    val target = toIndex.coerceIn(0, rest.size)
+    return rest.take(target) + clip + rest.drop(target)
+}
+
+/**
+ * Moves clip [id]'s start to source [fromMs], held inside the source and at least
+ * [MIN_CLIP_MS] short of the clip's own end.
+ */
+fun List<TrimClip>.trimStart(id: String, fromMs: Long): List<TrimClip> = map { clip ->
+    if (clip.id != id) clip
+    else clip.copy(fromMs = fromMs.coerceIn(0L, clip.toMs - MIN_CLIP_MS))
+}
+
+/** Moves clip [id]'s end to source [toMs], held inside [durationMs] and past its start. */
+fun List<TrimClip>.trimEnd(id: String, toMs: Long, durationMs: Long): List<TrimClip> = map { clip ->
+    if (clip.id != id) clip
+    else clip.copy(toMs = toMs.coerceIn(clip.fromMs + MIN_CLIP_MS, durationMs))
+}
+
+/** A layer key no clip holds yet (ME-215). */
+fun List<TrimClip>.nextKey(): Int = (maxOfOrNull { it.key } ?: 0) + 1
+
+/**
+ * Clip [id] joined back to the neighbour that continues it in the source — the right one
+ * first, then the left — undoing a split (reported 2026-11-04: nothing could). The clip
+ * that comes first keeps its id and its look. Unchanged when neither neighbour continues it
+ * at the same speed: one clip has one speed (ME-216).
+ */
+fun List<TrimClip>.join(id: String): List<TrimClip> {
+    val index = indexOfFirst { it.id == id }.takeIf { it >= 0 } ?: return this
+    val clip = this[index]
+    val right = getOrNull(index + 1)
+    if (clip.isFreeze) return this
+    if (right != null && !right.isFreeze && right.fromMs == clip.toMs && right.speed == clip.speed) {
+        return take(index) + clip.copy(toMs = right.toMs) + drop(index + 2)
+    }
+    val left = getOrNull(index - 1)
+    if (left != null && !left.isFreeze && left.toMs == clip.fromMs && left.speed == clip.speed) {
+        return take(index - 1) + left.copy(toMs = clip.toMs) + drop(index + 1)
+    }
+    return this
+}
+
+/**
+ * Whether this list cuts nothing — one clip from the start to [durationMs]. Written as no
+ * cut at all, so a film split and joined back is not left marked as edited.
+ */
+fun List<TrimClip>.cutsNothing(durationMs: Long): Boolean =
+    isEmpty() || (size == 1 && first().fromMs <= 0L && first().toMs >= durationMs && first().speed == 1f)
+
+/** Clip [id] at [speed] (ME-216); unchanged when it already plays at it. */
+fun List<TrimClip>.withSpeed(id: String, speed: Float): List<TrimClip> =
+    if (none { it.id == id && it.speed != speed }) this
+    else map { if (it.id == id) it.copy(speed = speed) else it }
+
+/** A freeze's first length: two seconds, the mockup's (ME-217). */
+const val FREEZE_HOLD_MS = 2_000L
+
+/**
+ * The longest a freeze may be held — ten minutes. It was thirty seconds, picked for no reason
+ * the author could be given (2026-11-04); this is only a guard against a runaway drag.
+ */
+const val FREEZE_MAX_MS = 10 * 60_000L
+
+/**
+ * A freeze of the frame under [timelineMs], [FREEZE_HOLD_MS] long, inserted there under
+ * [newId] (ME-217). Inside a clip it splits it first, the halves keeping its speed and look;
+ * on a join it goes between. Unchanged when the play head stands on a freeze already.
+ */
+fun List<TrimClip>.freezeAt(timelineMs: Long, newId: String, splitId: String): List<TrimClip> {
+    val at = atTimeline(timelineMs) ?: return this
+    if (this[at.index].isFreeze) return this
+    val clip = this[at.index]
+    val cut = split(timelineMs, splitId)
+    // Split: between the halves. Not split — a join, or too near an edge — on the side of the
+    // nearer edge, so it lands under the play head and not at the clip's far end (1.0.6 review).
+    val nearEnd = clip.toMs - at.sourceMs < at.sourceMs - clip.fromMs
+    val insertAt = if (cut.size > size || nearEnd) at.index + 1 else at.index
+    // The end is exclusive: a play head parked on it freezes the clip's last frame.
+    val sourceMs = at.sourceMs.coerceAtMost(clip.toMs - 1)
+    val freeze = TrimClip(newId, sourceMs, sourceMs, cut.nextKey(), holdMs = FREEZE_HOLD_MS)
+    return cut.take(insertAt) + freeze + cut.drop(insertAt)
+}
+
+/** Freeze [id] held for [holdMs], kept between a tenth of a second and [FREEZE_MAX_MS]. */
+fun List<TrimClip>.withHold(id: String, holdMs: Long): List<TrimClip> = map { clip ->
+    if (clip.id != id || !clip.isFreeze) clip else clip.copy(holdMs = holdMs.coerceIn(MIN_CLIP_MS, FREEZE_MAX_MS))
+}
+

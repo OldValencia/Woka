@@ -65,7 +65,9 @@ internal class ParamWriter(
         // A tool may rewrite its own parameters now that the frame is known — a preset
         // that means "this many pixels on the long edge" resolves to a scale here, so
         // the document stores the number and `stage()` never needs the frame (§3.4).
-        val resolved = tool.resolve(spec, written, picture.frame, picture.stats) ?: written
+        val framed = tool.resolve(spec, written, picture.frame, picture.stats) ?: written
+        // And, for a medium with time, where the play head stands (ME-287).
+        val resolved = picture.playHeadMs()?.let { tool.atPlayHead(spec, framed, it, live) } ?: framed
         // And a canvas tool may apply the same edit to what is *selected* — choosing red
         // with an arrow selected means "make this one red", not only "draw the next one
         // red" (ME-114). Part of the same operation, so it is the same undo step.

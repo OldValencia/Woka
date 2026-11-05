@@ -14,7 +14,12 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
+import com.woka.core.data.applyTo
+import com.woka.core.ui.image.AppliedVideoEdits
 import com.woka.feature.viewer.audio.AudioStage
+import com.woka.feature.viewer.image.rememberHdrModeAccess
+import com.woka.feature.viewer.video.engine.PlayEditedRanges
+import com.woka.feature.viewer.video.engine.PlayEditedSound
 import com.woka.feature.viewer.video.engine.activeCue
 import com.woka.feature.viewer.video.SubtitleBitmapLayer
 
@@ -46,9 +51,18 @@ fun MediaViewerFrame(
     // Read here, in the same composition as the bitmap above, so the pair the draw
     // scope reports is the pair it actually drew (§6).
     val drawnFrameId = video?.player?.currentFrameId ?: 0L
-    val color = frameColorInfo(media, frameToDraw)
     val moving = isMovingFrame(media, frameToDraw)
-    val painter = rememberFramePainter(frameToDraw, color, moving = moving)
+    // A moving frame takes the HDR mode here (ME-304); a still answered it at its decode.
+    val mode = rememberHdrModeAccess().current()
+    val color = frameColorInfo(media, frameToDraw).let { if (moving) mode.applyTo(it) else it }
+    // What `Done` wrote into the film (ME-284): its picture through the edit, and only
+    // the ranges it kept played; re-read when a save says so, not per frame.
+    val file = video?.player?.file
+    val edit = remember(file, AppliedVideoEdits.generation) { file?.let { AppliedVideoEdits.editOf(it) } }
+    val edited = remember(frameToDraw, edit, color, moving) { edit?.painter(frameToDraw, color, moving) }
+    val painter = edited ?: rememberFramePainter(frameToDraw, color, moving = moving)
+    if (video != null && edit != null) PlayEditedRanges(video.player, edit.clock)
+    if (video != null && edit != null) PlayEditedSound(video.player, edit)
 
     // Built once per action set. This composable recomposes on every presented
     // frame (it reads `currentFrame` above), and the list was rebuilt each time

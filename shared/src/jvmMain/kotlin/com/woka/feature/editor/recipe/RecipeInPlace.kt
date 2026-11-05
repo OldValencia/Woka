@@ -34,6 +34,8 @@ internal fun writeInPlace(file: File, carrier: TailRecipeCarrier, box: ByteArray
             handle.setLength(write.at)
             handle.seek(write.at)
             handle.write(box)
+            // After the append, so a write that dies first leaves a size merely short (ME-283).
+            carrier.lengthPatch(write.at + box.size)?.let { handle.patch(it) }
         }
     }
 }
@@ -49,8 +51,17 @@ internal fun clearInPlace(file: File, carrier: TailRecipeCarrier): Result<Unit>?
     val write = tailWrite(file, carrier) ?: return null
     if (!write.carries) return Result.success(Unit)
     return runCatching {
-        RandomAccessFile(file, "rw").use { handle -> handle.setLength(write.at) }
+        RandomAccessFile(file, "rw").use { handle ->
+            // Before the truncate, for the same reason the write patches after its append.
+            carrier.lengthPatch(write.at)?.let { handle.patch(it) }
+            handle.setLength(write.at)
+        }
     }
+}
+
+private fun RandomAccessFile.patch(patch: LengthPatch) {
+    seek(patch.at)
+    write(patch.bytes)
 }
 
 /** Where the next write starts, and whether it is replacing a box or appending one. */

@@ -54,7 +54,9 @@ internal fun EditorFrameScopeStrip(
     scope: EditScope,
     frameIndex: Int,
     onScopeChange: (EditScope) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** A film's selected clip, numbered from 1, or null for the whole film (ME-221). */
+    selectedClip: Int? = null
 ) {
     Column(
         modifier = modifier
@@ -63,23 +65,28 @@ internal fun EditorFrameScopeStrip(
             .testTag(FRAME_SCOPE_TAG),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        SegmentedControl(
-            options = listOf(ALL_FRAMES, SINGLE_FRAME),
-            selected = if (scope == EditScope.SingleFrame) SINGLE_FRAME else ALL_FRAMES,
-            onSelect = { chosen ->
-                onScopeChange(
-                    if (chosen == SINGLE_FRAME) EditScope.SingleFrame else EditScope.AllFrames
-                )
-            },
-            colors = SegmentedControlDefaults.onScrim
-        )
-        Spacer(Modifier.height(LABEL_GAP))
+        // **A film has no switch** (ME-221): the selected clip tab is the scope, and this
+        // only says what it is. A GIF keeps its two segments.
+        if (!frames.clips) {
+            SegmentedControl(
+                options = listOf(ALL_FRAMES, SINGLE_FRAME),
+                selected = if (scope == EditScope.SingleFrame) SINGLE_FRAME else ALL_FRAMES,
+                onSelect = { chosen ->
+                    onScopeChange(if (chosen == SINGLE_FRAME) EditScope.SingleFrame else EditScope.AllFrames)
+                },
+                colors = SegmentedControlDefaults.onScrim
+            )
+            Spacer(Modifier.height(LABEL_GAP))
+        }
         BasicText(
-            text = consequenceOf(frames, scope, frameIndex),
+            text = if (frames.clips) clipCaption(selectedClip) else consequenceOf(frames, scope, frameIndex),
             style = TextStyle(color = Theme.viewer.onScrimSecondary, fontSize = FOOTNOTE_SIZE)
         )
     }
 }
+
+private fun clipCaption(selectedClip: Int?): String =
+    selectedClip?.let { "Applies to clip $it" } ?: "Applies to every clip"
 
 /**
  * What the click is about to do, said before it happens.

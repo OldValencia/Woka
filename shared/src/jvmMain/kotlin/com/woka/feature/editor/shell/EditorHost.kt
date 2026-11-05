@@ -1,6 +1,7 @@
 package com.woka.feature.editor.shell
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -42,9 +43,8 @@ private class EditorDependencies : KoinComponent {
  * the editor — the engine, the document, the session, the frame — rather than acting
  * on it, which is why every `remember` below is keyed and none of them is a verb.
  *
- * A target the factory refuses closes immediately rather than showing an empty shell.
- * Both doors already ask [isEditable] before opening one, so this is the case where the
- * file changed between the menu opening and the click landing.
+ * A target the factory refuses closes immediately, with the reason in the notice strip
+ * (ME-289) rather than as an empty shell or a silent close.
  */
 @Composable
 internal fun EditorHost(
@@ -60,7 +60,7 @@ internal fun EditorHost(
     }
 
     if (engine == null) {
-        LaunchedEffect(target) { onClose() }
+        EditorRefusedEffect(target.path, onClose)
         return
     }
 
@@ -71,12 +71,12 @@ internal fun EditorHost(
     // (2026-09-02): keyed on the frame it re-seeded to `All Frames` on every move and
     // the switch flipped under the user's hand. Re-seeding guarded against an
     // `All Frames` save clearing other frames' work, which ME-175 made impossible.
-    var editScope by remember(target.path) { mutableStateOf(engine.frames.storedScope) }
+    var editScope by rememberEditScope(target.path, engine, session, dependencies.registry)
 
     // The engine is still keyed on the frame — it draws one frame's pixels — but the
     // session is not, so it is told to look elsewhere rather than rebuilt. **After the
     // switch is declared**, because what a frame change means depends on it.
-    LaunchedEffect(frameIndex) { session.moveToFrame(frameIndex, editScope) }
+    LaunchedEffect(frameIndex) { session.moveToFrame(engine.openingFrame(frameIndex), editScope) }
 
     EditorPresenceEffect(engine, session, file.name, editScope, onClose, onSaved)
 
@@ -100,6 +100,11 @@ internal fun EditorHost(
         onClose = onClose,
         onSaved = onSaved
     ) { actions ->
+        // `Done ▾`'s other entries (ME-291), read by the bar through `LocalDoneChoices`; on
+        // a film that cannot keep the edit the render takes `Done`'s place (ME-289).
+        val exports = exportAction(engine, session, file, editScope, onClose, onSaved)
+        val choices = doneChoicesOf(engine, exports)
+        val done = choices.instead ?: actions.done
         EditorKeyEffect(
             globalShortcuts = LocalGlobalShortcuts.current,
             canUndo = canUndo,
@@ -107,35 +112,38 @@ internal fun EditorHost(
             onCancel = actions.leave,
             onUndo = session::undo,
             onRedo = session::redo,
-            onDone = actions.done,
+            onDone = done,
             onTogglePlayback = engine::togglePlayback,
+            onStep = engine::stepPlayHead,
             canvasKeys = canvasKeys
         )
 
-        EditorScreen(
-            session = session,
-            engine = engine,
-            registry = dependencies.registry,
-            canvasKeys = canvasKeys,
-            onCancel = actions.leave,
-            onDone = actions.done,
-            canRevert = actions.canRevert,
-            onRevert = actions.askRevert,
-            frameControls = EditorFrameControls(
-                frames = engine.frames,
-                scope = editScope,
-                frameIndex = frameIndex,
-                // Leaving All Frames fixes what was made there as the shared layer, so a
-                // frame reached afterwards still shows it (2026-09-02).
-                // The switch moves what is *shown*, not only what a save means: leaving
-                // All Frames fixes the layer, entering it puts the frame's own work aside
-                // and shows the layer alone (2026-09-02).
-                onScopeChange = { picked ->
-                    if (picked == EditScope.SingleFrame) session.rebase() else session.detachFrame()
-                    editScope = picked
-                },
-                onSelectFrame = actions.selectFrame
+        CompositionLocalProvider(LocalDoneChoices provides choices, LocalCanvasKeys provides canvasKeys) {
+            EditorScreen(
+                session = session,
+                engine = engine,
+                registry = dependencies.registry,
+                canvasKeys = canvasKeys,
+                onCancel = actions.leave,
+                onDone = done,
+                canRevert = actions.canRevert,
+                onRevert = actions.askRevert,
+                frameControls = EditorFrameControls(
+                    frames = engine.frames,
+                    scope = editScope,
+                    frameIndex = frameIndex,
+                    // Leaving All Frames fixes what was made there as the shared layer, so a
+                    // frame reached afterwards still shows it (2026-09-02).
+                    // The switch moves what is *shown*, not only what a save means: leaving
+                    // All Frames fixes the layer, entering it puts the frame's own work aside
+                    // and shows the layer alone (2026-09-02).
+                    onScopeChange = { picked ->
+                        if (picked == EditScope.SingleFrame) session.rebase() else session.detachFrame()
+                        editScope = picked
+                    },
+                    onSelectFrame = actions.selectFrame
+                )
             )
-        )
+        }
     }
 }

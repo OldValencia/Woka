@@ -2,19 +2,24 @@ package com.woka.feature.editor.di
 
 import com.woka.core.data.MediaItem
 import com.woka.core.ui.image.AppliedStillEdits
+import com.woka.core.ui.image.AppliedVideoEdits
 import com.woka.feature.editor.core.EditorSession
 import com.woka.feature.editor.core.EditorEngineFactory
 import com.woka.feature.editor.core.EditorTool
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.engine.EditorEngineFactoryImpl
 import com.woka.feature.editor.engine.image.RecipeStillEdits
+import com.woka.feature.editor.engine.video.RecipeVideoEdits
 import com.woka.feature.editor.tools.adjust.AdjustTool
+import com.woka.feature.editor.tools.cover.CoverTool
 import com.woka.feature.editor.tools.crop.CropTool
 import com.woka.feature.editor.tools.filter.FilterTool
 import com.woka.feature.editor.tools.hdr.HdrTool
 import com.woka.feature.editor.tools.markup.MarkupTool
 import com.woka.feature.editor.tools.resize.ResizeTool
+import com.woka.feature.editor.tools.sound.SoundTool
 import com.woka.feature.editor.tools.transform.TransformTool
+import com.woka.feature.editor.tools.trim.TrimTool
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
@@ -51,6 +56,9 @@ val editorModule = module {
     single<EditorTool>(named(MarkupTool.manifest.id)) { MarkupTool }
     single<EditorTool>(named(ResizeTool.manifest.id)) { ResizeTool }
     single<EditorTool>(named(HdrTool.manifest.id)) { HdrTool }
+    single<EditorTool>(named(TrimTool.manifest.id)) { TrimTool }
+    single<EditorTool>(named(SoundTool.manifest.id)) { SoundTool }
+    single<EditorTool>(named(CoverTool.manifest.id)) { CoverTool }
 
     // `getAll` is what makes declaring a tool the only step in joining the set.
     // `single`, because the registry's per-kind flows are built once and every
@@ -68,5 +76,10 @@ val editorModule = module {
     // eager instances, and building this one installs it.
     single(createdAtStart = true) {
         RecipeStillEdits(get()).also { AppliedStillEdits.install(it) }
+    }
+    // The same for a film (ME-284): the viewer, PiP and the grid poster fold what `Done`
+    // wrote, and none of them resolves anything from Koin either.
+    single(createdAtStart = true) {
+        RecipeVideoEdits(get()).also { AppliedVideoEdits.install(it) }
     }
 }

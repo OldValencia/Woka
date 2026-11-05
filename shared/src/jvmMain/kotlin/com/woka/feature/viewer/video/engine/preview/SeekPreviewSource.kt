@@ -1,6 +1,7 @@
 package com.woka.feature.viewer.video.engine.preview
 
 import androidx.compose.ui.graphics.ImageBitmap
+import com.woka.feature.viewer.video.engine.decode.FreshFrameGrabber
 import com.woka.feature.viewer.video.engine.decode.toComposeBitmap
 import com.woka.feature.viewer.video.engine.sync.grabImageAt
 import com.woka.feature.viewer.video.engine.probe.clockwiseTurns
@@ -61,7 +62,7 @@ internal class SeekPreviewSource(
     private fun openGrabber(): FFmpegFrameGrabber? {
         if (unusable) return null
         return try {
-            FFmpegFrameGrabber(file).apply {
+            FreshFrameGrabber(file).apply {
                 // The player's own grabber already enumerated the streams, so this
                 // one needs only enough of a probe to decode: 4ms against 59ms.
                 setOption("probesize", "2000000")

@@ -67,7 +67,7 @@ private fun writeByCapability(
     // **Bucket B takes the open frame alone** and could not take more: it rewrites the
     // picture rather than recording a recipe (ME-126). It is empty today.
     EditCapability.Destructive -> reEncode(open)
-    EditCapability.Unavailable -> EditSaveResult.Failed(
+    EditCapability.RenderOnly, EditCapability.Unavailable -> EditSaveResult.Failed(
         "${file.extension.uppercase()} files cannot be edited."
     )
 }

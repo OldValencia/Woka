@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.asComposeImageBitmap
 import androidx.compose.ui.graphics.asSkiaBitmap
 import com.woka.core.data.StillColorInfo
 import com.woka.feature.viewer.video.engine.probe.HdrInfo
+import com.woka.feature.viewer.video.engine.probe.toColour
 import org.jetbrains.skia.Bitmap
 import org.jetbrains.skia.ColorAlphaType
 import org.jetbrains.skia.ColorType
@@ -112,7 +113,7 @@ internal class AmbientSampler {
         val next = bitmap.asComposeImageBitmap()
         Snapshot.withMutableSnapshot {
             image = next
-            color = hdr?.let { StillColorInfo(it.transfer, it.isWideGamut) } ?: StillColorInfo.Sdr
+            color = hdr?.toColour() ?: StillColorInfo.Sdr
         }
     }
 }

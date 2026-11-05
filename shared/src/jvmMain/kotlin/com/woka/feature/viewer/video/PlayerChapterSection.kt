@@ -13,11 +13,15 @@ import com.woka.feature.viewer.shell.PopoverSectionLabel
  * Chapter list in the Settings ⚙ popover (§4). Secondary navigation belongs in
  * the settings drawer, same reasoning as Video Track (§2.3); hidden entirely
  * when the file has no chapters.
+ *
+ * **Hidden on a film `Done` cut, too** (ME-285, the author 2026-11-05): its rows seek in
+ * source time, which a cut has moved. The slider keeps them, laid on the result
+ * (`chapterSegmentsOnResult`); editing chapters is planned for 1.0.9.
  */
 @Composable
 internal fun PlayerChapterSection(videoState: VideoPlayerState) {
     val chapters = videoState.tracks.chapters
-    if (chapters.isEmpty()) return
+    if (chapters.isEmpty() || rememberResultClock(videoState) != null) return
 
     // currentPositionMs changes at the presenter's rate; derived so the rows only
     // recompose when the play head actually crosses a boundary.

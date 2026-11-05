@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.woka.core.ui.icons.Icons
+import com.woka.core.ui.image.rememberReloadKey
 import com.woka.core.ui.theme.Theme
 import com.woka.core.utils.generateVideoThumbnail
 import org.jetbrains.compose.resources.painterResource
@@ -40,7 +41,12 @@ private val WATCHED_TINT = ColorFilter.colorMatrix(ColorMatrix().apply { setToSa
 @Composable
 internal fun BoxScope.VideoCover(file: File, dim: Boolean, calm: ColorFilter) {
     var bitmap by remember(file.absolutePath) { mutableStateOf<ImageBitmap?>(null) }
-    LaunchedEffect(file.absolutePath) {
+    // **And on the save signal** (`StillCoverImage`'s key): a `Done` on this film evicts
+    // its poster and moves its fold, and a tile keyed on the path alone kept the frame as
+    // shot until it was scrolled away and back (2026-11-04). The old frame stays up until
+    // the new one arrives, so the tile does not flash its placeholder.
+    val reloadKey = rememberReloadKey(file.absolutePath)
+    LaunchedEffect(file.absolutePath, reloadKey) {
         bitmap = generateVideoThumbnail(file)
     }
 

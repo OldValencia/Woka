@@ -5,6 +5,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.unit.IntOffset
 import com.woka.core.ui.components.ContextMenuPopup
 import com.woka.core.ui.components.DropdownItem
+import com.woka.core.ui.components.FolderPathItems
 import com.woka.core.ui.theme.Theme
 
 /** Which of the sidebar's three kinds of row was right-clicked. */
@@ -35,7 +36,8 @@ internal data class SidebarActions(
 
 /**
  * The right-click menu of a sidebar row. Each kind answers the one question it can:
- * a root can be unlinked, a folder inside one pinned or unpinned, a pin unpinned.
+ * a root can be unlinked, a folder inside one pinned or unpinned, a pin unpinned —
+ * and every row opens in the file manager and copies its full path.
  *
  * **Unlink takes effect at once and is red**, as it was on Home's card. It also
  * sweeps the watch history and remembered tracks under the root; SIDE-007 gives it
@@ -65,5 +67,7 @@ internal fun SidebarMenu(
                 actions.unpin(request.path)
             }
         }
+        // Every kind: the folder in the system's file manager, and its full path as text.
+        FolderPathItems(request.path, dismiss)
     }
 }

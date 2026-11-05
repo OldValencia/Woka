@@ -92,6 +92,15 @@ val LocalTopBarAccessories = compositionLocalOf { TopBarAccessoriesState() }
  */
 class GlobalShortcutState {
     var onPreviewKey by mutableStateOf<((KeyEvent) -> Boolean)?>(null)
+
+    /**
+     * True while the registered handler owns the keyboard **regardless of focus** — the
+     * editor's, which `MainShell` then also hands the window's keys (`WindowKeys`). A root
+     * node sees a key only while focus sits beneath it, and a reopened editor whose mark
+     * was selected by a click on the picture has focus nowhere: Delete, Esc and Ctrl+Z
+     * all went unheard until a rail button was clicked (2026-11-04).
+     */
+    var ownsWindow by mutableStateOf(false)
 }
 
 val LocalGlobalShortcuts = compositionLocalOf { GlobalShortcutState() }

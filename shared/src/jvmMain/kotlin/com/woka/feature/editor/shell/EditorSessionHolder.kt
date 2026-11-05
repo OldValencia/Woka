@@ -32,7 +32,8 @@ internal fun rememberEditorSession(
         // the second `Done` on a photograph replace the first one's edit instead of
         // continuing it.
         initial = engine.storedDocument(),
-        openedOn = frameIndex,
+        // A film opens on no clip at all — its shared layer (ME-215).
+        openedOn = engine.openingFrame(frameIndex),
         storedFor = engine::storedDocumentIn,
         storedBase = engine.storedBase()
     )

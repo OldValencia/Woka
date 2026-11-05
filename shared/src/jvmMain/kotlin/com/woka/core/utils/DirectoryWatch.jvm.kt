@@ -8,11 +8,14 @@ import kotlinx.coroutines.launch
 import java.io.IOException
 import java.nio.file.ClosedWatchServiceException
 import java.nio.file.FileSystems
+import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardWatchEventKinds.ENTRY_CREATE
 import java.nio.file.StandardWatchEventKinds.ENTRY_DELETE
 import java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY
 import java.nio.file.StandardWatchEventKinds.OVERFLOW
+import java.nio.file.WatchEvent
 import java.nio.file.WatchService
 
 /**
@@ -37,7 +40,7 @@ actual fun directoryChanges(path: String): Flow<Unit> = callbackFlow {
         try {
             while (true) {
                 val key = watcher.take()
-                if (key.pollEvents().isNotEmpty()) trySend(Unit)
+                if (key.pollEvents().any { it.isFolderChange(path) }) trySend(Unit)
                 if (!key.reset()) break
             }
         } catch (_: ClosedWatchServiceException) {
@@ -47,6 +50,19 @@ actual fun directoryChanges(path: String): Flow<Unit> = callbackFlow {
         }
     }
     awaitClose { watcher.close() }
+}
+
+/**
+ * **A sub-folder's modification is not the folder's change.** Windows stamps a folder's
+ * last-write time when a file is written inside it, and the parent's watch hears that as
+ * `ENTRY_MODIFY` on the sub-folder — so a subtitle downloaded into `Season 1` would
+ * refresh the grid one level up, which is what the contract rules out. A sub-folder
+ * created, deleted or renamed still arrives as `ENTRY_CREATE`/`ENTRY_DELETE`.
+ */
+private fun WatchEvent<*>.isFolderChange(path: String): Boolean {
+    if (kind() != ENTRY_MODIFY) return true
+    val name = context() as? Path ?: return true
+    return !Files.isDirectory(Paths.get(path).resolve(name))
 }
 
 /** Null for a path the platform will not watch — the caller's flow is then empty. */

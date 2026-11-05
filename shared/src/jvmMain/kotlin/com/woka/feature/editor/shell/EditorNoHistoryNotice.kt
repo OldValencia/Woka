@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
@@ -17,6 +18,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.woka.core.ui.theme.Theme
+import com.woka.feature.editor.EditorNoticeStatus
+import java.io.File
 
 /**
  * Bucket B's one extra thing: this format has nowhere to keep the edit, so `Done`
@@ -32,7 +35,38 @@ import com.woka.core.ui.theme.Theme
  * the user can act on, and "there is no revert" is its consequence.
  */
 @Composable
-internal fun EditorNoHistoryNotice() {
+internal fun EditorNoHistoryNotice() = EditorFormatNotice(
+    title = "This format keeps no edit history",
+    body = "Done re-encodes the picture in place. There is nothing to revert to " +
+        "afterwards, and editing it again starts from the re-encoded file.",
+    tag = "editor-no-history-notice"
+)
+
+/**
+ * A film's bucket B (ME-289): nowhere to keep the edit, so `Done` is the render — mockup
+ * state 9's words, shown for the whole session for this notice's own reason.
+ */
+@Composable
+internal fun EditorRenderOnlyNotice(extension: String) = EditorFormatNotice(
+    title = "${extension.uppercase()} cannot keep an edit yet",
+    body = "Done is unavailable for this format. Render writes a new file; the original is untouched.",
+    tag = "editor-render-only-notice"
+)
+
+/**
+ * A target the factory refuses (ME-289): the reason in the notice strip, then the close —
+ * never an editor that opens and shuts in one frame with nothing said.
+ */
+@Composable
+internal fun EditorRefusedEffect(path: String, onClose: () -> Unit) {
+    LaunchedEffect(path) {
+        EditorNoticeStatus.show("${File(path).extension.uppercase()} files cannot be edited.")
+        onClose()
+    }
+}
+
+@Composable
+private fun EditorFormatNotice(title: String, body: String, tag: String) {
     val warn = Theme.colors.accentFolders
     Column(
         modifier = Modifier
@@ -41,16 +75,15 @@ internal fun EditorNoHistoryNotice() {
             .background(warn.copy(alpha = 0.14f))
             .border(1.dp, warn.copy(alpha = 0.32f), RoundedCornerShape(9.dp))
             .padding(horizontal = 11.dp, vertical = 9.dp)
-            .testTag("editor-no-history-notice"),
+            .testTag(tag),
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         BasicText(
-            text = "This format keeps no edit history",
+            text = title,
             style = TextStyle(color = warn, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         )
         BasicText(
-            text = "Done re-encodes the picture in place. There is nothing to revert to " +
-                "afterwards, and editing it again starts from the re-encoded file.",
+            text = body,
             style = TextStyle(color = Theme.viewer.onScrimSecondary, fontSize = 11.5.sp)
         )
     }

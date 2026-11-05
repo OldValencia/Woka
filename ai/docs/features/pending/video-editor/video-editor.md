@@ -74,12 +74,12 @@ independently and ship independently.
 | # | Folder | What it owns | State |
 |---|---|---|---|
 | — | [`foundation/`](../../implemented/video-editor/foundation/foundation.md) | An `EditorEngine` for `MediaKind.Video`: the player's frame drawn through the recipe, HDR in the chain, frame retention, playback on the canvas, the timeline seam | **shipped 2026-09-03** — ME-201, ME-206, ME-207, ME-205; confirmed on screen |
-| **1** | [`save/`](save/save.md) | `Done`: a recipe inside a video container, written without copying the file, folded by every reader | not started |
-| **2** | [`timeline/`](timeline/timeline.md) | The strip and the document behind it: trim, split, select, delete, reorder, per-clip scope, speed, freeze-frame | not started |
-| **3** | [`playback/`](playback/playback.md) | Playing an *edited* timeline seamlessly — the pre-rolling second decoder, and the audio that follows it | not started |
-| **4** | [`audio/`](audio/audio.md) | Mute, volume and fades per clip; detach; an external track; extract to a file | not started |
+| **1** | [`save/`](save/save.md) | `Done`: a recipe inside a video container, written without copying the file, folded by every reader | **started** — mp4/mov/mkv/webm/avi carry an edit, every reader folds (ME-284); ME-285…287 left |
+| **2** | [`timeline/`](timeline/timeline.md) | The strip and the document behind it: trim, split, select, delete, reorder, per-clip scope, speed, freeze-frame | **started** — ME-210 (2026-11-01), ME-215…ME-218 (2026-11-04) done |
+| **3** | [`playback/`](playback/playback.md) | Playing an *edited* timeline seamlessly — the pre-rolling second decoder, and the audio that follows it | **started** — ME-231, ME-232, ME-233 done (2026-11-01…11-05): joins without a stall in picture or sound; ME-235 dropped, ME-236 (hardware decode) open |
+| **4** | [`audio/`](audio/audio.md) | Mute, volume and fades per clip; detach; an external track; extract to a file | **started** — ME-240 done 2026-11-04 |
 | **5** | [`picture/`](picture/picture.md) | Making Crop, Resize, Adjust, Filters and Markup *true* on a moving picture, and markup that appears, holds and fades | not started |
-| **6** | [`render/`](render/render.md) | `Render video…`: a new file, copying every segment it can and re-encoding only what it must | not started |
+| **6** | [`render/`](render/render.md) | `Render video…`: a new file, copying every segment it can and re-encoding only what it must | **started** — ME-290, ME-291 done 2026-11-01; HDR tone mapped on the encode path 2026-11-04 |
 | any | [`shell/`](shell/shell.md) | §300: the shell **both** editors compose — every one of it changes a still as well | ME-302, ME-303 **done 2026-09-04** |
 
 **This table is a feature roll-up and deliberately carries no ticket rows.** Each folder's own
@@ -149,7 +149,8 @@ dependency lands. Nothing here licenses working two folders at once in one sitti
   that file's own metadata. A sequence of clips from different files has nowhere to live, and needs a
   project, a clip library and a timeline of tracks. That is the line between this and iMovie, and it
   is where the feature stops. **Cutting within one file is not that** — see §3.2.
-- **Transitions, keyframed parameter animation, layers, masks, chroma key, stabilisation.**
+- **Transitions, keyframed parameter animation, layers, brush masks, chroma key, stabilisation.**
+  Rectangle and ellipse areas came back in on 2026-11-02 (ME-268).
 - **Precise (non-keyframe) cuts in the copy path.** A cut that must land mid-GOP re-encodes, and
   `render/` says what that costs.
 - **Subtitles.** The viewer owns them; the editor does not touch them.
@@ -505,6 +506,8 @@ these wants a fresh head rather than an estimate.
 
 | Date | Question | Decision | Why |
 |---|---|---|---|
+| 2026-11-02 | Masks? | **Rectangle and ellipse areas with feather for Adjust and Styles (ME-268); brushes stay out** | The author: a film needs *when* (ME-215, ME-263) and *where* a look applies. Reverses 2026-09-03 for these two shapes only |
+| 2026-11-01 | What does 1.0.6 ship, and what does `Done` do for a video until ME-284? | **Cutting (ME-210) and `Render video…` (ME-291, with VF-104); `Done ▾` offers both, the in-file `Done` staying visible only in the editor. The doors reopen (`VIDEO_EDITING_ENABLED`)** | The author's choice that morning: a render is visible everywhere by construction, so the release does not wait on the pre-rolling decoder that ME-284 reuses |
 | 2026-09-04 | In what order are the seven folders built? | **`save/`, `timeline/`, `playback/`, `audio/`, `picture/`, `render/`, with `shell/` at any point — written into §1a with each folder's starting ticket** | It was being re-derived from the backlog's dependency lines at the start of every sitting, which is a session of reading to reach an answer that does not change. `save/` is first because the author picked it the day the folders were drawn, and the three probes are called out separately because they answer questions rather than build on them |
 | 2026-09-03 | One folder or several? | **Seven feature folders, one shared backlog under `tickets/`** | The brief is seven bodies of work that fail and ship independently. The backlog stays single because a block's track is a section heading, and one file is where "what is left" can be read in one go |
 | 2026-09-03 | Does cutting break the data model? | **No — clips are ranges of one source** | The old objection was about a sequence of *several files*. Re-ordering ranges of one file is one op on one file, so the recipe, the carrier and the history all keep working (§3.2) |

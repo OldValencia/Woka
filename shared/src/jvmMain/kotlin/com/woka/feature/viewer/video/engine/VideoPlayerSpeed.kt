@@ -21,16 +21,53 @@ import kotlin.time.Duration.Companion.milliseconds
  * exception — see [AudioTempoFilter].
  */
 
+/** The user's own speed — the player's control and the settings (§6). */
 fun VideoPlayerState.setPlaybackSpeed(speed: Float) {
-    val snapped = PlaybackSpeed.snap(speed)
-    if (snapped == playbackSpeed) return
-    playbackSpeed = snapped
+    edit.userSpeed = PlaybackSpeed.snap(speed)
+    applySpeed()
+}
+
+/**
+ * An edited clip's pace while it plays (ME-216): ¼× to 4×, **multiplied into** the user's
+ * speed rather than written over it, and never persisted — it is the film's, not the user's.
+ *
+ * Two owners writing one value was the bug the author reported 2026-11-04: the viewer set
+ * the settings' speed and the edit set the clip's, and whichever effect ran last won — 1×
+ * after `Done`, 4× after Revert, right only after leaving and coming back. One value made of
+ * two inputs cannot be raced.
+ */
+fun VideoPlayerState.setClipPace(pace: Float, owner: Any = this) {
+    edit.paceOwner = owner
+    edit.clipPace = pace
+    applySpeed()
+}
+
+/**
+ * Back to the user's own speed — **only if [owner] set the pace last**. Measured 2026-11-04:
+ * after `Done` the viewer's frame is composed twice over one player for a moment, and the
+ * leaving copy's reset landed after the new copy's 4× — the film played at 1× until reopened.
+ */
+fun VideoPlayerState.releaseClipPace(owner: Any) {
+    if (edit.paceOwner !== owner) return
+    edit.paceOwner = null
+    edit.clipPace = 1f
+    applySpeed()
+}
+
+
+private fun VideoPlayerState.applySpeed() {
+    val speed = (edit.userSpeed * edit.clipPace).coerceIn(CLIP_SPEED_MIN, CLIP_SPEED_MAX)
+    if (speed == playbackSpeed) return
+    playbackSpeed = speed
     generation.requestSpeedChange()
     // The presenter's baseline was anchored under the old speed; without a rebase
     // every incoming frame would read as wildly early or late right after the
     // change and get dropped or slept on.
     generation.requestPresenterRebase()
 }
+
+private const val CLIP_SPEED_MIN = 0.25f
+private const val CLIP_SPEED_MAX = 4f
 
 /**
  * End of stream. Only Repeat File loops here — Repeat Folder means "play the next
@@ -87,6 +124,8 @@ internal fun VideoPlayerState.audioReseek(
     tempo: AudioTempoFilter?
 ): AudioTempoFilter? {
     audioSeekTo(grabber, targetMs, audioChannel)
+    // A cut film's sound starts again in the range the picture is in (ME-233).
+    if (edit.joins.active) edit.audio.follow(this, targetMs + audioDelayMs)
     tempo?.close()
     return buildTempoFilter(grabber)
 }

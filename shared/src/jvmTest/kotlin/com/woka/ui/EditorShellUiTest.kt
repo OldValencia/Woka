@@ -52,8 +52,9 @@ class EditorShellUiTest {
                 ToolDomain.entries.forEach {
                     onNodeWithTag("editor-tool-${it.name.lowercase()}").assertIsDisplayed()
                 }
-                // Four domains, three boundaries — never a divider per tool.
-                onAllNodesWithTag("editor-rail-divider").assertCountEquals(3)
+                // One boundary fewer than there are domains — never a divider per tool.
+                // Counted off the enum since ME-210 prepended `Time` and made it five.
+                onAllNodesWithTag("editor-rail-divider").assertCountEquals(ToolDomain.entries.size - 1)
             }
         }
     }

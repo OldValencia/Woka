@@ -2,8 +2,8 @@ package com.woka.feature.viewer.video.engine.sync
 
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.engine.decode.VideoFrame
-import com.woka.feature.viewer.video.engine.decode.filteredPicture
-import com.woka.feature.viewer.video.engine.decode.pictureTimeUs
+import com.woka.feature.viewer.video.engine.decode.PictureFilter
+import com.woka.feature.viewer.video.engine.decode.colourOf
 import com.woka.feature.viewer.video.engine.decode.publishFrame
 import com.woka.feature.viewer.video.engine.probe.HdrInfo
 
@@ -31,18 +31,38 @@ internal fun VideoPlayerState.videoSeekTo(
     hdrInfo: HdrInfo? = null
 ) {
     while (videoChannel.tryReceive().isSuccess) {}
+    landAt(grabber, pictureFilter, targetMs)?.let {
+        // The picture's own time, for a frame step to count from (ME-219).
+        edit.shownMs = pictureFilter.timeUs(grabber, it) / 1000L
+        // The grabber's picture, not the clone: only the former still has its side data (ME-301).
+        if (it.image != null) publishFrame(it.toComposeBitmap(), colourOf(hdrInfo, grabber))
+        it.close()
+    }
+}
+
+/**
+ * Puts [grabber] on [targetMs] and returns the picture there — a clone the caller closes —
+ * with the grabber left just after it. The player's seek and a decoder lane's pre-roll
+ * (ME-232) are the same landing: keyframe seek with backoff, then decode forward, through
+ * whichever [filter] belongs to that grabber. [alive] stops a lane that was let go.
+ */
+internal fun VideoPlayerState.landAt(
+    grabber: FFmpegFrameGrabber,
+    filter: PictureFilter,
+    targetMs: Long,
+    alive: () -> Boolean = { scope.isActive }
+): Frame? {
     // The graph holds neighbouring frames from before the jump (VF-102).
-    pictureFilter.reset()
+    filter.reset()
     if (targetMs <= 0L) {
         try { grabber.restart() } catch (_: Exception) {}
-        while (scope.isActive) {
+        while (alive()) {
             val frame = grabber.grabFrame(false, true, true, false, false) ?: break
             if (frame.image == null) continue
-            val picture = filteredPicture(frame) ?: continue
-            publishFrame(picture.toComposeBitmap(), hdrInfo)
-            break
+            val picture = filter.picture(frame) ?: continue
+            return picture.clone()
         }
-        return
+        return null
     }
     var attempt = 0
     // Seeking exactly to the end lands past the last decodable frame, so start a
@@ -58,15 +78,11 @@ internal fun VideoPlayerState.videoSeekTo(
     if (grabber.mediaTimeUs > targetMs * 1000L + 100000L) {
         try { grabber.restart() } catch (_: Exception) {}
     }
-    pictureFilter.reset()
-    val landed = decodeForwardTo(grabber, targetMs) ?: run {
+    filter.reset()
+    return decodeForwardTo(grabber, filter, targetMs, alive) ?: run {
         try { grabber.restart() } catch (_: Exception) {}
-        pictureFilter.reset()
-        decodeForwardTo(grabber, targetMs)
-    }
-    landed?.let {
-        if (it.image != null) publishFrame(it.toComposeBitmap(), hdrInfo)
-        it.close()
+        filter.reset()
+        decodeForwardTo(grabber, filter, targetMs, alive)
     }
 }
 
@@ -75,18 +91,25 @@ internal fun VideoPlayerState.videoSeekTo(
  * deinterlacing, a picture is the graph's — one frame behind the grabber — and its
  * own time is what is compared.
  */
-private fun VideoPlayerState.decodeForwardTo(grabber: FFmpegFrameGrabber, targetMs: Long): Frame? {
+private fun decodeForwardTo(grabber: FFmpegFrameGrabber, filter: PictureFilter, targetMs: Long, alive: () -> Boolean): Frame? {
     var lastGoodFrame: Frame? = null
-    while (scope.isActive) {
+    while (alive()) {
         val frame = grabber.grabFrame(false, true, true, false, false) ?: break
         if (frame.image == null) continue
-        val picture = filteredPicture(frame) ?: continue
+        val picture = filter.picture(frame) ?: continue
         lastGoodFrame?.close()
         lastGoodFrame = picture.clone()
-        if (pictureTimeUs(grabber, picture) >= targetMs * 1000L) break
+        if (filter.timeUs(grabber, picture) >= targetMs * 1000L) break
     }
     return lastGoodFrame
 }
+
+/** [frame] through [this] graph, or itself on the plain path — `filteredPicture` for any filter. */
+private fun PictureFilter.picture(frame: Frame): Frame? = if (filtering) process(frame) else frame
+
+/** A picture's media time through [this] filter — `pictureTimeUs` for any filter. */
+internal fun PictureFilter.timeUs(grabber: FFmpegFrameGrabber, picture: Frame): Long =
+    if (filtering) mediaTimeUs(picture) else grabber.mediaTimeUs
 
 /**
  * Seeks the AUDIO grabber to [targetMs] and clears buffered/queued audio. A

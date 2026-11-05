@@ -60,6 +60,27 @@ interface EditorEngine : EditorEngineSurface, EditorEnginePicture {
     fun storedBase(): EditDocument = storedDocument()
 
     /**
+     * The frame the session stands on when the door asked for [requested] — the request
+     * itself for a still; `NO_CLIP` for a film, which opens on its shared layer (ME-215).
+     */
+    fun openingFrame(requested: Int): Int = requested
+
+    /**
+     * [frames] as [document] has them — a film's clip count moves with every split, so the
+     * scope switch asks per document. A still's frames are the file's, and do not move.
+     */
+    fun framesIn(document: EditDocument): EditorFrames = frames
+
+    /**
+     * Rail entries that mean nothing in [scope], with the reason the rail shows — on a
+     * film, Trim under This Clip: a cut is the whole video's (ME-215). Empty for a still.
+     */
+    fun unavailableIn(scope: EditScope): Map<String, String> = emptyMap()
+
+    /** Clip [id]'s place in [document]'s cut, from 1, for the scope's caption (ME-221). */
+    fun clipNumberOf(document: EditDocument, id: String?): Int? = null
+
+    /**
      * Writes [document] into the file that was opened — the only save there is
      * (§5). Nothing is chosen: no target, no name, no confirmation.
      *
@@ -89,5 +110,26 @@ interface EditorEngine : EditorEngineSurface, EditorEnginePicture {
     suspend fun revert(
         scope: EditScope = EditScope.AllFrames,
         frameIndex: Int = 0
+    ): EditSaveResult = EditSaveResult.NothingToDo
+
+    /**
+     * A line the medium adds under tool [toolId]'s inspector, or null — Resize on a film,
+     * which changes nothing on screen and only sizes a render (ME-262, decided by the author
+     * 2026-11-02). The engine says it because the tool cannot know what it is open on.
+     */
+    fun toolNote(toolId: String): String? = null
+
+    /** What `Done ▾` offers beside `Done` (ME-291). Empty — a plain `Done` — for a still. */
+    val exports: List<EditorExport> get() = emptyList()
+
+    /**
+     * Writes [layers] out through [export], as a **new** file; the source is never touched.
+     * [progress] is called with 0..1 from whatever thread does the work. Cancellable: a
+     * cancelled export leaves nothing behind. Defaulted to nothing, like [revert].
+     */
+    suspend fun export(
+        export: EditorExport,
+        layers: EditLayers,
+        progress: (Float) -> Unit
     ): EditSaveResult = EditSaveResult.NothingToDo
 }

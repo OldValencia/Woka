@@ -14,14 +14,23 @@ import org.bytedeco.javacv.FrameGrabber
 import com.woka.feature.viewer.video.model.MediaTrack
 
 /**
+ * Decoder threads for every video grabber the player opens — its own and each lane
+ * (ME-232). Not `auto`, which on a 16-thread machine holds a set of 4K frames per thread:
+ * one HEVC decoder cost ~0.8 GB. Four measured as fast as `auto` on S02E01 (87 vs 91 fps)
+ * and 48 fps on Green Book against 24 needed, at 270–330 MB; four of them at once still
+ * decode 4K at 41 fps or more (`playback.md`, `DecoderPoolProbe`, 2026-11-04).
+ */
+internal const val DECODE_THREADS = "4"
+
+/**
  * Opens a video-only grabber (audio is decoded on its own grabber, §2.1) on
  * [videoStreamIndex] — the absolute container index, matching [MediaTrack.index];
  * -1 leaves the container default in place (used for the first open, before the
  * probe has run).
  */
 internal fun VideoPlayerState.openVideoGrabber(videoStreamIndex: Int = -1): FFmpegFrameGrabber {
-    val grabber = FFmpegFrameGrabber(file)
-    grabber.setVideoOption("threads", "auto") // SW decode: dodge D3D11VA half-frame scaling bugs
+    val grabber = FreshFrameGrabber(file)
+    grabber.setVideoOption("threads", DECODE_THREADS) // SW decode: dodge D3D11VA half-frame scaling bugs
     // An interlaced or rotated file hands the decoder's own frames to the picture
     // graph, which scales and converts to RGBA after `bwdif` and the turn (VF-102/105).
     if (pictureFilter.active) grabber.imageMode = FrameGrabber.ImageMode.RAW
@@ -30,6 +39,26 @@ internal fun VideoPlayerState.openVideoGrabber(videoStreamIndex: Int = -1): FFmp
     // Output at the size actually drawn (§6). No-op until the probe has filled in
     // the native dimensions, so the very first open is always native.
     renderScale.applyTo(grabber)
+    return grabber
+}
+
+/**
+ * A grabber for a decoder lane (ME-232), not yet started: the player's own options, its
+ * selected stream, no audio, and **the size the player's grabber decodes at now** — not
+ * `renderScale.applyTo`, which would record the lane's size as the player's and hide a
+ * rescale the player's own grabber still owes.
+ */
+internal fun VideoPlayerState.openLaneGrabber(): FFmpegFrameGrabber {
+    val grabber = FreshFrameGrabber(file)
+    grabber.setVideoOption("threads", DECODE_THREADS)
+    if (pictureFilter.active) grabber.imageMode = FrameGrabber.ImageMode.RAW
+    else grabber.pixelFormat = AV_PIX_FMT_RGBA
+    tracks.selectedVideoIndex?.let { grabber.videoStream = it }
+    grabber.audioStream = Int.MAX_VALUE
+    if (renderScale.decodeWidth > 0) {
+        grabber.imageWidth = renderScale.decodeWidth
+        grabber.imageHeight = renderScale.decodeHeight
+    }
     return grabber
 }
 

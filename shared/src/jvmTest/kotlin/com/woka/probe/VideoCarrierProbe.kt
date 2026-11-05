@@ -60,15 +60,21 @@ class VideoCarrierProbe {
             )
         )
 
-        val subjects = listOfNotNull(mov, mp4.takeIf { it.isFile && it.length() > 0 })
+        // ME-282 and ME-283: an EBML element and a RIFF chunk, which ME-281 said nothing about.
+        val mkv = File(root, "carrier.mkv")
+        SampleMedia.file("chapters.mkv").copyTo(mkv, overwrite = true)
+        val avi = File(root, "carrier.avi").apply { delete() }
+        generateClip(avi, "libopenh264", seconds = 2, gop = CLIP_FPS, format = "avi")
+
+        val subjects = listOfNotNull(mov, mp4.takeIf { it.isFile && it.length() > 0 }, mkv, avi)
         // The **before** state goes in beside each, so the by-hand question is "does this
         // behave like that one" rather than "does this look right to me".
         subjects.forEach { it.copyTo(File(root, "reference_${it.name}"), overwrite = true) }
 
         val rows = subjects.map { row(binary, it) }
 
-        println("Video carrier probe — a Woka recipe appended to an mp4 and a mov")
-        if (subjects.size < 2) println("The mp4 remux failed: $remuxed")
+        println("Video carrier probe — a Woka recipe appended to an mp4, a mov, an mkv and an avi")
+        if (subjects.size < 4) println("The mp4 remux failed: $remuxed")
         println(renderTable(HEADERS, rows))
         printByHand(root)
     }
@@ -101,7 +107,7 @@ class VideoCarrierProbe {
         println("Files are in `${root.absolutePath}`.")
         println("Each `reference_*` is the same file **without** our box — compare against it.")
         println()
-        println("**By hand**, open both `carrier.mp4` and `carrier.mov` in each of:")
+        println("**By hand**, open every `carrier.*` in each of:")
         println("  1. mpv")
         println("  2. VLC")
         println("  3. Windows Explorer's preview pane")

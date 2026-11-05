@@ -9,6 +9,7 @@ import com.woka.core.data.MediaItem
 import com.woka.app.shell.LocalGlobalShortcuts
 import com.woka.feature.viewer.shell.frames.rememberFrameExportEntry
 import com.woka.feature.viewer.shell.frames.rememberFrameStrip
+import com.woka.feature.viewer.video.engine.probe.toColour
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -141,9 +142,8 @@ fun MediaViewerScreen(
         onEdit = editAction,
         onInfo = infoAction,
         isInfoOpen = showInfoDialog,
-        // Hidden for video, whose decode the switch never reaches (ME-180), and for an
-        // SDR still, which has nothing for it to say — `hdrControlApplies` holds why not.
-        showHdrMode = videoState == null && hdrControlVisible(state.stillColor),
+        // On an HDR film or still, never a track — `hdrControlApplies` holds why (ME-303, ME-304).
+        showHdrMode = activeItem !is MediaItem.Audio && hdrControlVisible(videoState?.streamHdrInfo?.toColour() ?: state.stillColor),
         showSizeControl = activeItem !is MediaItem.Audio,
         playerContent = playerContent
     )

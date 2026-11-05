@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.unit.IntSize
 import kotlin.math.max
@@ -59,41 +60,55 @@ internal fun RasterSurface(
     // zooming out revealed the whole of it. Every operation before the crop produced an
     // output at least as large as what it drew, so nothing had ever exceeded the box.
     Canvas(modifier = modifier.fillMaxSize().clipToBounds()) {
-        val output = recipe.outputSize
-        // Before the first layout, and for a document whose fold produced nothing to
-        // draw. Returning is invisible for a frame; dividing by zero is not.
-        if (output.width <= 0 || output.height <= 0) return@Canvas
-        if (sourceSize.width <= 0 || sourceSize.height <= 0) return@Canvas
+        drawThroughRecipe(source, sourceSize, recipe, fill)
+    }
+}
 
-        // **Both axes, and centred** (2026-09-03). It was `size.width / output.width`
-        // anchored at the origin, which is right only while the box has the picture's own
-        // proportions — true of the canvas and false of every thumbnail.
-        val across = size.width / output.width.toFloat()
-        val down = size.height / output.height.toFloat()
-        val fitScale = if (fill) max(across, down) else min(across, down)
-        // Zero on the canvas, where the two scales are equal. What a `fill` crops is
-        // split between the two edges rather than taken off one of them.
-        val left = (size.width - output.width * fitScale) / 2f
-        val top = (size.height - output.height * fitScale) / 2f
+/**
+ * [RasterSurface]'s drawing, on its own so the viewer's `RecipePainter` (ME-284) draws a
+ * film's frame by **the same lines** the editor's canvas does — a second copy of the scales
+ * below is how a played edit would start disagreeing with the one that was approved.
+ */
+internal fun DrawScope.drawThroughRecipe(
+    source: ImageBitmap,
+    sourceSize: IntSize,
+    recipe: RasterRecipe,
+    fill: Boolean = false
+) {
+    val output = recipe.outputSize
+    // Before the first layout, and for a document whose fold produced nothing to
+    // draw. Returning is invisible for a frame; dividing by zero is not.
+    if (output.width <= 0 || output.height <= 0) return
+    if (sourceSize.width <= 0 || sourceSize.height <= 0) return
 
-        withTransform({
-            translate(left, top)
-            scale(fitScale, fitScale, pivot = Offset.Zero)
-        }) {
-            withTransform({ transform(recipe.matrix) }) {
-                // Everything inside this call reasons in source pixels and never
-                // learns the bitmap was smaller. That is what lets the same recipe run
-                // here against a 2560 px copy and again on save against the native
-                // bitmap, with no branch between them — and it is what ME-116 spends:
-                // swapping the two at zoom needs no logic here at all. Shared with the
-                // save path rather than written twice, so the two cannot drift.
-                drawRecipeImage(source, sourceSize, recipe)
-            }
-            // Markup is drawn in source coordinates too, but *outside* the matrix:
-            // a crop must clip an arrow, not move it (§3.4's application order). After
-            // the shaders as well as the filter: markup sits on top of a sharpened
-            // picture rather than being sharpened with it (ME-165).
-            recipe.paints.forEach { paint -> paint.draw(this) }
+    // **Both axes, and centred** (2026-09-03). It was `size.width / output.width`
+    // anchored at the origin, which is right only while the box has the picture's own
+    // proportions — true of the canvas and false of every thumbnail.
+    val across = size.width / output.width.toFloat()
+    val down = size.height / output.height.toFloat()
+    val fitScale = if (fill) max(across, down) else min(across, down)
+    // Zero on the canvas, where the two scales are equal. What a `fill` crops is
+    // split between the two edges rather than taken off one of them.
+    val left = (size.width - output.width * fitScale) / 2f
+    val top = (size.height - output.height * fitScale) / 2f
+
+    withTransform({
+        translate(left, top)
+        scale(fitScale, fitScale, pivot = Offset.Zero)
+    }) {
+        withTransform({ transform(recipe.matrix) }) {
+            // Everything inside this call reasons in source pixels and never
+            // learns the bitmap was smaller. That is what lets the same recipe run
+            // here against a 2560 px copy and again on save against the native
+            // bitmap, with no branch between them — and it is what ME-116 spends:
+            // swapping the two at zoom needs no logic here at all. Shared with the
+            // save path rather than written twice, so the two cannot drift.
+            drawRecipeImage(source, sourceSize, recipe)
         }
+        // Markup is drawn in source coordinates too, but *outside* the matrix:
+        // a crop must clip an arrow, not move it (§3.4's application order). After
+        // the shaders as well as the filter: markup sits on top of a sharpened
+        // picture rather than being sharpened with it (ME-165).
+        recipe.paints.forEach { paint -> paint.draw(this) }
     }
 }

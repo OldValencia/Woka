@@ -20,12 +20,25 @@ fun EditorSession.preview(op: ToolOp) {
     _document.value = _document.value.withPending(op)
 }
 
-/** Folds the operation in flight into the document and records one undo step. */
+/**
+ * Folds the operation in flight into the document and records one undo step.
+ *
+ * On a film with a clip open (ME-221), a shared tool's op — a cut — goes into the shared
+ * layer and the clip's own work is composed over it again: a split made with clip 2 selected
+ * is the whole film's split, not clip 2's.
+ */
 fun EditorSession.commit(cardinality: ToolCardinality) {
-    val committed = _document.value.commitPending(cardinality)
+    val pending = _document.value.pending
+    val committed = if (film.linear && frame != NO_CLIP && pending != null && pending.toolId in film.sharedTools) {
+        val own = _document.value.ops - base.ops.toSet()
+        base = base.withPending(pending).commitPending(cardinality)
+        EditDocument(base.ops + own)
+    } else {
+        _document.value.commitPending(cardinality)
+    }
     if (committed == _document.value) return
     _document.value = committed
-    _history.value = _history.value.push(committed)
+    record(committed)
 }
 
 /** Abandons the operation in flight — an aborted drag, not an undo. */

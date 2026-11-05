@@ -110,6 +110,15 @@ the author chose `save/` as the folder after it. The ticket IDs stay in the `ME-
 namespace, banded one range per folder inside the 200s, because the prefix means *Media Editor* and
 spans the whole phase; ME-202…ME-204 are retired, their ids kept and never reused.
 
+**Release 1.0.6 (2026-11-05) carries the video editor's working core**, checked on screen by the
+author: cut, trim, reorder and duplicate on the strip; per-clip looks (This Clip), speed and
+freeze-frame; mute, volume and fades; the edit kept inside mp4/mov/mkv/webm/avi and folded by every
+reader; `Render video…` with HDR tone mapped on the encode path; and playback of a cut film with no
+stall at a join in picture (ME-232, four decoder lanes at four threads) or sound (ME-233, spliced to
+the sample). Still open in 5b: `picture/` whole, the rest of `audio/` (waveform, detach, an external
+track, extraction), `save/`'s watch record, Revert and cover (ME-285…ME-287), and ME-236 — hardware decoding for the lanes, the one
+thing measured to shorten a join's pre-roll.
+
 The claim below that "the video editor adds a tool set, an engine and a saver and changes none of the
 shell" **survived being read against the code** and is still true of the shell: what it understated is
 the size of the tool set. The one seam the shell grows is a defaulted `Timeline` composable, following

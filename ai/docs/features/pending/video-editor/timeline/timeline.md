@@ -11,10 +11,17 @@ Umbrella, and the data-model argument this rests on: [`../video-editor.md`](../v
 
 ## 1. Status
 
-No tickets written. Every block is in [the shared backlog](../backlog.md) §210.
+| Ticket | Title | State |
+|---|---|---|
+| [ME-221](tickets/ME-221-the-clip-tabs-are-the-scope.md) | The clip tabs are the scope | **done 2026-11-05**, checked by the author |
+| [ME-218](tickets/ME-218-the-strip-zooms.md) | The strip zooms | **done 2026-11-04**, build and tests green — *awaiting the by-hand pass* |
+| [ME-217](tickets/ME-217-freeze-frame.md) | Freeze-frame | **done 2026-11-04**, build and tests green — *awaiting the by-hand pass* |
+| [ME-216](tickets/ME-216-speed-per-clip.md) | Speed per clip | **done 2026-11-04**, build and tests green — *awaiting the by-hand pass* |
+| [ME-215](tickets/ME-215-this-clip.md) | This Clip: a tool on one stretch of the film | **done 2026-11-04**, build and tests green — *awaiting the by-hand pass* |
+| [ME-210](tickets/ME-210-cut-the-film-on-the-strip.md) | Cut the film on the strip — folds in ME-211…ME-214 | **done 2026-11-01**, build and tests green; **not yet looked at on screen** — drag, handle trims and the filmstrip want a by-hand pass |
 
-Blocked on [`foundation/`](../../../implemented/video-editor/foundation/foundation.md) — there is no band to draw in until ME-201
-lands, and no engine to fold a timeline stage.
+Every other block is in [the shared backlog](../backlog.md) §210. Joins stall for one seek each
+until ME-232.
 
 ---
 
@@ -150,6 +157,7 @@ table, and this is the first tool that competes with another for a key.
 
 | Date | Question | Decision | Why |
 |---|---|---|---|
+| 2026-11-05 | Can a clip be picked outside Trim? | **Yes, once there are two: tabs and a bar with `Copy` · `Paste ▾` in every tool; cutting stays in the tool, renamed `Clips`** (id still `trim`) | The author: a look is made in Adjust and Filters, so copying it from Trim alone was the wrong door. Making the strip always editable was weighed and refused — a drag on the film would reorder instead of scrub in every tool, and This Clip would still need the strip's second behaviour |
 | 2026-09-03 | One tool or several for the strip? | **One, `Trim`, in a new `Time` domain** | Split, delete and reorder are gestures on one object; three rail entries for one object is the overload the whole feature is defined against |
 | 2026-09-03 | Do cuts snap to keyframes? | **No** | The default save copies nothing, so a keyframe buys nothing; snapping would make the strip lie about where the cut lands (§3.3). Reverses retired ME-202 |
 | 2026-09-03 | Where does a per-clip setting live? | **A clip field if the strip's layout needs it, otherwise an op in the clip's layer** | The strip must be drawable from the clip list alone. One rule then covers audio and picture identically instead of a second per-clip mechanism (§3.2) |

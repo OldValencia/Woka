@@ -21,8 +21,9 @@ import com.woka.core.ui.theme.Theme
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ViewerTooltip(text: String, content: @Composable () -> Unit) {
+fun ViewerTooltip(text: String, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     TooltipArea(
+        modifier = modifier,
         tooltip = {
             Box(
                 modifier = Modifier

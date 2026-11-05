@@ -5,7 +5,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
+import com.woka.core.data.StillColorInfo
+import com.woka.core.data.applyTo
+import com.woka.feature.viewer.image.rememberHdrModeAccess
 import com.woka.feature.viewer.video.engine.VideoPlayerState
+import com.woka.feature.viewer.video.engine.probe.toColour
 
 /**
  * Paints a seek-bar preview the way the picture itself is painted.
@@ -19,7 +23,8 @@ import com.woka.feature.viewer.video.engine.VideoPlayerState
  * [VideoPlayerState.streamHdrInfo] rather than `currentFrameHdrInfo`: the stream's
  * own description is stable for the whole track, so reading it costs no
  * recomposition at the frame rate — and a preview is a frame of that track no
- * matter what happens to be on screen when it is drawn.
+ * matter what happens to be on screen when it is drawn. So it takes the film's white
+ * point (ME-301), never a scene's (ME-305), and the HDR mode like the picture (ME-304).
  */
 @Composable
 internal fun rememberPreviewPainter(
@@ -27,9 +32,11 @@ internal fun rememberPreviewPainter(
     bitmap: ImageBitmap?
 ): Painter? {
     if (bitmap == null) return null
-    val hdr = videoState?.streamHdrInfo?.takeIf { it.needsColorManagement }
+    val mode = rememberHdrModeAccess().current()
+    val stream = videoState?.streamHdrInfo?.toColour() ?: StillColorInfo.Sdr
+    val hdr = mode.applyTo(stream).takeIf { it.needsColorManagement }
     return remember(bitmap, hdr) {
         if (hdr == null) BitmapPainter(bitmap)
-        else HdrImagePainter(bitmap, hdr.transfer, hdr.isWideGamut)
+        else HdrImagePainter(bitmap, hdr.transfer, hdr.isWideGamut, whitePoint = hdr.whitePoint ?: ASSUMED_WHITE_POINT)
     }
 }

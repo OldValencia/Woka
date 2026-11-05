@@ -6,18 +6,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.MediaKind
+import com.woka.core.data.StillColorInfo
+import com.woka.core.data.applyTo
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
-import com.woka.feature.editor.core.EditLayers
-import com.woka.feature.editor.core.EditSaveResult
-import com.woka.feature.editor.core.EditScope
 import com.woka.feature.editor.core.EditorEngine
+import com.woka.feature.editor.core.EditorTimelineScope
+import com.woka.feature.editor.core.LocalClipLooks
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.engine.image.RasterRecipe
-import com.woka.feature.editor.engine.image.fold
+import com.woka.feature.editor.tools.trim.TrimTool
+import com.woka.feature.viewer.image.rememberHdrModeAccess
 import com.woka.feature.viewer.video.engine.probe.HdrInfo
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.woka.feature.viewer.video.engine.probe.toColour
 import java.io.File
 
 /**
@@ -33,6 +34,9 @@ import java.io.File
  * byte of the media data — the same road a `heic` takes, reached by two extensions in
  * `carrierFor` and made affordable on a 4 GB file by ME-280's in-place write.
  *
+ * **What it writes is [VideoEditorOutputs]'** — the save, the revert and the render —
+ * split out when the render pushed this file past the size mandate.
+ *
  * [recipe] is `internal` and absent from [EditorEngine] for the same reason the image
  * engine's is (§3.3): the moment the shell can name a raster type, every file that
  * touches one becomes a video ticket.
@@ -42,7 +46,7 @@ internal class VideoEditorEngine(
     private val registry: EditorToolRegistry,
     /** Passed in, never re-derived: the factory has already asked. */
     override val capability: EditCapability
-) : EditorEngine {
+) : VideoEditorClips(file, registry, capability) {
 
     override val kind = MediaKind.Video
 
@@ -60,8 +64,9 @@ internal class VideoEditorEngine(
     /** Owned here so `Surface` and `Thumbnail` share one decoder — see the holder. */
     private val playback = VideoPlayerHolder()
 
+    /** The picture as the canvas draws it — Resize left to the render (`previewFold`). */
     internal fun recipe(document: EditDocument): RasterRecipe =
-        fold(document, registry, sourceSize)
+        previewFold(document, registry, sourceSize)
 
     /** The frame the recipe produces — a crop's dimensions, not the source's. */
     override fun drawnSize(document: EditDocument): IntSize = recipe(document).outputSize
@@ -70,16 +75,36 @@ internal class VideoEditorEngine(
     override fun previewMatrix(document: EditDocument): Matrix = recipe(document).matrix
 
     override fun togglePlayback() {
-        playback.state?.let { it.isPlaying = !it.isPlaying }
+        // Through the walk, so Space pauses a freeze's hold as well as the player (ME-217).
+        playback.state?.let { playback.walk.toggle(it) }
     }
 
+    /** Consumed even before the player is up: the arrows are the strip's in a video (ME-219). */
+    override fun stepPlayHead(direction: Int, bySecond: Boolean): Boolean {
+        playback.state?.let { playback.walk.step(it, direction, bySecond) }
+        return true
+    }
+
+    override fun playHeadMs(): Long? =
+        playback.state?.let { playback.walk.timelineMs(playback.walk.clips, it.currentPositionMs) }
+
+    /** The film's colour, for the HDR pill (ME-304) — a film's codec parameters answer it. */
+    override val sourceColor: StillColorInfo by lazy { codedColour(file) }
+
     /**
-     * The stream's colour, and **not the frame's** (ME-205). `streamHdrInfo` is written
-     * once per opened track and is stable by contract, which is what a memoised recipe
-     * needs; `currentFrameHdrInfo` is rewritten every frame, and keying a fold on it
-     * would re-fold sixty times a second.
+     * The canvas's colour is the **frame's** (ME-305): the film's white point, or its
+     * scene's HDR10+ peak, under the HDR mode (ME-304). `currentFrameHdrInfo` is rewritten
+     * every frame, but with an equal value inside a scene, and it is structural-equality
+     * state — so the fold below re-runs at a cut, not sixty times a second (ME-205's worry).
      */
-    private val streamColour: HdrInfo? @Composable get() = playback.state?.streamHdrInfo
+    private val frameColour: StillColorInfo @Composable get() = moded(playback.state?.currentFrameHdrInfo)
+
+    /** The stream's, for the thumbnail: one picture for a whole span takes no scene's peak. */
+    private val streamColour: StillColorInfo @Composable get() = moded(playback.state?.streamHdrInfo)
+
+    @Composable
+    private fun moded(hdr: HdrInfo?): StillColorInfo =
+        rememberHdrModeAccess().current().applyTo(hdr?.toColour() ?: StillColorInfo.Sdr)
 
     /**
      * **Remembered on the document, not rebuilt per frame.** The frame is the only thing
@@ -88,9 +113,12 @@ internal class VideoEditorEngine(
      */
     @Composable
     override fun Surface(document: EditDocument, modifier: Modifier) {
-        val colour = streamColour
-        val recipe = remember(document, sourceSize, colour) {
-            recipe(document).copy(source = hdrStageFor(colour))
+        val colour = frameColour
+        // The clip under the play head draws through its own layer (ME-215).
+        val key = TrimTool.clipsIn(document)?.getOrNull(playback.walk.index)?.key ?: 0
+        val shown = LocalClipLooks.current?.documentFor(document, key) ?: document
+        val recipe = remember(shown, sourceSize, colour) {
+            recipe(shown).copy(source = hdrStageFor(colour))
         }
         // **The document says when a drag is in flight** and the canvas only needs the
         // answer: `pending` is set by `preview` and cleared by `commit`, so one boolean
@@ -103,8 +131,8 @@ internal class VideoEditorEngine(
      * fills, so there is one decoder behind the picture, the strip and every thumbnail.
      */
     @Composable
-    override fun Timeline(document: EditDocument, modifier: Modifier) =
-        VideoEditorBand(playback, modifier)
+    override fun Timeline(document: EditDocument, edits: EditorTimelineScope, modifier: Modifier) =
+        VideoEditorBand(playback, document, edits, modifier, sourceSize)
 
     @Composable
     override fun Thumbnail(document: EditDocument, modifier: Modifier) {
@@ -114,23 +142,4 @@ internal class VideoEditorEngine(
         }
         VideoEditorThumbnail(playback, sourceSize, recipe, modifier)
     }
-
-    /** What the file carries, so a second sitting continues the first (ME-288). */
-    override fun storedDocument(): EditDocument = storedVideoDocument(file)
-
-    /** What a write does to the file, and the stamp it carries — see `VideoEditorWrites`. */
-    private val writes = VideoEditorWrites(file, capability)
-
-    override suspend fun save(layers: EditLayers): EditSaveResult =
-        withContext(Dispatchers.IO) { writes.save(layers) }
-
-    /**
-     * **Both parameters are ignored, and the interface licenses it**: a video timeline has
-     * no frame to key on, so the scope switch never appears for one.
-     *
-     * The `Done ▾` menu this enables, and the reason it prints on a container with no
-     * carrier, are ME-286's. This is the red button telling the truth.
-     */
-    override suspend fun revert(scope: EditScope, frameIndex: Int): EditSaveResult =
-        withContext(Dispatchers.IO) { writes.revert() }
 }
