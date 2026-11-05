@@ -18,8 +18,12 @@ internal const val MAX_LANES = 3
  */
 internal const val LEAD_HORIZON_MS = 3_000L
 
-/** A lane left free this long is closed, giving its 270–330 MB back. */
-internal const val IDLE_CLOSE_MS = 10_000L
+/**
+ * A lane left free this long is closed, giving its 270–330 MB back. Short on purpose — the
+ * author's call, 2026-11-05: memory is the scarce thing, and reopening a lane costs a few
+ * milliseconds of open plus a pre-roll it would have paid anyway.
+ */
+internal const val IDLE_CLOSE_MS = 3_000L
 
 /**
  * The player's spare decoders (ME-232). **A free lane pre-rolls at once** rather than at a

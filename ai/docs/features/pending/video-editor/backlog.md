@@ -114,12 +114,20 @@ ME-234's remainder — pace and holds in the engine rather than the walks — is
 status in [`playback/`](playback/playback.md)'s table. Re-cut by a measurement: an audio seek costs
 1–11 ms, so no audio lanes — the one audio grabber splices to the sample with a 5 ms ramp.
 
-### ME-235 — Ranges shorter than the pool can reach
-Four lanes cover a run of ranges as long as each is at least the lead divided by three — ~0.75 s on
-a long-GOP stream, ~0.15 s on an ordinary one (`playback.md` "Pool size"). A range shorter than that,
-in a run of such, is decoded whole into memory ahead of time at the drawn size (~140 MB for 0.7 s at
-1920 wide) and presented from there, holding no lane. The threshold comes from the lead the lanes
-actually measure while pre-rolling, not from a constant.
+### ME-235 — dropped 2026-11-05, id retained
+Holding short ranges in memory does not lift the bound it was for: filling the memory takes the
+same decode from the keyframe as a lane's pre-roll, and the author ruled out spending RAM on
+frames. A cheaper pre-roll was measured instead (`playback.md`, `PrerollProbe`) and nothing in
+software reaches it — the cost is decoding reference frames. What stands: four lanes cover runs
+of ranges down to ~0.75 s on a long-GOP stream and ~0.15 s on an ordinary one, and a join past
+that waits on a lane already part way there, never longer than a seek. Idle lanes now close after
+3 s instead of 10.
+
+### ME-236 — Hardware decoding for the lanes
+The only thing measured to move the pre-roll bound. Needs a hardware device context JavaCV does
+not set up for a grabber, and a way past the D3D11VA scaling bugs that made the player decode in
+software (`openVideoGrabber`). Probe first: GPU HEVC pre-roll time and memory on S02E01, and
+whether frames come back whole.
 *Depends on ME-232.*
 
 ### ME-234 — folded, id retained
@@ -145,16 +153,18 @@ draggable on its own. The row exists only while it holds something. The clip's v
 travel with the sound, and that rule has to be written down.
 *Depends on ME-240, ME-241.*
 
-### ME-243 — Add an external audio file
-An AWT `FileDialog` through `jvmMain`, a path stored relative to the video's folder when they share
-one, and an honest **missing audio** state when the file has moved. The first thing in the editor
-that can break because of something outside the file.
-*Depends on ME-242.*
+### ME-243 — folded into ME-244 2026-11-05, id retained
+The author merged the two: adding a file and laying tracks over the film are one feature.
 
-### ME-244 — Two sources at once
-Summing two decoded streams with a gain each before the one sound line. It lands in the same code
-ME-232 and ME-233 change, so it is sequenced after them and never written in parallel.
-*Depends on ME-233, ME-243.*
+### ME-244 — Insert external audio tracks
+Re-scoped by the author 2026-11-05, with ME-243 folded in: **one or several outside audio files
+laid over the film**. Each comes in through an AWT `FileDialog` via `jvmMain`, is stored by a path
+relative to the video's folder when they share one, and becomes an entry on a sound row —
+trimmable and movable — mixed with the film's own sound at a gain each before the one sound line.
+A file that has moved shows an honest **missing audio** state: the first thing in the editor that
+can break because of something outside the file. It lands in the code ME-232 and ME-233 changed —
+the spliced sound — so it is written after them.
+*Depends on ME-233, ME-242.*
 
 ### ME-245 — Extract the audio to a file
 An `Output` tool: the edited audio as `m4a`, stream-copied when the codec fits the container and
@@ -171,12 +181,9 @@ measurement is one audio pass — the same pass ME-241 already makes for the wav
 
 ## 260 — Picture
 
-### ME-260 — Turn the four free tools on, and prove it
-Crop, Transform, Adjust and Filters need no tool code — they need a test each proving the fold, the
-`drawnSize` letterboxing and the source-coordinate placement are right on a video, and a by-hand pass
-recorded with a date. If ME-201's measurement said the shader chain cannot run per frame, this block
-is re-planned instead of promoted.
-*Depends on ME-201, ME-205.*
+### ME-260 — done, checked by the author 2026-11-05
+Crop, Transform, Adjust and Filters work on a video — on the canvas, per clip through This Clip
+(ME-215) and in a render. Checked by hand rather than through the per-tool tests the block named.
 
 ### ME-261 — Filter-strip thumbnails from one held frame
 `PreviewChoiceParam` asks the engine for a `Thumbnail` per option — fourteen for Styles. They must all
@@ -200,10 +207,10 @@ Adjust op. It goes in the Adjust card's existing header-action slot, so there is
 and no new rail entry. This is also the answer to `picture/` §4's open question about `stats`.
 *Depends on ME-260.*
 
-### ME-266 — 9:16 and 1:1 crop presets
-Crop already carries an aspect list; this names the two ratios people actually export for and centres
-the kept region on the frame. A list entry each, and no mechanism.
-*Depends on ME-260.*
+### ME-266 — dropped 2026-11-05, id retained
+Crop already offers 1:1, 4:3, 3:2 and 16:9 (`CropAspect`), and its Orientation switch turns any of
+them upright — 16:9 + Portrait is 9:16 (`cropRatioIn`). A separate 9:16 chip would duplicate that and
+read backwards under Portrait; the author kept it as it is.
 
 ### ME-267 — Copy another clip's look
 "Apply clip 2's adjustments here" is a copy of a few ops from one clip's layer into another's, so it
@@ -249,10 +256,9 @@ watch record stores `positionMs` against `durationMs` and can now point past the
 are in source time and may have been re-ordered or cut away.
 *Depends on ME-284.*
 
-### ME-286 — Revert, and the menu the capability drives
-Revert removes the box and puts the file back as it was shot. `capability` then answers per container,
-and `Done ▾` shows one entry or two accordingly, saying why when it shows one.
-*Depends on ME-288, ME-290.*
+### ME-286 — already built, recorded 2026-11-05
+Revert is in the top bar (`RevertDialog`), and a film whose container cannot carry an edit opens
+render-only, its `Done ▾` saying so (ME-289, `EditCapability.RenderOnly`).
 
 ### ME-287 — Choose the cover
 One field in the recipe holding a **timeline** position, and the tile draws that frame **through the
@@ -296,12 +302,9 @@ palettegen/paletteuse over the same document, so it is a render *target* and not
 *Numbered outside the video bands on purpose: these change the shell **both** editors use, so a still
 is affected by every one of them and the tests that prove them are the image editor's too.*
 
-### ME-300 — Right-click resets any input
-Right-click on a control the schema renders returns it to its default; right-click on the inspector
-header resets the whole tool. Every `ParamSpec` type, in the one place rows are rendered — not eight
-places. The double-click-to-detent on a slider stays, because a detent is not always a default. The
-gesture is free: the canvas owns the context menu and no inspector row has one.
-*Depends on nothing. Design: [`../video-editor.md`](video-editor.md) §4.1b.*
+### ME-300 — already built, recorded 2026-11-05
+Right-click resets a control through the app's own `resetOnRightClick` — the editor's sliders, the
+clip-speed slider, and on the strip the whole cut (`StripActions`).
 
 ### ME-302 — promoted 2026-09-04, and split in two on the way
 The block named three surfaces. The **rail** left as

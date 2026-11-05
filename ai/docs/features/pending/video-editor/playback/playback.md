@@ -194,3 +194,26 @@ thread setting. S02E01 / Green Book:
 - **Two threads is too thin**: 25 fps on Green Book with four running, on the edge of 24.
 - Flat out is the worst case. In steady state one decoder plays at the film's rate and the others,
   having paid their seek, sit holding a frame.
+
+### Reaching a frame more cheaply — `PrerollProbe`, 2026-11-05
+
+The question behind ME-235's re-cut: rather than hold short ranges in memory, make a lane's
+pre-roll cheaper. Five places, native size, landed offset after `@`. S02E01:
+
+| | 4 threads | 2 threads |
+|---|---|---|
+| as `landAt` does it — every frame converted and cloned | 221 · 2454 · 948 · 673 · 2390 ms, @2–34 | 277 · 4186 · 1569 · 1108 · 3851 ms |
+| decoded only, converted at the target | 243 · 2733 · 940 · 690 · 2437 ms, @2–34 | 281 · 4137 · 1593 · 1065 · 3835 ms |
+| + non-reference frames skipped until 300 ms short | 241 · 2645 · 918 · 643 · 2269 ms, **@44–102** | 259 · 3173 · 1127 · 809 · 2789 ms |
+
+Green Book reads the same at its own scale (298–486 ms at four threads).
+
+- **The conversion costs nothing here**: JavaCV's `setTimestamp` already decodes forward to its
+  target unconverted, so `landAt`'s per-frame convert-and-clone only ever touches the last frame
+  or two. The whole price is decoding reference frames.
+- **Skipping non-reference frames barely helps and lands on the wrong frame** — 44–102 ms past
+  the target, where the join must be exact.
+- **Two threads are 1.6× slower** to pre-roll; four stays.
+- What would change the bound is **hardware decoding**: JavaCV does not set up a hardware device
+  context for a grabber, and the player decodes in software because of the D3D11VA scaling bugs
+  noted in `openVideoGrabber`. A project of its own, recorded in the backlog, not in 1.0.6.

@@ -75,11 +75,11 @@ independently and ship independently.
 |---|---|---|---|
 | — | [`foundation/`](../../implemented/video-editor/foundation/foundation.md) | An `EditorEngine` for `MediaKind.Video`: the player's frame drawn through the recipe, HDR in the chain, frame retention, playback on the canvas, the timeline seam | **shipped 2026-09-03** — ME-201, ME-206, ME-207, ME-205; confirmed on screen |
 | **1** | [`save/`](save/save.md) | `Done`: a recipe inside a video container, written without copying the file, folded by every reader | **started** — mp4/mov/mkv/webm/avi carry an edit, every reader folds (ME-284); ME-285…287 left |
-| **2** | [`timeline/`](timeline/timeline.md) | The strip and the document behind it: trim, split, select, delete, reorder, per-clip scope, speed, freeze-frame | **started** — ME-210 done 2026-11-01 |
-| **3** | [`playback/`](playback/playback.md) | Playing an *edited* timeline seamlessly — the pre-rolling second decoder, and the audio that follows it | **started** — ME-231 done 2026-11-01; joins still stall |
-| **4** | [`audio/`](audio/audio.md) | Mute, volume and fades per clip; detach; an external track; extract to a file | not started |
+| **2** | [`timeline/`](timeline/timeline.md) | The strip and the document behind it: trim, split, select, delete, reorder, per-clip scope, speed, freeze-frame | **started** — ME-210 (2026-11-01), ME-215…ME-218 (2026-11-04) done |
+| **3** | [`playback/`](playback/playback.md) | Playing an *edited* timeline seamlessly — the pre-rolling second decoder, and the audio that follows it | **started** — ME-231, ME-232, ME-233 done (2026-11-01…11-05): joins without a stall in picture or sound; ME-235 dropped, ME-236 (hardware decode) open |
+| **4** | [`audio/`](audio/audio.md) | Mute, volume and fades per clip; detach; an external track; extract to a file | **started** — ME-240 done 2026-11-04 |
 | **5** | [`picture/`](picture/picture.md) | Making Crop, Resize, Adjust, Filters and Markup *true* on a moving picture, and markup that appears, holds and fades | not started |
-| **6** | [`render/`](render/render.md) | `Render video…`: a new file, copying every segment it can and re-encoding only what it must | **started** — ME-290, ME-291 done 2026-11-01 |
+| **6** | [`render/`](render/render.md) | `Render video…`: a new file, copying every segment it can and re-encoding only what it must | **started** — ME-290, ME-291 done 2026-11-01; HDR tone mapped on the encode path 2026-11-04 |
 | any | [`shell/`](shell/shell.md) | §300: the shell **both** editors compose — every one of it changes a still as well | ME-302, ME-303 **done 2026-09-04** |
 
 **This table is a feature roll-up and deliberately carries no ticket rows.** Each folder's own
