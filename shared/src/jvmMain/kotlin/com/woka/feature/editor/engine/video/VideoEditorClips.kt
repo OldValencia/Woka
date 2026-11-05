@@ -1,14 +1,10 @@
 package com.woka.feature.editor.engine.video
 
-import com.woka.core.data.MediaKind
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
-import com.woka.feature.editor.core.EditScope
 import com.woka.feature.editor.core.EditorFrames
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.core.NO_CLIP
-import com.woka.feature.editor.core.ToolDomain
-import com.woka.feature.editor.tools.cover.CoverTool
 import com.woka.feature.editor.tools.trim.TrimTool
 import java.io.File
 
@@ -20,7 +16,7 @@ import java.io.File
  */
 internal abstract class VideoEditorClips(
     private val file: File,
-    private val registry: EditorToolRegistry,
+    registry: EditorToolRegistry,
     capability: EditCapability
 ) : VideoEditorOutputs(file, registry, capability) {
 
@@ -43,19 +39,10 @@ internal abstract class VideoEditorClips(
         frames.copy(count = TrimTool.clipsIn(document)?.size ?: 1)
 
     /**
-     * Under This Clip only a clip's **look** is its own (ME-215): a cut, the frame's
-     * geometry and the output size are the whole video's — one film has one frame size.
+     * **Nothing is unavailable with a clip selected** (ME-221): a cut lands in the shared
+     * layer whatever is selected, and Crop, Transform, Resize and Cover clear the selection
+     * as they open (`EditorScreen`) — one film has one frame size.
      */
-    override fun unavailableIn(scope: EditScope): Map<String, String> {
-        if (scope != EditScope.SingleFrame) return emptyMap()
-        return registry.tools(MediaKind.Video).value.mapNotNull { tool ->
-            val domain = tool.manifest.domain
-            when {
-                tool == CoverTool -> tool.manifest.id to "The cover is the whole video's"
-                domain == ToolDomain.Time -> tool.manifest.id to "Cuts apply to the whole video"
-                domain == ToolDomain.Geometry || domain == ToolDomain.Output -> tool.manifest.id to "Frame size is the whole video's"
-                else -> null
-            }
-        }.toMap()
-    }
+    override fun clipNumberOf(document: EditDocument, id: String?): Int? =
+        TrimTool.clipsIn(document)?.indexOfFirst { it.id == id }?.takeIf { it >= 0 }?.plus(1)
 }

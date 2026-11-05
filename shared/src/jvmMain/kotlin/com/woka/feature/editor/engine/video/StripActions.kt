@@ -1,5 +1,6 @@
 package com.woka.feature.editor.engine.video
 
+import com.woka.feature.editor.core.NO_CLIP
 import com.woka.feature.editor.tools.trim.TrimClip
 import com.woka.feature.editor.tools.trim.TrimTool
 import com.woka.feature.editor.tools.trim.atTimeline
@@ -30,16 +31,20 @@ internal fun StripState.splitAtPlayHead() {
     val at = walk.timelineMs(clips, player.currentPositionMs)
     val before = clips
     val after = before.split(at, newClipId())
-    apply(after)
-    // The new half keeps the look of the clip it was cut from (ME-215).
+    if (after == before) return
+    // The new half keeps the look of the clip it was cut from (ME-215) — copied **before** the
+    // cut is committed, so the step the cut makes holds it (ME-221).
     val cut = before.getOrNull(before.atTimelineIndex(at))
     after.firstOrNull { new -> before.none { it.id == new.id } }?.let { new -> cut?.let { edits.copyLayer(it.key, new.key) } }
+    apply(after)
 }
 
-/** Removes the selected clip and closes the hole; the selection goes with it. */
+/** Removes the selected clip and closes the hole; the selection goes with it, in the same step. */
 internal fun StripState.deleteSelected(id: String) {
-    apply(clips.delete(id))
-    edits.select(null)
+    val after = clips.delete(id)
+    if (after == clips) return
+    edits.pick(null, NO_CLIP, step = false)
+    apply(after)
 }
 
 /** Puts a copy beside the selected clip and selects the copy, which is what was made. */
@@ -47,10 +52,11 @@ internal fun StripState.duplicateSelected(id: String) {
     val copyId = newClipId()
     val after = clips.duplicate(id, copyId)
     val original = clips.firstOrNull { it.id == id }
+    val copy = after.firstOrNull { it.id == copyId } ?: return
+    // The copy carries the original's look too (ME-215), and is selected — both inside the step.
+    original?.let { edits.copyLayer(it.key, copy.key) }
+    edits.pick(copyId, copy.key, step = false)
     apply(after)
-    // The copy carries the original's look too (ME-215).
-    after.firstOrNull { it.id == copyId }?.let { copy -> original?.let { edits.copyLayer(it.key, copy.key) } }
-    edits.select(copyId)
 }
 
 /** Joins the selected clip back to the neighbour it was split from; the first one stays selected. */
@@ -59,8 +65,8 @@ internal fun StripState.joinSelected(id: String) {
     if (after == clips) return
     // Joined to the right the clip keeps its id; joined to the left, the left one's survives.
     val kept = after.firstOrNull { it.id == id } ?: clips.getOrNull(clips.indexOfFirst { it.id == id } - 1)
+    edits.pick(kept?.id, kept?.key ?: NO_CLIP, step = false)
     apply(after)
-    edits.select(kept?.id)
 }
 
 /**
@@ -73,16 +79,16 @@ internal fun StripState.freezeAtPlayHead() {
     val source = clips.getOrNull(clips.atTimelineIndex(at))
     val after = clips.freezeAt(at, newClipId(), newClipId())
     if (after == clips) return
-    apply(after)
+    // Copied before the commit, so the freeze's step holds the looks (ME-221).
     after.filter { clip -> clips.none { it.id == clip.id } }.forEach { new ->
         source?.let { edits.copyLayer(it.key, new.key) }
     }
+    apply(after)
 }
 
-/** Selects [clip] and opens its layer, under This Clip (ME-215). */
-internal fun StripState.focus(clip: TrimClip) {
-    edits.select(clip.id)
-    edits.focus(clip.key)
+/** A click on [clip]'s tab: selects it, or — already selected — deselects (ME-221). One step. */
+internal fun StripState.pickTab(clip: TrimClip) {
+    if (edits.selectedId == clip.id) edits.pick(null, NO_CLIP) else edits.pick(clip.id, clip.key)
 }
 
 /**
@@ -93,7 +99,7 @@ internal fun StripState.focus(clip: TrimClip) {
  */
 internal fun StripState.resetCut() {
     if (clips == wholeSource(durationMs)) return
-    edits.select(null)
+    edits.pick(null, NO_CLIP, step = false)
     edits.preview(TrimTool.opFor(emptyList()))
     edits.commit()
 }

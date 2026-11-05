@@ -23,6 +23,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Rule
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertNull
 
 /**
  * Clips are picked in every tool once there are two (2026-11-05, ME-267): outside `Clips` a
@@ -72,6 +73,11 @@ class ClipLookUiTest {
             onNodeWithTag("editor-clip-paste").assertExists()
             onNodeWithTag("editor-clip-delete").assertDoesNotExist()
             onNodeWithTag("editor-strip-split").assertDoesNotExist()
+
+            // ME-221: a second click on the selected tab lets the clip go.
+            onNodeWithTag("editor-clip-tab-source").performClick()
+            waitForIdle()
+            assertNull(edits.selectedId, "a second click kept the selection")
         }
     }
 }

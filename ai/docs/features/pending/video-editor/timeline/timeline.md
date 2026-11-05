@@ -13,6 +13,7 @@ Umbrella, and the data-model argument this rests on: [`../video-editor.md`](../v
 
 | Ticket | Title | State |
 |---|---|---|
+| [ME-221](tickets/ME-221-the-clip-tabs-are-the-scope.md) | The clip tabs are the scope | **done 2026-11-05**, checked by the author |
 | [ME-218](tickets/ME-218-the-strip-zooms.md) | The strip zooms | **done 2026-11-04**, build and tests green — *awaiting the by-hand pass* |
 | [ME-217](tickets/ME-217-freeze-frame.md) | Freeze-frame | **done 2026-11-04**, build and tests green — *awaiting the by-hand pass* |
 | [ME-216](tickets/ME-216-speed-per-clip.md) | Speed per clip | **done 2026-11-04**, build and tests green — *awaiting the by-hand pass* |

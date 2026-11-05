@@ -1,5 +1,7 @@
 package com.woka.feature.editor.engine.video
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -10,9 +12,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
@@ -42,7 +51,13 @@ private val ON_ACCENT = Color(0xFF1C1C1E)
  * Numbered in timeline order; a freeze says so.
  */
 @Composable
-internal fun BoxScope.ClipTabs(clips: List<TrimClip>, geometry: StripGeometry, selectedId: String?, onSelect: (String) -> Unit) {
+internal fun BoxScope.ClipTabs(
+    clips: List<TrimClip>,
+    geometry: StripGeometry,
+    selectedId: String?,
+    pulse: DeselectPulse,
+    onSelect: (String) -> Unit
+) {
     val density = LocalDensity.current
     clips.forEachIndexed { index, clip ->
         val shown = geometry.spans[index].visibleIn(geometry.viewPx) ?: return@forEachIndexed
@@ -55,6 +70,11 @@ internal fun BoxScope.ClipTabs(clips: List<TrimClip>, geometry: StripGeometry, s
                 .offset { IntOffset((shown.left + (shown.width - widthPx) / 2f).roundToInt(), 0) }
                 .width(with(density) { widthPx.toDp() })
                 .height(CLIP_TAB_HEIGHT - 2.dp)
+                .graphicsLayer {
+                    val scale = if (pulse.id == clip.id) pulse.scale.value else 1f
+                    scaleX = scale
+                    scaleY = scale
+                }
                 .clip(RoundedCornerShape(bottomStart = 5.dp, bottomEnd = 5.dp))
                 .background(if (selected) Theme.colors.accentEditor else Theme.viewer.onScrim.copy(alpha = 0.16f))
                 .pointerHoverIcon(PointerIcon.Hand)
@@ -73,3 +93,35 @@ internal fun BoxScope.ClipTabs(clips: List<TrimClip>, geometry: StripGeometry, s
         }
     }
 }
+
+/** Which tab is pulsing, and how far (ME-221); one per strip. */
+@Stable
+internal class DeselectPulse {
+    var id: String? by mutableStateOf(null)
+    val scale = Animatable(1f)
+}
+
+/**
+ * Pulses the tab that has just **lost** the selection — a second click on it, or a whole-film
+ * tool opening (the author, 2026-11-05) — so the author sees which clip let go. Moving the
+ * selection from one clip to another does not pulse: the new one lights up, which says it.
+ */
+@Composable
+internal fun rememberDeselectPulse(selectedId: String?): DeselectPulse {
+    val pulse = remember { DeselectPulse() }
+    val previous = remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(selectedId) {
+        val lost = previous.value
+        previous.value = selectedId
+        if (lost == null || selectedId != null) return@LaunchedEffect
+        pulse.id = lost
+        pulse.scale.snapTo(1f)
+        pulse.scale.animateTo(PULSE_SCALE, tween(PULSE_MS))
+        pulse.scale.animateTo(1f, tween(PULSE_MS * 3 / 2))
+        pulse.id = null
+    }
+    return pulse
+}
+
+private const val PULSE_SCALE = 1.3f
+private const val PULSE_MS = 120

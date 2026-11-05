@@ -22,6 +22,8 @@ import com.woka.feature.editor.core.EditScope
 import com.woka.feature.editor.core.EditorEngine
 import com.woka.feature.editor.core.EditorSession
 import com.woka.feature.editor.core.EditorToolRegistry
+import com.woka.feature.editor.core.NO_CLIP
+import com.woka.feature.editor.core.pickClip
 
 /**
  * The editor, whole.
@@ -86,8 +88,9 @@ internal fun EditorScreen(
 
     // One `if`, and a photograph pays exactly this much for the frame band existing. A
     // film's clips are counted on the document, which every split moves (ME-215).
+    val clipSelection by session.clipSelection.collectAsState()
     val perFrame = frameControls?.let { it.copy(frames = engine.framesIn(document).takeIf { f -> f.clips } ?: it.frames) }
-        ?.takeIf { it.frames.allowsPerFrame }
+        ?.takeIf { it.frames.allowsPerFrame }?.copy(selectedClip = engine.clipNumberOf(document, clipSelection))
     val scope = perFrame?.scope ?: EditScope.AllFrames
     val blocked = unavailable + engine.unavailableIn(scope)
 
@@ -101,6 +104,10 @@ internal fun EditorScreen(
     }
 
     val activeTool = tools.firstOrNull { it.manifest.id == activeToolId }
+    // A whole-film tool opening clears a film's clip selection, as a step (ME-221).
+    LaunchedEffect(activeToolId) {
+        if (engine.frames.clips && clearsClipSelection(activeTool?.manifest?.domain)) session.pickClip(null, NO_CLIP)
+    }
     val canvasDocument = canvasDocumentFor(activeTool, document, peek.active)
     val skipped = skippedOps(document, registry, engine.kind)
 
@@ -136,7 +143,6 @@ internal fun EditorScreen(
             activeToolId = activeToolId,
             skipped = skipped,
             unavailable = blocked,
-            perClip = perFrame?.frames?.clips == true && scope == EditScope.SingleFrame,
             selectedId = { selection.id },
             onSelectTool = { id -> activeToolId = if (activeToolId == id) null else id }
         )

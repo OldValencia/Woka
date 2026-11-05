@@ -39,13 +39,11 @@ interface EditorTimelineScope {
     fun cancel()
 
     /**
-     * **This Clip** is on (ME-215): the strip only chooses the clip the picture tools edit,
-     * and cuts nothing — a cut is the whole video's, so Trim waits for All Clips.
+     * Selects clip [id], layer [key] — null and [NO_CLIP] for the whole film — and with it the
+     * scope the look tools edit (ME-221). [step] makes it an undo step of its own; a delete or a
+     * duplicate passes false and selects inside the step it is making.
      */
-    val perClip: Boolean get() = false
-
-    /** Opens clip layer [key] for editing; the session's own move, under This Clip. */
-    fun focus(key: Int) {}
+    fun pick(id: String?, key: Int, step: Boolean = true) = select(id)
 
     /** Gives layer [to] the look of layer [from] — a split's new half, a duplicate. */
     fun copyLayer(from: Int, to: Int) {}
@@ -59,6 +57,6 @@ interface EditorTimelineScope {
     /** Pastes [ops] of the kinds [taken] picks onto layer [key], as one undoable step (ME-267). */
     fun pasteLayer(key: Int, ops: List<ToolOp>, taken: (ToolOp) -> Boolean) {}
 
-    /** The clip being edited under This Clip, whose own ops are in the document; null otherwise. */
+    /** The selected clip, whose own ops are in the document (ME-221); null for the whole film. */
     val openClip: Int? get() = null
 }

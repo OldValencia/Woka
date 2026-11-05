@@ -77,6 +77,9 @@ interface EditorEngine : EditorEngineSurface, EditorEnginePicture {
      */
     fun unavailableIn(scope: EditScope): Map<String, String> = emptyMap()
 
+    /** Clip [id]'s place in [document]'s cut, from 1, for the scope's caption (ME-221). */
+    fun clipNumberOf(document: EditDocument, id: String?): Int? = null
+
     /**
      * Writes [document] into the file that was opened — the only save there is
      * (§5). Nothing is chosen: no target, no name, no confirmation.

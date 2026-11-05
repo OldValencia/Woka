@@ -25,7 +25,8 @@ internal fun BoxScope.EditorFrameBand(controls: EditorFrameControls, file: File)
         scope = controls.scope,
         frameIndex = controls.frameIndex,
         onScopeChange = controls.onScopeChange,
-        modifier = Modifier.align(Alignment.TopCenter)
+        modifier = Modifier.align(Alignment.TopCenter),
+        selectedClip = controls.selectedClip
     )
     // A film's clips are chosen on its own band, under the picture (ME-215).
     if (controls.frames.clips) return

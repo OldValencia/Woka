@@ -71,7 +71,7 @@ internal fun EditorHost(
     // (2026-09-02): keyed on the frame it re-seeded to `All Frames` on every move and
     // the switch flipped under the user's hand. Re-seeding guarded against an
     // `All Frames` save clearing other frames' work, which ME-175 made impossible.
-    var editScope by remember(target.path) { mutableStateOf(engine.frames.storedScope) }
+    var editScope by rememberEditScope(target.path, engine, session, dependencies.registry)
 
     // The engine is still keyed on the frame — it draws one frame's pixels — but the
     // session is not, so it is told to look elsewhere rather than rebuilt. **After the

@@ -80,6 +80,10 @@ the band's transport, and the readout is `m:ss:ff` (`FrameSteps.kt`, `FrameSteps
 viewer moved with it: on a film the arrows seek ±5 s and `Alt` changes file, on a picture they
 change file; the ±5 s and ‹ › buttons name their keys in a tooltip.
 
+### ME-221 — new, promoted 2026-11-05
+[`timeline/tickets/ME-221-the-clip-tabs-are-the-scope.md`](timeline/tickets/ME-221-the-clip-tabs-are-the-scope.md)
+— the selected clip is the scope; the `All Clips` / `This Clip` switch goes for a film.
+
 ### ME-220 — Snapping
 The play head, and a dragged clip or sound edge, snap within a few pixels to: clip joins, the ends of
 the whole timeline, a markup shape's span, and a sound entry's edges. A snap draws a one-pixel accent

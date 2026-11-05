@@ -52,15 +52,20 @@ fun EditorSession.pasteOnClip(to: Int, ops: List<ToolOp>, taken: (ToolOp) -> Boo
     val own = ownOpsOf(to)
     val pasted = own.filterNot(taken) + ops.filter(taken)
     if (pasted == own) return
+    // The clip open on a film (ME-221) is on screen, not put away.
+    if (film.linear && to == frame) {
+        _document.value = EditDocument(base.ops + pasted)
+        return record(_document.value)
+    }
     val before = elsewhere.value[to]
     val after = layerWith(to, pasted)
     elsewhere.value += to to after
-    _history.value = _history.value.push(_document.value, LayerChange(to, before, after))
+    record(_document.value, LayerChange(to, before, after))
 }
 
-/** Clip [key] holding [own] over the shared layer on screen, put away as a touched frame. */
+/** Clip [key] holding [own] over the shared layer, put away as a touched frame. */
 private fun EditorSession.layerWith(key: Int, own: List<ToolOp>): FrameEdit {
-    val shared = _document.value
+    val shared = sharedLayer
     val document = EditDocument(shared.ops + own)
     return FrameEdit(document, EditorHistory.startingAt(document), storedFor(key), shared)
 }

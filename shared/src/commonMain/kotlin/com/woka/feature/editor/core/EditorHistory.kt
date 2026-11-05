@@ -29,7 +29,9 @@ data class EditorHistory(
      * leaves the document on screen as it was and rewrites another clip's look; the
      * session puts that layer back on undo and forward again on redo (`stepLayers`).
      */
-    val changes: List<LayerChange?> = List(entries.size) { null }
+    val changes: List<LayerChange?> = List(entries.size) { null },
+    /** Beside each entry, a film session's whole state after it (ME-221), or null. */
+    val shots: List<SessionShot?> = List(entries.size) { null }
 ) {
 
     companion object {
@@ -71,11 +73,12 @@ data class EditorHistory(
      * keeps. At the cap the **oldest** entry goes — losing the newest would mean
      * the last thing done is the first thing forgotten.
      */
-    fun push(document: EditDocument, change: LayerChange? = null): EditorHistory {
+    fun push(document: EditDocument, change: LayerChange? = null, shot: SessionShot? = null): EditorHistory {
         val kept = entries.take(index + 1) + document
         val keptChanges = changes.take(index + 1) + change
+        val keptShots = shots.take(index + 1) + shot
         val drop = (kept.size - HISTORY_CAP).coerceAtLeast(0)
-        return EditorHistory(kept.drop(drop), kept.size - drop - 1, keptChanges.drop(drop))
+        return EditorHistory(kept.drop(drop), kept.size - drop - 1, keptChanges.drop(drop), keptShots.drop(drop))
     }
 
     fun undo(): EditorHistory = if (canUndo) copy(index = index - 1) else this

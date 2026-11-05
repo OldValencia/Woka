@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,8 +48,6 @@ internal fun BoxScope.EditorBottomPanel(
     activeToolId: String?,
     skipped: List<ToolOp>,
     unavailable: Map<String, String>,
-    /** This Clip on a film (ME-215): the strip picks a clip and cuts nothing. */
-    perClip: Boolean = false,
     /** What the canvas has selected — read live, see `ParamRows`. */
     selectedId: () -> String?,
     onSelectTool: (String) -> Unit
@@ -60,15 +59,14 @@ internal fun BoxScope.EditorBottomPanel(
     // Owned here because this is the one place that has both the card and the room
     // beside it — see `InspectorAccessory`.
     val accessory = remember { InspectorAccessory() }
-    // The band's own selection, outliving every rebuilt scope (ME-210) — and apart from
-    // the canvas's, because a clip id is not a shape id.
-    val clipSelection = remember(session) { ToolSelection() }
+    // The band's selection is the session's (ME-221) — apart from the canvas's, because a
+    // clip id is not a shape id, and a step of history, because on a film it is the scope.
+    val clipSelection by session.clipSelection.collectAsState()
     val timeline = EditorTimelineScopeImpl(
         session = session,
         tools = tools,
-        selection = clipSelection,
-        editing = activeTool?.manifest?.domain == ToolDomain.Time && !perClip,
-        perClip = perClip
+        selected = clipSelection,
+        editing = activeTool?.manifest?.domain == ToolDomain.Time
     )
 
     Column(

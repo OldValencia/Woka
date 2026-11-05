@@ -25,5 +25,7 @@ internal data class EditorFrameControls(
     val frameIndex: Int,
     val onScopeChange: (EditScope) -> Unit,
     /** Walking to another picture without leaving the editor (ME-158). */
-    val onSelectFrame: (Int) -> Unit
+    val onSelectFrame: (Int) -> Unit,
+    /** A film's selected clip, numbered from 1, for the caption (ME-221); filled by `EditorScreen`. */
+    val selectedClip: Int? = null
 )

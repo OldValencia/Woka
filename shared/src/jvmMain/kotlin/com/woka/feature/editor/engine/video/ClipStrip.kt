@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -23,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import com.woka.core.ui.components.resetOnRightClick
 import com.woka.feature.editor.core.EditorTimelineScope
 import com.woka.feature.editor.tools.trim.TrimClip
-import com.woka.feature.editor.tools.trim.atTimeline
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import kotlin.math.roundToInt
 
@@ -62,19 +60,15 @@ internal fun ClipStrip(
     val state = remember(player, walk) { StripState(player, walk) }
     SideEffect { state.refresh(clips, edits, durationMs) }
     // Clips are picked in every tool once there are two (2026-11-05); cut only in Clips.
-    val tabs = edits.editing || (!edits.perClip && clips.size > 1)
+    val tabs = edits.editing || clips.size > 1
     val height by animateDpAsState(if (edits.editing) FILM_EDITING else FILM_RESTING + if (tabs) CLIP_TAB_HEIGHT else 0.dp)
     val drag = state.drag
     // The document as it stands, always — an edge drag re-flows it live (`edgeLayout`).
     val laidOut = clips
     val (lead, tail) = trimmedEnds(laidOut, durationMs, edits.editing)
     val selectedId = edits.selectedId?.takeIf { id -> clips.any { it.id == id } }
-    // Entering This Clip opens the clip already picked, or the one under the play head.
-    LaunchedEffect(edits.perClip) {
-        if (!edits.perClip) return@LaunchedEffect
-        val at = clips.atTimeline(walk.timelineMs(clips, player.currentPositionMs))?.index ?: 0
-        (clips.firstOrNull { it.id == selectedId } ?: clips.getOrNull(at))?.let { state.focus(it) }
-    }
+    // The tab that just lost the selection pulses once, so the author sees it go (ME-221).
+    val pulse = rememberDeselectPulse(selectedId)
 
     BoxWithConstraints(modifier.height(height).testTag(CLIP_STRIP_TAG)) {
         val density = LocalDensity.current
@@ -111,7 +105,7 @@ internal fun ClipStrip(
                     clip = clip,
                     cells = cells,
                     showRange = edits.editing && span.width > with(density) { 96.dp.toPx() },
-                    selected = (tabs || edits.perClip) && clip.id == selectedId,
+                    selected = tabs && clip.id == selectedId,
                     ownLook = edits.hasOwnLook(clip.key),
                     carried = (drag as? StripDrag.Reorder)?.id == clip.id,
                     modifier = Modifier
@@ -129,7 +123,7 @@ internal fun ClipStrip(
             PlayHead(player, walk, laidOut, geometry, edits.editing && drag == null, onFreeze = { state.freezeAtPlayHead() }) {
                 state.splitAtPlayHead()
             }
-            if (tabs) ClipTabs(laidOut, geometry, selectedId) { edits.select(it) }
+            if (tabs) ClipTabs(laidOut, geometry, selectedId, pulse) { id -> laidOut.firstOrNull { it.id == id }?.let(state::pickTab) }
             ZoomOverview(zoom, geometry)
         }
     }

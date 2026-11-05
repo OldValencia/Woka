@@ -65,8 +65,6 @@ internal fun Modifier.stripGestures(
     }
 
 private suspend fun AwaitPointerEventScope.scrub(state: StripState, geometry: StripGeometry, down: PointerInputChange) {
-    // **This Clip** (ME-215): the click also picks the clip whose look is being edited.
-    if (state.edits.perClip) geometry.indexAt(down.position.x)?.let { state.focus(state.clips[it]) }
     val player = state.player
     player.pauseForSeek()
     state.walk.seekTo(player, state.clips, geometry.timelineAt(down.position.x))
@@ -92,7 +90,8 @@ private suspend fun AwaitPointerEventScope.pickOrCarry(state: StripState, geomet
         state.walk.seekTo(state.player, from, geometry.timelineAt(down.position.x))
         return
     }
-    state.edits.select(id)
+    // Selected inside the reorder's own step (ME-221).
+    state.edits.pick(id, from[index].key, step = false)
     state.drag = StripDrag.Reorder(id, from)
     var last = from
     horizontalDrag(moved.id) { change ->

@@ -78,7 +78,7 @@ internal fun VideoEditorBand(
     if (player != null && duration > 0L) MixClipSound(player, walk, clips, document, edits)
     // The selected clip's bar floats above the band; the room is kept so the inspector over
     // the band moves up rather than under it (reported 2026-11-05).
-    val barShown = clips.any { it.id == edits.selectedId } && (edits.editing || (!edits.perClip && clips.size > 1))
+    val barShown = clips.any { it.id == edits.selectedId } && (edits.editing || clips.size > 1)
     val room by animateDpAsState(if (barShown) CLIP_BAR_ROOM else 0.dp)
 
     Row(

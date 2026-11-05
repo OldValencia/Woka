@@ -90,9 +90,19 @@ class EditorSession(
      */
     internal var base: EditDocument = initial
 
+    /** A film's one line of history (ME-221, `EditorSessionFocus`); idle for a still. */
+    internal val film = FilmLine(openedOn)
+
+    /** [frame], watched: on a film the open clip is the scope (ME-221). */
+    val focus: StateFlow<Int> get() = film.focus
+
+    /** The clip the strip has selected (ME-221) — part of history, unlike a shape's. */
+    val clipSelection: StateFlow<String?> get() = film.selection
+
     /** Which frame the flows above are speaking about (ME-169). */
-    var frame: Int = openedOn
-        internal set
+    var frame: Int
+        get() = film.focus.value
+        internal set(value) { film.focus.value = value }
 
     /**
      * Every frame the editor has left, with its work intact (ME-169). **Not a map of
@@ -124,6 +134,8 @@ class EditorSession(
     fun redo() = moveTo(_history.value.redo())
     
     private fun moveTo(history: EditorHistory) {
+        val shot = history.shots.getOrNull(history.index)
+        if (film.linear && shot != null) return restore(history, shot)
         stepLayers(_history.value, history)
         _history.value = history
         _document.value = history.current
