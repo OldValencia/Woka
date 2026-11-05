@@ -1,9 +1,9 @@
 package com.woka.feature.editor.engine.video
 
+import com.woka.core.data.StillColorInfo
 import com.woka.feature.editor.engine.image.RasterStage
 import com.woka.feature.viewer.video.ASSUMED_WHITE_POINT
 import com.woka.feature.viewer.video.HDR_EFFECT
-import com.woka.feature.viewer.video.engine.probe.HdrInfo
 import com.woka.feature.viewer.video.shaderCode
 
 /**
@@ -23,24 +23,23 @@ import com.woka.feature.viewer.video.shaderCode
  * every stage evaluates its child in **source** coordinates — any other value draws a
  * corner of the frame blown up across the picture.
  *
- * **[ASSUMED_WHITE_POINT], not a measured peak.** ME-120 measures a still's own; a frame
- * that will be gone in 40 ms is the one thing that cannot be measured, and a running peak
- * would make the tone curve move while the picture plays. A stable per-file peak — read
- * from the container's content-light-level side data rather than from the pixels — is
- * ME-301's probe and not this.
+ * **The colour's white point, never a measured one** — the film's declared peak or its
+ * scene's HDR10+ peak (ME-301, ME-305), read off the frame's side data. A frame that will be
+ * gone in 40 ms cannot be measured, and a running peak would make the curve move while the
+ * picture plays. A film that declares nothing keeps [ASSUMED_WHITE_POINT].
  */
-internal fun hdrStageFor(info: HdrInfo?): RasterStage.Shader? {
+internal fun hdrStageFor(color: StillColorInfo?): RasterStage.Shader? {
     // Null is both "no player yet" and "ordinary sRGB", and they want the same answer:
     // no stage, so the recipe keeps the fast `drawImage` path it has always taken.
-    if (info == null || !info.needsColorManagement) return null
+    if (color == null || !color.needsColorManagement) return null
     return RasterStage.Shader(
         effect = HDR_EFFECT,
         uniforms = listOf(
             1f,
             1f,
-            info.transfer.shaderCode(),
-            if (info.isWideGamut) 1f else 0f,
-            ASSUMED_WHITE_POINT
+            color.transfer.shaderCode(),
+            if (color.isWideGamut) 1f else 0f,
+            color.whitePoint ?: ASSUMED_WHITE_POINT
         ),
         resolutionScale = null
     )

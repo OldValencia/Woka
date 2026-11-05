@@ -27,7 +27,9 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.woka.core.data.StillColorInfo
+import com.woka.core.data.applyTo
 import com.woka.core.ui.image.AppliedVideoEdits
+import com.woka.feature.viewer.image.rememberHdrModeAccess
 import com.woka.feature.viewer.shell.rememberFramePainter
 import com.woka.feature.viewer.video.engine.preview.hoverExcerpts
 import kotlinx.coroutines.delay
@@ -67,10 +69,12 @@ actual fun VideoHoverExcerpts(file: File, modifier: Modifier) {
     }
 
     val shown = frame ?: return
+    // The HDR mode the picture is shown in (ME-304); every frame here is a moving one.
+    val moded = rememberHdrModeAccess().current().applyTo(color)
     Box(modifier = modifier) {
-        val edited = remember(shown, color, edit) { edit?.painter(shown, color, moving = true) }
+        val edited = remember(shown, moded, edit) { edit?.painter(shown, moded, moving = true) }
         Image(
-            painter = edited ?: rememberFramePainter(shown, color, moving = true),
+            painter = edited ?: rememberFramePainter(shown, moded, moving = true),
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop

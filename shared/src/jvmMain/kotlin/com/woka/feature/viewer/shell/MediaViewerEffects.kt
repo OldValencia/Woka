@@ -23,7 +23,7 @@ fun MediaViewerTopBarSetup(
     onEdit: (() -> Unit)?,
     onInfo: () -> Unit,
     isInfoOpen: Boolean,
-    /** See `MediaViewerNormalControls.showHdrMode` — false while a video is open. */
+    /** See `MediaViewerNormalControls.showHdrMode` — false on an SDR picture and on a track. */
     showHdrMode: Boolean = true,
     /** See `MediaViewerNormalControls.showSizeControl` — false while a track is open. */
     showSizeControl: Boolean = true

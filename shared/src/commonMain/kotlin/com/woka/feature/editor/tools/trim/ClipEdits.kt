@@ -122,10 +122,15 @@ const val FREEZE_MAX_MS = 10 * 60_000L
 fun List<TrimClip>.freezeAt(timelineMs: Long, newId: String, splitId: String): List<TrimClip> {
     val at = atTimeline(timelineMs) ?: return this
     if (this[at.index].isFreeze) return this
+    val clip = this[at.index]
     val cut = split(timelineMs, splitId)
-    // Split: between the halves. Not split (a join, or too near an edge): before that clip.
-    val insertAt = if (cut.size > size) at.index + 1 else at.index
-    val freeze = TrimClip(newId, at.sourceMs, at.sourceMs, cut.nextKey(), holdMs = FREEZE_HOLD_MS)
+    // Split: between the halves. Not split — a join, or too near an edge — on the side of the
+    // nearer edge, so it lands under the play head and not at the clip's far end (1.0.6 review).
+    val nearEnd = clip.toMs - at.sourceMs < at.sourceMs - clip.fromMs
+    val insertAt = if (cut.size > size || nearEnd) at.index + 1 else at.index
+    // The end is exclusive: a play head parked on it freezes the clip's last frame.
+    val sourceMs = at.sourceMs.coerceAtMost(clip.toMs - 1)
+    val freeze = TrimClip(newId, sourceMs, sourceMs, cut.nextKey(), holdMs = FREEZE_HOLD_MS)
     return cut.take(insertAt) + freeze + cut.drop(insertAt)
 }
 

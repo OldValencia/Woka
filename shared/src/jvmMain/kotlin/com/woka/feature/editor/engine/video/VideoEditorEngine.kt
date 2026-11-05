@@ -6,6 +6,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.MediaKind
+import com.woka.core.data.StillColorInfo
+import com.woka.core.data.applyTo
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditorEngine
@@ -14,7 +16,9 @@ import com.woka.feature.editor.core.LocalClipLooks
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.engine.image.RasterRecipe
 import com.woka.feature.editor.tools.trim.TrimTool
+import com.woka.feature.viewer.image.rememberHdrModeAccess
 import com.woka.feature.viewer.video.engine.probe.HdrInfo
+import com.woka.feature.viewer.video.engine.probe.toColour
 import java.io.File
 
 /**
@@ -84,13 +88,23 @@ internal class VideoEditorEngine(
     override fun playHeadMs(): Long? =
         playback.state?.let { playback.walk.timelineMs(playback.walk.clips, it.currentPositionMs) }
 
+    /** The film's colour, for the HDR pill (ME-304) — a film's codec parameters answer it. */
+    override val sourceColor: StillColorInfo by lazy { codedColour(file) }
+
     /**
-     * The stream's colour, and **not the frame's** (ME-205). `streamHdrInfo` is written
-     * once per opened track and is stable by contract, which is what a memoised recipe
-     * needs; `currentFrameHdrInfo` is rewritten every frame, and keying a fold on it
-     * would re-fold sixty times a second.
+     * The canvas's colour is the **frame's** (ME-305): the film's white point, or its
+     * scene's HDR10+ peak, under the HDR mode (ME-304). `currentFrameHdrInfo` is rewritten
+     * every frame, but with an equal value inside a scene, and it is structural-equality
+     * state — so the fold below re-runs at a cut, not sixty times a second (ME-205's worry).
      */
-    private val streamColour: HdrInfo? @Composable get() = playback.state?.streamHdrInfo
+    private val frameColour: StillColorInfo @Composable get() = moded(playback.state?.currentFrameHdrInfo)
+
+    /** The stream's, for the thumbnail: one picture for a whole span takes no scene's peak. */
+    private val streamColour: StillColorInfo @Composable get() = moded(playback.state?.streamHdrInfo)
+
+    @Composable
+    private fun moded(hdr: HdrInfo?): StillColorInfo =
+        rememberHdrModeAccess().current().applyTo(hdr?.toColour() ?: StillColorInfo.Sdr)
 
     /**
      * **Remembered on the document, not rebuilt per frame.** The frame is the only thing
@@ -99,7 +113,7 @@ internal class VideoEditorEngine(
      */
     @Composable
     override fun Surface(document: EditDocument, modifier: Modifier) {
-        val colour = streamColour
+        val colour = frameColour
         // The clip under the play head draws through its own layer (ME-215).
         val key = TrimTool.clipsIn(document)?.getOrNull(playback.walk.index)?.key ?: 0
         val shown = LocalClipLooks.current?.documentFor(document, key) ?: document

@@ -1,16 +1,18 @@
 package com.woka.feature.editor.engine.video.render
 
 import androidx.compose.ui.unit.IntSize
+import com.woka.core.data.HdrView
+import com.woka.core.data.applyTo
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.core.ToolOp
 import com.woka.feature.editor.engine.image.fold
-import com.woka.feature.editor.engine.video.hdrStageFor
 import com.woka.feature.editor.tools.sound.SoundTool
 import com.woka.feature.editor.tools.trim.TrimClip
 import com.woka.feature.editor.tools.trim.TrimTool
 import com.woka.feature.editor.tools.trim.wholeSource
+import com.woka.feature.viewer.video.engine.probe.toColour
 import org.bytedeco.javacv.FFmpegFrameRecorder
 import java.io.File
 import java.nio.file.Files
@@ -46,14 +48,21 @@ internal fun renderVideo(
 ): EditSaveResult {
     var scratch: File? = null
     return try {
-        val probe = probeSource(source)
+        val probe = probeSource(source, alive)
+        if (!alive()) return EditSaveResult.NothingToDo
+        if (probe.durationMs <= 0L) return EditSaveResult.Failed("${source.name} does not say how long it is. Nothing was written.")
         val clips = TrimTool.clipsIn(document) ?: wholeSource(probe.durationMs)
         val recipes = clips.map { it.key }.distinct()
             .associateWith { key -> fold(EditDocument(document.ops + looks(key)), registry, sourceSize) }
         // A PQ or HLG film is tone mapped by the canvas's own stage (`hdrStageFor`), so an
-        // encode that would otherwise pass frames through draws every one of them.
-        val hdr = hdrStageFor(probe.hdr)
-        val pixelWork = recipes.values.any { !it.isIdentity(sourceSize) }
+        // encode that would otherwise pass frames through draws every one of them — under
+        // the HDR mode the canvas showed it in (ME-304), to the film's or scene's peak.
+        val colour = HdrView.mode.applyTo(probe.hdr.toColour()).takeIf { it.needsColorManagement }
+        // **The render is what the canvas showed** (the author, 2026-11-05): an HDR mode that
+        // changes the picture — Off on a PQ film, On on an SDR one — rules the copy out, which
+        // would hand back the source's own look instead.
+        val modeMoves = colour != probe.hdr.toColour().takeIf { it.needsColorManagement }
+        val pixelWork = modeMoves || recipes.values.any { !it.isIdentity(sourceSize) }
         // A gain, a mute or a fade changes every sample, which a packet copy cannot (ME-240).
         val sound = renderSoundOf(document, looks, clips)
         // A clip at another speed, or a freeze, is retimed — which a packet copy cannot do.
@@ -65,16 +74,24 @@ internal fun renderVideo(
         if (copies) {
             copyClips(source, scratch, format, clips, alive, progress)
         } else {
-            val drawn = pixelWork || hdr != null
-            val pictures = if (drawn) recipes.mapValues { RecipePicture(sourceSize, it.value.copy(source = hdr)) } else emptyMap()
-            encodeClips(source, scratch, format, clips, { clip -> pictures[clip.key] }, alive, progress, sound)
+            val drawn = pixelWork || colour != null
+            val buffers = HashMap<EvenSize, RenderBuffers>()
+            val shared = { size: EvenSize -> buffers.getOrPut(size) { RenderBuffers(size) } }
+            val pictures = if (drawn) recipes.mapValues { RecipePicture(sourceSize, it.value, colour, shared) } else emptyMap()
+            try {
+                encodeClips(source, scratch, format, clips, { clip -> pictures[clip.key] }, alive, progress, sound)
+            } finally {
+                buffers.values.forEach { it.close() }
+            }
         }
         if (!alive()) {
             scratch.delete()
             return EditSaveResult.NothingToDo
         }
-        Files.move(scratch.toPath(), target.toPath(), StandardCopyOption.ATOMIC_MOVE)
-        EditSaveResult.Saved(target.path)
+        // Named again if a file took the name while this ran: an atomic move replaces it on Windows.
+        val landed = if (target.exists()) renderTargetBeside(source, target.extension) else target
+        Files.move(scratch.toPath(), landed.toPath(), StandardCopyOption.ATOMIC_MOVE)
+        EditSaveResult.Saved(landed.path)
     } catch (failure: Exception) {
         scratch?.delete()
         EditSaveResult.Failed("The render failed (${failure.message}). The original is untouched.")

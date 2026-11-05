@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
+import com.woka.feature.editor.core.NO_CLIP
 import com.woka.feature.editor.tools.trim.move
 import com.woka.feature.viewer.video.engine.pauseForSeek
 import com.woka.feature.viewer.video.engine.resumeAfterSeek
@@ -87,7 +88,9 @@ private suspend fun AwaitPointerEventScope.pickOrCarry(state: StripState, geomet
         state.walk.seekTo(state.player, from, geometry.timelineAt(down.position.x))
         return
     }
-    // Selected inside the reorder's own step (ME-221).
+    // Selected inside the reorder's own step (ME-221) — and put back if the drop makes none, or
+    // the selection moved with no step to undo it by (1.0.6 review).
+    val before = state.edits.selectedId
     state.edits.pick(id, from[index].key, step = false)
     state.drag = StripDrag.Reorder(id, from)
     var last = from
@@ -100,6 +103,7 @@ private suspend fun AwaitPointerEventScope.pickOrCarry(state: StripState, geomet
             last = next
         }
     } finally {
+        if (last == from) state.edits.pick(before, from.firstOrNull { it.id == before }?.key ?: NO_CLIP, step = false)
         state.finish(last)
     }
 }

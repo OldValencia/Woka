@@ -2,7 +2,11 @@ package com.woka.feature.viewer.video.engine.audio
 
 import com.woka.core.ui.image.SourceRange
 import com.woka.feature.viewer.video.engine.VideoPlayerState
+import kotlinx.coroutines.channels.Channel
 import org.bytedeco.javacv.FFmpegFrameGrabber
+import org.bytedeco.javacv.Frame
+import java.nio.Buffer
+import java.nio.ShortBuffer
 
 /*
  * The sample and result-time arithmetic behind `AudioRanges` (ME-233), split out of it for
@@ -39,5 +43,15 @@ internal fun startOf(ranges: List<SourceRange>, index: Int): Long = ranges.take(
 internal fun resultOf(ranges: List<SourceRange>, index: Int, videoMs: Long): Long {
     val range = ranges.getOrNull(index) ?: return videoMs
     if (range.isFreeze) return startOf(ranges, index)
-    return startOf(ranges, index) + ((videoMs - range.fromMs) / range.speed).toLong()
+    return startOf(ranges, index) + ((videoMs - range.fromMs) / range.speed.toDouble()).toLong()
+}
+
+/** [kept] samples of [frame] onto [channel], through [tempo] when the range plays at a speed. */
+internal suspend fun sendKept(frame: Frame, kept: ShortArray, tempo: AudioTempoFilter?, channel: Channel<ByteArray>) {
+    val wrapped = ShortBuffer.wrap(kept)
+    val chunks = tempo?.let {
+        frame.samples = arrayOf<Buffer>(wrapped)
+        it.process(frame)
+    }
+    if (chunks != null) chunks.forEach { channel.send(it) } else channel.send(wrapped.toPcmBytes())
 }

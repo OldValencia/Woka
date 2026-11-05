@@ -7,7 +7,6 @@ import org.bytedeco.javacv.FFmpegFrameFilter
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.FFmpegFrameRecorder
 import org.bytedeco.javacv.Frame
-import java.nio.ShortBuffer
 import kotlin.math.roundToLong
 
 /**
@@ -47,17 +46,10 @@ internal fun clipTempo(grabber: FFmpegFrameGrabber, speed: Float): FFmpegFrameFi
     }.getOrNull()
 }
 
-/** [samples] through [tempo] into [recorder]; straight in when there is no tempo. */
-internal fun recordSound(recorder: FFmpegFrameRecorder, tempo: FFmpegFrameFilter?, samples: Frame) {
-    if (tempo == null) return recorder.record(samples)
-    tempo.push(samples)
-    while (true) recorder.record(tempo.pullSamples() ?: break)
-}
-
 /**
  * A freeze in a render (ME-217): the frame at the clip's start, drawn through its look and
- * placed on every slot of the hold, with silence under it so the sound after it stays level
- * with its picture.
+ * placed on every slot of the hold. The silence under it is `RenderAudio`'s, made up to the
+ * hold's end by the caller, so it is counted with the rest of the sound.
  */
 internal fun recordFreeze(
     grabber: FFmpegFrameGrabber,
@@ -83,16 +75,4 @@ internal fun recordFreeze(
         pace.place(shown, atUs) { recorder.record(it, AV_PIX_FMT_RGBA) }
         atUs += stepUs
     }
-    if (grabber.audioChannels > 0) recordSilence(recorder, grabber.sampleRate, grabber.audioChannels, clip.holdMs)
 }
-
-/** [ms] of silence, a second at a time. */
-private fun recordSilence(recorder: FFmpegFrameRecorder, sampleRate: Int, channels: Int, ms: Long) {
-    var left = sampleRate * ms / 1000L
-    while (left > 0) {
-        val count = minOf(left, sampleRate.toLong()).toInt()
-        recorder.recordSamples(sampleRate, channels, ShortBuffer.wrap(ShortArray(count * channels)))
-        left -= count
-    }
-}
-

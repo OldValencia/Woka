@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import com.woka.core.data.StillColorInfo
 import com.woka.feature.viewer.video.ASSUMED_WHITE_POINT
 import com.woka.feature.viewer.video.HdrImagePainter
+import com.woka.feature.viewer.video.engine.probe.toColour
 
 /**
  * How the viewer decides what a picture must be drawn *through*.
@@ -28,7 +29,7 @@ import com.woka.feature.viewer.video.HdrImagePainter
 fun frameColorInfo(media: ViewerMedia, drawn: ImageBitmap): StillColorInfo {
     val fromFrame = if (isMovingFrame(media, drawn)) {
         val video = media as ViewerMedia.Video
-        video.player.currentFrameHdrInfo?.let { StillColorInfo(it.transfer, it.isWideGamut) }
+        video.player.currentFrameHdrInfo?.toColour()
     } else {
         (media as? ViewerMedia.Still)?.color
     }
@@ -58,10 +59,10 @@ fun isMovingFrame(media: ViewerMedia, drawn: ImageBitmap): Boolean =
  * is replaced at the frame rate, which is what put it out of `displayable`'s reach in the
  * first place.
  *
- * That is also why the white point is the constant here with no branch left. ME-120
- * measures a picture's own peak, and a frame that will be gone in 40 ms is the one thing
- * that cannot be measured — a running peak would make the curve move while the picture
- * plays.
+ * The white point is the one the film declares — or its scene's (ME-301, ME-305) — never a
+ * measurement of these pixels: a frame that will be gone in 40 ms cannot be measured, and a
+ * running peak would make the curve move while the picture plays. A film that declares
+ * nothing keeps [ASSUMED_WHITE_POINT].
  */
 @Composable
 fun rememberFramePainter(
@@ -77,7 +78,7 @@ fun rememberFramePainter(
                 transfer = color.transfer,
                 isWideGamut = color.isWideGamut,
                 smooth = smooth,
-                whitePoint = ASSUMED_WHITE_POINT
+                whitePoint = color.whitePoint ?: ASSUMED_WHITE_POINT
             )
         }
     } else {

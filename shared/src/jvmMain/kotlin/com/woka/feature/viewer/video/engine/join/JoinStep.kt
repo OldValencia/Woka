@@ -5,6 +5,7 @@ import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.engine.decode.END_OF_EDIT_TS
 import com.woka.feature.viewer.video.engine.decode.FramePacer
 import com.woka.feature.viewer.video.engine.decode.VideoFrame
+import com.woka.feature.viewer.video.engine.decode.colourOf
 import com.woka.feature.viewer.video.engine.probe.HdrInfo
 import kotlinx.coroutines.channels.Channel
 import org.bytedeco.javacv.FFmpegFrameGrabber
@@ -71,13 +72,14 @@ internal class JoinStep(
     /**
      * Before a grab: a freeze being decoded sends its one picture — the one already on
      * screen, after a seek into its hold — and the loop goes straight on to the next range,
-     * while the presenter holds the frame.
+     * while the presenter holds the frame — in the colour it was drawn with (ME-301).
      */
     suspend fun beforeGrab(grabber: FFmpegFrameGrabber, generation: Int, hdr: HdrInfo?): FFmpegFrameGrabber? {
         val range = joins.ranges.getOrNull(joins.decoding)?.takeIf { it.isFreeze } ?: return null
         val frame = player.currentFrame
         if (!joins.freezeSent && frame != null) {
-            channel.send(VideoFrame(frame, range.fromMs, generation, hdr, player.currentFrameId, joins.decoding, joins.heldMs))
+            val colour = player.currentFrameHdrInfo ?: hdr
+            channel.send(VideoFrame(frame, range.fromMs, generation, colour, player.currentFrameId, joins.decoding, joins.heldMs))
         }
         joins.freezeSent = true
         return handOff(grabber, null, generation, hdr)
@@ -117,7 +119,7 @@ internal class JoinStep(
         val range = ranges.getOrNull(next) ?: return grabber.also { sendEnd(generation) }
         if (picture != null && continues(ranges[joins.decoding], range)) {
             joins.decoding = next
-            send(picture, tsMs, generation, hdr, next)
+            send(grabber, picture, tsMs, generation, hdr, next)
             return grabber
         }
         val lane = pool?.laneFor(next, range.fromMs)?.takeIf { it.awaitParked() }
@@ -125,16 +127,19 @@ internal class JoinStep(
             ?: return grabber.also { sendEnd(generation) }
         joins.decoding = next
         joins.freezeSent = range.isFreeze
-        send(landed.picture, landed.tsMs, generation, hdr, next)
-        landed.picture.close()
+        try {
+            send(landed.grabber, landed.picture, landed.tsMs, generation, hdr, next)
+        } finally {
+            landed.picture.close()
+        }
         decodedMs = landed.tsMs
         pacer.rebase()
         return if (range.isFreeze) handOff(landed.grabber, null, generation, hdr) else landed.grabber
     }
 
-    private suspend fun send(picture: Frame, tsMs: Long, generation: Int, hdr: HdrInfo?, joinIndex: Int) {
+    private suspend fun send(grabber: FFmpegFrameGrabber, picture: Frame, tsMs: Long, generation: Int, hdr: HdrInfo?, joinIndex: Int) {
         val paced = pacer.convert(picture)
-        channel.send(VideoFrame(paced.bitmap, tsMs, generation, hdr, paced.id, joinIndex))
+        channel.send(VideoFrame(paced.bitmap, tsMs, generation, player.colourOf(hdr, grabber), paced.id, joinIndex))
     }
 
     private suspend fun sendEnd(generation: Int) {

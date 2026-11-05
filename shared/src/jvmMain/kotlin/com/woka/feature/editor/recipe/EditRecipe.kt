@@ -7,6 +7,9 @@ import com.woka.feature.editor.save.writeAtomically
 import kotlinx.serialization.encodeToString
 import java.io.File
 
+/** The largest file the byte path rewrites whole — it reads every byte onto the heap. */
+private const val MAX_REWRITE_BYTES = 256L * 1024 * 1024
+
 /**
  * The edit a file carries, as far as the rest of the app is concerned (§5).
  *
@@ -67,6 +70,10 @@ internal object EditRecipe {
         // rather than by building a second copy of a 4 GB video.
         if (carrier is TailRecipeCarrier) {
             appendedInPlace(file, carrier, encoded)?.let { return it }
+            // The in-place write declined — something follows our box — and the byte path
+            // reads the whole file onto the heap: hundreds of MB, or an OutOfMemoryError past
+            // 2 GB (1.0.6 review). A film that large is refused instead.
+            if (file.length() > MAX_REWRITE_BYTES) return failure("${file.name} is too large to rewrite with its edit.")
         }
         val bytes = runCatching { file.readBytes() }.getOrElse { return Result.failure(it) }
 
@@ -86,7 +93,7 @@ internal object EditRecipe {
         encoded: String
     ): Result<Unit>? {
         val head = file.leading(HEAD_PROBE) ?: return null
-        if (!carrier.accepts(head) || !carrier.fits(head, file.length())) {
+        if (!carrier.accepts(head) || !carrier.fits(head, file.length()) || !carrier.fitsFile(file)) {
             return failure("${file.extension.uppercase()} files cannot carry an edit.")
         }
         val box = carrier.box(encoded)

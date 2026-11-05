@@ -2,7 +2,6 @@ package com.woka.feature.viewer.video.engine.join
 
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.engine.decode.PictureFilter
-import com.woka.feature.viewer.video.engine.decode.openLaneGrabber
 import com.woka.feature.viewer.video.engine.sync.landAt
 import com.woka.feature.viewer.video.engine.sync.timeUs
 import kotlinx.coroutines.CancellationException
@@ -12,10 +11,6 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.bytedeco.javacv.FFmpegFrameGrabber
-import org.bytedeco.javacv.Frame
-
-/** A lane's picture handed to the decode loop: the grabber to go on with, and where it stands. */
-internal class Landed(val grabber: FFmpegFrameGrabber, val picture: Frame, val tsMs: Long)
 
 /**
  * One spare decoder (ME-232): a grabber of its own that seeks to an upcoming range's start
@@ -35,9 +30,7 @@ internal class DecoderLane(private val player: VideoPlayerState) {
 
     val filter = PictureFilter()
 
-    private var grabber: FFmpegFrameGrabber? = null
-    private var width = -1
-    private var stream = -1
+    private val decoder = LaneGrabber(player)
     private var job: Job? = null
 
     /** The range this lane is rolling to or parked on, by index and start; -1 when free. */
@@ -55,12 +48,11 @@ internal class DecoderLane(private val player: VideoPlayerState) {
     var freeSinceMs = System.currentTimeMillis()
         private set
 
-    val isFree: Boolean get() = index < 0
+    /** Holding no range, and no pre-roll still running on its grabber. */
+    val isFree: Boolean get() = index < 0 && job?.isActive != true
 
-    /** Opened at a size or on a stream the player's grabber no longer uses. */
-    val isStale: Boolean
-        get() = grabber != null &&
-            (width != player.renderScale.decodeWidth || stream != (player.tracks.selectedVideoIndex ?: stream))
+    /** See [LaneGrabber.isStale]. */
+    val isStale: Boolean get() = decoder.isStale
 
     fun holds(rangeIndex: Int, startMs: Long): Boolean = index == rangeIndex && fromMs == startMs
 
@@ -71,8 +63,9 @@ internal class DecoderLane(private val player: VideoPlayerState) {
         fromMs = startMs
         job = player.scope.launch(Dispatchers.IO) {
             try {
-                val lane = grabber ?: open()
+                val lane = decoder.openedFor(filter)
                 val picture = player.landAt(lane, filter, startMs) { isActive } ?: return@launch
+                if (!isActive) return@launch picture.close()
                 parked = Landed(lane, picture, filter.timeUs(lane, picture) / 1000L)
             } catch (e: CancellationException) {
                 throw e
@@ -98,48 +91,39 @@ internal class DecoderLane(private val player: VideoPlayerState) {
         val landed = parked ?: return null
         parked = null
         playerFilter.swapGraphWith(filter)
-        grabber = outgoing
-        width = player.renderScale.decodeWidth
-        stream = outgoing.videoStream
+        decoder.adopt(outgoing)
         release()
         return landed
+    }
+
+    /**
+     * Lets go of the range **without waiting**: a pre-roll inside a native seek runs on to its
+     * end on its own thread, and waiting for it froze the playing picture up to ~2 s on a list
+     * edit or a seek (1.0.6 review). The lane is not [isFree] until it has.
+     */
+    fun letGo() {
+        job?.cancel()
+        parked?.picture?.close()
+        parked = null
+        release()
     }
 
     /** Stops any pre-roll and drops its picture; the grabber stays open for the next one. */
     suspend fun free() {
         job?.cancelAndJoin()
         job = null
-        parked?.picture?.close()
-        parked = null
-        release()
+        letGo()
     }
 
     suspend fun close() {
         free()
         filter.close()
-        grabber?.let {
-            runCatching {
-                it.stop()
-                it.release()
-            }
-        }
-        grabber = null
+        decoder.close()
     }
 
     private fun release() {
         if (index >= 0) freeSinceMs = System.currentTimeMillis()
         index = -1
         fromMs = -1L
-    }
-
-    private fun open(): FFmpegFrameGrabber {
-        val lane = player.openLaneGrabber()
-        lane.start()
-        filter.mirror(player.pictureFilter)
-        filter.open(lane, player.renderScale.decodeWidth, player.renderScale.decodeHeight)
-        width = player.renderScale.decodeWidth
-        stream = lane.videoStream
-        grabber = lane
-        return lane
     }
 }

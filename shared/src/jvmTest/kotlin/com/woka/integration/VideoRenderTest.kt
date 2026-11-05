@@ -49,6 +49,18 @@ class VideoRenderTest {
         assertTrue(out.parentFile.listFiles()!!.none { it.name.endsWith(".woka-render") }, "scratch left behind")
     }
 
+    /**
+     * 1.0.6 review: a cut 10 ms before a keyframe still copies, and the backward seek landed
+     * on the keyframe before it — half a second the user cut away, copied in front of the clip.
+     */
+    @Test
+    fun `a copy starts on the keyframe at the cut, not on the one before it`() = onClip { source, registry ->
+        val out = render(source, cuts(0L to 1_000L, 1_990L to 3_000L), registry)
+        val back = readBack(out)
+        assertTrue(back.firstDecodes, "the copy does not decode: $back")
+        assertTrue(abs(back.durationMs - 2_000L) <= 100L, "the cut-away GOP came along: $back")
+    }
+
     @Test
     fun `a cut off a keyframe re-encodes and keeps the timeline's length`() = onClip { source, registry ->
         val out = render(source, cuts(0L to 1_000L, 2_200L to 3_000L), registry)

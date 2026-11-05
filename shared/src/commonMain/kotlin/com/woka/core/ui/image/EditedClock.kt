@@ -46,7 +46,7 @@ class EditedClock(val ranges: List<SourceRange>) {
         val start = startOf(current)
         val range = ranges[current]
         if (range.isFreeze) return start + heldMs
-        return start + ((sourceMs - range.fromMs) / range.speed).toLong().coerceIn(0L, range.lengthMs)
+        return start + ((sourceMs - range.fromMs) / range.speed.toDouble()).toLong().coerceIn(0L, range.lengthMs)
     }
 
     /**
@@ -59,7 +59,7 @@ class EditedClock(val ranges: List<SourceRange>) {
         ranges.forEachIndexed { i, range ->
             val length = range.lengthMs
             if (timelineMs < start + length) {
-                val into = if (range.isFreeze) 0L else ((timelineMs - start).coerceAtLeast(0L) * range.speed).toLong()
+                val into = if (range.isFreeze) 0L else ((timelineMs - start).coerceAtLeast(0L) * range.speed.toDouble()).toLong()
                 return i to range.fromMs + into
             }
             start += length

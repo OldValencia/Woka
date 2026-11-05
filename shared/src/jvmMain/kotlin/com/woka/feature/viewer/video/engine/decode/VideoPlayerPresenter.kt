@@ -125,7 +125,7 @@ internal fun VideoPlayerState.startPresenterLoop(videoChannel: Channel<VideoFram
             droppedInARow = 0
             generation.isBehind = false
             currentFrame = bitmap
-            currentFrameHdrInfo = hdrInfo
+            showColour(hdrInfo)
             currentFrameId = frameId
             edit.shownMs = frameTsMs
             recordPresentedFrame() // the one hot-path cost of §health

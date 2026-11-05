@@ -23,7 +23,13 @@ import androidx.compose.runtime.Immutable
 @Immutable
 data class StillColorInfo(
     val transfer: TransferKind = TransferKind.SDR,
-    val isWideGamut: Boolean = false
+    val isWideGamut: Boolean = false,
+    /**
+     * What a **video frame** peaks at, in units of SDR white — the film's declared peak, or its
+     * scene's (ME-301, ME-305). Null for a still, whose white point is measured at its decode
+     * (ME-120) and never travels here, and for a film that declared nothing.
+     */
+    val whitePoint: Float? = null
 ) {
     val needsColorManagement: Boolean
         get() = needsColorManagement(transfer, isWideGamut)

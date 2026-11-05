@@ -66,6 +66,10 @@ internal fun copySpan(
         val atUs = av_rescale_q(stampOf(packet), base, MICROS)
         if (shiftUs == null) {
             if (!video || packet.flags() and AV_PKT_FLAG_KEY == 0) continue
+            // `AVSEEK_FLAG_BACKWARD` lands on the keyframe at or *before* the cut, and the copy
+            // is allowed for one up to 16 ms after it — so the GOP the user cut away was copied
+            // in front of the clip (1.0.6 review). The span starts on the keyframe at the cut.
+            if (atUs < fromUs + start) continue
             shiftUs = atUs - sink.nextUs
         }
         if (atUs >= untilUs + start) {
@@ -92,11 +96,12 @@ internal fun copySpan(
  * packet flags with nothing decoded, 2–4 ms for a short file (ME-290). The grabber is left
  * at the end; whoever copies seeks first anyway.
  */
-internal fun keyframesMs(grabber: FFmpegFrameGrabber): List<Long> {
+internal fun keyframesMs(grabber: FFmpegFrameGrabber, alive: () -> Boolean = { true }): List<Long> {
     val context = grabber.formatContext
     val start = containerStartUs(grabber)
     val keys = ArrayList<Long>()
-    while (true) {
+    // Asked per packet: on a multi-GB film this walk is seconds, and ✕ waited it out (1.0.6 review).
+    while (alive()) {
         val packet = grabber.grabPacket() ?: break
         val stream = context.streams(packet.stream_index())
         if (stream.codecpar().codec_type() != AVMEDIA_TYPE_VIDEO) continue

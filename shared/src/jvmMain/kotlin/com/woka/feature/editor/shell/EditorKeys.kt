@@ -74,7 +74,7 @@ internal fun EditorKeyEffect(
             // handler is previewed at the window root, before focus, so without this
             // `Backspace` deletes the shape being typed into and `Esc` closes the editor
             // out from under the field. The field handles both itself.
-            if (curCanvasKeys?.typing == true) return@handler false
+            if (curCanvasKeys?.yields(event.key) == true) return@handler false
             when {
                 event.key == Key.Escape -> consume { curCancel() }
                 event.isCtrlPressed && event.key == Key.S -> consume { curDone() }

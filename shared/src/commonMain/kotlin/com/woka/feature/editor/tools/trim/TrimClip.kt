@@ -54,7 +54,7 @@ data class TrimClip(
     val sourceLengthMs: Long get() = (toMs - fromMs).coerceAtLeast(0L)
 
     /** How long it lasts on the timeline — the hold, or the source span at its [speed]. */
-    val lengthMs: Long get() = if (isFreeze) holdMs else (sourceLengthMs / speed).toLong()
+    val lengthMs: Long get() = if (isFreeze) holdMs else (sourceLengthMs / speed.toDouble()).toLong()
 }
 
 /** The quick speeds the clip bar offers as one click each, slowest first (ME-216). */

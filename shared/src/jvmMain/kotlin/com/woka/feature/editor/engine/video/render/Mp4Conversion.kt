@@ -2,6 +2,8 @@ package com.woka.feature.editor.engine.video.render
 
 import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.tools.trim.wholeSource
+import com.woka.feature.viewer.video.engine.decode.FreshFrameGrabber
+import com.woka.feature.viewer.video.engine.sync.lengthMs
 import org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_ID_AAC
 import org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_ID_H264
 import org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_ID_HEVC
@@ -36,12 +38,15 @@ internal fun convertToMp4(source: File, alive: () -> Boolean, progress: (Float) 
         val probe = FFmpegFrameGrabber(source).let { grabber ->
             try {
                 grabber.start()
-                Mp4Probe(grabber.lengthInTime / 1000L, copiesIntoMp4(grabber))
+                // The player's length, which counts a file whose header states none (VF-001):
+                // the header's 0 made a `[0, 0)` clip and an empty file reported as saved.
+                Mp4Probe(grabber.lengthMs(source), copiesIntoMp4(grabber))
             } finally {
                 runCatching { grabber.stop() }
                 runCatching { grabber.release() }
             }
         }
+        if (probe.durationMs <= 0L) return EditSaveResult.Failed("${source.name} does not say how long it is. Nothing was written.")
         val clips = wholeSource(probe.durationMs)
         if (probe.copies) copyWhole(source, scratch, probe.durationMs, alive, progress)
         else encodeClips(source, scratch, "mp4", clips, { null }, alive, progress)
@@ -64,12 +69,16 @@ private fun copiesIntoMp4(grabber: FFmpegFrameGrabber): Boolean =
         (grabber.audioChannels == 0 || grabber.audioCodec in COPYABLE_AUDIO)
 
 private fun copyWhole(source: File, target: File, durationMs: Long, alive: () -> Boolean, progress: (Float) -> Unit) {
-    val grabber = FFmpegFrameGrabber(source)
+    val grabber = FreshFrameGrabber(source)
     try {
         grabber.start()
         val recorder = FFmpegFrameRecorder(target, grabber.imageWidth, grabber.imageHeight, grabber.audioChannels)
         recorder.format = "mp4"
-        recorder.start(grabber.formatContext)
+        // The source container's tag (`H264` in an `.nsv`, `raac` in an `.rm`) is not an mp4
+        // one, and the muxer refuses the stream outright (1.0.6 review): let it pick its own.
+        val context = grabber.formatContext
+        for (stream in 0 until context.nb_streams()) context.streams(stream).codecpar().codec_tag(0)
+        recorder.start(context)
         try {
             copySpan(grabber, PacketSink(recorder), 0L, Long.MAX_VALUE / 4, alive) { atUs ->
                 progress(atUs / 1000f / durationMs.coerceAtLeast(1L))

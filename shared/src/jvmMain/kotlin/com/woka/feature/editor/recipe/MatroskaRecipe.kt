@@ -39,7 +39,14 @@ internal object MatroskaRecipe : TailRecipeCarrier {
 
     override fun boxIn(tail: ByteArray): IntRange? = tail.ourElement()
 
-    override fun accepts(head: ByteArray): Boolean = head.segmentSizeKnown()
+    override fun accepts(head: ByteArray): Boolean = head.segmentEnd() != null
+
+    /**
+     * The `Segment` must end inside the file. An interrupted recording or download declares
+     * more than it holds, and an element appended there lands *inside* the Segment — inside
+     * its last partial block, which a demuxer then reads as a frame (1.0.6 review).
+     */
+    override fun fits(head: ByteArray, length: Long): Boolean = head.segmentEnd()?.let { it <= length } == true
 
     override fun scan(bytes: ByteArray): RecipeScan {
         val element = bytes.ourElement() ?: return RecipeScan(null)
@@ -63,7 +70,7 @@ internal object MatroskaRecipe : TailRecipeCarrier {
     }
 
     override fun with(bytes: ByteArray, payload: String): ByteArray? {
-        if (!accepts(bytes)) return null
+        if (!accepts(bytes) || !fits(bytes, bytes.size.toLong())) return null
         return box(payload)?.let { bytes.appending(it) }
     }
 }
@@ -84,14 +91,18 @@ private fun ByteArray.ourElement(): IntRange? {
     }
 }
 
-/** `1a 45 df a3`, the EBML header skipped by its own size, then a `Segment` not of unknown size. */
-private fun ByteArray.segmentSizeKnown(): Boolean {
-    if (!matchesAt(0, EBML_MAGIC)) return false
-    val header = vintAt(EBML_MAGIC.size) ?: return false
+/**
+ * Where the `Segment` ends: `1a 45 df a3`, the EBML header skipped by its own size, then a
+ * `Segment` not of unknown size. Null for anything else.
+ */
+private fun ByteArray.segmentEnd(): Long? {
+    if (!matchesAt(0, EBML_MAGIC)) return null
+    val header = vintAt(EBML_MAGIC.size) ?: return null
     val segment = EBML_MAGIC.size + header.width + header.value
-    if (segment > size - SEGMENT_ID.size || !matchesAt(segment.toInt(), SEGMENT_ID)) return false
-    val length = vintAt(segment.toInt() + SEGMENT_ID.size) ?: return false
-    return !length.unknown
+    if (segment > size - SEGMENT_ID.size || !matchesAt(segment.toInt(), SEGMENT_ID)) return null
+    val length = vintAt(segment.toInt() + SEGMENT_ID.size) ?: return null
+    if (length.unknown) return null
+    return segment + SEGMENT_ID.size + length.width + length.value
 }
 
 private class Vint(val width: Int, val value: Long, val unknown: Boolean)

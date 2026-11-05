@@ -51,6 +51,22 @@ fun hdrControlApplies(color: StillColorInfo, mode: HdrViewMode): Boolean =
     needsToneCurve(color.transfer) || mode == HdrViewMode.ForceHdr
 
 /**
+ * A **video frame's** colour under this mode (ME-304) — the moving picture's twin of
+ * `colourToBelieve`, which a still answers at its decode. Applied where the colour is read,
+ * never in the player: a paused film is not re-published when the mode flips.
+ *
+ * `ForceHdr` keeps a film that was HDR already exactly as it was, white point included; an
+ * untagged one is read as PQ / BT.2020 and has no white point to declare, so it takes the
+ * assumed one. Never call it on a still's colour — its pixels are already sRGB.
+ */
+fun HdrViewMode.applyTo(color: StillColorInfo): StillColorInfo = when (this) {
+    HdrViewMode.Auto -> color
+    HdrViewMode.ForceSdr -> StillColorInfo.Sdr
+    HdrViewMode.ForceHdr ->
+        if (needsToneCurve(color.transfer)) color else StillColorInfo(TransferKind.PQ, isWideGamut = true)
+}
+
+/**
  * The current [HdrViewMode], for the readers that cannot resolve a setting.
  *
  * The same shape `AppliedStillEdits` uses and for the same reason: `displayable` and

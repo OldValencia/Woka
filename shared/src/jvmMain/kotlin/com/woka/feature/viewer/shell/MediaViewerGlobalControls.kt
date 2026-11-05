@@ -57,12 +57,10 @@ fun MediaViewerNormalControls(
     /**
      * Whether the HDR control belongs in the pill (ME-180).
      *
-     * **False for video, and hidden rather than removed.** Everything ME-177 built runs
-     * at the still decode; a video frame is still tone mapped by `HdrImagePainter` with
-     * the assumed white point, and the switch reaches none of that. A control that moves
-     * nothing is worse than no control. Whether video ever gets the same treatment is
-     * open — it needs a white point that does not pump between frames — so the parameter
-     * stays and only the argument is false.
+     * **False on an SDR picture and on a track** (ME-303): a control that moves nothing is
+     * worse than no control. A film has it since ME-304 — its frames take the mode where
+     * their colour is read, and its white point is the one the film declares (ME-301), so
+     * the switch reaches every surface that draws it.
      */
     showHdrMode: Boolean = true,
     /** Fit/Fill and zoom; false for a track, whose cover is not a picture to size (AP-003). */

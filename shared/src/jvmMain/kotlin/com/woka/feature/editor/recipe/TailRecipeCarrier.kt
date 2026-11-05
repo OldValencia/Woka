@@ -54,6 +54,12 @@ internal interface TailRecipeCarrier : RecipeCarrier {
     fun fits(head: ByteArray, length: Long): Boolean = true
 
     /**
+     * The same question asked of the whole [file], at the write only — for a container whose
+     * answer is in its box layout rather than its head (`isoBoxesEndCleanly`, 1.0.6 review).
+     */
+    fun fitsFile(file: File): Boolean = true
+
+    /**
      * The header field that counts the file's own length, rewritten for a file [length]
      * bytes long — or null for a container that keeps none (ISOBMFF, Matroska). RIFF's
      * size at offset 4 is the one there is (ME-283).

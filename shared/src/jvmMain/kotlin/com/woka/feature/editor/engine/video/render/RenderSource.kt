@@ -1,6 +1,11 @@
 package com.woka.feature.editor.engine.video.render
 
+import com.woka.core.data.TransferKind
+import com.woka.feature.viewer.video.engine.decode.FreshFrameGrabber
+import com.woka.feature.viewer.video.engine.decode.lastPicture
 import com.woka.feature.viewer.video.engine.probe.HdrInfo
+import com.woka.feature.viewer.video.engine.probe.readFrom
+import com.woka.feature.viewer.video.engine.sync.lengthMs
 import com.woka.feature.viewer.video.engine.track.readStreamHdrInfo
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import java.io.File
@@ -18,8 +23,26 @@ internal class SourceProbe(
     val hdr: HdrInfo
 )
 
-internal fun probeSource(source: File): SourceProbe = withGrabber(source) { grabber ->
-    SourceProbe(grabber.lengthInTime / 1000L, keyframesMs(grabber), grabber.format.orEmpty(), grabber.readStreamHdrInfo())
+internal fun probeSource(source: File, alive: () -> Boolean = { true }): SourceProbe = withGrabber(source) { grabber ->
+    val keyframes = keyframesMs(grabber, alive)
+    // The player's length, which counts a file whose header states none (VF-001); the header's
+    // 0 rendered a `[0, 0)` film into an empty file reported as saved (1.0.6 review).
+    SourceProbe(grabber.lengthMs(source), keyframes, grabber.format.orEmpty(), declaredColour(grabber))
+}
+
+/**
+ * The stream's colour with the film's declared white point (ME-301), read off its first
+ * picture — one decode, on an HDR source only, and after the packet walk, which has to see
+ * the first keyframe itself.
+ */
+private fun declaredColour(grabber: FFmpegFrameGrabber): HdrInfo {
+    val hdr = grabber.readStreamHdrInfo()
+    if (hdr.transfer == TransferKind.SDR) return hdr
+    runCatching {
+        grabber.setTimestamp(0L)
+        grabber.grabImage()
+    }
+    return hdr.readFrom(grabber.lastPicture)
 }
 
 /**
@@ -37,7 +60,7 @@ internal fun containerFormat(extension: String, probed: String): String = when (
 }
 
 internal fun <T> withGrabber(file: File, block: (FFmpegFrameGrabber) -> T): T {
-    val grabber = FFmpegFrameGrabber(file)
+    val grabber = FreshFrameGrabber(file)
     try {
         grabber.start()
         return block(grabber)

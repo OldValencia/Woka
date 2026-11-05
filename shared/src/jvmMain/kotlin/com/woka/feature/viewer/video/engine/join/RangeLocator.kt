@@ -22,7 +22,15 @@ internal fun relocate(player: VideoPlayerState, atMs: Long) {
     joins.decoding = joins.decoding.coerceIn(0, ranges.lastIndex)
     if (ranges.getOrNull(joins.decoding)?.holds(atMs) == true) return
     val inside = ranges.indexOfFirst { it.holds(atMs) }
-    val next = ranges.indexOfFirst { it.fromMs > atMs }
+    // **Past the decoding range's end, "next" is the next in the list**, not the next in the
+    // source: with the clips out of order the source's next was an earlier clip, and the end
+    // of the film jumped back into it (1.0.6 review). Past the last one there is none.
+    val current = ranges[joins.decoding]
+    val next = if (!current.isFreeze && atMs >= current.toMs) {
+        (joins.decoding + 1).takeIf { it <= ranges.lastIndex } ?: -1
+    } else {
+        ranges.indexOfFirst { it.fromMs > atMs }
+    }
     if (inside < 0 && next >= 0) return seekToStart(player, next)
     joins.decoding = if (inside >= 0) inside else ranges.lastIndex
     joins.freezeSent = false

@@ -118,7 +118,7 @@ internal fun EditorHost(
             canvasKeys = canvasKeys
         )
 
-        CompositionLocalProvider(LocalDoneChoices provides choices) {
+        CompositionLocalProvider(LocalDoneChoices provides choices, LocalCanvasKeys provides canvasKeys) {
             EditorScreen(
                 session = session,
                 engine = engine,

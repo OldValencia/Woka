@@ -320,13 +320,13 @@ one. The **two pills** stayed here as ME-303 below.
 status in [`shell/`](shell/shell.md)'s table. With it, the whole of the report of 2026-09-03 is
 either shipped or specified, and §300 keeps only ME-300 and ME-301.
 
-### ME-301 — The HDR control reaches a video frame
-`showHdrMode` is false for video (ME-180) because the switch reached nothing: the tone map ran in
-`HdrImagePainter` with an assumed white point. ME-205 puts it in the recipe chain, which is half the
-answer; the other half is a white point that does not pump between frames. **Probe first:** whether
-the container's content-light-level and mastering-display side data give a stable peak, which would
-make it one number read once per file rather than a measurement per frame.
-*Depends on ME-205.*
+### ME-301 — promoted 2026-11-05, and cut in three on the way
+The probe answered yes — a stable, truthful peak on every frame's side data — and found a native
+leak in JavaCV's RGBA path on the way (ME-237, `playback/`). The block became
+[ME-301](shell/tickets/ME-301-the-films-own-white-point.md) (the file's own white point),
+[ME-304](shell/tickets/ME-304-the-hdr-menu-reaches-a-video.md) (the pill on a video) and
+[ME-305](shell/tickets/ME-305-hdr10-plus-scene-peaks.md) (HDR10+ scene peaks), status in
+[`shell/`](shell/shell.md)'s table. §300 keeps only ME-300.
 
 ---
 

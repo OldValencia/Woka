@@ -16,6 +16,8 @@ import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import com.woka.core.data.applyTo
+import com.woka.feature.viewer.image.rememberHdrModeAccess
 import com.woka.feature.viewer.shell.rememberFramePainter
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import kotlinx.coroutines.delay
@@ -70,6 +72,8 @@ internal fun AmbientFillLayer(player: VideoPlayerState) {
         animationSpec = tween(400)
     )
     if (bitmap == null) return
+    // The picture's HDR mode, so the bars agree with it (ME-304).
+    val color = rememberHdrModeAccess().current().applyTo(sampler.color)
 
     val saturation = remember {
         ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(AMBIENT_SATURATION) })
@@ -85,7 +89,7 @@ internal fun AmbientFillLayer(player: VideoPlayerState) {
             // colour — filtered, because this one is magnified sixty times.
             // `moving`: the sampler blends a fresh frame every 200 ms, and this is a
             // 64-pixel smear of the picture rather than the picture (ME-120).
-            painter = rememberFramePainter(bitmap, sampler.color, smooth = true, moving = true),
+            painter = rememberFramePainter(bitmap, color, smooth = true, moving = true),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             colorFilter = saturation,

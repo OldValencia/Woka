@@ -1,5 +1,7 @@
 package com.woka.feature.editor.recipe
 
+import java.io.File
+
 /**
  * Sixteen bytes that say the box is ours, and **they can never change**: they are the
  * identity of every recipe already written into a photograph. Readable in a hex dump
@@ -42,6 +44,8 @@ internal object IsoBmffRecipe : TailRecipeCarrier {
         tail.ourBox()?.let { it.at until it.end }
 
     override fun accepts(head: ByteArray): Boolean = head.isIsoBmff()
+
+    override fun fitsFile(file: File): Boolean = file.isoBoxesEndCleanly()
 
     /**
      * **Never truncated**, unlike the head carriers.

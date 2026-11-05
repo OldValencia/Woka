@@ -2,6 +2,8 @@ package com.woka.feature.viewer.video.engine.decode
 
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.engine.probe.HdrInfo
+import com.woka.feature.viewer.video.engine.probe.readFrom
+import com.woka.feature.viewer.video.engine.probe.withSceneOf
 import com.woka.feature.viewer.video.engine.sync.mediaTimeUs
 import com.woka.feature.viewer.video.engine.writeUiState
 
@@ -75,6 +77,23 @@ internal suspend fun VideoPlayerState.deliverPicture(
     generation.isBehind = false
     val paced = pacer.convert(picture)
     videoChannel.send(
-        VideoFrame(paced.bitmap, frameTsMs, frameGeneration, hdrInfo, paced.id)
+        VideoFrame(paced.bitmap, frameTsMs, frameGeneration, colourOf(hdrInfo, grabber), paced.id)
     )
+}
+
+/**
+ * The colour of the picture [grabber] last returned: the film's declared white point
+ * (ME-301) and its scene's HDR10+ peak (ME-305), read off that picture's own side data
+ * (ME-237). The player, a lane and a seek all take it from the one place that decoded the frame.
+ *
+ * **The white point is read once**: once the stream has it, [hdr] is replaced by the stream's
+ * own, so a later frame without the side data cannot fall to the assumed value and flicker.
+ * Only the scene's peak is read per picture.
+ */
+internal fun VideoPlayerState.colourOf(hdr: HdrInfo?, grabber: FFmpegFrameGrabber): HdrInfo? {
+    val known = streamHdrInfo?.takeIf {
+        it.whitePoint != null && it.transfer == hdr?.transfer && it.isWideGamut == hdr.isWideGamut
+    }
+    val picture = grabber.lastPicture
+    return (known ?: hdr)?.readFrom(picture)?.withSceneOf(picture)
 }

@@ -36,7 +36,7 @@ fun List<TrimClip>.atTimeline(timelineMs: Long): ClipPosition? {
         val end = start + clip.lengthMs
         if (clamped < end) {
             // A freeze shows its one frame for the whole hold (ME-217).
-            val into = if (clip.isFreeze) 0L else ((clamped - start) * clip.speed).toLong()
+            val into = if (clip.isFreeze) 0L else ((clamped - start) * clip.speed.toDouble()).toLong()
             return ClipPosition(index, clip.fromMs + into)
         }
         start = end
@@ -47,7 +47,7 @@ fun List<TrimClip>.atTimeline(timelineMs: Long): ClipPosition? {
 /** The inverse: where source [sourceMs] inside clip [index] sits on the timeline. */
 fun List<TrimClip>.timelineOf(index: Int, sourceMs: Long): Long {
     val clip = getOrNull(index) ?: return 0L
-    return startOf(index) + ((sourceMs - clip.fromMs) / clip.speed).toLong().coerceIn(0L, clip.lengthMs)
+    return startOf(index) + ((sourceMs - clip.fromMs) / clip.speed.toDouble()).toLong().coerceIn(0L, clip.lengthMs)
 }
 
 /**

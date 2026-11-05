@@ -26,7 +26,6 @@ import com.woka.feature.editor.tools.sound.SoundTool
 import com.woka.feature.editor.tools.trim.TrimTool
 import com.woka.feature.editor.tools.trim.atTimeline
 import com.woka.feature.editor.tools.trim.totalMs
-import com.woka.feature.viewer.video.engine.probe.HdrInfo
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
@@ -67,7 +66,7 @@ internal class RecipeVideoEdits(private val registry: EditorToolRegistry) : Vide
         val recipes = keys.associateWith { key ->
             previewFold(payload.documentFor(key), registry, sourceSize).takeUnless { it.isIdentity(sourceSize) }
         }
-        val cover = CoverTool.coverIn(payload.ops)?.let { coverIn(clips, it) }
+        val cover = CoverTool.coverIn(payload.ops)?.let { coverIn(clips, it, CoverTool.anchorIn(payload.ops)) }
         return FoldedVideoEdit(EditedClock(ranges), sourceSize, recipes, SoundTool.mixIn(payload.ops), cover)
     }
 }
@@ -77,7 +76,13 @@ internal class RecipeVideoEdits(private val registry: EditorToolRegistry) : Vide
  * through (ME-287). Clamped inside the result, so a later trim moves it rather than losing
  * it (`save.md` §3.6); a freeze's cover is its one frame. Uncut, the two times are one.
  */
-internal fun coverIn(clips: List<TrimClip>, atMs: Long): Pair<Long, Int> {
+internal fun coverIn(clips: List<TrimClip>, atMs: Long, anchor: Pair<String, Long>? = null): Pair<Long, Int> {
+    // The clip it was pinned to, while that clip still holds the frame (1.0.6 review).
+    if (anchor != null) {
+        val (id, sourceMs) = anchor
+        val pinned = clips.firstOrNull { it.id == id }?.takeIf { it.isFreeze || sourceMs in it.fromMs until it.toMs }
+        if (pinned != null) return sourceMs to pinned.key
+    }
     if (clips.isEmpty()) return atMs to 0
     val at = clips.atTimeline(atMs.coerceAtMost(clips.totalMs() - 1L)) ?: return atMs to 0
     return at.sourceMs to clips[at.index].key
@@ -102,7 +107,7 @@ private class FoldedVideoEdit(
     override fun painter(frame: ImageBitmap, color: StillColorInfo, moving: Boolean): Painter? {
         val recipe = recipe ?: return null
         // A moving frame arrives untone-mapped (ME-205), so its HDR pass leads the chain.
-        val hdr = if (moving) hdrStageFor(HdrInfo(color.transfer, color.isWideGamut)) else null
+        val hdr = if (moving) hdrStageFor(color) else null
         return RecipePainter(frame, sourceSize, recipe.copy(source = hdr))
     }
 

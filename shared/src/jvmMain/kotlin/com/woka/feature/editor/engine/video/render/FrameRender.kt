@@ -1,6 +1,7 @@
 package com.woka.feature.editor.engine.video.render
 
 import com.woka.feature.editor.tools.trim.TrimClip
+import com.woka.feature.viewer.video.engine.decode.FreshFrameGrabber
 import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_RGBA
 import org.bytedeco.ffmpeg.global.avutil.AV_SAMPLE_FMT_S16
 import org.bytedeco.javacv.FFmpegFrameGrabber
@@ -33,7 +34,7 @@ internal fun encodeClips(
     /** The edit's sound (ME-240), or null for sound as recorded. */
     sound: RenderSound? = null
 ) {
-    val grabber = FFmpegFrameGrabber(source).apply {
+    val grabber = FreshFrameGrabber(source).apply {
         pixelFormat = AV_PIX_FMT_RGBA
         // Interleaved 16-bit, so a gain is one multiplication a sample (`RenderSound`).
         sampleFormat = AV_SAMPLE_FMT_S16
@@ -55,6 +56,9 @@ internal fun encodeClips(
     }
 }
 
+/** How far past a cut the clip's sound is looked for once its picture has passed it. */
+private const val SOUND_TAIL_US = 2_000_000L
+
 private fun recordClips(
     grabber: FFmpegFrameGrabber,
     recorder: FFmpegFrameRecorder,
@@ -67,12 +71,15 @@ private fun recordClips(
     val start = containerStartUs(grabber)
     val totalUs = clips.sumOf { it.lengthMs } * 1000L
     val pace = RenderPace(recorder)
+    val audio = RenderAudio(recorder, grabber.sampleRate, grabber.audioChannels)
     var baseUs = 0L
     for (clip in clips) {
         val picture = pictureOf(clip)
         if (clip.isFreeze) {
+            audio.padTo(baseUs)
             recordFreeze(grabber, recorder, pace, picture, clip, baseUs, start)
             baseUs += clip.lengthMs * 1000L
+            audio.padTo(baseUs)
             continue
         }
         val fromUs = clip.fromMs * 1000L
@@ -80,29 +87,36 @@ private fun recordClips(
         // A clip's speed retimes its picture and its sound (ME-216, `RenderPace`).
         val tempo = clipTempo(grabber, clip.speed)
         grabber.setTimestamp(fromUs)
-        while (alive()) {
+        // The clip's sound is read to its own end even once the picture is past the cut:
+        // a muxer interleaves up to a second, and that tail was lost (1.0.6 review).
+        var pictureDone = false
+        var soundDone = !audio.present
+        var heard = false
+        while (alive() && !(pictureDone && soundDone)) {
             val frame = grabber.grab() ?: break
             val atUs = frame.timestamp - start
-            if (atUs >= untilUs && frame.image != null) break
-            if (atUs < fromUs || atUs >= untilUs) continue
+            // A source whose sound stops before its picture: not read to the end of the file.
+            if (pictureDone && atUs >= untilUs + SOUND_TAIL_US) break
             if (frame.image != null) {
-                val outUs = baseUs + ((atUs - fromUs) / clip.speed).toLong()
+                if (atUs >= untilUs) pictureDone = true
+                if (atUs < fromUs || atUs >= untilUs) continue
+                val outUs = baseUs + ((atUs - fromUs) / clip.speed.toDouble()).toLong()
                 pace.place(picture?.draw(frame) ?: frame, outUs) { recorder.record(it, AV_PIX_FMT_RGBA) }
                 if (totalUs > 0) progress(outUs.toFloat() / totalUs)
             } else if (frame.samples != null) {
-                val intoMs = (atUs - fromUs) / 1000.0 / clip.speed
-                sound?.apply(frame, clip, baseUs / 1000.0 + intoMs, intoMs, grabber.sampleRate, grabber.audioChannels)
-                recordSound(recorder, tempo, frame)
+                if (atUs >= untilUs) soundDone = true
+                val kept = audio.within(frame, atUs, fromUs, untilUs) ?: continue
+                val intoMs = (maxOf(atUs, fromUs) - fromUs) / 1000.0 / clip.speed
+                if (!heard) audio.padTo(baseUs + (intoMs * 1000).toLong())
+                heard = true
+                sound?.apply(kept, clip, baseUs / 1000.0 + intoMs, intoMs, grabber.sampleRate, grabber.audioChannels)
+                audio.record(tempo, kept)
             }
         }
-        tempo?.let { filter ->
-            runCatching {
-                filter.stop()
-                filter.release()
-            }
-        }
+        audio.drain(tempo)
         if (!alive()) return
         baseUs += clip.lengthMs * 1000L
+        audio.padTo(baseUs)
     }
 }
 

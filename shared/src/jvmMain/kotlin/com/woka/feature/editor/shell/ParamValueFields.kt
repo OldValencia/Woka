@@ -28,6 +28,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
@@ -61,6 +62,7 @@ import com.woka.feature.editor.core.FloatParam
 @Composable
 internal fun ValueField(spec: FloatParam, value: Float, writer: ParamWriter) {
     var text by remember { mutableStateOf(plainFloat(value)) }
+    val keys = LocalCanvasKeys.current
     // Kept honest when the value moves from the slider, a stepper end or a reset.
     LaunchedEffect(value) {
         if (text.toFloatOrNull() != value) text = plainFloat(value)
@@ -95,6 +97,8 @@ internal fun ValueField(spec: FloatParam, value: Float, writer: ParamWriter) {
             modifier = Modifier
                 .weight(1f)
                 .testTag("param-${spec.key}-field")
+                // The caret's keys are the field's: ←/→ and Backspace past the editor (1.0.6 review).
+                .onFocusChanged { keys?.fieldFocused = it.isFocused }
                 .onPreviewKeyEvent { event ->
                     // **Enter is swallowed, not acted on.** The panel is a sibling of the
                     // inspector rather than a popup, so there is nothing for a key to

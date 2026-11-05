@@ -5,6 +5,7 @@ import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.engine.sync.landAt
 import com.woka.feature.viewer.video.engine.sync.timeUs
 import org.bytedeco.javacv.FFmpegFrameGrabber
+import org.bytedeco.javacv.Frame
 
 /**
  * Spare decoders beside the player's own, so four in all: 1.1–1.3 GB at four threads each,
@@ -42,7 +43,7 @@ internal class LanePool(private val player: VideoPlayerState) {
         lanes.filter { it.isStale }.forEach { closeLane(it) }
         val wanted = upcomingStarts(ranges, playing, positionMs)
         lanes.filter { lane -> !lane.isFree && wanted.none { lane.holds(it, ranges[it].fromMs) } }
-            .forEach { it.free() }
+            .forEach { it.letGo() }
         for (index in wanted) {
             if (lanes.any { it.holds(index, ranges[index].fromMs) }) continue
             val lane = lanes.firstOrNull { it.isFree } ?: newLane() ?: break
@@ -70,6 +71,9 @@ internal class LanePool(private val player: VideoPlayerState) {
         lanes.remove(lane)
     }
 }
+
+/** A lane's picture handed to the decode loop: the grabber to go on with, and where it stands. */
+internal class Landed(val grabber: FFmpegFrameGrabber, val picture: Frame, val tsMs: Long)
 
 /**
  * No lane holds the range: [grabber] seeks to it itself — the stall ME-232 exists to avoid,

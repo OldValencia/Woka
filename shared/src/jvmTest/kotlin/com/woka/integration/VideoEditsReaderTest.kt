@@ -113,7 +113,7 @@ class VideoEditsReaderTest {
     @Test
     fun `the chosen cover is a frame of the result`() = onFilm { film, edits ->
         val cuts = TrimTool.opFor(listOf(TrimClip("a", 0L, 1_000L), TrimClip("b", 2_000L, 3_000L, key = 1)))
-        val cover = ToolOp(CoverTool.manifest.id, assertNotNull(CoverTool.atPlayHead(CoverTool.Use, ParamSet(), 1_500L)))
+        val cover = ToolOp(CoverTool.manifest.id, assertNotNull(CoverTool.atPlayHead(CoverTool.Use, ParamSet(), 1_500L, EditDocument(listOf(cuts)))))
         val layers = EditLayers(EditDocument(listOf(cuts, cover)), mapOf(1 to EditDocument(listOf(ToolOp("tint")))), setOf(1))
         assertIs<EditSaveResult.Saved>(recordRecipe(film, layers, SourceStamp.of(film)))
 
@@ -128,7 +128,16 @@ class VideoEditsReaderTest {
         val clips = listOf(TrimClip("a", 0L, 1_000L), TrimClip("b", 2_000L, 3_000L, key = 1))
         assertEquals(2_999L to 1, coverIn(clips, 9_000L))
         assertEquals(400L to 0, coverIn(emptyList(), 400L))
-        assertNull(CoverTool.atPlayHead(CoverTool.Clear, ParamSet(), 1_500L))
+        assertNull(CoverTool.atPlayHead(CoverTool.Clear, ParamSet(), 1_500L, EditDocument()))
         assertNull(CoverTool.coverIn(listOf(ToolOp(CoverTool.manifest.id, ParamSet().with(CoverTool.Clear, true)))))
+    }
+
+    /** 1.0.6 review: kept as a timeline time alone, a reorder slid the cover onto another clip. */
+    @Test
+    fun `a cover stays on its clip's frame when the clips are reordered`() {
+        val clips = listOf(TrimClip("a", 0L, 1_000L), TrimClip("b", 2_000L, 3_000L, key = 1))
+        val params = assertNotNull(CoverTool.atPlayHead(CoverTool.Use, ParamSet(), 400L, EditDocument(listOf(TrimTool.opFor(clips)))))
+        val ops = listOf(ToolOp(CoverTool.manifest.id, params))
+        assertEquals(400L to 0, coverIn(clips.reversed(), assertNotNull(CoverTool.coverIn(ops)), CoverTool.anchorIn(ops)))
     }
 }

@@ -8,6 +8,7 @@ import com.woka.core.data.markUsed
 import com.woka.core.ui.image.AppliedVideoEdits
 import com.woka.core.ui.image.ImageBitmapCache
 import com.woka.core.ui.image.encodeWebp
+import com.woka.feature.viewer.video.engine.decode.FreshFrameGrabber
 import com.woka.feature.viewer.video.engine.sync.grabImageAt
 import com.woka.feature.viewer.video.engine.sync.lengthMs
 import com.woka.feature.viewer.video.engine.probe.clockwiseTurns
@@ -76,7 +77,7 @@ internal object VideoThumbnailExtractor {
     }
 
     private fun extract(file: File, previewFile: File): ImageBitmap? {
-        val grabber = FFmpegFrameGrabber(file)
+        val grabber = FreshFrameGrabber(file)
         return try {
             grabber.setVideoOption("hwaccel", "auto")
             grabber.pixelFormat = AV_PIX_FMT_BGR24

@@ -33,11 +33,16 @@ fun EditorSession.ownOpsOf(key: Int): List<ToolOp> {
  *
  * Called from `All Clips`, the only scope the strip cuts in, so the document on screen is
  * the shared layer and the copy is composed over it. Stashed as a frame the sitting
- * touched, so `layers` writes it and `Done` keeps it; nothing at all when [from] has no look.
+ * touched, so `layers` writes it and `Done` keeps it.
+ *
+ * **Even no look is copied over a stale one.** A new clip's key is the list's largest plus one,
+ * so it can be the key of a clip deleted or joined away whose look is still stashed or stored
+ * — and that look came back on the new clip (1.0.6 review). Nothing at all only when neither
+ * side has one.
  */
 fun EditorSession.copyFrame(from: Int, to: Int) {
     val own = ownOpsOf(from)
-    if (own.isEmpty()) return
+    if (own.isEmpty() && ownOpsOf(to).isEmpty()) return
     elsewhere.value += to to layerWith(to, own)
 }
 

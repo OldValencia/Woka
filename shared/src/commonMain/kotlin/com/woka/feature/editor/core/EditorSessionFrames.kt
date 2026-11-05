@@ -81,12 +81,15 @@ fun EditorSession.detachFrame() {
  *
  * **Every frame the sitting touched is written either way.** It used to return the open
  * frame alone in `All Frames`, so work stashed before the switch was dropped in silence.
+ *
+ * **Touched means changed, not visited.** A frame opened and put away as it was is clean,
+ * and `touched` tells the writer to drop any stored key it does not find in `frames` — so
+ * counting a visit erased a clip's saved look on `Done` and in a render (1.0.6 review).
  */
 fun EditorSession.layers(scope: EditScope): EditLayers {
     val shared = if (scope == EditScope.AllFrames) _document.value else base
-    val stashed = elsewhere.value
-        .filterValues { it.isDirty }
-        .mapValues { EditDocument(it.value.rebasedOn(shared).ownOps) }
+    val dirty = elsewhere.value.filterValues { it.isDirty }
+    val stashed = dirty.mapValues { EditDocument(it.value.rebasedOn(shared).ownOps) }
     val open = when (scope) {
         // In All Frames the open frame *is* the shared layer, so it adds nothing.
         EditScope.AllFrames -> emptyMap()
@@ -96,7 +99,8 @@ fun EditorSession.layers(scope: EditScope): EditLayers {
     return EditLayers(
         base = shared,
         frames = (stashed + open).filterValues { it.ops.isNotEmpty() },
-        touched = elsewhere.value.keys + frame
+        // The open frame only where it is its own layer; in All Frames it adds nothing.
+        touched = dirty.keys + open.keys
     )
 }
 

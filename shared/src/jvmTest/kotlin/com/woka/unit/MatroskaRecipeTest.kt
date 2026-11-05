@@ -61,6 +61,18 @@ class MatroskaRecipeTest {
         assertTrue(MatroskaRecipe.accepts(mkv()))
     }
 
+    /** 1.0.6 review: a cut-off download's Segment declares more than the file holds. */
+    @Test
+    fun `a Segment that runs past the end of the file is refused`() {
+        val whole = mkv()
+        val truncated = whole.copyOfRange(0, whole.size - 10)
+        assertTrue(MatroskaRecipe.fits(whole, whole.size.toLong()))
+        assertFalse(MatroskaRecipe.fits(truncated, truncated.size.toLong()), "an element would land inside the last block")
+        assertNull(MatroskaRecipe.with(truncated, PAYLOAD))
+        val carrying = assertNotNull(MatroskaRecipe.with(whole, PAYLOAD))
+        assertTrue(MatroskaRecipe.fits(carrying, carrying.size.toLong()), "a file already carrying an edit was refused")
+    }
+
     @Test
     fun `a container that is not EBML is refused`() {
         val riff = "RIFF".toByteArray() + ByteArray(4) + "AVI ".toByteArray() + ByteArray(40)

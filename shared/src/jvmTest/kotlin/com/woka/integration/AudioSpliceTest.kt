@@ -22,6 +22,7 @@ import java.io.File
 import java.nio.file.Files
 import kotlin.math.abs
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
@@ -38,17 +39,20 @@ class AudioSpliceTest {
     @Test
     fun `three ranges play as one stream, as long as the result, with no step at a join`() = onSplice(
         listOf(SourceRange(300L, 900L), SourceRange(2_311L, 2_900L), SourceRange(1_207L, 1_700L))
-    ) { pcm, rate ->
+    ) { pcm, rate, splices ->
         val expectedMs = 600L + 589L + 493L
         assertTrue(abs(pcm.size * 1000L / rate - expectedMs) <= 25L, "${pcm.size * 1000L / rate} ms of sound, not $expectedMs")
         val worst = pcm.toList().zipWithNext().maxOf { (a, b) -> abs(a - b) }
         assertTrue(worst < 1_000, "a step of $worst between two samples")
+        // The loop measures the sound against the picture by this time: after a join it must
+        // be the next range's start, or the loop re-seeks or stalls at every join (1.0.6 review).
+        assertEquals(listOf(2_311L to 2_311L, 1_207L to 1_207L), splices)
     }
 
     @Test
     fun `a freeze is silence for its hold`() = onSplice(
         listOf(SourceRange(300L, 900L), SourceRange(900L, 900L, holdMs = 500L), SourceRange(900L, 1_400L))
-    ) { pcm, rate ->
+    ) { pcm, rate, _ ->
         val silent = longestSilence(pcm) * 1000L / rate
         assertTrue(abs(silent - 500L) <= 15L, "$silent ms of silence for a 500 ms hold")
     }
@@ -64,8 +68,11 @@ class AudioSpliceTest {
         return best
     }
 
-    /** Feeds the clip's audio through the splicer over [ranges]; [check] gets the left channel. */
-    private fun onSplice(ranges: List<SourceRange>, check: (ShortArray, Int) -> Unit) {
+    /**
+     * Feeds the clip's audio through the splicer over [ranges]; [check] gets the left channel,
+     * and for each join the time the step reported against the range it entered.
+     */
+    private fun onSplice(ranges: List<SourceRange>, check: (ShortArray, Int, List<Pair<Long?, Long>>) -> Unit) {
         startKoinOnce()
         val dir = Files.createTempDirectory("woka-splice").toFile()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -77,13 +84,20 @@ class AudioSpliceTest {
             player.playRanges(ranges, this)
             val grabber = player.openAudioGrabber(-1).apply { start() }
             val channel = Channel<ByteArray>(Channel.UNLIMITED)
+            val splices = ArrayList<Pair<Long?, Long>>()
             runBlocking {
                 grabber.setTimestamp(ranges.first().fromMs * 1000L - 100_000L)
                 player.edit.audio.follow(player, ranges.first().fromMs)
                 var tempo: AudioTempoFilter? = null
                 while (!player.edit.audio.ended) {
                     val frame = grabber.grabSamples() ?: break
-                    tempo = player.edit.audio.deliver(player, grabber, frame, tempo, channel).tempo
+                    val from = player.edit.audio.index
+                    val step = player.edit.audio.deliver(player, grabber, frame, tempo, channel)
+                    tempo = step.tempo
+                    val entered = player.edit.joins.ranges.getOrNull(player.edit.audio.index)
+                    if (player.edit.audio.index != from && entered != null && !player.edit.audio.ended) {
+                        splices += step.atMs to entered.fromMs
+                    }
                 }
             }
             channel.close()
@@ -93,7 +107,7 @@ class AudioSpliceTest {
             grabber.stop()
             grabber.release()
             player.dispose()
-            check(left, rate)
+            check(left, rate, splices)
         } finally {
             scope.cancel()
             dir.deleteRecursively()

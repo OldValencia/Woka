@@ -106,11 +106,13 @@ internal fun FrameStep(direction: Int, onStep: () -> Unit) {
  *
  * **The shape is the source's length's** — [sourceMs] — not the result's and not each value's
  * (measured 2026-11-05): a trim taking the result under an hour narrowed the readout, the
- * strip beside it widened mid-drag, and the width change cancelled the drag.
+ * strip beside it widened mid-drag, and the width change cancelled the drag. **Or the result's,
+ * when that is longer** — slowed or frozen past an hour, it read `160:00:00` (1.0.6 review);
+ * only a drag that itself crosses the hour can still move the width.
  */
 @Composable
 internal fun Readout(position: () -> Long, duration: Long, fps: Double?, sourceMs: Long = duration) {
-    val hours = usesHours(sourceMs)
+    val hours = usesHours(maxOf(sourceMs, duration))
     val last = fps?.let { (frameCount(duration, it) - 1L).coerceAtLeast(0L) }
     BasicText(
         text = "${timecode(position(), fps, hours, last)} / ${timecode(duration, fps, hours, null)}",

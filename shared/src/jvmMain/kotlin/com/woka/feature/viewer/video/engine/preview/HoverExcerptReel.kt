@@ -4,6 +4,10 @@ import androidx.compose.ui.graphics.ImageBitmap
 import com.woka.core.data.StillColorInfo
 import com.woka.core.ui.image.EditedClock
 import com.woka.core.ui.image.SourceRange
+import com.woka.feature.viewer.video.engine.decode.FreshFrameGrabber
+import com.woka.feature.viewer.video.engine.decode.lastPicture
+import com.woka.feature.viewer.video.engine.probe.readFrom
+import com.woka.feature.viewer.video.engine.probe.toColour
 import com.woka.feature.viewer.video.engine.decode.toComposeBitmap
 import com.woka.feature.viewer.video.engine.sync.grabImageAt
 import com.woka.feature.viewer.video.engine.sync.lengthMs
@@ -64,7 +68,7 @@ internal fun hoverExcerpts(file: File, kept: List<SourceRange> = emptyList()): F
         val fps = grabber.frameRate.takeIf { it.isFinite() && it > 1.0 } ?: 24.0
         val count = (EXCERPT_SECONDS * fps).roundToInt()
         val frameMs = (1000.0 / fps).roundToInt().toLong()
-        val color = grabber.readStreamHdrInfo().let { StillColorInfo(it.transfer, it.isWideGamut) }
+        var hdr = grabber.readStreamHdrInfo()
         val spans = excerptSpans(grabber.pictureLengthUs(file), kept)
         val turns = grabber.clockwiseTurns // upright, as the player shows it (VF-105)
         while (true) {
@@ -72,12 +76,13 @@ internal fun hoverExcerpts(file: File, kept: List<SourceRange> = emptyList()): F
                 // Converted at once: the grabber hands back the same `Frame` every time.
                 fun Frame.inSpan() = takeIf { it.timestamp < span.last }?.toComposeBitmap()?.rotatedClockwise(turns)
                 val first = grabber.grabImageAt(span.first)?.inSpan()
+                hdr = hdr.readFrom(grabber.lastPicture) // the film's white point, once (ME-301)
                 val rest = generateSequence { grabber.grabImage()?.inSpan() }
                     .take(count - 1)
                     .toList()
                 val frames = listOfNotNull(first) + rest
                 if (frames.isEmpty()) return@flow
-                emit(Excerpt(index, frames, frameMs, color))
+                emit(Excerpt(index, frames, frameMs, hdr.toColour()))
             }
         }
     } finally {
@@ -125,7 +130,7 @@ private fun FFmpegFrameGrabber.pictureLengthUs(file: File): Long {
  * The second open is cheap because the probe is capped.
  */
 private fun openGrabber(file: File): FFmpegFrameGrabber? = try {
-    FFmpegFrameGrabber(file).apply {
+    FreshFrameGrabber(file).apply {
         setOption("probesize", "2000000")
         setOption("analyzeduration", "1000000")
         setVideoOption("threads", THREADS)

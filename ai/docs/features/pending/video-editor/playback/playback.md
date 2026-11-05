@@ -17,6 +17,7 @@ offered on 2026-09-03 and turned down.
 | ME-230 | Probe: two decoders, one file | **done 2026-11-04** — two 4K decoders run at ~60 fps each against 24 needed; a join today stalls 0.2–1.9 s; the pre-roll lead is up to ~2.2 s, not 300 ms. Table at the end of this file; probe `jvmTest/probe/JoinDecodeProbe.kt` |
 | [ME-232](tickets/ME-232-joins-without-a-stall.md) | Joins without a stall — lane pool, engine-owned list, decoder threads 4 | **built 2026-11-05**, tests green; **not yet looked at by hand** |
 | [ME-233](tickets/ME-233-sound-across-a-join.md) | Sound across a join — spliced to the sample in the one audio loop | **built 2026-11-05**, tests green; **not yet heard by the author** |
+| [ME-237](tickets/ME-237-side-data-stops-piling-up.md) | Side data stops piling up on the RGBA frame — a native leak of up to 1.7 GB per hour of 4K DV | **built 2026-11-05**, `FreshFrameGrabberTest` green — 5 entries at frame 300 against 1500 |
 
 Every other block is in [the shared backlog](../backlog.md) §230.
 

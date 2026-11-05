@@ -17,6 +17,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import com.woka.feature.viewer.video.engine.handleEndOfStream
 import com.woka.feature.viewer.video.engine.writeUiState
 import com.woka.feature.viewer.video.engine.track.readStreamHdrInfo
+import com.woka.feature.viewer.video.engine.probe.keptOn
 import com.woka.feature.viewer.video.engine.join.JoinStep
 
 /**
@@ -55,10 +56,10 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
                 val reopenIndex = pendingVideoReopenIndex
                 if (reopenIndex != null) {
                     pendingVideoReopenIndex = null
+                    val stream = grabber.videoStream // a rescale keeps the film's white point (1.0.6 review)
                     grabber = reopenVideoGrabber(grabber, reopenIndex, videoChannel)
                     hdrInfo = grabber.readStreamHdrInfo()
-                    val reopened = hdrInfo
-                    writeUiState { streamHdrInfo = reopened }
+                    writeUiState { streamHdrInfo = hdrInfo.takeIf { grabber.videoStream == stream }?.keptOn(streamHdrInfo) ?: hdrInfo }
                     // The play head did not move, so no generation bump: the frame
                     // reopenVideoGrabber landed stays current and audio — parked on
                     // isReloadingVideo meanwhile — picks up from the same position.

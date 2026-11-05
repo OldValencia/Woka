@@ -32,6 +32,18 @@ class FreezeFrameTest {
         assertEquals(10_000L + FREEZE_HOLD_MS, frozen.totalMs())
     }
 
+    /** 1.0.6 review: too near the end to split, it went to the start of the clip. */
+    @Test
+    fun `a freeze near a clip's end lands after it, and the film's end freezes its last frame`() {
+        val nearEnd = wholeSource(10_000L).freezeAt(9_950L, "f", "r")
+        assertEquals(listOf("source", "f"), nearEnd.map { it.id })
+        assertEquals(9_950L, nearEnd[1].fromMs)
+
+        val atEnd = wholeSource(10_000L).freezeAt(10_000L, "f", "r")
+        assertEquals(listOf("source", "f"), atEnd.map { it.id })
+        assertTrue(atEnd[1].fromMs < 10_000L, "a freeze of a frame past the clip's exclusive end")
+    }
+
     @Test
     fun `the whole hold shows the one frame, and the film resumes after it`() {
         assertEquals(4_000L, frozen.atTimeline(4_500L)!!.sourceMs)

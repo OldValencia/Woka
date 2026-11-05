@@ -82,7 +82,7 @@ data class SourceRange(
     val isFreeze: Boolean get() = holdMs > 0L
 
     /** How long it lasts on the result. */
-    val lengthMs: Long get() = if (isFreeze) holdMs else ((toMs - fromMs) / speed).toLong()
+    val lengthMs: Long get() = if (isFreeze) holdMs else ((toMs - fromMs) / speed.toDouble()).toLong()
 }
 
 /** No editor in the graph: no film carries an edit. */

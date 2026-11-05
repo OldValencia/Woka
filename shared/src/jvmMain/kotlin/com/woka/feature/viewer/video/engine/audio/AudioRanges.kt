@@ -6,7 +6,6 @@ import com.woka.feature.viewer.video.engine.sync.mediaTimeUs
 import kotlinx.coroutines.channels.Channel
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.Frame
-import java.nio.Buffer
 import java.nio.ShortBuffer
 
 /** The ramp at each side of a splice — long enough to hide the step, too short to hear as a fade. */
@@ -72,6 +71,9 @@ internal class AudioRanges {
         return resultOf(joins.ranges, index, audioMs + player.audioDelayMs) - picture
     }
 
+    /** [ended], unless the list changed since — a grown list left the sound silent (1.0.6 review). */
+    fun parked(player: VideoPlayerState): Boolean = ended && listGen == player.edit.joins.listGen
+
     /** Whether a speed change is only the picture catching up with a pace the sound already has. */
     fun alreadyAt(player: VideoPlayerState): Boolean = player.playbackSpeed == builtSpeed
 
@@ -101,10 +103,15 @@ internal class AudioRanges {
         }
         val splicing = keepTo < frames
         if (splicing) ramp(kept, channels, fade, rising = false)
-        if (kept.isNotEmpty()) send(frame, kept, tempo, channel)
+        if (kept.isNotEmpty()) sendKept(frame, kept, tempo, channel)
         val atMs = startUs / 1000L
         if (!splicing) return AudioStep(tempo, atMs)
-        return AudioStep(splice(player, grabber, ranges, tempo, channel), atMs)
+        val next = splice(player, grabber, ranges, tempo, channel)
+        // **The sound is now at the next range's start**, not at this frame's time in the old
+        // one: measured against range `index` that time read tens of seconds behind or ahead,
+        // and the loop re-seeked or stalled at every join (1.0.6 review).
+        val spliced = ranges.getOrNull(index)?.takeUnless { ended }?.let { audioUs(player, it.fromMs) / 1000L }
+        return AudioStep(next, spliced ?: atMs)
     }
 
     /** Into the next range: a freeze's silence first, then the seek, and the next range's tempo. */
@@ -125,19 +132,12 @@ internal class AudioRanges {
         fadeIn = true
         runCatching { grabber.setTimestamp((audioUs(player, range.fromMs) - SPLICE_PREROLL_US).coerceAtLeast(0L)) }
         val wanted = (player.edit.userSpeed * range.speed).coerceIn(0.25f, 4f)
-        if (wanted == builtSpeed) return tempo
+        // Rebuilt even at the same speed: `atempo` does not survive the seek just made, and a
+        // kept one failed for good at the first backward join (`audioReseek`'s own finding).
+        if (wanted == 1f && builtSpeed == 1f) return tempo
         tempo?.close()
         builtSpeed = wanted
         return if (wanted == 1f) null else AudioTempoFilter(grabber.sampleRate, grabber.audioChannels, wanted)
-    }
-
-    private suspend fun send(frame: Frame, kept: ShortArray, tempo: AudioTempoFilter?, channel: Channel<ByteArray>) {
-        val wrapped = ShortBuffer.wrap(kept)
-        val chunks = tempo?.let {
-            frame.samples = arrayOf<Buffer>(wrapped)
-            it.process(frame)
-        }
-        if (chunks != null) chunks.forEach { channel.send(it) } else channel.send(wrapped.toPcmBytes())
     }
 
     /** The range holding [videoMs] — the one on screen first, as a duplicated clip has two. */

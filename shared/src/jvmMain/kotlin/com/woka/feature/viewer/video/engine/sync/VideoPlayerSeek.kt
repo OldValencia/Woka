@@ -3,6 +3,7 @@ package com.woka.feature.viewer.video.engine.sync
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.engine.decode.VideoFrame
 import com.woka.feature.viewer.video.engine.decode.PictureFilter
+import com.woka.feature.viewer.video.engine.decode.colourOf
 import com.woka.feature.viewer.video.engine.decode.publishFrame
 import com.woka.feature.viewer.video.engine.probe.HdrInfo
 
@@ -33,7 +34,8 @@ internal fun VideoPlayerState.videoSeekTo(
     landAt(grabber, pictureFilter, targetMs)?.let {
         // The picture's own time, for a frame step to count from (ME-219).
         edit.shownMs = pictureFilter.timeUs(grabber, it) / 1000L
-        if (it.image != null) publishFrame(it.toComposeBitmap(), hdrInfo)
+        // The grabber's picture, not the clone: only the former still has its side data (ME-301).
+        if (it.image != null) publishFrame(it.toComposeBitmap(), colourOf(hdrInfo, grabber))
         it.close()
     }
 }
