@@ -7,6 +7,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isAltPressed
 import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
@@ -40,6 +41,8 @@ internal fun EditorKeyEffect(
      * clock (ME-207). **Defaulted**, so the image editor is unchanged.
      */
     onTogglePlayback: () -> Unit = {},
+    /** `←`/`→` a frame, with `Alt` a second (ME-219); `false` leaves the key unconsumed. */
+    onStep: (direction: Int, bySecond: Boolean) -> Boolean = { _, _ -> false },
     /**
      * The open canvas tool's `Delete`, through the editor's one keyboard slot (ME-114).
      * Null when no such tool is open, which is every tool but Markup today.
@@ -53,6 +56,7 @@ internal fun EditorKeyEffect(
     val curCanUndo by rememberUpdatedState(canUndo)
     val curCanRedo by rememberUpdatedState(canRedo)
     val curTogglePlayback by rememberUpdatedState(onTogglePlayback)
+    val curStep by rememberUpdatedState(onStep)
     val curCanvasKeys by rememberUpdatedState(canvasKeys)
 
     DisposableEffect(globalShortcuts) {
@@ -88,6 +92,8 @@ internal fun EditorKeyEffect(
                 // button keeps focus after it is clicked — so an unconsumed space
                 // re-activated the last tool instead of pausing the video.
                 event.key == Key.Spacebar -> consume { curTogglePlayback() }
+                event.key == Key.DirectionLeft -> curStep(-1, event.isAltPressed)
+                event.key == Key.DirectionRight -> curStep(1, event.isAltPressed)
                 else -> false
             }
         }

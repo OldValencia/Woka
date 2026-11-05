@@ -75,6 +75,12 @@ internal class VideoEditorEngine(
         playback.state?.let { playback.walk.toggle(it) }
     }
 
+    /** Consumed even before the player is up: the arrows are the strip's in a video (ME-219). */
+    override fun stepPlayHead(direction: Int, bySecond: Boolean): Boolean {
+        playback.state?.let { playback.walk.step(it, direction, bySecond) }
+        return true
+    }
+
     /**
      * The stream's colour, and **not the frame's** (ME-205). `streamHdrInfo` is written
      * once per opened track and is stable by contract, which is what a memoised recipe

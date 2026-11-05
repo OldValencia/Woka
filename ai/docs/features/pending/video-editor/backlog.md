@@ -73,11 +73,10 @@ ME-234's freeze half folded in.
 ### ME-218 — promoted and done 2026-11-04
 [`timeline/tickets/ME-218-the-strip-zooms.md`](timeline/tickets/ME-218-the-strip-zooms.md).
 
-### ME-219 — Frame-accurate stepping
-`←` / `→` step one frame, a modifier steps one second, and the readout shows the frame as well as the
-time. Cheapest item in the feature and the one that decides whether a cut lands where it was meant
-to; a split is only as honest as the play head's position.
-*Depends on ME-206.*
+### ME-219 — done 2026-11-05 without a ticket, checked by the author
+`←` / `→` step one frame of the result, `Alt` one second (the viewer's skip modifier); `❙◀` `▶❙`
+flank the band's transport, and the readout is `m:ss:ff` (`FrameSteps.kt`, `FrameStepsTest`). The
+viewer's ±5 s buttons name `Alt+←/→` in a tooltip.
 
 ### ME-220 — Snapping
 The play head, and a dragged clip or sound edge, snap within a few pixels to: clip joins, the ends of

@@ -17,6 +17,7 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.woka.core.ui.theme.Theme
+import com.woka.feature.viewer.shell.ViewerTooltip
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
@@ -40,22 +41,26 @@ private val HIT_PADDING = 4.dp
 internal fun SkipButton(
     icon: DrawableResource,
     contentDescription: String,
+    /** The key that does the same — `Alt+←` — shown on hover, since nothing else says it. */
+    shortcut: String,
     enabled: Boolean,
     onClick: () -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(6.dp))
-            .pointerHoverIcon(PointerIcon.Hand)
-            .clickable(enabled = enabled, onClick = onClick),
-        contentAlignment = Alignment.Center
-    ) {
-        Image(
-            painter = painterResource(icon),
-            contentDescription = contentDescription,
-            contentScale = ContentScale.FillBounds,
-            colorFilter = ColorFilter.tint(Theme.colors.textPrimary),
-            modifier = Modifier.padding(HIT_PADDING).width(ICON_WIDTH).height(ICON_HEIGHT)
-        )
+    ViewerTooltip("$contentDescription   ·   $shortcut") {
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(6.dp))
+                .pointerHoverIcon(PointerIcon.Hand)
+                .clickable(enabled = enabled, onClick = onClick),
+            contentAlignment = Alignment.Center
+        ) {
+            Image(
+                painter = painterResource(icon),
+                contentDescription = contentDescription,
+                contentScale = ContentScale.FillBounds,
+                colorFilter = ColorFilter.tint(Theme.colors.textPrimary),
+                modifier = Modifier.padding(HIT_PADDING).width(ICON_WIDTH).height(ICON_HEIGHT)
+            )
+        }
     }
 }

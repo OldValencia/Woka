@@ -31,6 +31,8 @@ internal fun VideoPlayerState.videoSeekTo(
 ) {
     while (videoChannel.tryReceive().isSuccess) {}
     landAt(grabber, pictureFilter, targetMs)?.let {
+        // The picture's own time, for a frame step to count from (ME-219).
+        edit.shownMs = pictureFilter.timeUs(grabber, it) / 1000L
         if (it.image != null) publishFrame(it.toComposeBitmap(), hdrInfo)
         it.close()
     }

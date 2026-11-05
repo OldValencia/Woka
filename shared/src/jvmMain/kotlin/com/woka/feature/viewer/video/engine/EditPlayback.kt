@@ -26,7 +26,18 @@ internal class EditPlayback {
 
     /** Where in them the sound is, ahead of the picture, and its splices (ME-233). */
     val audio = AudioRanges()
+
+    /**
+     * The media time of the picture on screen, or −1 before one (ME-219). Not the position:
+     * that is the audio clock while playing and the seek's *target* while paused, and a frame
+     * step has to count from the picture itself.
+     */
+    @Volatile
+    var shownMs = -1L
 }
+
+/** The media time of the picture on screen, or −1 before there is one (ME-219). */
+val VideoPlayerState.shownFrameMs: Long get() = edit.shownMs
 
 /**
  * The edit's gain at this moment (ME-240) — mute, volume and the fades — multiplied into the

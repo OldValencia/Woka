@@ -114,6 +114,7 @@ internal fun EditorHost(
             onRedo = session::redo,
             onDone = done,
             onTogglePlayback = engine::togglePlayback,
+            onStep = engine::stepPlayHead,
             canvasKeys = canvasKeys
         )
 

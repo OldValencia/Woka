@@ -127,6 +127,7 @@ internal fun VideoPlayerState.startPresenterLoop(videoChannel: Channel<VideoFram
             currentFrame = bitmap
             currentFrameHdrInfo = hdrInfo
             currentFrameId = frameId
+            edit.shownMs = frameTsMs
             recordPresentedFrame() // the one hot-path cost of §health
             if (joinIndex >= 0) {
                 presentJoin(joinIndex, heldFromMs, frameTsMs)

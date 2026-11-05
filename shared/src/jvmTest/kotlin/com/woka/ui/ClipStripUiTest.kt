@@ -6,7 +6,6 @@ import androidx.compose.ui.test.click
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performMouseInput
-import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.rightClick
 import androidx.compose.ui.unit.IntSize
 import com.woka.feature.editor.engine.video.CLIP_STRIP_TAG
@@ -96,7 +95,9 @@ class ClipStripUiTest {
             waitForIdle()
 
             // A click on the body only seeks (2026-11-04); the clip's tab is what selects it.
-            onNodeWithTag(CLIP_STRIP_TAG).performTouchInput { click(centerLeft.copy(x = width * 0.1f)) }
+            // **A mouse click** (2026-11-05): a touch widens the 12 dp tab to a 48 dp target,
+            // and once the band grew its frame steps that target reached the click.
+            onNodeWithTag(CLIP_STRIP_TAG).performMouseInput { click(centerLeft.copy(x = width * 0.1f)) }
             waitForIdle()
             assertNull(edits.selectedId, "a click on a clip's body selected it")
             onNodeWithTag("editor-clip-tab-source").performClick()

@@ -63,6 +63,7 @@ fun MediaViewerTimeSlider(
             SkipButton(
                 icon = Icons.Static.SkipBackward5,
                 contentDescription = "Skip back 5s",
+                shortcut = "Alt+←",
                 enabled = videoState != null,
                 onClick = { videoState?.skipBy(-5000) }
             )
@@ -118,6 +119,7 @@ fun MediaViewerTimeSlider(
             SkipButton(
                 icon = Icons.Static.SkipForward5,
                 contentDescription = "Skip forward 5s",
+                shortcut = "Alt+→",
                 enabled = videoState != null,
                 onClick = { videoState?.skipBy(5000) }
             )

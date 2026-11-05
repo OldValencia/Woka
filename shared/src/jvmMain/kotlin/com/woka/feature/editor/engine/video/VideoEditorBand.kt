@@ -83,9 +83,11 @@ internal fun VideoEditorBand(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(BAND_GAP)
     ) {
+        FrameStep(direction = -1) { player?.let { walk.step(it, -1, bySecond = false) } }
         Transport(playing = player?.let { walk.isPlaying(it) } == true) {
             player?.let { walk.toggle(it) }
         }
+        FrameStep(direction = 1) { player?.let { walk.step(it, 1, bySecond = false) } }
         if (player != null && duration > 0L) {
             ClipStrip(player, walk, clips, cells, edits, duration, zoom, Modifier.weight(1f))
         } else {
@@ -94,7 +96,8 @@ internal fun VideoEditorBand(
         ZoomPill(zoom)
         Readout(
             position = { player?.let { walk.timelineMs(clips, it.currentPositionMs) } ?: 0L },
-            duration = clips.totalMs()
+            duration = clips.totalMs(),
+            fps = player?.frameRate()
         )
     }
 }
@@ -106,6 +109,9 @@ internal fun VideoEditorBand(
  */
 @Composable
 private fun WalkClips(player: VideoPlayerState, walk: ClipWalk, clips: List<TrimClip>) {
-    LaunchedEffect(player, walk, clips) { player.playRanges(clips.map { it.toSourceRange() }, walk) }
+    LaunchedEffect(player, walk, clips) {
+        walk.clips = clips
+        player.playRanges(clips.map { it.toSourceRange() }, walk)
+    }
     DisposableEffect(player, walk) { onDispose { player.releaseRanges(walk) } }
 }

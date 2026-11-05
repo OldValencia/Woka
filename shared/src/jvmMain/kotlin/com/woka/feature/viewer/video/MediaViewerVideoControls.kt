@@ -67,22 +67,24 @@ fun MediaViewerVideoControls(
             }
         )
         
-        Box(
-            modifier = Modifier
-                .size(32.dp)
-                .pointerHoverIcon(PointerIcon.Hand)
-                .clickable(
-                    interactionSource = interactionSource,
-                    indication = null
-                ) { videoState?.togglePlayPause() },
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                painter = painterResource(if (isPlaying) Icons.Static.Pause else Icons.Static.PlayFill),
-                contentDescription = "Play/Pause",
-                modifier = Modifier.size(20.dp),
-                colorFilter = ColorFilter.tint(Theme.colors.textPrimary.copy(alpha = iconAlpha))
-            )
+        SimpleTooltip(if (isPlaying) "Pause   ·   Space" else "Play   ·   Space") {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .pointerHoverIcon(PointerIcon.Hand)
+                    .clickable(
+                        interactionSource = interactionSource,
+                        indication = null
+                    ) { videoState?.togglePlayPause() },
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(if (isPlaying) Icons.Static.Pause else Icons.Static.PlayFill),
+                    contentDescription = "Play/Pause",
+                    modifier = Modifier.size(20.dp),
+                    colorFilter = ColorFilter.tint(Theme.colors.textPrimary.copy(alpha = iconAlpha))
+                )
+            }
         }
         
         // The play head is handed over as a lambda, never read here: `durationMs`
@@ -122,7 +124,7 @@ fun MediaViewerVideoControls(
                 soundBoost = soundBoost
             )
             PlayerSettingsControl(onHoverChange = onSettingsHoverChange)
-            if (canFullscreen) SimpleTooltip(if (isFullscreen) "Exit Fullscreen" else "Fullscreen") {
+            if (canFullscreen) SimpleTooltip(if (isFullscreen) "Exit Fullscreen   ·   F" else "Fullscreen   ·   F") {
                 Box(
                     modifier = Modifier
                         .size(32.dp)
