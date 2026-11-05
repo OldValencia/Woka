@@ -49,6 +49,8 @@ private val BAR_LIFT = 9.dp
  */
 @Composable
 internal fun ClipBar(
+    /** The Clips tool is open: the clip's structure — delete, duplicate, join, speed — is offered. */
+    cutting: Boolean,
     canDelete: Boolean,
     anchorX: Float,
     onDelete: () -> Unit,
@@ -57,7 +59,9 @@ internal fun ClipBar(
     onJoin: (() -> Unit)? = null,
     /** The clip's speed and how to change it (ME-216); null hides the chip. */
     speed: Float = 1f,
-    onSpeed: ((Float) -> Unit)? = null
+    onSpeed: ((Float) -> Unit)? = null,
+    /** `Copy` and `Paste ▾` (ME-267); null hides both. */
+    look: ClipLookActions? = null
 ) {
     val lift = with(LocalDensity.current) { BAR_LIFT.roundToPx() }
     val position = remember(anchorX, lift) { AboveAnchor(anchorX.roundToInt(), lift) }
@@ -71,16 +75,22 @@ internal fun ClipBar(
                 .testTag("editor-clip-bar"),
             horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            BarAction("Delete", Theme.colors.danger, enabled = canDelete, tag = "editor-clip-delete", onClick = onDelete)
-            BarAction("Duplicate", Theme.viewer.onScrim, enabled = true, tag = "editor-clip-duplicate", onClick = onDuplicate)
-            BarAction("Join", Theme.viewer.onScrim, enabled = onJoin != null, tag = "editor-clip-join", onClick = onJoin ?: {})
-            onSpeed?.let { ClipSpeedChip(speed, it) }
+            if (cutting) {
+                BarAction("Delete", Theme.colors.danger, enabled = canDelete, tag = "editor-clip-delete", onClick = onDelete)
+                BarAction("Duplicate", Theme.viewer.onScrim, enabled = true, tag = "editor-clip-duplicate", onClick = onDuplicate)
+                BarAction("Join", Theme.viewer.onScrim, enabled = onJoin != null, tag = "editor-clip-join", onClick = onJoin ?: {})
+            }
+            look?.let {
+                BarAction("Copy", Theme.viewer.onScrim, enabled = true, tag = "editor-clip-copy", onClick = it.onCopy)
+                PasteAction(it)
+            }
+            if (cutting) onSpeed?.let { ClipSpeedChip(speed, it) }
         }
     }
 }
 
 @Composable
-private fun BarAction(label: String, color: Color, enabled: Boolean, tag: String, onClick: () -> Unit) {
+internal fun BarAction(label: String, color: Color, enabled: Boolean, tag: String, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .height(26.dp)

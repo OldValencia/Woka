@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.woka.feature.editor.core.EditorTimelineScope
+import com.woka.feature.editor.core.ToolOp
 import com.woka.feature.editor.tools.trim.TrimClip
 import com.woka.feature.editor.tools.trim.TrimTool
 import com.woka.feature.editor.tools.trim.cutsNothing
@@ -92,6 +93,9 @@ internal class StripState(val player: VideoPlayerState, val walk: ClipWalk) {
     }
 
     var drag: StripDrag? by mutableStateOf(null)
+
+    /** The clip bar's clipboard (ME-267): one clip's own work, for the sitting. */
+    var copiedLook: List<ToolOp>? by mutableStateOf(null)
 
     fun preview(next: List<TrimClip>) = edits.preview(TrimTool.opFor(next))
 

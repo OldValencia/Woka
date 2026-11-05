@@ -208,12 +208,15 @@ Crop already offers 1:1, 4:3, 3:2 and 16:9 (`CropAspect`), and its Orientation s
 them upright — 16:9 + Portrait is 9:16 (`cropRatioIn`). A separate 9:16 chip would duplicate that and
 read backwards under Portrait; the author kept it as it is.
 
-### ME-267 — Copy another clip's look
-"Apply clip 2's adjustments here" is a copy of a few ops from one clip's layer into another's, so it
-is `EditLayers` and nothing new. Two `ActionParam`s — copy, paste — reading the clip selection.
-**Deliberately not presets:** nothing is named, stored or listed, because a named preset is a library
-to manage and this is a clipboard.
-*Depends on ME-215.*
+### ME-267 — done 2026-11-05 without a ticket, checked by the author
+Re-cut with the author: not two `ActionParam`s but **`Copy` and `Paste ▾` on the clip bar**, where
+the selection already is. `Copy` takes the clip's own work whole; `Paste ▾` offers Look, Sound, or
+Look and Sound, and **replaces** those kinds on the target (`ClipLook.kt`, `pasteOnClip`). A paste is
+one undo step: a history entry now carries the off-screen clip layer it changed (`LayerChange`,
+`stepLayers`), so `Ctrl+Z` puts it back (`ClipPasteTest`). Still a clipboard, not presets.
+The same day the strip learned to pick clips in **every** tool once there are two — tabs, and a
+bar with `Copy` · `Paste ▾` alone — while cutting stays in the tool, renamed **Clips** (id still
+`trim`; `timeline.md` §6, `ClipLookUiTest`).
 
 ---
 

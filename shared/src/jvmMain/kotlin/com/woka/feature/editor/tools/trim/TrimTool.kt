@@ -18,7 +18,9 @@ import com.woka.feature.viewer.video.formatTime
 import kotlinx.serialization.builtins.ListSerializer
 
 /**
- * `✂ Trim` — the whole cut as one ordered clip list (ME-210, `timeline.md` §3.1).
+ * `✂ Clips` — the whole cut as one ordered clip list (ME-210, `timeline.md` §3.1). Named
+ * `Trim` until 2026-11-05, when the author renamed it for all it does; the id stays `trim`,
+ * because every film edited before carries it in its recipe.
  *
  * **One tool, not three** (decision 2026-09-03): split, delete and reorder are gestures on
  * one object, the strip, and three rail entries for one object is the overload the feature
@@ -39,8 +41,8 @@ object TrimTool : EditorTool {
 
     override val manifest = ToolManifest(
         id = "trim",
-        title = "Trim",
-        summary = "Cut, split and reorder",
+        title = "Clips",
+        summary = "Cut, order, speed and freeze",
         icon = Icons.Static.Trim,
         domain = ToolDomain.Time,
         order = 0,

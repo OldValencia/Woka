@@ -24,8 +24,6 @@ import com.woka.core.ui.components.resetOnRightClick
 import com.woka.feature.editor.core.EditorTimelineScope
 import com.woka.feature.editor.tools.trim.TrimClip
 import com.woka.feature.editor.tools.trim.atTimeline
-import com.woka.feature.editor.tools.trim.join
-import com.woka.feature.editor.tools.trim.withSpeed
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import kotlin.math.roundToInt
 
@@ -63,7 +61,9 @@ internal fun ClipStrip(
 ) {
     val state = remember(player, walk) { StripState(player, walk) }
     SideEffect { state.refresh(clips, edits, durationMs) }
-    val height by animateDpAsState(if (edits.editing) FILM_EDITING else FILM_RESTING)
+    // Clips are picked in every tool once there are two (2026-11-05); cut only in Clips.
+    val tabs = edits.editing || (!edits.perClip && clips.size > 1)
+    val height by animateDpAsState(if (edits.editing) FILM_EDITING else FILM_RESTING + if (tabs) CLIP_TAB_HEIGHT else 0.dp)
     val drag = state.drag
     // The document as it stands, always — an edge drag re-flows it live (`edgeLayout`).
     val laidOut = clips
@@ -111,36 +111,25 @@ internal fun ClipStrip(
                     clip = clip,
                     cells = cells,
                     showRange = edits.editing && span.width > with(density) { 96.dp.toPx() },
-                    selected = (edits.editing || edits.perClip) && clip.id == selectedId,
+                    selected = (tabs || edits.perClip) && clip.id == selectedId,
                     ownLook = edits.hasOwnLook(clip.key),
                     carried = (drag as? StripDrag.Reorder)?.id == clip.id,
                     modifier = Modifier
                         .offset { IntOffset(shown.left.roundToInt(), 0) }
                         .width(with(density) { shown.width.toDp() })
                         .fillMaxHeight()
-                        .padding(bottom = if (edits.editing) CLIP_TAB_HEIGHT else 0.dp),
+                        .padding(bottom = if (tabs) CLIP_TAB_HEIGHT else 0.dp),
                     fullWidthPx = span.width,
                     shiftPx = shown.left - span.left
                 )
-                if (edits.editing && clip.id == selectedId && drag == null) {
-                    ClipBar(
-                        canDelete = clips.size > 1,
-                        // Over the part of the clip on screen, so a zoom does not carry it off.
-                        anchorX = shown.left + shown.width / 2f,
-                        onDelete = { state.deleteSelected(selectedId) },
-                        onDuplicate = { state.duplicateSelected(selectedId) },
-                        onJoin = { state.joinSelected(selectedId) }.takeIf { clips.join(selectedId) != clips },
-                        speed = clip.speed,
-                        // A freeze has no speed (ME-217).
-                        onSpeed = { speed: Float -> state.apply(clips.withSpeed(selectedId, speed)) }.takeIf { !clip.isFreeze }
-                    )
-                }
+                // Over the part of the clip on screen, so a zoom does not carry it off.
+                if (tabs && clip.id == selectedId && drag == null) SelectedClipBar(state, clips, clip, edits, shown.left + shown.width / 2f)
             }
             if (edits.editing) TrimmedEnds(geometry, laidOut, cells, durationMs, selectedId, null)
             PlayHead(player, walk, laidOut, geometry, edits.editing && drag == null, onFreeze = { state.freezeAtPlayHead() }) {
                 state.splitAtPlayHead()
             }
-            if (edits.editing) ClipTabs(laidOut, geometry, selectedId) { edits.select(it) }
+            if (tabs) ClipTabs(laidOut, geometry, selectedId) { edits.select(it) }
             ZoomOverview(zoom, geometry)
         }
     }

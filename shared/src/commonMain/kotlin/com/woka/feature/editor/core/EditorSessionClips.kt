@@ -38,7 +38,44 @@ fun EditorSession.ownOpsOf(key: Int): List<ToolOp> {
 fun EditorSession.copyFrame(from: Int, to: Int) {
     val own = ownOpsOf(from)
     if (own.isEmpty()) return
+    elsewhere.value += to to layerWith(to, own)
+}
+
+/**
+ * Pastes [ops] onto clip [to] (ME-267): of the kinds [taken] picks — the picture, the
+ * sound, or both — the clip's own are **replaced** by [ops]', the rest of its own kept.
+ *
+ * From `All Clips`, like [copyFrame], so the document on screen does not change; the step
+ * is a history entry carrying the layer's before and after, and undo puts it back.
+ */
+fun EditorSession.pasteOnClip(to: Int, ops: List<ToolOp>, taken: (ToolOp) -> Boolean) {
+    val own = ownOpsOf(to)
+    val pasted = own.filterNot(taken) + ops.filter(taken)
+    if (pasted == own) return
+    val before = elsewhere.value[to]
+    val after = layerWith(to, pasted)
+    elsewhere.value += to to after
+    _history.value = _history.value.push(_document.value, LayerChange(to, before, after))
+}
+
+/** Clip [key] holding [own] over the shared layer on screen, put away as a touched frame. */
+private fun EditorSession.layerWith(key: Int, own: List<ToolOp>): FrameEdit {
     val shared = _document.value
     val document = EditDocument(shared.ops + own)
-    elsewhere.value += to to FrameEdit(document, EditorHistory.startingAt(document), storedFor(to), shared)
+    return FrameEdit(document, EditorHistory.startingAt(document), storedFor(key), shared)
+}
+
+/**
+ * The off-screen half of an undo or a redo from [from] to [to] (ME-267): the entry being
+ * left backwards puts its layer back as it was; the entry being reached forwards, as it
+ * became. Nothing for a step that changed only the document on screen.
+ */
+internal fun EditorSession.stepLayers(from: EditorHistory, to: EditorHistory) {
+    val step = when {
+        to.index < from.index -> from.changes.getOrNull(from.index)?.let { it.key to it.before }
+        to.index > from.index -> to.changes.getOrNull(to.index)?.let { it.key to it.after }
+        else -> null
+    } ?: return
+    val (key, layer) = step
+    elsewhere.value = if (layer == null) elsewhere.value - key else elsewhere.value + (key to layer)
 }

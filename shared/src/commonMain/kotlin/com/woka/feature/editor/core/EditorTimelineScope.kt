@@ -56,6 +56,9 @@ interface EditorTimelineScope {
     /** Layer [key]'s own ops — its look and its sound (ME-240). */
     fun ownOps(key: Int): List<ToolOp> = emptyList()
 
+    /** Pastes [ops] of the kinds [taken] picks onto layer [key], as one undoable step (ME-267). */
+    fun pasteLayer(key: Int, ops: List<ToolOp>, taken: (ToolOp) -> Boolean) {}
+
     /** The clip being edited under This Clip, whose own ops are in the document; null otherwise. */
     val openClip: Int? get() = null
 }

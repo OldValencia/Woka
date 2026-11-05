@@ -124,6 +124,7 @@ class EditorSession(
     fun redo() = moveTo(_history.value.redo())
     
     private fun moveTo(history: EditorHistory) {
+        stepLayers(_history.value, history)
         _history.value = history
         _document.value = history.current
     }

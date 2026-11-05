@@ -23,7 +23,13 @@ private const val HISTORY_CAP = 50
 @Immutable
 data class EditorHistory(
     val entries: List<EditDocument> = listOf(EditDocument()),
-    val index: Int = 0
+    val index: Int = 0,
+    /**
+     * Beside each entry, the clip layer it changed **off screen**, or null (ME-267). A paste
+     * leaves the document on screen as it was and rewrites another clip's look; the
+     * session puts that layer back on undo and forward again on redo (`stepLayers`).
+     */
+    val changes: List<LayerChange?> = List(entries.size) { null }
 ) {
 
     companion object {
@@ -65,10 +71,11 @@ data class EditorHistory(
      * keeps. At the cap the **oldest** entry goes — losing the newest would mean
      * the last thing done is the first thing forgotten.
      */
-    fun push(document: EditDocument): EditorHistory {
+    fun push(document: EditDocument, change: LayerChange? = null): EditorHistory {
         val kept = entries.take(index + 1) + document
-        val trimmed = if (kept.size > HISTORY_CAP) kept.takeLast(HISTORY_CAP) else kept
-        return EditorHistory(trimmed, trimmed.lastIndex)
+        val keptChanges = changes.take(index + 1) + change
+        val drop = (kept.size - HISTORY_CAP).coerceAtLeast(0)
+        return EditorHistory(kept.drop(drop), kept.size - drop - 1, keptChanges.drop(drop))
     }
 
     fun undo(): EditorHistory = if (canUndo) copy(index = index - 1) else this

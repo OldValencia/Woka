@@ -1,5 +1,6 @@
 package com.woka.feature.editor.engine.video
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -10,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,6 +36,9 @@ private val BAND_WIDTH = 640.dp
 
 private val BAND_PADDING = 10.dp
 private val BAND_GAP = 10.dp
+
+/** The clip bar's height and its lift above the strip (`ClipBar`). */
+private val CLIP_BAR_ROOM = 40.dp
 
 internal const val EDITOR_BAND_TAG = "editor-band"
 
@@ -71,9 +76,14 @@ internal fun VideoEditorBand(
     val cells = rememberFilmstrip(holder.state?.file, duration, codedSize)
     if (player != null && duration > 0L) WalkClips(player, walk, clips)
     if (player != null && duration > 0L) MixClipSound(player, walk, clips, document, edits)
+    // The selected clip's bar floats above the band; the room is kept so the inspector over
+    // the band moves up rather than under it (reported 2026-11-05).
+    val barShown = clips.any { it.id == edits.selectedId } && (edits.editing || (!edits.perClip && clips.size > 1))
+    val room by animateDpAsState(if (barShown) CLIP_BAR_ROOM else 0.dp)
 
     Row(
         modifier = modifier
+            .padding(top = room)
             .width(BAND_WIDTH)
             .clip(RoundedCornerShape(EditorTokens.Rail.containerRadius))
             .background(Theme.viewer.popoverScrim)

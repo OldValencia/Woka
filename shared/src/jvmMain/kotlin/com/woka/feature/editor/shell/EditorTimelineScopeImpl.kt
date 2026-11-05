@@ -12,6 +12,7 @@ import com.woka.feature.editor.core.commit
 import com.woka.feature.editor.core.copyFrame
 import com.woka.feature.editor.core.moveToFrame
 import com.woka.feature.editor.core.ownOpsOf
+import com.woka.feature.editor.core.pasteOnClip
 import com.woka.feature.editor.core.preview
 
 /**
@@ -60,6 +61,9 @@ internal class EditorTimelineScopeImpl(
     override fun hasOwnLook(key: Int): Boolean = session.ownOpsOf(key).isNotEmpty()
 
     override fun ownOps(key: Int): List<ToolOp> = session.ownOpsOf(key)
+
+    override fun pasteLayer(key: Int, ops: List<ToolOp>, taken: (ToolOp) -> Boolean) =
+        session.pasteOnClip(key, ops, taken)
 
     override val openClip: Int? get() = session.frame.takeIf { perClip }
 }

@@ -156,6 +156,7 @@ table, and this is the first tool that competes with another for a key.
 
 | Date | Question | Decision | Why |
 |---|---|---|---|
+| 2026-11-05 | Can a clip be picked outside Trim? | **Yes, once there are two: tabs and a bar with `Copy` · `Paste ▾` in every tool; cutting stays in the tool, renamed `Clips`** (id still `trim`) | The author: a look is made in Adjust and Filters, so copying it from Trim alone was the wrong door. Making the strip always editable was weighed and refused — a drag on the film would reorder instead of scrub in every tool, and This Clip would still need the strip's second behaviour |
 | 2026-09-03 | One tool or several for the strip? | **One, `Trim`, in a new `Time` domain** | Split, delete and reorder are gestures on one object; three rail entries for one object is the overload the whole feature is defined against |
 | 2026-09-03 | Do cuts snap to keyframes? | **No** | The default save copies nothing, so a keyframe buys nothing; snapping would make the strip lie about where the cut lands (§3.3). Reverses retired ME-202 |
 | 2026-09-03 | Where does a per-clip setting live? | **A clip field if the strip's layout needs it, otherwise an op in the clip's layer** | The strip must be drawable from the clip list alone. One rule then covers audio and picture identically instead of a second per-clip mechanism (§3.2) |

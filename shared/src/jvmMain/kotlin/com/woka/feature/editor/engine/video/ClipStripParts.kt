@@ -15,7 +15,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.woka.core.ui.icons.Icons
+import com.woka.feature.editor.core.EditorTimelineScope
 import com.woka.feature.editor.tools.trim.TrimClip
+import com.woka.feature.editor.tools.trim.join
+import com.woka.feature.editor.tools.trim.withSpeed
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import kotlin.math.roundToInt
 
@@ -64,4 +67,24 @@ internal fun BoxScope.PlayHead(
     val onFreezeClip = clips.getOrNull(walk.index)?.isFreeze == true
     PlayHeadAction(x, geometry.viewPx, slot = 0, Icons.Static.Trim, "Split here", "editor-strip-split", !onFreezeClip, onSplit)
     PlayHeadAction(x, geometry.viewPx, slot = 1, Icons.Static.Freeze, "Freeze this frame", "editor-strip-freeze", !onFreezeClip, onFreeze)
+}
+
+/**
+ * The selected [clip]'s bar over [anchorX]: its structure while `Clips` is open, and its look
+ * — `Copy`, `Paste ▾` — whenever there is another clip to take it to (ME-267).
+ */
+@Composable
+internal fun SelectedClipBar(state: StripState, clips: List<TrimClip>, clip: TrimClip, edits: EditorTimelineScope, anchorX: Float) {
+    ClipBar(
+        cutting = edits.editing,
+        canDelete = clips.size > 1,
+        anchorX = anchorX,
+        onDelete = { state.deleteSelected(clip.id) },
+        onDuplicate = { state.duplicateSelected(clip.id) },
+        onJoin = { state.joinSelected(clip.id) }.takeIf { clips.join(clip.id) != clips },
+        speed = clip.speed,
+        // A freeze has no speed (ME-217).
+        onSpeed = { speed: Float -> state.apply(clips.withSpeed(clip.id, speed)) }.takeIf { !clip.isFreeze },
+        look = state.lookActions(clip, edits).takeIf { clips.size > 1 }
+    )
 }
