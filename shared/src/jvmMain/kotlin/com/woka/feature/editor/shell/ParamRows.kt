@@ -22,6 +22,7 @@ import com.woka.feature.editor.core.PreviewChoiceParam
 import com.woka.feature.editor.core.ToggleSetParam
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntSize
+import com.woka.feature.editor.core.panelDocument
 
 /**
  * A tool's whole panel, from its schema — the composable form of §3.4's claim that a
@@ -55,7 +56,7 @@ internal fun ParamRows(
      */
     thumbnail: @Composable (EditDocument, Modifier) -> Unit = { _, _ -> }
 ) {
-    val stored = paramsOf(document, tool, picture.sourceSize)
+    val stored = paramsOf(session.panelDocument(document, tool.manifest), tool, picture.sourceSize)
     // **What the panel shows follows the selection; what it writes still starts from the
     // document** (`CanvasTool.displayed`, reported by hand 2026-08-29). The two are not the
     // same question: a control reports the shape under the cursor, and every control sends

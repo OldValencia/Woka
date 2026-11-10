@@ -22,7 +22,9 @@ import com.woka.feature.viewer.video.engine.setClipGain
 /**
  * The edit's sound while the editor plays (ME-240): the shared layer's mute, volume and fades
  * over the whole timeline, times the playing clip's own — so a fade is heard as it is made.
- * The shared layer is the document less the open clip's own work, under This Clip.
+ * The shared layer is the session's, not the document less the open clip's own work: a clip's
+ * own sound replaces the film's op in the document, so that subtraction lost the film's sound
+ * while the clip was open (review 1.0.7, F3). [document] keys the recomposition.
  */
 @Composable
 internal fun MixClipSound(
@@ -32,9 +34,7 @@ internal fun MixClipSound(
     document: EditDocument,
     edits: EditorTimelineScope
 ) {
-    val open = edits.openClip
-    val shared = document.ops - open?.let { edits.ownOps(it).toSet() }.orEmpty()
-    val whole = SoundTool.mixIn(shared)
+    val whole = SoundTool.mixIn(edits.sharedOps)
     val own = clips.associate { it.key to SoundTool.mixIn(edits.ownOps(it.key)) }
     val owner = remember { Any() }
     // An edit with its sound as recorded asks the player for nothing at all; the gain one set

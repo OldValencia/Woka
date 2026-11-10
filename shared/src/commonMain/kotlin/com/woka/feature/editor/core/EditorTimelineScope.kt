@@ -59,4 +59,7 @@ interface EditorTimelineScope {
 
     /** The selected clip, whose own ops are in the document (ME-221); null for the whole film. */
     val openClip: Int? get() = null
+
+    /** The layer every clip plays under, whichever clip is open (review 1.0.7, F3). */
+    val sharedOps: List<ToolOp> get() = emptyList()
 }

@@ -39,7 +39,8 @@ object SoundTool : EditorTool {
         order = 0,
         supports = setOf(MediaKind.Video),
         cardinality = ToolCardinality.Single,
-        interaction = ToolInteraction.Continuous
+        interaction = ToolInteraction.Continuous,
+        multipliesShared = true
     )
 
     override val params: List<ParamSpec<*>> = listOf(Mute, Volume, FadeIn, FadeOut)

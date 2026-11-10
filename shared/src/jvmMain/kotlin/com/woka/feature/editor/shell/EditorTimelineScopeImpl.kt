@@ -15,6 +15,7 @@ import com.woka.feature.editor.core.ownOpsOf
 import com.woka.feature.editor.core.pasteOnClip
 import com.woka.feature.editor.core.pickClip
 import com.woka.feature.editor.core.preview
+import com.woka.feature.editor.core.sharedOps
 
 /**
  * `EditorTimelineScope`, assembled from the session (ME-210) — `EditorToolScopeImpl`'s
@@ -65,4 +66,6 @@ internal class EditorTimelineScopeImpl(
         session.pasteOnClip(key, ops, taken)
 
     override val openClip: Int? get() = session.frame.takeIf { it != NO_CLIP }
+
+    override val sharedOps: List<ToolOp> get() = session.sharedOps
 }

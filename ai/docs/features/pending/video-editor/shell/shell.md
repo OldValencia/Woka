@@ -46,9 +46,9 @@ reported against an SDR **photograph**.
 |---|---|---|
 | [ME-302](tickets/ME-302-the-hdr-tool-leaves-an-sdr-rail.md) | The HDR tool leaves an SDR picture's rail | **done 2026-09-04**, confirmed on screen by the author |
 | [ME-303](tickets/ME-303-the-hdr-dropdown-leaves-an-sdr-pill.md) | The HDR dropdown leaves an SDR picture's pill | **done 2026-09-04** — the viewer's pill is one `&&` over a unit-tested predicate and wants a by-hand look |
-| [ME-301](tickets/ME-301-the-films-own-white-point.md) | An HDR film is tone mapped to its own white point | **built 2026-11-05**, `:shared:build` green; probe `jvmTest/probe/VideoHdrPeakProbe.kt`; **not yet looked at by the author** |
-| [ME-304](tickets/ME-304-the-hdr-menu-reaches-a-video.md) | The HDR menu reaches a video | **built 2026-11-05**, green; **not yet looked at by the author** |
-| [ME-305](tickets/ME-305-hdr10-plus-scene-peaks.md) | An HDR10+ film is tone mapped scene by scene | **built 2026-11-05**, green; **not yet looked at by the author** |
+| [ME-301](tickets/ME-301-the-films-own-white-point.md) | An HDR film is tone mapped to its own white point | **built 2026-11-05**, `:shared:build` green; probe `jvmTest/probe/VideoHdrPeakProbe.kt`; checked by the author |
+| [ME-304](tickets/ME-304-the-hdr-menu-reaches-a-video.md) | The HDR menu reaches a video | **built 2026-11-05**, green; checked by the author |
+| [ME-305](tickets/ME-305-hdr10-plus-scene-peaks.md) | An HDR10+ film is tone mapped scene by scene | **built 2026-11-05**, green; checked by the author |
 
 Unpromoted blocks — ME-300 — are in the shared backlog
 ([`../tickets/backlog.md`](../backlog.md) §300), which is where their state is *not* recorded:

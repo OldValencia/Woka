@@ -6,6 +6,7 @@ import com.woka.feature.editor.core.CanvasTool
 import com.woka.feature.editor.core.EditorSession
 import com.woka.feature.editor.core.cancelPending
 import com.woka.feature.editor.core.commit
+import com.woka.feature.editor.core.panelDocument
 import com.woka.feature.editor.core.preview
 import com.woka.feature.editor.core.EditorTool
 import com.woka.feature.editor.core.ParamSpec
@@ -60,7 +61,8 @@ internal class ParamWriter(
         // set up — and every drag rebuilt its parameters from a stale base, wiping the
         // slider moved before it (2026-08-22).
         val live = session.document.value
-        val base = if (spec is ActionParam) tool.defaults(picture.sourceSize) else paramsOf(live, tool, picture.sourceSize)
+        val shown = session.panelDocument(live, tool.manifest)
+        val base = if (spec is ActionParam) tool.defaults(picture.sourceSize) else paramsOf(shown, tool, picture.sourceSize)
         val written = base.with(spec, value)
         // A tool may rewrite its own parameters now that the frame is known — a preset
         // that means "this many pixels on the long edge" resolves to a scale here, so

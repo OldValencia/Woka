@@ -13,6 +13,7 @@ import com.woka.feature.editor.core.EditorSession
 import com.woka.feature.editor.core.EditorTool
 import com.woka.feature.editor.core.LocalClipLooks
 import com.woka.feature.editor.core.ownOpsOf
+import com.woka.feature.editor.core.sharedOps
 
 /**
  * The picture and whatever draws over it — `EditorScreen`'s canvas, moved out unchanged
@@ -32,7 +33,7 @@ internal fun EditorCanvasLayer(
 ) {
     // A film draws each clip through its own layer (ME-215); the session holds them.
     val open = session.frame.takeIf { frameControls?.scope == EditScope.SingleFrame }
-    val looks = ClipLooks(open) { key -> session.ownOpsOf(key) }.takeIf { engine.frames.clips }
+    val looks = ClipLooks(open, session.sharedOps) { key -> session.ownOpsOf(key) }.takeIf { engine.frames.clips }
     CompositionLocalProvider(LocalClipLooks provides looks) {
         CanvasHostWith(engine, session, tools, activeTool, document, frameControls, canvasKeys, selection, peek)
     }
