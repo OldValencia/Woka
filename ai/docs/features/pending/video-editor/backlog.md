@@ -146,7 +146,9 @@ ME-232.
 ### ME-240 — promoted and done 2026-11-04
 [`audio/tickets/ME-240-mute-volume-fades.md`](audio/tickets/ME-240-mute-volume-fades.md).
 
-### ME-241 — The waveform
+### ME-241 — The waveform — done 2026-11-10 without a ticket
+A sound row under the strip, opened by a speaker right of the readout (the author, 2026-11-10);
+`audio.md` §3.6. Tests: `AudioPeaksTest`, `SoundRowUiTest`. As specified:
 One audio-decode pass per file producing min/max peaks per column, cached on path plus length plus
 mtime the way the poster is. A row with no waveform cannot be cut usefully, which is why this comes
 before the row itself.

@@ -170,6 +170,16 @@ speech is. Audio decodes far faster than video, so the peaks for a whole file ar
 by path plus length plus mtime, exactly as the poster is (`SaveEviction`'s key). Drawing is a
 min/max column per pixel.
 
+**Built 2026-11-10 (ME-241) as a row the author opens** — reshaped the same day. A band over each
+clip's foot read as decoration and had nowhere to grow; instead a **speaker right of the readout**
+puts a **sound row** under the strip (`SoundRow`, `SoundRows.shown`, kept while Woka runs): one
+segment under each clip on the strip's own geometry, so zoom and scroll move both, each holding its
+clip's wave (`ClipWave`) from the source under each column — trims and speeds move it, a freeze
+draws none. A press on the row seeks and drags nothing. **It is the first of the rows under the
+strip**, and the place later sound work goes (music over the film, ME-244) rather than the clips.
+`AudioPeaks` is one audio-only pass on a low-priority thread, one byte per 20 ms (360 KB for two
+hours), filling from the start so a long film's wave grows; kept in memory for the last four films.
+
 ### 3.7 Extract is an `Output` tool
 
 "Give me the sound as a file" is not an edit to the video, so it belongs in the `Output` group beside
@@ -197,7 +207,8 @@ encodes only when it does not. It respects the cuts, because everything does.
 | Date | Question | Decision | Why |
 |---|---|---|---|
 | 2026-09-03 | Where do mute, volume and fades live? | **An ordinary tool's op, in the clip's layer** | It is `EditLayers` doing what it was built for, and it makes "mute everything" and "mute this clip" one control with the scope switch already beside it (§3.2) |
-| 2026-09-03 | How many extra rows? | **One, holding both detached and external entries** | Two rows is a track list, which is the line the feature refuses to cross. One row is one selection, one waveform, one set of gestures (§3.3) |
+| 2026-11-10 | How many extra rows, after all? | **A rows area under the strip that grows — several tracks in time, a simplified desk in the spirit of FL Studio; the sound row (ME-241) is its first** | The author: the rows must read as their own place, apart from the clips, so later sound work (several tracks, an entry's own speed) is done there. Reverses 2026-09-03 below |
+| 2026-09-03 | How many extra rows? | **One, holding both detached and external entries** — *reversed 2026-11-10, above* | Two rows is a track list, which is the line the feature refuses to cross. One row is one selection, one waveform, one set of gestures (§3.3) |
 | 2026-09-03 | Is a second row shown by default? | **No — only after Detach or Add** | Author's call: someone who never asks never sees it |
 | 2026-09-03 | May a recipe reference another file? | **Yes, for the external track only, with a missing-audio state and a relative path where possible** | The alternative puts megabytes of audio into a metadata slot designed for hundreds of bytes. The cost is stated in §3.4 rather than discovered later |
 | 2026-09-03 | Fade shape? | **Linear, in seconds, one shape** | A curve editor is a professional control for a difference nobody hears at 300 ms |

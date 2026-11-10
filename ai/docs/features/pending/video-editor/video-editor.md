@@ -507,6 +507,7 @@ these wants a fresh head rather than an estimate.
 
 | Date | Question | Decision | Why |
 |---|---|---|---|
+| 2026-11-10 | What is under the strip? | **Rows, opened by the author, on the strip's own time — the sound row first (ME-241), several tracks later** | The author: a waveform drawn over the clips was decoration with nowhere to grow; a separate row is where sound work happens, and it may become a simplified multi-track desk (`audio/audio.md` §6) |
 | 2026-11-10 | What kind of editor is this? | **A full editor — cut, trim, music over the film, the everyday jobs — whose UI never looks like a professional tool's** | The author, weighing it against iOS Photos' editor: the work wanted is the full one, the face it shows is the simple one. A feature earns its place by a common job, and its control by fitting the controls already there; a second way to say something the editor can already say (*when* is a clip) is the sign of overreach |
 | 2026-11-10 | Masks, after all? | **No — ME-268 reverted unshipped; the id is retained** | Built and then judged by the author against the KISS brief: a fixed area on a moving picture is of little use without tracking, which is not coming; it turned Adjust and Styles from sliders into canvas tools; and timing it would have been a third way to say *when*. Reverses 2026-11-02 |
 | 2026-11-02 | Masks? | **Rectangle and ellipse areas with feather for Adjust and Styles (ME-268); brushes stay out** | The author: a film needs *when* (ME-215, ME-263) and *where* a look applies. Reverses 2026-09-03 for these two shapes only |
