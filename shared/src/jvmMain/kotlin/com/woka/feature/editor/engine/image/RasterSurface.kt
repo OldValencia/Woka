@@ -109,6 +109,6 @@ internal fun DrawScope.drawThroughRecipe(
         // a crop must clip an arrow, not move it (§3.4's application order). After
         // the shaders as well as the filter: markup sits on top of a sharpened
         // picture rather than being sharpened with it (ME-165).
-        recipe.paints.forEach { paint -> paint.draw(this) }
+        recipe.paints.forEach { paint -> paint.draw(this, recipe.atMs) }
     }
 }

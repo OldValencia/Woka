@@ -64,7 +64,8 @@ internal fun VideoEditorCanvas(
     RasterSurface(
         source = frame,
         sourceSize = sourceSize,
-        recipe = recipe,
+        // The timeline millisecond on screen, so a timed shape fades as it will play (ME-263).
+        recipe = recipe.copy(atMs = holder.walk.timelineMs(holder.walk.clips, player.currentPositionMs)),
         modifier = modifier.drawWithContent {
             drawContent()
             player.frameRetention.acknowledge(frameId)

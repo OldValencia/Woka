@@ -98,6 +98,12 @@ sealed interface RasterStage : ToolStage {
      */
     data class Composite(val stages: List<RasterStage>) : RasterStage
 
-    /** Markup. Drawn in source coordinates, after the matrix, filter and shaders. */
-    data class Paint(val draw: DrawScope.() -> Unit) : RasterStage
+    /**
+     * Markup. Drawn in source coordinates, after the matrix, filter and shaders.
+     *
+     * Handed the **timeline** millisecond the picture stands at (ME-263), or null for a still
+     * and anything else with no time — so a shape timed on a film fades by the same number on
+     * the canvas, in the viewer and in a render.
+     */
+    data class Paint(val draw: DrawScope.(atMs: Long?) -> Unit) : RasterStage
 }

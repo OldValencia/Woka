@@ -16,6 +16,7 @@ import com.woka.feature.editor.core.LocalClipLooks
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.engine.image.RasterRecipe
 import com.woka.feature.editor.tools.trim.TrimTool
+import com.woka.feature.editor.tools.trim.totalMs
 import com.woka.feature.viewer.image.rememberHdrModeAccess
 import com.woka.feature.viewer.video.engine.probe.HdrInfo
 import com.woka.feature.viewer.video.engine.probe.toColour
@@ -87,6 +88,10 @@ internal class VideoEditorEngine(
 
     override fun playHeadMs(): Long? =
         playback.state?.let { playback.walk.timelineMs(playback.walk.clips, it.currentPositionMs) }
+
+    /** The cut's length, or the film's own while it is uncut (ME-263). */
+    override fun timelineMs(document: EditDocument): Long? =
+        TrimTool.clipsIn(document)?.totalMs() ?: playback.state?.durationMs?.takeIf { it > 0L }
 
     /** The film's colour, for the HDR pill (ME-304) — a film's codec parameters answer it. */
     override val sourceColor: StillColorInfo by lazy { codedColour(file) }

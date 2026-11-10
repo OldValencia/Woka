@@ -68,10 +68,14 @@ internal fun recordFreeze(
         still = frame
         if (frame.timestamp - startUs >= fromUs) break
     }
-    val shown = still?.let { picture?.draw(it) ?: it } ?: return
+    val held = still ?: return
+    var shown = picture?.draw(held, baseUs / 1000L) ?: held
     val stepUs = (1_000_000.0 / recorder.frameRate).toLong().coerceAtLeast(1L)
     var atUs = baseUs
     while (atUs < baseUs + clip.holdMs * 1000L) {
+        // Drawn again per slot only when the look moves with time, so a caption fades over a
+        // freeze as it does on the canvas (ME-263); otherwise the one drawing serves the hold.
+        if (picture != null && picture.moves && atUs > baseUs) shown = picture.draw(held, atUs / 1000L)
         pace.place(shown, atUs) { recorder.record(it, AV_PIX_FMT_RGBA) }
         atUs += stepUs
     }

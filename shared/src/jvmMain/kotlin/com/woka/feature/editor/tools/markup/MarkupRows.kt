@@ -34,7 +34,15 @@ internal fun markupRows(params: ParamSet, sourceSize: IntSize): List<ParamSpec<*
         typed -> if (plated) setOf(MarkupTool.Width) else setOf(MarkupTool.Width, MarkupTool.Corner)
         else -> setOf(MarkupTool.TextSize, MarkupTool.Fill, MarkupTool.Corner, MarkupTool.Faces)
     }
-    return MarkupTool.specs(sourceSize).filterNot { it.key in hidden.map { spec -> spec.key } }
+    return MarkupTool.specs(sourceSize).filterNot { it.key in hidden.map { spec -> spec.key } || it.isTiming() }
+}
+
+/** [markupRows], and for a film with a shape selected its timing rows (ME-263), ranged to the film. */
+internal fun markupRows(params: ParamSet, sourceSize: IntSize, selectedId: String?, timelineMs: Long?): List<ParamSpec<*>> {
+    val pen = markupRows(params, sourceSize)
+    val timed = selectedId != null && timelineMs != null && timelineMs > 0L &&
+        params[MarkupTool.Shapes].any { it.id == selectedId }
+    return if (timed) pen + timingRows(timelineMs) else pen
 }
 
 /**

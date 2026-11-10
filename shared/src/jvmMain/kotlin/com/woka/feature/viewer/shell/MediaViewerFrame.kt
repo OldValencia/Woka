@@ -59,7 +59,9 @@ fun MediaViewerFrame(
     // the ranges it kept played; re-read when a save says so, not per frame.
     val file = video?.player?.file
     val edit = remember(file, AppliedVideoEdits.generation) { file?.let { AppliedVideoEdits.editOf(it) } }
-    val edited = remember(frameToDraw, edit, color, moving) { edit?.painter(frameToDraw, color, moving) }
+    // Where the frame stands, for timed markup (ME-263) — read with the frame it belongs to.
+    val atMs = video?.player?.currentPositionMs
+    val edited = remember(frameToDraw, edit, color, moving) { edit?.painter(frameToDraw, color, moving, atMs) }
     val painter = edited ?: rememberFramePainter(frameToDraw, color, moving = moving)
     if (video != null && edit != null) PlayEditedRanges(video.player, edit.clock)
     if (video != null && edit != null) PlayEditedSound(video.player, edit)

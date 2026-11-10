@@ -6,6 +6,7 @@ import com.woka.feature.editor.core.EditorTimelineScope
 import com.woka.feature.editor.core.EditorTool
 import com.woka.feature.editor.core.NO_CLIP
 import com.woka.feature.editor.core.ToolCardinality
+import com.woka.feature.editor.core.TimeWindow
 import com.woka.feature.editor.core.ToolOp
 import com.woka.feature.editor.core.cancelPending
 import com.woka.feature.editor.core.commit
@@ -34,7 +35,8 @@ internal class EditorTimelineScopeImpl(
     private val session: EditorSession,
     private val tools: List<EditorTool>,
     private val selected: String?,
-    override val editing: Boolean
+    override val editing: Boolean,
+    override val markedSpan: TimeWindow? = null
 ) : EditorTimelineScope {
 
     override val selectedId: String? get() = selected

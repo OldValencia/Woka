@@ -62,4 +62,7 @@ interface EditorTimelineScope {
 
     /** The layer every clip plays under, whichever clip is open (review 1.0.7, F3). */
     val sharedOps: List<ToolOp> get() = emptyList()
+
+    /** When the shape the canvas has selected is on screen, for the strip (ME-263); null for none. */
+    val markedSpan: TimeWindow? get() = null
 }

@@ -38,6 +38,11 @@ shared layer (`EditorSession.sharedOps`) instead of subtracting, and shows a dra
 other clips only when the shared layer is what is being dragged. Files written by 1.0.6 now render
 as they were edited. Tests: `ClipLayeringTest`.
 
+Markup is `Single` too — one op holds every shape — so a clip's own markup now replaces the
+film's on that clip, as it already did on screen while the clip was open. Its op was seeded from
+the film's shapes when the panel opened, so the film's shapes are in it; a film shape added after
+that does not reach the clip.
+
 ### F3 — the same split broke a clip's own sound, the other way round — **fixed 2026-11-10**
 Sound **multiplies**: the film's mute, volume and fades over the whole timeline, times the playing
 clip's own (ME-240; `soundGain`, `VideoRender`, `MixClipSound`).

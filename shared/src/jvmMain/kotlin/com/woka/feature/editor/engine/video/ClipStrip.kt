@@ -120,6 +120,7 @@ internal fun ClipStrip(
                 if (tabs && clip.id == selectedId && drag == null) SelectedClipBar(state, clips, clip, edits, shown.left + shown.width / 2f)
             }
             if (edits.editing) TrimmedEnds(geometry, laidOut, durationMs, selectedId, null)
+            edits.markedSpan?.let { MarkedSpan(geometry, laidOut, it) }
             PlayHead(player, walk, laidOut, geometry, edits.editing && drag == null, onFreeze = { state.freezeAtPlayHead() }) {
                 state.splitAtPlayHead()
             }

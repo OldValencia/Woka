@@ -66,7 +66,8 @@ internal fun ParamRows(
     val writer = ParamWriter(session, tool, picture, selectedId)
     // What this tool wants shown for the values it currently holds — all of them, for
     // every tool but Markup.
-    val shown = tool.rows(params, picture.sourceSize)
+    val shown = (tool as? CanvasTool)?.rows(params, picture.sourceSize, selectedId(), picture.timelineMs)
+        ?: tool.rows(params, picture.sourceSize)
     // A spec that rides inside another spec's popover gets **no control of its own**
     // (ME-155). `rows` still names it, and must: it is still written, still folded and
     // still saved — only the place it is reached from has moved.

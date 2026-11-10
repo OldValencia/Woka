@@ -1,6 +1,11 @@
 package com.woka.unit
 
 import com.woka.feature.editor.engine.image.RasterStage
+import com.woka.feature.editor.tools.markup.MarkupAppearsParam
+import com.woka.feature.editor.tools.markup.MarkupFadeInParam
+import com.woka.feature.editor.tools.markup.MarkupFadeOutParam
+import com.woka.feature.editor.tools.markup.MarkupFromPlayHeadParam
+import com.woka.feature.editor.tools.markup.MarkupHoldsParam
 import com.woka.feature.editor.tools.markup.MarkupPoint
 import com.woka.feature.editor.tools.markup.MarkupShape
 import com.woka.feature.editor.tools.markup.MarkupTool
@@ -45,7 +50,14 @@ class MarkupTextStageTest {
                 MarkupTool.TextSize,
                 // The faces after the size they modify (ME-151).
                 MarkupTool.Faces,
-                MarkupTool.Shapes
+                // A film's timing rows, drawn only with a shape selected (ME-263).
+                MarkupAppearsParam,
+                MarkupFromPlayHeadParam,
+                MarkupHoldsParam,
+                MarkupFadeInParam,
+                MarkupFadeOutParam,
+                MarkupTool.Shapes,
+                MarkupTool.Windows
             ),
             MarkupTool.params
         )

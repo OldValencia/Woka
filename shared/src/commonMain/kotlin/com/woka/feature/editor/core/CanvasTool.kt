@@ -1,6 +1,7 @@
 package com.woka.feature.editor.core
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.IntSize
 
 /**
  * A tool that also needs direct manipulation on the canvas — crop, markup, trim.
@@ -94,6 +95,21 @@ interface CanvasTool : EditorTool {
      * the panel describe what is under the cursor.
      */
     fun displayed(params: ParamSet, selectedId: String?): ParamSet = params
+
+    /**
+     * [rows] and [restyled], told what only the shell knows (ME-263): the shape
+     * [selectedId], and how long a film's timeline is — [timelineMs], null for a still. Markup
+     * draws its timing rows only for a film with a shape selected, ranged to the film.
+     * Each defaults to its plain twin, so a tool with no time in it overrides nothing.
+     */
+    fun rows(params: ParamSet, sourceSize: IntSize, selectedId: String?, timelineMs: Long?): List<ParamSpec<*>> =
+        rows(params, sourceSize)
+
+    fun restyled(spec: ParamSpec<*>, params: ParamSet, selectedId: String?, timelineMs: Long?): ParamSet? =
+        restyled(spec, params, selectedId)
+
+    /** When the shape [selectedId] is on a film's timeline, for the strip (ME-263); null for none. */
+    fun spanOf(document: EditDocument, selectedId: String?): TimeWindow? = null
 
     @Composable
     fun Overlay(scope: EditorToolScope)

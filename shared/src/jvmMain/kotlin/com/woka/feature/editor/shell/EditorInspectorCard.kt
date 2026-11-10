@@ -60,7 +60,7 @@ internal fun EditorInspectorCard(
         animationSpec = spring(dampingRatio = 0.82f, stiffness = 300f)
     )
 
-    val picture = PictureFacts(frame, engine.sourceSize, engine.stats, engine::playHeadMs)
+    val picture = PictureFacts(frame, engine.sourceSize, engine.stats, engine::playHeadMs, engine.timelineMs(document))
     CompositionLocalProvider(LocalInspectorAccessory provides accessory) {
         GooeyPair(
             progress = progress,

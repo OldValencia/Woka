@@ -52,9 +52,12 @@ internal class RecipePicture(
 
     override val outputSize = evenSize(recipe.outputSize.width, recipe.outputSize.height)
 
-    override fun draw(frame: Frame): Frame {
+    /** Markup may be timed on a film; nothing else in a recipe changes with time. */
+    override val moves = recipe.paints.isNotEmpty()
+
+    override fun draw(frame: Frame, atMs: Long): Frame {
         val (out, pixels) = buffersOf(outputSize)
-        val drawn = renderAtNativeScale(frame.toComposeBitmap(), sourceSize, stagedFor(frame))
+        val drawn = renderAtNativeScale(frame.toComposeBitmap(), sourceSize, stagedFor(frame).copy(atMs = atMs))
         try {
             // The top-left even-sized region: an odd crop loses its last row or column.
             drawn.readPixels(pixels, 0, 0)
@@ -104,7 +107,12 @@ internal fun evenSize(width: Int, height: Int) =
 /** What a frame looks like after the recipe, at the encoder's size. */
 internal interface FramePicture {
     val outputSize: EvenSize
-    fun draw(frame: Frame): Frame
+
+    /** Whether the same frame looks different at another time — timed markup (ME-263). */
+    val moves: Boolean get() = false
+
+    /** [frame] through the recipe, at timeline millisecond [atMs] of the result. */
+    fun draw(frame: Frame, atMs: Long): Frame
 }
 
 /** The output `Frame` and the Skia readback bitmap a render draws every frame into. */
