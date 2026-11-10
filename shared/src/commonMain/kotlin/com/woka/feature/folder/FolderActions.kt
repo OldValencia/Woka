@@ -25,11 +25,8 @@ object FolderActions {
             val file = File(path)
             if (file.exists()) {
                 val newFile = copyNameBeside(file.parentFile, file)
-                if (file.isDirectory) {
-                    file.copyRecursively(newFile)
-                } else {
-                    file.copyTo(newFile)
-                }
+                // Whole or not at all, so the tile never opens on half a file.
+                copyWhole(file, newFile)
             }
         }
     }
@@ -58,13 +55,8 @@ object FolderActions {
                 if (file.exists() && !isSamePlace(destDir, file)) {
                     val newFile = File(destDir, file.name)
                     if (!file.renameTo(newFile)) {
-                        if (file.isDirectory) {
-                            file.copyRecursively(newFile)
-                            file.deleteRecursively()
-                        } else {
-                            file.copyTo(newFile)
-                            file.delete()
-                        }
+                        copyWhole(file, newFile)
+                        if (file.isDirectory) file.deleteRecursively() else file.delete()
                     }
                 }
             }
@@ -92,7 +84,8 @@ object FolderActions {
                     // `targetFor` has already found a free name, so there is nothing there
                     // to overwrite. Passing it anyway would leave a loaded gun for the next
                     // person who changes the naming rule.
-                    if (file.isDirectory) file.copyRecursively(newFile) else file.copyTo(newFile)
+                    // And whole, so the tile never opens on a copy still being written.
+                    copyWhole(file, newFile)
                 }
             }
         }
