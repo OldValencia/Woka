@@ -19,5 +19,10 @@ import androidx.compose.runtime.Immutable
 data class EditorExport(
     val id: String,
     val title: String,
-    val summary: String
+    val summary: String,
+    /**
+     * Where the play head stood when the entry was chosen (ME-294), stamped by the shell
+     * before the editor closes — the player goes with it. Null for a medium with no time.
+     */
+    val atMs: Long? = null
 )

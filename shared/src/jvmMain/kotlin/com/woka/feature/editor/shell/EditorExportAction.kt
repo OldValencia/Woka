@@ -40,10 +40,12 @@ internal fun exportAction(
         EditorRenderStatus.failed("A render is already running. Wait for it, or cancel it first.")
     } else {
         val layers = session.layers(scope)
+        // Read before the close takes the player with it (ME-294).
+        val chosen = export.copy(atMs = engine.playHeadMs())
         onClose()
         val job = EditorRenderStatus.scope.launch(start = CoroutineStart.LAZY) {
             try {
-                val result = engine.export(export, layers) { fraction ->
+                val result = engine.export(chosen, layers) { fraction ->
                     EditorRenderStatus.scope.launch { EditorRenderStatus.progress(fraction) }
                 }
                 when (result) {

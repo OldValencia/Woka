@@ -101,7 +101,7 @@ private fun recordClips(
                 if (atUs >= untilUs) pictureDone = true
                 if (atUs < fromUs || atUs >= untilUs) continue
                 val outUs = baseUs + ((atUs - fromUs) / clip.speed.toDouble()).toLong()
-                pace.place(picture?.draw(frame) ?: frame, outUs) { recorder.record(it, AV_PIX_FMT_RGBA) }
+                pace.place(picture?.draw(frame, outUs / 1000L) ?: frame, outUs) { recorder.record(it, AV_PIX_FMT_RGBA) }
                 if (totalUs > 0) progress(outUs.toFloat() / totalUs)
             } else if (frame.samples != null) {
                 if (atUs >= untilUs) soundDone = true

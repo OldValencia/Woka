@@ -74,4 +74,7 @@ interface EditorEngineSurface {
      * writes (ME-287). Null for a medium with no time, which is a still.
      */
     fun playHeadMs(): Long? = null
+
+    /** How long the result of [document] is, in milliseconds (ME-263); null for a still. */
+    fun timelineMs(document: EditDocument): Long? = null
 }

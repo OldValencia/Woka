@@ -37,6 +37,8 @@ private val BAND_WIDTH = 640.dp
 private val BAND_PADDING = 10.dp
 private val BAND_GAP = 10.dp
 
+private val READOUT_TO_SOUND = (-5).dp
+
 /** The clip bar's height and its lift above the strip (`ClipBar`). */
 private val CLIP_BAR_ROOM = 40.dp
 
@@ -74,6 +76,7 @@ internal fun VideoEditorBand(
     val walk = holder.walk
     val zoom = remember(holder) { StripZoom() }
     val cells = rememberFilmstrip(holder.state?.file, duration, codedSize)
+    val peaks = rememberAudioPeaks(holder.state?.file, duration)
     if (player != null && duration > 0L) WalkClips(player, walk, clips)
     if (player != null && duration > 0L) MixClipSound(player, walk, clips, document, edits)
     // The selected clip's bar floats above the band; the room is kept so the inspector over
@@ -99,17 +102,21 @@ internal fun VideoEditorBand(
         }
         FrameStep(direction = 1) { player?.let { walk.step(it, 1, bySecond = false) } }
         if (player != null && duration > 0L) {
-            ClipStrip(player, walk, clips, cells, edits, duration, zoom, Modifier.weight(1f))
+            ClipStrip(player, walk, clips, cells, edits, duration, zoom, Modifier.weight(1f), peaks)
         } else {
             Spacer(Modifier.weight(1f))
         }
         ZoomPill(zoom)
-        Readout(
-            position = { player?.let { walk.timelineMs(clips, it.currentPositionMs) } ?: 0L },
-            duration = clips.totalMs(),
-            fps = player?.frameRate(),
-            sourceMs = duration
-        )
+        // The speaker sits close by the time it belongs to, not a band gap away.
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(READOUT_TO_SOUND)) {
+            Readout(
+                position = { player?.let { walk.timelineMs(clips, it.currentPositionMs) } ?: 0L },
+                duration = clips.totalMs(),
+                fps = player?.frameRate(),
+                sourceMs = duration
+            )
+            SoundRowToggle()
+        }
     }
 }
 

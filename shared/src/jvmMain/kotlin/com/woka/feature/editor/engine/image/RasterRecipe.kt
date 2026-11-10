@@ -53,7 +53,9 @@ data class RasterRecipe(
     val colorFilter: ColorFilter?,
     val shaders: List<RasterStage.Shader> = emptyList(),
     val paints: List<RasterStage.Paint>,
-    val skipped: List<ToolOp>
+    val skipped: List<ToolOp>,
+    /** Where on a film's timeline this frame stands, for [paints] (ME-263); null for a still. */
+    val atMs: Long? = null
 )
 
 /**

@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.woka.core.ui.components.resetOnRightClick
 import com.woka.feature.editor.core.EditorTimelineScope
+import com.woka.feature.editor.tools.sound.SoundTool
 import com.woka.feature.editor.tools.trim.TrimClip
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import kotlin.math.roundToInt
@@ -55,13 +56,16 @@ internal fun ClipStrip(
     edits: EditorTimelineScope,
     durationMs: Long,
     zoom: StripZoom,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** The film's sound for the row under the strip (ME-241), shown while [SoundRows] says so. */
+    peaks: AudioPeaks? = null
 ) {
     val state = remember(player, walk) { StripState(player, walk) }
     SideEffect { state.refresh(clips, edits, durationMs) }
     // Clips are picked in every tool once there are two (2026-11-05); cut only in Clips.
     val tabs = edits.editing || clips.size > 1
-    val height by animateDpAsState(if (edits.editing) FILM_EDITING else FILM_RESTING + if (tabs) CLIP_TAB_HEIGHT else 0.dp)
+    val sound = if (SoundRows.shown && peaks != null) SOUND_ROOM else 0.dp
+    val height by animateDpAsState((if (edits.editing) FILM_EDITING else FILM_RESTING + if (tabs) CLIP_TAB_HEIGHT else 0.dp) + sound)
     val drag = state.drag
     // The document as it stands, always — an edge drag re-flows it live (`edgeLayout`).
     val laidOut = clips
@@ -112,18 +116,24 @@ internal fun ClipStrip(
                         .offset { IntOffset(shown.left.roundToInt(), 0) }
                         .width(with(density) { shown.width.toDp() })
                         .fillMaxHeight()
-                        .padding(bottom = if (tabs) CLIP_TAB_HEIGHT else 0.dp),
+                        .padding(bottom = (if (tabs) CLIP_TAB_HEIGHT else 0.dp) + sound),
                     fullWidthPx = span.width,
                     shiftPx = shown.left - span.left
                 )
                 // Over the part of the clip on screen, so a zoom does not carry it off.
                 if (tabs && clip.id == selectedId && drag == null) SelectedClipBar(state, clips, clip, edits, shown.left + shown.width / 2f)
             }
+            // Under the play head, which runs down through it.
+            if (sound > 0.dp && peaks != null) SoundRow(laidOut, geometry, widthPx, peaks, SoundTool.mixIn(edits.sharedOps), { key -> SoundTool.mixIn(edits.ownOps(key)) }) { ms -> walk.seekTo(player, laidOut, ms) }
             if (edits.editing) TrimmedEnds(geometry, laidOut, durationMs, selectedId, null)
+            edits.markedSpan?.let { MarkedSpan(geometry, laidOut, it) }
             PlayHead(player, walk, laidOut, geometry, edits.editing && drag == null, onFreeze = { state.freezeAtPlayHead() }) {
                 state.splitAtPlayHead()
             }
-            if (tabs) ClipTabs(laidOut, geometry, selectedId, pulse) { id -> laidOut.firstOrNull { it.id == id }?.let(state::pickTab) }
+            // The tabs sit under their clips, above the sound row.
+            if (tabs) Box(Modifier.fillMaxSize().padding(bottom = sound)) {
+                ClipTabs(laidOut, geometry, selectedId, pulse) { id -> laidOut.firstOrNull { it.id == id }?.let(state::pickTab) }
+            }
             ZoomOverview(zoom, geometry)
         }
     }

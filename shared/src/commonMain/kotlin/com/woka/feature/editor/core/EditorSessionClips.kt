@@ -29,6 +29,22 @@ fun EditorSession.ownOpsOf(key: Int): List<ToolOp> {
 }
 
 /**
+ * What [tool]'s panel reads and writes from (review 1.0.7, F3): the [document] on screen, or —
+ * for a tool whose clip op multiplies the shared layer's — the open clip's own work alone, so
+ * its values start neutral instead of copying the film's into the clip and applying them twice.
+ */
+fun EditorSession.panelDocument(document: EditDocument, tool: ToolManifest): EditDocument {
+    if (!tool.multipliesShared || !film.linear || frame == NO_CLIP) return document
+    return document.copy(ops = document.ops - base.ops.toSet())
+}
+
+/** Whether one clip of a film is selected — the scope the film-only rows hide in (ME-246). */
+val EditorSession.clipOpen: Boolean get() = film.linear && frame != NO_CLIP
+
+/** The layer every clip draws under, whichever document is on screen (review 1.0.7, F1). */
+val EditorSession.sharedOps: List<ToolOp> get() = sharedLayer.ops
+
+/**
  * Gives clip [to] the look clip [from] has — a split's right half, a duplicate (ME-215).
  *
  * Called from `All Clips`, the only scope the strip cuts in, so the document on screen is

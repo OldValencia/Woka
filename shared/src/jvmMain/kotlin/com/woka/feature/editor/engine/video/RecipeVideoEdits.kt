@@ -104,11 +104,11 @@ private class FoldedVideoEdit(
     private val recipe: RasterRecipe?
         get() = recipes[clock.ranges.getOrNull(clock.index)?.key ?: 0]
 
-    override fun painter(frame: ImageBitmap, color: StillColorInfo, moving: Boolean): Painter? {
+    override fun painter(frame: ImageBitmap, color: StillColorInfo, moving: Boolean, sourceMs: Long?): Painter? {
         val recipe = recipe ?: return null
         // A moving frame arrives untone-mapped (ME-205), so its HDR pass leads the chain.
         val hdr = if (moving) hdrStageFor(color) else null
-        return RecipePainter(frame, sourceSize, recipe.copy(source = hdr))
+        return RecipePainter(frame, sourceSize, recipe.copy(source = hdr, atMs = sourceMs?.let { clock.toTimeline(it) }))
     }
 
     /** The look of the clip the cover is in (ME-287), else the first clip's. */

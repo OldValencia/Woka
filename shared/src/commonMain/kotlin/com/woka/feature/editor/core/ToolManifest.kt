@@ -26,6 +26,7 @@ import org.jetbrains.compose.resources.DrawableResource
  * | [cardinality] | whether a new operation replaces or appends |
  * | [interaction] | commit on change, on release, or hand to the overlay |
  * | [shortcut] | the keyboard table and the `?` popover |
+ * | [multipliesShared] | where an open clip's panel starts (`panelDocument`) |
  */
 @Immutable
 data class ToolManifest(
@@ -41,5 +42,10 @@ data class ToolManifest(
     val supports: Set<MediaKind> = setOf(MediaKind.Image, MediaKind.Video),
     val cardinality: ToolCardinality = ToolCardinality.Single,
     val interaction: ToolInteraction = ToolInteraction.Continuous,
-    val shortcut: EditorShortcut? = null
+    val shortcut: EditorShortcut? = null,
+    // A clip's own op **multiplies** the shared layer's rather than replacing it (review
+    // 1.0.7, F3): a clip's sound is the film's times its own, so its panel starts neutral.
+    val multipliesShared: Boolean = false,
+    // Rows only the whole film carries (ME-246): hidden while one clip is selected.
+    val filmOnly: Set<String> = emptySet()
 )

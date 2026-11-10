@@ -11,6 +11,7 @@ import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditorEngine
 import com.woka.feature.editor.core.EditorSession
 import com.woka.feature.editor.core.EditorTool
+import com.woka.feature.editor.core.panelDocument
 
 /**
  * The open tool's card: its header, its schema-rendered rows, and the panel that slides
@@ -59,7 +60,7 @@ internal fun EditorInspectorCard(
         animationSpec = spring(dampingRatio = 0.82f, stiffness = 300f)
     )
 
-    val picture = PictureFacts(frame, engine.sourceSize, engine.stats, engine::playHeadMs)
+    val picture = PictureFacts(frame, engine.sourceSize, engine.stats, engine::playHeadMs, engine.timelineMs(document))
     CompositionLocalProvider(LocalInspectorAccessory provides accessory) {
         GooeyPair(
             progress = progress,
@@ -71,7 +72,7 @@ internal fun EditorInspectorCard(
                 title = activeTool.manifest.title,
                 // The tool's own line, then the medium's word on it (`EditorEngine.toolNote`).
                 footnote = listOfNotNull(
-                    activeTool.footnote(paramsOf(document, activeTool, engine.sourceSize), frame),
+                    activeTool.footnote(paramsOf(session.panelDocument(document, activeTool.manifest), activeTool, engine.sourceSize), frame),
                     engine.toolNote(activeTool.manifest.id)
                 ).joinToString(" · ").ifEmpty { null },
                 // The dock is the ceiling: a card sizes to its content and stops

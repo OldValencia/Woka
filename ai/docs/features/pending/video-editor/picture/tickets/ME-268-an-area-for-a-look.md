@@ -1,5 +1,9 @@
 # ME-268 — An area for Adjust and Styles: rectangle or ellipse
 
+> **Dropped 2026-11-10, id retained.** Built in full that day — an SkSL mask stage, the Area /
+> Feather rows, a canvas box on Crop's handles, render tests green — and reverted unshipped by the
+> author against the KISS brief (`video-editor.md` §6). Kept as the record of what it would take.
+
 | | |
 |---|---|
 | **Order** | after ME-215 — an area's *time* is its clip |

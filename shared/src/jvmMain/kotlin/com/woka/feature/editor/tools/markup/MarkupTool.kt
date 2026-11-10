@@ -14,7 +14,6 @@ import com.woka.feature.editor.core.ToolDomain
 import com.woka.feature.editor.core.ToolInteraction
 import com.woka.feature.editor.core.ToolManifest
 import com.woka.feature.editor.core.ToolStage
-import com.woka.feature.editor.engine.image.RasterStage
 import kotlinx.serialization.builtins.ListSerializer
 
 /**
@@ -91,9 +90,12 @@ object MarkupTool : CanvasTool {
      */
     val Faces = MarkupFacesParam
 
-    /** The pen first, then the payload the inspector deliberately draws nothing for. */
+    /** When each shape is on screen in a film (ME-263) — `MarkupTiming`. */
+    val Windows = MarkupWindowsParam
+
+    /** The pen first, then the timing, then the payloads the inspector draws nothing for. */
     override val params: List<ParamSpec<*>> =
-        listOf(Kind, Color, Fill, Corner, Width, TextSize, Faces, Shapes)
+        listOf(Kind, Color, Fill, Corner, Width, TextSize, Faces) + TIMING + listOf(Shapes, Windows)
 
     /** Which of those are worth drawing for the pen currently chosen — `MarkupRows`. */
     /** The two size specs re-defaulted for this picture (ME-159); everything else as declared. */
@@ -103,6 +105,10 @@ object MarkupTool : CanvasTool {
     override fun rows(params: ParamSet, sourceSize: IntSize): List<ParamSpec<*>> =
         markupRows(params, sourceSize)
 
+    /** Plus the timing rows, for a film with a shape selected (ME-263). */
+    override fun rows(params: ParamSet, sourceSize: IntSize, selectedId: String?, timelineMs: Long?) =
+        markupRows(params, sourceSize, selectedId, timelineMs)
+
     /** The pen on one line and its style on the next, both compact (ME-155). */
     override fun lines(rows: List<ParamSpec<*>>): List<List<ParamSpec<*>>> = markupLines(rows)
 
@@ -110,25 +116,8 @@ object MarkupTool : CanvasTool {
     override fun folded(spec: ParamSpec<*>, rows: List<ParamSpec<*>>): List<ParamSpec<*>> =
         markupFolded(spec, rows)
 
-    /**
-     * **One stage for every shape**, drawn in list order.
-     *
-     * One rather than one each, because the fold collapses paints into a list it walks
-     * per frame: a hundred arrows would otherwise be a hundred stages, sorted and mapped,
-     * to produce the same hundred draw calls.
-     *
-     * Null for an empty list — the rule every tool follows, so opening the panel and
-     * closing it again leaves the document exactly as it was found.
-     */
-    override fun stage(params: ParamSet): ToolStage? {
-        // A text shape nobody typed into draws nothing, so a list holding only those is a
-        // list of nothing — and a stage that paints no pixel is still a stage the fold
-        // walks and sorts on every frame.
-        val shapes = params[Shapes].filterNot { it is MarkupShape.Text && it.text.isBlank() }
-        if (shapes.isEmpty()) return null
-
-        return RasterStage.Paint { shapes.forEach { shape -> drawMarkup(shape) } }
-    }
+    /** Every shape in one stage, each at its own time on a film — `markupStage`. */
+    override fun stage(params: ParamSet): ToolStage? = markupStage(params)
 
     /** Marks to touch with no tool open (ME-149) — none on a picture nobody has drawn on. */
     override fun selectableIn(document: EditDocument): Boolean =
@@ -141,9 +130,19 @@ object MarkupTool : CanvasTool {
     override fun restyled(spec: ParamSpec<*>, params: ParamSet, selectedId: String?): ParamSet? =
         restyleSelected(spec, params, selectedId)
 
+    /** And a timing row to that shape's window (ME-263). */
+    override fun restyled(spec: ParamSpec<*>, params: ParamSet, selectedId: String?, timelineMs: Long?) =
+        restyleTiming(spec, params, selectedId, timelineMs) ?: restyleSelected(spec, params, selectedId)
+
     /** And the panel reports that shape rather than the pen — `displaySelected`. */
     override fun displayed(params: ParamSet, selectedId: String?): ParamSet =
-        displaySelected(params, selectedId)
+        displayTiming(displaySelected(params, selectedId), selectedId)
+
+    /** `Appear at play head` reads the shapes from the document, not from the action's blank set. */
+    override fun atPlayHead(spec: ParamSpec<*>, params: ParamSet, playHeadMs: Long, document: EditDocument) =
+        appearAtPlayHead(spec, playHeadMs, document)
+
+    override fun spanOf(document: EditDocument, selectedId: String?) = windowOf(document, selectedId)
 
     @Composable
     override fun Overlay(scope: EditorToolScope) = MarkupOverlay(scope)

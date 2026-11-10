@@ -44,9 +44,11 @@ interface AppliedVideoEdit {
      * the frame's — or null when the edit changes nothing on the picture (a cut alone),
      * so the viewer keeps its own painter. The clip is the one [clock] is in (ME-215), so a
      * look that is one clip's own draws there and nowhere else. [color] and [moving] are the viewer's own
-     * answers, for the HDR pass that has to run before the edit grades anything.
+     * answers, for the HDR pass that has to run before the edit grades anything. [sourceMs]
+     * is where in the file [frame] stands, so timed markup fades as it did in the editor
+     * (ME-263); null draws every shape whole.
      */
-    fun painter(frame: ImageBitmap, color: StillColorInfo, moving: Boolean): Painter?
+    fun painter(frame: ImageBitmap, color: StillColorInfo, moving: Boolean, sourceMs: Long? = null): Painter?
 
     /**
      * The grid's poster, edited — through the look of the clip [coverMs] falls in, else the

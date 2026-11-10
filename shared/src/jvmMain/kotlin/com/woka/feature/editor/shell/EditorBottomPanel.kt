@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import com.woka.feature.editor.core.CanvasTool
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditorEngine
@@ -66,7 +67,8 @@ internal fun BoxScope.EditorBottomPanel(
         session = session,
         tools = tools,
         selected = clipSelection,
-        editing = activeTool?.manifest?.domain == ToolDomain.Time
+        editing = activeTool?.manifest?.domain == ToolDomain.Time,
+        markedSpan = (activeTool as? CanvasTool)?.spanOf(document, selectedId())
     )
 
     Column(

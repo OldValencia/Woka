@@ -39,5 +39,7 @@ internal data class PictureFacts(
      */
     val stats: SourceStats? = null,
     /** Where the play head stands, **read at the click** (ME-287); null for a still. */
-    val playHeadMs: () -> Long? = { null }
+    val playHeadMs: () -> Long? = { null },
+    /** How long a film's result is, for rows ranged to it (ME-263); null for a still. */
+    val timelineMs: Long? = null
 )

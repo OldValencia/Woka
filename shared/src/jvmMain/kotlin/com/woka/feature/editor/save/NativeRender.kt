@@ -50,7 +50,7 @@ internal fun renderAtNativeScale(
         }
         // Outside the transform, exactly as on screen: a crop clips markup rather
         // than moving it (§3.4's application order).
-        recipe.paints.forEach { paint -> paint.draw(this) }
+        recipe.paints.forEach { paint -> paint.draw(this, recipe.atMs) }
     }
     surface.makeImageSnapshot()
 }

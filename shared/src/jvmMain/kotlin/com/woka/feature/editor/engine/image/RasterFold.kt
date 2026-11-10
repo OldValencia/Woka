@@ -115,6 +115,7 @@ private fun orderedStages(
     val enabled = registry.tools(MediaKind.Image).value
     return applied(document, registry)
         .mapNotNull { op -> resolve(op, registry, enabled, skipped) }
+        .let { lastOfEachSingle(it) }
         .sortedBy { (_, tool) -> tool.manifest.domain.ordinal }
         .mapNotNull { (op, tool) -> tool.stage(op.params) as? RasterStage }
         .flatMap { flatten(it) }
