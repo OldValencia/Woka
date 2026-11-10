@@ -53,6 +53,10 @@ internal class DoneChoices(
     /** What the button does in `Done`'s place — the first export — or null where `Done` stays. */
     val instead: (() -> Unit)?
         get() = exports.firstOrNull()?.takeIf { !keeps }?.let { export -> { onExport(export) } }
+
+    /** What the caret offers beside the button: every export, or — the first being the button — the rest (ME-294). */
+    val menu: List<EditorExport>
+        get() = if (keeps) exports else exports.drop(1)
 }
 
 internal fun doneChoicesOf(engine: EditorEngine, onExport: (EditorExport) -> Unit) =
@@ -72,16 +76,19 @@ internal fun DoneMenu(choices: DoneChoices, onDone: () -> Unit, onDismiss: () ->
         onDismissRequest = onDismiss
     ) {
         MenuSurface(Modifier.width(MENU_WIDTH).testTag("editor-done-menu")) {
-            DoneMenuEntry(
-                title = "Done",
-                summary = "Instant. The edit goes into the file, the video is not re-encoded.",
-                tag = "editor-done-menu-done"
-            ) {
-                onDismiss()
-                onDone()
+            // `Done` heads the menu only where it is the button (ME-289).
+            if (choices.keeps) {
+                DoneMenuEntry(
+                    title = "Done",
+                    summary = "Instant. The edit goes into the file, the video is not re-encoded.",
+                    tag = "editor-done-menu-done"
+                ) {
+                    onDismiss()
+                    onDone()
+                }
+                Box(Modifier.fillMaxWidth().padding(vertical = 4.dp).height(1.dp).background(Theme.colors.border))
             }
-            Box(Modifier.fillMaxWidth().padding(vertical = 4.dp).height(1.dp).background(Theme.colors.border))
-            choices.exports.forEach { export ->
+            choices.menu.forEach { export ->
                 DoneMenuEntry(export.title, export.summary, "editor-export-${export.id}") {
                     onDismiss()
                     choices.onExport(export)

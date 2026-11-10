@@ -200,8 +200,10 @@ the inspector says "Applies when you render the video" (`EditorEngine.toolNote`)
 ### ME-263 — promoted 2026-11-02
 [`picture/tickets/ME-263-markup-appears-holds-fades.md`](picture/tickets/ME-263-markup-appears-holds-fades.md).
 
-### ME-268 — new, promoted 2026-11-02
-[`picture/tickets/ME-268-an-area-for-a-look.md`](picture/tickets/ME-268-an-area-for-a-look.md) — rectangle and ellipse areas.
+### ME-268 — dropped 2026-11-10, id retained
+[`picture/tickets/ME-268-an-area-for-a-look.md`](picture/tickets/ME-268-an-area-for-a-look.md) — rectangle and ellipse areas;
+built, then reverted unshipped: a fixed area is of little use on a moving picture without tracking,
+and it made the colour tools canvas tools (`video-editor.md` §6, 2026-11-10).
 
 ### ME-265 — dropped 2026-11-05, id retained
 The editor already has auto-enhance, and the author judged a better one is not reachable without a
@@ -280,7 +282,15 @@ ME-290 the probe, ME-291 the render with ME-292 and ME-293's progress and cancel
 [`render/tickets/ME-291-render-video.md`](render/tickets/ME-291-render-video.md). ME-293's
 *a render still running when the window closes* is answered by a scratch file deleted on exit.
 
-### ME-294 — This frame as a photo
+### ME-294 — This frame as a photo — done 2026-11-10 without a ticket
+`Done ▾` → **Save frame as photo** (`render/FramePhoto.kt`): the frame under the play head,
+decoded exactly, through its clip's look with markup at that moment and the canvas's HDR mode, at
+the coded size and without Resize, turned upright, as `name 1m05s.jpg` (quality 100, the author) beside the film —
+numbered, never an overwrite. The play head is stamped on the export before the editor closes
+(`EditorExport.atMs`). A film that cannot keep an edit gets it under the `Render video…` button's
+caret, which lists the exports beside the button. Test: `FramePhotoTest`.
+
+As specified:
 The current frame at coded resolution, through the recipe, written beside the video. The still save
 path already renders a recipe at native scale; this is that, given a frame instead of a bitmap.
 *Depends on ME-260.*

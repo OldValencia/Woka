@@ -11,6 +11,8 @@ import com.woka.feature.editor.core.EditorExport
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.core.ToolOp
 import com.woka.feature.editor.engine.video.render.RenderVideo
+import com.woka.feature.editor.engine.video.render.SaveFramePhoto
+import com.woka.feature.editor.engine.video.render.saveFramePhoto
 import com.woka.feature.editor.engine.video.render.renderOnlyNote
 import com.woka.feature.editor.engine.video.render.renderVideo
 import com.woka.feature.editor.tools.trim.TrimTool
@@ -57,15 +59,19 @@ internal abstract class VideoEditorOutputs(
     override suspend fun revert(scope: EditScope, frameIndex: Int): EditSaveResult =
         withContext(Dispatchers.IO) { writes.revert(scope, frameIndex) }
 
-    /** `Render video…` beside `Done` — a new file, the source untouched (ME-291). */
-    override val exports = listOf(RenderVideo)
+    /** `Render video…` beside `Done`, and this frame as a photo (ME-291, ME-294) — new files, the source untouched. */
+    override val exports = listOf(RenderVideo, SaveFramePhoto)
 
     override fun toolNote(toolId: String): String? = renderOnlyNote(toolId)
 
     override suspend fun export(export: EditorExport, layers: EditLayers, progress: (Float) -> Unit) =
         withContext(Dispatchers.IO) {
             val job = coroutineContext.job
-            renderVideo(file, layers.base, looksFor(layers), registry, sourceSize, { job.isActive }, progress)
+            if (export.id == SaveFramePhoto.id) {
+                saveFramePhoto(file, layers.base, looksFor(layers), registry, sourceSize, export.atMs ?: 0L)
+            } else {
+                renderVideo(file, layers.base, looksFor(layers), registry, sourceSize, { job.isActive }, progress)
+            }
         }
 
     abstract override val sourceSize: IntSize

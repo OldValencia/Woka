@@ -55,7 +55,7 @@ internal fun DoneButton(onDone: () -> Unit, choices: DoneChoices = DoneChoices(e
         // **`Done ▾` only where there is something beside `Done`** (§4.5): a still has no
         // export, and a caret that opened a one-entry menu would be a second way to press
         // the same button.
-        if (choices.keeps && choices.exports.isNotEmpty()) {
+        if (choices.menu.isNotEmpty()) {
             DoneCaret { menuOpen = true }
             if (menuOpen) DoneMenu(choices, onDone) { menuOpen = false }
         }
