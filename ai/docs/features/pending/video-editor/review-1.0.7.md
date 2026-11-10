@@ -56,6 +56,14 @@ clip's own (ME-240; `soundGain`, `VideoRender`, `MixClipSound`).
 reads and writes from the clip's own work alone (`EditorSession.panelDocument`), so it starts at
 the defaults. `MixClipSound` takes the film's half from `EditorTimelineScope.sharedOps`.
 
+### F5 — the test JVM dies in native FFmpeg inside a render's decode — **open, intermittent**
+Found 2026-11-10 in a full `:shared:build`: twice in about eight runs, once with a dump
+(`shared/hs_err_pid30068.log`). `EXCEPTION_ACCESS_VIOLATION` at pc 0 in `avutil-60.dll`, under
+`avcodec_send_packet` ← `FrameRender.recordClips` ← `FreshFrameGrabber.grabFrame`, in
+`RenderSoundSyncTest` "cuts off keyframes keep the sound as long as the picture" — a cut render,
+no area, no markup. The rerun passes. No native frames in the dump, so the cause is not known;
+the next step is to run that test alone in a loop until it fails, then narrow it.
+
 ### F2 — `EditorSession.reset()` has no caller outside tests — minor, left
 `EditorSessionResets.kt:19`. Only `EditorSessionTest` calls it.
 

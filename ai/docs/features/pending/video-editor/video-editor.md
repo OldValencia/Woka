@@ -149,8 +149,9 @@ dependency lands. Nothing here licenses working two folders at once in one sitti
   that file's own metadata. A sequence of clips from different files has nowhere to live, and needs a
   project, a clip library and a timeline of tracks. That is the line between this and iMovie, and it
   is where the feature stops. **Cutting within one file is not that** — see §3.2.
-- **Transitions, keyframed parameter animation, layers, brush masks, chroma key, stabilisation.**
-  Rectangle and ellipse areas came back in on 2026-11-02 (ME-268).
+- **Transitions, keyframed parameter animation, layers, masks of any shape, chroma key,
+  stabilisation.** Rectangle and ellipse areas came in on 2026-11-02 (ME-268) and went out again on
+  2026-11-10, built and reverted unshipped — see the log.
 - **Precise (non-keyframe) cuts in the copy path.** A cut that must land mid-GOP re-encodes, and
   `render/` says what that costs.
 - **Subtitles.** The viewer owns them; the editor does not touch them.
@@ -506,6 +507,8 @@ these wants a fresh head rather than an estimate.
 
 | Date | Question | Decision | Why |
 |---|---|---|---|
+| 2026-11-10 | What kind of editor is this? | **A full editor — cut, trim, music over the film, the everyday jobs — whose UI never looks like a professional tool's** | The author, weighing it against iOS Photos' editor: the work wanted is the full one, the face it shows is the simple one. A feature earns its place by a common job, and its control by fitting the controls already there; a second way to say something the editor can already say (*when* is a clip) is the sign of overreach |
+| 2026-11-10 | Masks, after all? | **No — ME-268 reverted unshipped; the id is retained** | Built and then judged by the author against the KISS brief: a fixed area on a moving picture is of little use without tracking, which is not coming; it turned Adjust and Styles from sliders into canvas tools; and timing it would have been a third way to say *when*. Reverses 2026-11-02 |
 | 2026-11-02 | Masks? | **Rectangle and ellipse areas with feather for Adjust and Styles (ME-268); brushes stay out** | The author: a film needs *when* (ME-215, ME-263) and *where* a look applies. Reverses 2026-09-03 for these two shapes only |
 | 2026-11-01 | What does 1.0.6 ship, and what does `Done` do for a video until ME-284? | **Cutting (ME-210) and `Render video…` (ME-291, with VF-104); `Done ▾` offers both, the in-file `Done` staying visible only in the editor. The doors reopen (`VIDEO_EDITING_ENABLED`)** | The author's choice that morning: a render is visible everywhere by construction, so the release does not wait on the pre-rolling decoder that ME-284 reuses |
 | 2026-09-04 | In what order are the seven folders built? | **`save/`, `timeline/`, `playback/`, `audio/`, `picture/`, `render/`, with `shell/` at any point — written into §1a with each folder's starting ticket** | It was being re-derived from the backlog's dependency lines at the start of every sitting, which is a session of reading to reach an answer that does not change. `save/` is first because the author picked it the day the folders were drawn, and the three probes are called out separately because they answer questions rather than build on them |

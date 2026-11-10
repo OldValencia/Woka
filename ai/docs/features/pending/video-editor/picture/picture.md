@@ -13,8 +13,8 @@ Umbrella: [`../video-editor.md`](../video-editor.md) §3.1. Ticket ids: **ME-260
 
 | Ticket | Title | State |
 |---|---|---|
-| [ME-263](tickets/ME-263-markup-appears-holds-fades.md) | Markup that appears, holds and fades | **built 2026-11-10**, `:shared:build` green; not yet looked at by the author |
-| [ME-268](tickets/ME-268-an-area-for-a-look.md) | An area for Adjust and Styles: rectangle or ellipse | **specified 2026-11-02**, not started; after ME-215. Reverses "masks out" for these two shapes |
+| [ME-263](tickets/ME-263-markup-appears-holds-fades.md) | Markup that appears, holds and fades | **built 2026-11-10**, `:shared:build` green; checked by the author (renders) |
+| [ME-268](tickets/ME-268-an-area-for-a-look.md) | An area for Adjust and Styles: rectangle or ellipse | **dropped 2026-11-10, id retained** — built, then reverted unshipped by the author's call (KISS); see `video-editor.md` §6 |
 | [ME-264](tickets/ME-264-the-hdr-tool-stops-claiming-video.md) | The HDR tool stops claiming video | **done 2026-09-03** — build green |
 
 Everything else is in [the shared backlog](../backlog.md) §260. ME-264 was taken out of band,
