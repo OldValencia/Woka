@@ -178,7 +178,26 @@ An `Output` tool: the edited audio as `m4a`, stream-copied when the codec fits t
 encoded when it does not. It respects the cuts, because everything does.
 *Depends on ME-240.*
 
-### ME-246 — Loudness in one switch
+### ME-246 — Loudness in one switch — done 2026-11-10, checked by the author
+**Changed from the block below:** the render applies the **same stored gain** the preview does, not
+`loudnorm` — a dynamic filter in the render would not match what was heard (the render matches the
+canvas, 2026-11-05). The gain is measured once and written into the op, so editor, viewer and render
+read one number and nothing re-measures.
+1. `AudioPeaks` also sums the squares of every sample in its one pass: `meanSquare`, and
+   `evenGain()` = the gain taking the film's RMS to −18 dBFS, capped at +12 dB and at what keeps the
+   loudest peak under full scale; null until the pass is done.
+2. `core/SourceStats` gains `soundGain: Float? = null`; `VideoEditorEngine.stats` answers it from the
+   film's `AudioPeaks` (the `measured` cache by file key) once measured.
+3. `SoundTool`: `Even = BoolParam("even", "Even loudness")` (a row) and `EvenGain` (a hidden
+   `FloatParam`, the stored gain). `resolve(Even, on, stats)` writes `stats.soundGain`; `mixOf` folds
+   `volume × EvenGain` when `Even` is on — every reader already uses `SoundMix.volume`, so the
+   editor's mix, the viewer and the render follow with no change of their own.
+4. Film-wide only: under a selected clip the row is hidden (`rows` by scope later; for now the
+   switch on a clip simply multiplies like any clip sound).
+5. Tests: the tone fixture's `evenGain` (6000/32768 RMS ≈ −18 dBFS → about 1.0); `SoundTool` folds
+   the gain only when on.
+
+As first written:
 One `BoolParam`. In the preview it is a measured gain applied to the whole timeline; in a render it is
 `loudnorm`. For clips shot on different things this is the difference between usable and not, and the
 measurement is one audio pass — the same pass ME-241 already makes for the waveform.

@@ -28,7 +28,9 @@ data class SourceStats(
     /** The level above which [WHITE_PERCENTILE] of it sits, as 0…1. */
     val whitePoint: Float,
     /** Mean luma as 0…1 — what an exposure correction is measured against. */
-    val meanLuma: Float
+    val meanLuma: Float,
+    /** A film's even-loudness gain once its sound is measured (ME-246); null for a picture. */
+    val soundGain: Float? = null
 ) {
     companion object {
 

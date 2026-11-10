@@ -45,5 +45,7 @@ data class ToolManifest(
     val shortcut: EditorShortcut? = null,
     // A clip's own op **multiplies** the shared layer's rather than replacing it (review
     // 1.0.7, F3): a clip's sound is the film's times its own, so its panel starts neutral.
-    val multipliesShared: Boolean = false
+    val multipliesShared: Boolean = false,
+    // Rows only the whole film carries (ME-246): hidden while one clip is selected.
+    val filmOnly: Set<String> = emptySet()
 )

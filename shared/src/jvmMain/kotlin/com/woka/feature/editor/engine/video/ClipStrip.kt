@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.woka.core.ui.components.resetOnRightClick
 import com.woka.feature.editor.core.EditorTimelineScope
+import com.woka.feature.editor.tools.sound.SoundTool
 import com.woka.feature.editor.tools.trim.TrimClip
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import kotlin.math.roundToInt
@@ -123,7 +124,7 @@ internal fun ClipStrip(
                 if (tabs && clip.id == selectedId && drag == null) SelectedClipBar(state, clips, clip, edits, shown.left + shown.width / 2f)
             }
             // Under the play head, which runs down through it.
-            if (sound > 0.dp && peaks != null) SoundRow(laidOut, geometry, widthPx, peaks) { ms -> walk.seekTo(player, laidOut, ms) }
+            if (sound > 0.dp && peaks != null) SoundRow(laidOut, geometry, widthPx, peaks, SoundTool.mixIn(edits.sharedOps), { key -> SoundTool.mixIn(edits.ownOps(key)) }) { ms -> walk.seekTo(player, laidOut, ms) }
             if (edits.editing) TrimmedEnds(geometry, laidOut, durationMs, selectedId, null)
             edits.markedSpan?.let { MarkedSpan(geometry, laidOut, it) }
             PlayHead(player, walk, laidOut, geometry, edits.editing && drag == null, onFreeze = { state.freezeAtPlayHead() }) {

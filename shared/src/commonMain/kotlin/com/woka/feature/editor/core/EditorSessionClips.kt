@@ -38,6 +38,9 @@ fun EditorSession.panelDocument(document: EditDocument, tool: ToolManifest): Edi
     return document.copy(ops = document.ops - base.ops.toSet())
 }
 
+/** Whether one clip of a film is selected — the scope the film-only rows hide in (ME-246). */
+val EditorSession.clipOpen: Boolean get() = film.linear && frame != NO_CLIP
+
 /** The layer every clip draws under, whichever document is on screen (review 1.0.7, F1). */
 val EditorSession.sharedOps: List<ToolOp> get() = sharedLayer.ops
 

@@ -10,6 +10,8 @@ import java.io.File
 import java.nio.ShortBuffer
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.abs
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 /** One peak per this many milliseconds of sound: 360 KB for a two-hour film. */
 internal const val PEAK_MS = 20L
@@ -35,6 +37,19 @@ internal class AudioPeaks(private val file: File, durationMs: Long) {
 
     @Volatile
     private var stopped = false
+
+    /** The sum of every sample's square and how many there were — the film's RMS (ME-246). */
+    private var squares = 0.0
+    private var counted = 0L
+
+    @Volatile
+    private var measuredGain: Float? = null
+
+    /**
+     * The gain that brings the film's RMS to −18 dBFS (ME-246) — capped at +12 dB, and at what
+     * keeps the loudest peak under full scale. Null until the whole film has been measured.
+     */
+    fun evenGain(): Float? = measuredGain
 
     private val pass = Thread(::decode, "woka-waveform").apply {
         isDaemon = true
@@ -75,7 +90,10 @@ internal class AudioPeaks(private val file: File, durationMs: Long) {
                 var index = at
                 var loudest = 0
                 for (i in 0 until samples.limit()) {
-                    loudest = maxOf(loudest, abs(samples.get(i).toInt()))
+                    val sample = samples.get(i).toInt()
+                    loudest = maxOf(loudest, abs(sample))
+                    squares += sample.toDouble() * sample
+                    counted++
                     if ((i + 1) % perPeak == 0 || i == samples.limit() - 1) {
                         if (index in peaks.indices) peaks[index] = maxOf(peaks[index].toInt() and 0xFF, loudest * 255 / 32768).toByte()
                         index++
@@ -87,12 +105,27 @@ internal class AudioPeaks(private val file: File, durationMs: Long) {
                     filledMs.longValue = index * PEAK_MS
                 }
             }
+            if (!stopped) measuredGain = gainFor(squares, counted, peaks)
             filledMs.longValue = peaks.size * PEAK_MS
         }
         runCatching { grabber.stop() }
         runCatching { grabber.release() }
     }
 }
+
+/** RMS to −18 dBFS, at most +12 dB and never past the loudest peak; 1 for silence. */
+private fun gainFor(squares: Double, counted: Long, peaks: ByteArray): Float {
+    if (counted == 0L || squares <= 0.0) return 1f
+    val rms = sqrt(squares / counted) / 32768.0
+    val target = 10.0.pow(-18.0 / 20.0)
+    val loudest = (peaks.maxOf { it.toInt() and 0xFF } / 255.0).coerceAtLeast(1e-6)
+    return minOf(target / rms, 4.0, 1.0 / loudest).toFloat()
+}
+
+private fun keyOf(file: File) = "${file.absolutePath}|${file.length()}|${file.lastModified()}"
+
+/** [file]'s even-loudness gain, once the strip has measured it whole (ME-246); else null. */
+internal fun evenGainOf(file: File): Float? = measured[keyOf(file)]?.evenGain()
 
 /** The films whose sound has been measured, by path, length and mtime; a handful at most. */
 private val measured = ConcurrentHashMap<String, AudioPeaks>()
@@ -106,7 +139,7 @@ private const val KEPT = 4
 @Composable
 internal fun rememberAudioPeaks(file: File?, durationMs: Long): AudioPeaks? {
     if (file == null || durationMs <= 0L) return null
-    val key = "${file.absolutePath}|${file.length()}|${file.lastModified()}"
+    val key = keyOf(file)
     val peaks = remember(key) {
         measured[key] ?: AudioPeaks(file, durationMs).also { fresh ->
             if (measured.size >= KEPT) measured.keys.firstOrNull()?.let { measured.remove(it)?.stop() }

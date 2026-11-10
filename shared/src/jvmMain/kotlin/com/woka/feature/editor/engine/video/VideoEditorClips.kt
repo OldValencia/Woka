@@ -5,6 +5,7 @@ import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditorFrames
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.core.NO_CLIP
+import com.woka.feature.editor.core.SourceStats
 import com.woka.feature.editor.tools.trim.TrimTool
 import java.io.File
 
@@ -31,6 +32,10 @@ internal abstract class VideoEditorClips(
     override fun storedBase(): EditDocument = storedDocument()
 
     override fun openingFrame(requested: Int): Int = NO_CLIP
+
+    /** No picture to measure; the film's even-loudness gain once its sound is (ME-246). */
+    override val stats: SourceStats?
+        get() = evenGainOf(file)?.let { SourceStats(emptyList(), 0f, 1f, 0.5f, soundGain = it) }
 
     override val frames: EditorFrames get() = EditorFrames(overridden = stored.frames.keys, clips = true)
 

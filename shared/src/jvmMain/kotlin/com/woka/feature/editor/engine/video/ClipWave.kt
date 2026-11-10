@@ -19,7 +19,15 @@ private val WAVE = Color.White.copy(alpha = 0.72f)
  * yet measured is simply empty.
  */
 @Composable
-internal fun ClipWave(clip: TrimClip, peaks: AudioPeaks, fullWidthPx: Float, shiftPx: Float, modifier: Modifier) {
+internal fun ClipWave(
+    clip: TrimClip,
+    peaks: AudioPeaks,
+    fullWidthPx: Float,
+    shiftPx: Float,
+    modifier: Modifier,
+    /** The edit's gain at a millisecond into this clip — volume, mute, fades — so the wave is the sound as it plays. */
+    gainAt: (intoClipMs: Long) -> Float = { 1f }
+) {
     if (clip.isFreeze) return
     val filled = peaks.filledMs.longValue
     Canvas(modifier.testTag(CLIP_WAVE_TAG)) {
@@ -31,7 +39,8 @@ internal fun ClipWave(clip: TrimClip, peaks: AudioPeaks, fullWidthPx: Float, shi
             val fromMs = clip.fromMs + ((shiftPx + x) * perPx).toLong()
             val toMs = (fromMs + perPx.toLong().coerceAtLeast(1L)).coerceAtMost(clip.toMs)
             if (fromMs < filled) {
-                val half = peaks.peakIn(fromMs, toMs) * size.height / 2f
+                val into = ((fromMs - clip.fromMs) / clip.speed.toDouble()).toLong()
+                val half = (peaks.peakIn(fromMs, toMs) * gainAt(into)).coerceAtMost(1f) * size.height / 2f
                 if (half > 0.5f) drawLine(WAVE, Offset(x, middle - half), Offset(x, middle + half), strokeWidth = 1f)
             }
             x += 1f

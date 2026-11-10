@@ -1,5 +1,6 @@
 package com.woka.feature.editor.tools.sound
 
+import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.MediaKind
 import com.woka.core.ui.icons.Icons
 import com.woka.core.ui.image.SoundMix
@@ -8,6 +9,7 @@ import com.woka.feature.editor.core.EditorTool
 import com.woka.feature.editor.core.FloatParam
 import com.woka.feature.editor.core.ParamSet
 import com.woka.feature.editor.core.ParamSpec
+import com.woka.feature.editor.core.SourceStats
 import com.woka.feature.editor.core.ToolCardinality
 import com.woka.feature.editor.core.ToolDomain
 import com.woka.feature.editor.core.ToolInteraction
@@ -40,10 +42,23 @@ object SoundTool : EditorTool {
         supports = setOf(MediaKind.Video),
         cardinality = ToolCardinality.Single,
         interaction = ToolInteraction.Continuous,
-        multipliesShared = true
+        multipliesShared = true,
+        filmOnly = setOf("even")
     )
 
-    override val params: List<ParamSpec<*>> = listOf(Mute, Volume, FadeIn, FadeOut)
+    /** Even loudness (ME-246): on, the film plays at its measured gain — [EvenGain], stored. */
+    val Even = BoolParam("even", "Even loudness")
+
+    /** The gain measured when [Even] was switched on; never a row — `resolve` writes it. */
+    val EvenGain = FloatParam("evenGain", "Even gain", 0f..4f, default = 1f)
+
+    override val params: List<ParamSpec<*>> = listOf(Mute, Volume, FadeIn, FadeOut, Even, EvenGain)
+
+    override fun rows(params: ParamSet, sourceSize: IntSize): List<ParamSpec<*>> = this.params - EvenGain
+
+    /** Switching [Even] on stores the film's measured gain, so the viewer and render read the same one. */
+    override fun resolve(spec: ParamSpec<*>, params: ParamSet, frame: IntSize, stats: SourceStats?): ParamSet? =
+        if (spec == Even && params[Even]) stats?.soundGain?.let { params.with(EvenGain, it) } else null
 
     override fun stage(params: ParamSet): ToolStage? = mixOf(params)?.let { SoundStage(it) }
 
@@ -54,7 +69,7 @@ object SoundTool : EditorTool {
     private fun mixOf(params: ParamSet): SoundMix? {
         val mix = SoundMix(
             mute = params[Mute],
-            volume = params[Volume] / 100f,
+            volume = params[Volume] / 100f * if (params[Even]) params[EvenGain] else 1f,
             fadeInMs = (params[FadeIn] * 1000f).toLong(),
             fadeOutMs = (params[FadeOut] * 1000f).toLong()
         )

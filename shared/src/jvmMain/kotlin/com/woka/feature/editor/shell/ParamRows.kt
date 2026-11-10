@@ -22,6 +22,7 @@ import com.woka.feature.editor.core.PreviewChoiceParam
 import com.woka.feature.editor.core.ToggleSetParam
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntSize
+import com.woka.feature.editor.core.clipOpen
 import com.woka.feature.editor.core.panelDocument
 
 /**
@@ -66,8 +67,9 @@ internal fun ParamRows(
     val writer = ParamWriter(session, tool, picture, selectedId)
     // What this tool wants shown for the values it currently holds — all of them, for
     // every tool but Markup.
-    val shown = (tool as? CanvasTool)?.rows(params, picture.sourceSize, selectedId(), picture.timelineMs)
+    val scoped = (tool as? CanvasTool)?.rows(params, picture.sourceSize, selectedId(), picture.timelineMs)
         ?: tool.rows(params, picture.sourceSize)
+    val shown = scoped.filterNot { session.clipOpen && it.key in tool.manifest.filmOnly }
     // A spec that rides inside another spec's popover gets **no control of its own**
     // (ME-155). `rows` still names it, and must: it is still written, still folded and
     // still saved — only the place it is reached from has moved.

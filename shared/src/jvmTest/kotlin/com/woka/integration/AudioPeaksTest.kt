@@ -37,5 +37,8 @@ class AudioPeaksTest {
             val level = peaks.peakIn(at, at + 200L)
             assertTrue(level in 0.12f..0.26f, "the tone reads $level at $at ms")
         }
+        // ME-246: a 6000-of-32768 sine is about −18 dBFS RMS, so it needs about no gain.
+        val gain = peaks.evenGain() ?: error("no even gain after a finished pass")
+        assertTrue(gain in 0.9f..1.1f, "the tone's even gain is $gain")
     }
 }
