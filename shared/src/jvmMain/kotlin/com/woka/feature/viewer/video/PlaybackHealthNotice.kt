@@ -53,6 +53,9 @@ private const val VISIBLE_MS = 8_000L
  */
 @Composable
 internal fun PlaybackHealthNotice(videoState: VideoPlayerState, bottomPadding: Dp) {
+    val unsupported = videoState.videoFailure.message
+    UnsupportedVideoNotice(unsupported)
+    if (unsupported != null) return
     // The other thing to say about this file, from the same call site in both
     // windows (VF-103): it did not open at all.
     VideoOpenFailedNotice(isVisible = videoState.openFailed)

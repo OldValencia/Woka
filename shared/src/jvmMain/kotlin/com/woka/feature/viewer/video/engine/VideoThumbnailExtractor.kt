@@ -13,6 +13,7 @@ import com.woka.feature.viewer.video.engine.decode.FreshFrameGrabber
 import com.woka.feature.viewer.video.engine.sync.grabImageAt
 import com.woka.feature.viewer.video.engine.sync.lengthMs
 import com.woka.feature.viewer.video.engine.probe.clockwiseTurns
+import com.woka.feature.viewer.video.engine.probe.UnsupportedVideoException
 import org.bytedeco.ffmpeg.global.avutil.AV_LOG_QUIET
 import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_BGR24
 import org.bytedeco.ffmpeg.global.avutil.av_log_set_level
@@ -103,6 +104,8 @@ internal object VideoThumbnailExtractor {
             // display matrix, so a phone's portrait clip arrived on its side (VF-105).
             val turns = grabber.clockwiseTurns
             selectedImage?.let { saveVideoPoster(it, turns, previewFile, cacheKey, mode) }
+        } catch (_: UnsupportedVideoException) {
+            null
         } finally {
             // Guarded, or a `start()` that threw is masked by whatever `stop()`
             // throws on top of it and the real cause never leaves this method (F5).

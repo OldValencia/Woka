@@ -47,6 +47,7 @@ internal abstract class VideoEditorOutputs(
      * keeps the film as long as it was, and keeps the record.
      */
     override suspend fun save(layers: EditLayers): EditSaveResult = withContext(Dispatchers.IO) {
+        videoWriteFailure(file)?.let { return@withContext it }
         val before = resultLengthOf(file)
         writes.save(layers).also { result ->
             if (result is EditSaveResult.Saved && resultLengthOf(file) != before) {

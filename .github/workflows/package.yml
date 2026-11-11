@@ -61,7 +61,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y fakeroot dpkg dpkg-dev
 
-      # libjxl and jxrlib ship inside the app (desktopApp/appResources/<os>-<arch>/). The Windows
+      # libjxl, jxrlib and the DV bridge ship in desktopApp/appResources/<os>-<arch>/. The Windows
       # set is committed; macOS and Linux build theirs from pinned sources before packaging.
       - name: Install native build tools (Linux)
         if: runner.os == 'Linux'
@@ -72,6 +72,12 @@ jobs:
         run: |
           bash natives/jxl/build.sh
           sh natives/jxr/build.sh
+          sh natives/dovi/build.sh
+
+      - name: Build Dolby Vision metadata bridge (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: ./natives/dovi/build.ps1
 
       - name: Build native installer
         run: ./gradlew ${{ matrix.gradle-task }}

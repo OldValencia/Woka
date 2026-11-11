@@ -1,5 +1,6 @@
 package com.woka.feature.viewer.video.engine.decode
 
+import com.woka.feature.viewer.video.engine.probe.requireSupportedVideo
 import org.bytedeco.ffmpeg.avutil.AVFrame
 import org.bytedeco.ffmpeg.global.avutil.av_frame_remove_side_data
 import org.bytedeco.javacv.FFmpegFrameGrabber
@@ -24,7 +25,13 @@ import java.io.File
  *
  * Every grabber that decodes pictures is one of these; one that reads only the header is not.
  */
-internal class FreshFrameGrabber(file: File) : FFmpegFrameGrabber(file) {
+internal class FreshFrameGrabber(
+    file: File,
+    /** Diagnostic probes may inspect unsupported signals; production must not display them. */
+    private val allowUnsupportedColour: Boolean = false
+) : FFmpegFrameGrabber(file) {
+
+    private var checkedVideoStream = Int.MIN_VALUE
 
     /**
      * The `AVFrame` behind the last picture returned, in either mode, until the next grab.
@@ -43,6 +50,11 @@ internal class FreshFrameGrabber(file: File) : FFmpegFrameGrabber(file) {
         keyFrames: Boolean,
         doData: Boolean
     ): Frame? {
+        // Once per opened stream, before even a seek's unprocessed frames are decoded.
+        if (doVideo && !allowUnsupportedColour && checkedVideoStream != videoStream) {
+            requireSupportedVideo()
+            checkedVideoStream = videoStream
+        }
         if (imageMode != FrameGrabber.ImageMode.RAW) lastPicture?.let { clearSideData(it) }
         val frame = super.grabFrame(doAudio, doVideo, doProcessing, keyFrames, doData)
         if (frame?.image != null) lastPicture = frame.opaque as? AVFrame
@@ -50,12 +62,14 @@ internal class FreshFrameGrabber(file: File) : FFmpegFrameGrabber(file) {
     }
 
     override fun stop() {
+        checkedVideoStream = Int.MIN_VALUE
         lastPicture = null
         super.stop()
     }
 
     /** `release()` frees the frame too, and a later `start()` must not clear a freed one. */
     override fun release() {
+        checkedVideoStream = Int.MIN_VALUE
         lastPicture = null
         super.release()
     }

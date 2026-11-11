@@ -28,7 +28,7 @@ class DolbySampleProbe {
             "Test Jellyfin 4K DV P8.1.mp4", "Test Jellyfin 4K DV P8.4.mp4",
             "Test Jellyfin 8K HEVC 10bit 150M.mp4", "Test Jellyfin 8K HEVC HDR10 150M.mp4")
         for (name in files) {
-            val grabber = FreshFrameGrabber(File("D:/Movies/DV samples", name))
+            val grabber = FreshFrameGrabber(File("D:/Movies/DV samples", name), allowUnsupportedColour = true)
             try {
                 grabber.setVideoOption("threads", "4")
                 grabber.audioStream = Int.MAX_VALUE

@@ -59,7 +59,9 @@ internal fun saveFramePhoto(
     val colour = HdrView.mode.applyTo(codedColour(source)).takeIf { it.needsColorManagement }
     val recipe = previewFold(EditDocument(document.ops + looks(key)), registry, sourceSize)
         .copy(source = hdrStageFor(colour), atMs = atMs)
-    val (frame, turns) = decodeAt(source, sourceMs) ?: return EditSaveResult.Failed("No frame at that point could be read.")
+    val decoded = decodeAt(source, sourceMs)
+    decoded.exceptionOrNull()?.let { return EditSaveResult.Failed(it.message ?: "The frame could not be read.") }
+    val (frame, turns) = decoded.getOrNull() ?: return EditSaveResult.Failed("No frame at that point could be read.")
     val drawn = renderAtNativeScale(frame, sourceSize, recipe)
     val upright = drawn.turnedClockwise(turns)
     val bytes = upright.encodeToData(EncodedImageFormat.JPEG, JPEG_QUALITY)?.bytes
@@ -90,7 +92,7 @@ private fun decodeAt(source: File, sourceMs: Long) = runCatching {
         runCatching { grabber.stop() }
         runCatching { grabber.release() }
     }
-}.getOrNull()
+}
 
 /** This image turned [turns] quarter turns clockwise; itself for none. */
 private fun Image.turnedClockwise(turns: Int): Image {

@@ -16,8 +16,9 @@ import java.security.MessageDigest
  * so a phone's portrait clip cached on its side would never be redrawn upright.
  * v6 (1.0.8): video posters now contain the viewer's HDR tone map; old unmapped WebP
  * entries must not be served under the same path, size, mtime and view mode.
+ * v7 (P5 guard): posters of unsupported Dolby signals must not retain false colours.
  */
-private const val KEY_SCHEMA_MARKER = ".keys-v6"
+private const val KEY_SCHEMA_MARKER = ".keys-v7"
 
 /**
  * What an entry is written as. WebP rather than PNG since v3 — a poster is a

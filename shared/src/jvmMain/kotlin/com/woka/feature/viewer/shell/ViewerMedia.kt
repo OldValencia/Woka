@@ -90,7 +90,7 @@ sealed interface ViewerMedia {
     }
 }
 
-/** Stands in for the poster of a track with no cover; the stage draws its own placeholder. */
+/** Missing audio cover or rejected video: the stage draws its placeholder or failure notice. */
 private val NO_COVER = ImageBitmap(1, 1)
 
 /**
@@ -108,8 +108,8 @@ val ViewerMedia.player: VideoPlayerState?
     get() = (this as? ViewerMedia.Video)?.player ?: (this as? AudioMedia)?.player
 
 /**
- * Builds the media the shell shows. Null until the poster has decoded — the player
- * shows its spinner meanwhile, exactly as it did when the bitmap was nullable.
+ * Builds the media the shell shows. Null until the poster has decoded, except for an
+ * explicit video failure: waiting for a rejected poster would hide its notice forever.
  */
 @Composable
 fun rememberViewerMedia(
@@ -117,13 +117,16 @@ fun rememberViewerMedia(
     player: VideoPlayerState?,
     sourceSize: IntSize = IntSize.Zero,
     color: StillColorInfo = StillColorInfo.Sdr
-): ViewerMedia? =
-    remember(poster, player, sourceSize, color) {
+): ViewerMedia? {
+    val unsupported = player?.videoFailure?.message
+    return remember(poster, player, sourceSize, color, unsupported) {
         when {
             // A track shows without a cover, so it does not wait for one.
             player?.isAudioOnly == true -> AudioMedia(player, poster)
+            player != null && unsupported != null -> ViewerMedia.Video(player, NO_COVER)
             poster == null -> null
             player != null -> ViewerMedia.Video(player, poster)
             else -> ViewerMedia.Still(poster, sourceSize, color)
         }
     }
+}

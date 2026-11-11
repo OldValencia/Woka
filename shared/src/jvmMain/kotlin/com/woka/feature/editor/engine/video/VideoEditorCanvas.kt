@@ -15,6 +15,7 @@ import com.woka.app.AppDependencies
 import com.woka.feature.editor.engine.image.RasterRecipe
 import com.woka.feature.editor.engine.image.RasterSurface
 import com.woka.feature.viewer.video.engine.VideoPlayerState
+import com.woka.feature.viewer.video.UnsupportedVideoNotice
 import java.io.File
 
 /**
@@ -55,6 +56,10 @@ internal fun VideoEditorCanvas(
     }
 
     val player = holder.state ?: return
+    if (player.videoFailure.message != null) {
+        UnsupportedVideoNotice(player.videoFailure.message, modifier)
+        return
+    }
     HoldWhileDragging(player, dragging)
     // Nothing is drawn until the decoder has presented something. Returning is invisible
     // for the frame or two an open takes; drawing a null bitmap is not an option.

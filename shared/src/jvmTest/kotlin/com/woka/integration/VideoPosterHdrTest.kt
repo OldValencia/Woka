@@ -117,13 +117,13 @@ class VideoPosterHdrTest {
     }
 
     @Test
-    fun `v5 unmapped posters are discarded once and v6 entries survive`() = withTempStorageRoot { root ->
+    fun `v6 unsupported posters are discarded once and v7 entries survive`() = withTempStorageRoot { root ->
         val dir = File(root, ".thumbnails").also { it.mkdirs() }
-        File(dir, ".keys-v5").writeText("")
+        File(dir, ".keys-v6").writeText("")
         val old = File(dir, "unmapped.webp").also { it.writeText("old") }
         assertEquals(dir, WokaStorage.thumbnailsDir)
         assertTrue(!old.exists())
-        assertTrue(File(dir, ".keys-v6").isFile)
+        assertTrue(File(dir, ".keys-v7").isFile)
         val current = File(dir, "mapped.webp").also { it.writeText("current") }
         assertEquals(dir, WokaStorage.thumbnailsDir)
         assertTrue(current.isFile)

@@ -4,7 +4,6 @@ import androidx.compose.ui.graphics.ImageBitmap
 import com.woka.core.data.StillColorInfo
 import com.woka.core.ui.image.EditedClock
 import com.woka.core.ui.image.SourceRange
-import com.woka.feature.viewer.video.engine.decode.FreshFrameGrabber
 import com.woka.feature.viewer.video.engine.decode.lastPicture
 import com.woka.feature.viewer.video.engine.probe.readFrom
 import com.woka.feature.viewer.video.engine.probe.toColour
@@ -14,13 +13,14 @@ import com.woka.feature.viewer.video.engine.sync.lengthMs
 import com.woka.feature.viewer.video.engine.track.readStreamHdrInfo
 import com.woka.feature.viewer.video.engine.probe.clockwiseTurns
 import com.woka.feature.viewer.video.engine.probe.rotatedClockwise
+import com.woka.feature.viewer.video.engine.probe.UnsupportedVideoException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
-import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_RGBA
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.Frame
 import java.io.File
@@ -31,12 +31,6 @@ private val POSITIONS = listOf(0.1, 0.3, 0.5, 0.7, 0.9)
 
 /** One excerpt's length (SIDE-006, measured: see the ticket's table). */
 private const val EXCERPT_SECONDS = 2.5
-
-/** Wide enough for an L card at 125 % scaling; the decode cost barely moves with it. */
-private const val OUT_WIDTH = 320
-
-/** The seek preview's own budget: measured to keep 1.6× ahead of real time on a 2160p remux. */
-private const val THREADS = "2"
 
 /** One excerpt, decoded and ready to draw at [frameMs] apart. */
 internal class Excerpt(
@@ -63,7 +57,7 @@ internal class Excerpt(
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 internal fun hoverExcerpts(file: File, kept: List<SourceRange> = emptyList()): Flow<Excerpt> = flow {
-    val grabber = openGrabber(file) ?: return@flow
+    val grabber = openHoverGrabber(file) ?: return@flow
     try {
         val fps = grabber.frameRate.takeIf { it.isFinite() && it > 1.0 } ?: 24.0
         val count = (EXCERPT_SECONDS * fps).roundToInt()
@@ -89,6 +83,8 @@ internal fun hoverExcerpts(file: File, kept: List<SourceRange> = emptyList()): F
         grabber.stop()
         grabber.release()
     }
+}.catch { failure ->
+    if (failure !is UnsupportedVideoException) throw failure
 }.buffer(1).flowOn(Dispatchers.IO.limitedParallelism(1))
 
 /**
@@ -121,30 +117,4 @@ private fun FFmpegFrameGrabber.pictureLengthUs(file: File): Long {
         0L
     }
     return own.takeIf { it > 0 } ?: (lengthMs(file) * 1000L)
-}
-
-/**
- * Opened twice: once to learn the picture's shape, then at [OUT_WIDTH] with that
- * shape. The output size is fixed before `start()`, and reading it back after
- * assigning one side returns the value written (`SeekPreviewSource.applyPreviewSize`).
- * The second open is cheap because the probe is capped.
- */
-private fun openGrabber(file: File): FFmpegFrameGrabber? = try {
-    FreshFrameGrabber(file).apply {
-        setOption("probesize", "2000000")
-        setOption("analyzeduration", "1000000")
-        setVideoOption("threads", THREADS)
-        pixelFormat = AV_PIX_FMT_RGBA
-        audioStream = Int.MAX_VALUE
-        start()
-        val sourceWidth = imageWidth.coerceAtLeast(1)
-        val sourceHeight = imageHeight
-        stop()
-        imageWidth = OUT_WIDTH
-        val scaled = (OUT_WIDTH.toLong() * sourceHeight / sourceWidth).toInt()
-        imageHeight = (scaled - scaled % 2).coerceAtLeast(2)
-        start()
-    }
-} catch (_: Exception) {
-    null
 }

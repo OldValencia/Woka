@@ -3,7 +3,6 @@ package com.woka.feature.viewer.video.engine.decode
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.engine.launchResumeSaver
 import com.woka.feature.viewer.video.engine.resumePositionMs
-import com.woka.feature.viewer.video.engine.saveResumePosition
 import com.woka.feature.viewer.video.engine.seek
 import com.woka.feature.viewer.video.engine.sync.videoSeekTo
 import com.woka.feature.viewer.video.engine.track.reopenVideoGrabber
@@ -130,21 +129,9 @@ internal fun VideoPlayerState.startDecoderLoop(videoChannel: Channel<VideoFrame>
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            e.printStackTrace()
+            reportVideoDecodeFailure(e)
         } finally {
-            // Runs on cancellation too, which is what makes dispose() the moment a
-            // closed file's position is written (§4).
-            saveResumePosition()
-            withContext(NonCancellable) { joins.close() }
-            tracksProbed.complete(Unit) // never leave the audio loop waiting if start() failed
-            isReloadingVideo = false // a failed swap must not leave a stuck spinner
-            pictureFilter.close()
-            try {
-                grabber.stop()
-                grabber.release()
-            } catch (_: Exception) {}
-
-            if (isActive) isPlaying = false
+            finishVideoDecoder(grabber, joins, videoChannel)
         }
     }
 }
