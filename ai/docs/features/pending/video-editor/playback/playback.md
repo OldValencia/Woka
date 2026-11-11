@@ -218,3 +218,118 @@ Green Book reads the same at its own scale (298–486 ms at four threads).
 - What would change the bound is **hardware decoding**: JavaCV does not set up a hardware device
   context for a grabber, and the player decodes in software because of the D3D11VA scaling bugs
   noted in `openVideoGrabber`. A project of its own, recorded in the backlog, not in 1.0.6.
+
+---
+
+## Measured — ME-236, 2026-11-10
+
+**Probe only; no application code changed.** `HardwareLaneProbe`, `HardwareLaneFrames` and
+`HardwareContextGrabber` in `shared/src/jvmTest/kotlin/com/woka/probe/`. Bundled JavaCV 1.5.14 /
+FFmpeg 8.1.2-1.5.14, Windows, NVIDIA RTX 5080 with 16 GB VRAM / driver 596.49, plus integrated
+AMD Radeon Graphics / driver 32.0.21043.5001. `D:/Movies/Avatar The Last Airbender Season 2/S02E01.mkv`,
+3840×2160, 24 fps, HEVC 10-bit DV/HDR, long GOPs: the same film as ME-230 and ME-235.
+
+### Method and actual hardware use
+
+Fresh test JVM per mode and output width (`0` = native, `1920` = 1920×1080). Four decoder threads,
+no audio, RGBA conversion and software scaling as in the player's lanes. Five targets at 13, 32,
+51, 67 and 86 percent. Single-lane seek to first / three frames; then pools of one through four
+decoders, B's seek + three cloned frames while A decodes flat out, and all four decoding 120 frames
+each concurrently. All four lanes remain allocated during the A/B measurement; the other two idle.
+
+```powershell
+$env:WOKA_HW_MODE = 'cuda-native' # sw / cuvid / cuda-native / d3d11-native
+$env:WOKA_HW_WIDTH = '0'         # 0 / 1920
+./gradlew.bat :shared:jvmTest --rerun --tests "*HardwareLaneProbe" --info
+```
+
+`--rerun` forces the selected test task to execute after changing environment variables. Artifacts
+are in `shared/build/me236/<mode>-<width>/`: `results.txt`, five frame signatures, and sibling
+`<mode>-<width>-gradle.log`. `pixel-comparison.txt` compares all GPU signatures against software.
+Each output directory is replaced on a subsequent run with the same mode and width.
+
+- **Software control:** decoder name `hevc`, four threads, the existing `FreshFrameGrabber`.
+- **CUVID:** actual named decoder `hevc_cuvid`, NVIDIA GPU 0. It opens and decodes; no generic
+  `hwaccel=auto` option is accepted as proof of acceleration.
+- **Native CUDA:** ordinary `hevc` decoder with an explicit CUDA device, `get_format` selecting
+  `AV_PIX_FMT_CUDA`, and successful `av_hwframe_transfer_data` downloads counted on returned frames.
+- **Native D3D11VA:** explicit device index 1, which FFmpeg identifies as
+  `1002:13c0 (AMD Radeon(TM) Graphics)` on this machine. It selects `AV_PIX_FMT_D3D11` and downloads
+  GPU frames. This is **AMD**, not a measurement of D3D11VA on the RTX 5080.
+
+JavaCV supplies neither the device setup nor the hardware-to-software frame download in its normal
+image conversion path. The temporary adapter reopens the codec with its device and callback set
+**before** `avcodec_open2`, downloads a frame, copies its properties and then calls JavaCV's existing
+RGBA conversion. A first attempt to attach a context after opening returned software frames and was
+rejected by the probe; it is not counted as an accelerated result. Reflection into JavaCV is used
+only for this experiment; a production adapter and lifecycle review remain work.
+
+### Pre-roll and memory
+
+Times below are **seek + three frames while another lane plays flat out**, in milliseconds. Native
+4K output; targets match the software control exactly:
+
+| Target | Software | Native CUDA, RTX 5080 | Native D3D11VA, AMD |
+|---|---:|---:|---:|
+| 13% | 343 | 104 | 287 |
+| 32% | 3467 | 460 | 2523 |
+| 51% | 1079 | 214 | 1012 |
+| 67% | 807 | 211 | 950 |
+| 86% | 2671 | 436 | 2185 |
+
+With output scaled to 1920, software takes **275 / 3174 / 1082 / 791 / 2669 ms**;
+native CUDA **55 / 451 / 194 / 177 / 420 ms**;
+native AMD D3D11VA **248 / 3208 / 1321 / 1288 / 2823 ms**.
+Reducing output resolution still does not remove the CPU seek bottleneck. The RTX's native CUDA
+path reduces the worst measured case by about **7.5×**, and its playing lane remains above the
+film's required 24 fps during every pre-roll. AMD is inconsistent and can be slower than software.
+
+| Four lanes, native output | Software | Native CUDA | Native D3D11VA, AMD |
+|---|---:|---:|---:|
+| Process resident RAM, after concurrent decoding | 1375 MB | 1333 MB | 2039 MB |
+| Process baseline before opening | 93 MB | 92 MB | 92 MB |
+| Additional NVIDIA device memory, approximate | none attributable | ~2.8 GB | not applicable: uses AMD |
+| Each lane, four decoding flat out | 48–54 fps | 46–47 fps | 36 fps |
+
+Native CUDA ran at 54 fps per lane in an earlier pass; there is no claim of a large steady-state
+RGBA throughput improvement. Its clear gain is reaching the target after a long-GOP seek. At 1920
+output it reaches ~99 fps per lane against software's 58–76. CUDA's host RAM is about the same as
+software's, not eliminated; it also consumes VRAM. Closing the native CUDA pool returns NVIDIA
+memory from 5607 to 2763 MB (2772 MB before opening) and host RAM to 132 MB. Device memory comes
+from `nvidia-smi`'s **device-wide** usage; other applications can change the baseline, so deltas are
+estimates rather than process-private allocation counts. Process RAM comes from `Pointer.physicalBytes()`.
+
+### Frame correctness and the CUVID trap
+
+For each of the five targets, all three GPU routes match software **exactly** in returned timestamp,
+CRC32 over every RGBA pixel in each half of the frame, and a 64×36 RGB sample grid. This holds at
+both native 4K and 1920 output: 30 GPU-vs-software comparisons, no signature differences. A half-frame
+or scaling corruption was not observed with this explicit-download path. Frame hashes are before
+the application's HDR shaders, not a visual claim about the final window.
+
+**`hevc_cuvid` loses frame side data.** At all five targets its RGBA frame has none, while software
+carries mastering-display metadata, content-light levels, Dolby Vision RPU data and parsed Dolby
+Vision metadata. `color_trc=16`, primaries/matrix 9 remain, but these tags alone cannot replace the
+missing data. Matching decoded pixels does not make CUVID a safe replacement for the existing path.
+
+**Native HEVC + CUDA and native HEVC + D3D11VA retain those four metadata types and payload sizes**
+at every sampled target, as well as the same colour tags. Thus a route exists that accelerates
+pre-roll without discarding the data the HDR pipeline consumes. Presence and sizes were measured;
+parsed metadata values and final tone-mapped window output were not independently compared.
+
+### Verdict and limits
+
+**ME-236 has a measured benefit; recommendation: keep it in 1.0.8, subject to the implementation
+gate.** On the RTX, a multi-second long-GOP pre-roll becomes about half a second. This is relevant
+to short consecutive clips and is different from a general claim that all playback becomes faster.
+It still does not guarantee seamless joins for arbitrarily short clips.
+
+Do not enable hardware decoding indiscriminately. A production path needs explicit device selection,
+preserved side data, scaling checks, correct teardown/cancellation and a software fallback. The AMD
+result shows why a device being available does not establish that it is a better choice. No author
+decision to remove ME-236 has been made; the feature is **not implemented** by these probes.
+
+Limits: one real long-GOP 4K film, this machine and driver, short bounded runs, ordinary seek/clone
+operations rather than the running application's lane hand-off. No 8K/150 Mbit/s result, DV Profile 5
+correctness, HDR10+ dynamic-data parity, interlaced/rotated processing, hours-long stability or other
+GPU generations is established. The existing software fallback remains necessary.

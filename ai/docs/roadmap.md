@@ -70,6 +70,10 @@ Verified end to end by `features/implemented/viewer-verification-pass.md`: the f
 plus a manual pass, since retired. The "Direct OS Launch Behavior" below is built as
 of that pass; the rare formats are the one part still outstanding.
 
+**1.0.8 HDR video posters (2026-11-11):** static posters use the viewer's tone mapping before
+caching, with the selected frame's peak and the global HDR mode. Automated checks pass and the
+author confirms the manual check. See [`implemented/hdr-video-posters`](features/implemented/hdr-video-posters.md).
+
 - **UX:** Clicking a media file in the grid dims the background and opens the Viewer overlay.
 - **UI:** Image centered, bottom carousel (context of the current folder), top toolbar (Title, Zoom, `X` button).
 - **Direct OS Launch Behavior (Double Click):** 

@@ -215,3 +215,89 @@ The content is a moving diagonal under grain, so 1 Mbit/s is below what either e
   depends on the Windows Media Foundation driver. NVENC and QSV do not open on this machine. There is
   no `libx264`, so the CRF-style quality knob the plan imagined does not exist in the build: quality
   is a bitrate.
+
+---
+
+## Measured — ME-295, 2026-11-10
+
+**Probe only; the application is unchanged.** `HybridRenderProbe`, `HybridSegments` and
+`HybridReadback` in `shared/src/jvmTest/kotlin/com/woka/probe/`. Run:
+
+```powershell
+./gradlew.bat :shared:jvmTest --tests "*HybridRenderProbe" --info
+```
+
+Bundled JavaCV 1.5.14 / FFmpeg 8.1.2-1.5.14 performs the changed H.264 segment's encode,
+direct packet mux and readback. System FFmpeg 8.0 (GPL build with `libx264` / `libx265`)
+generates independent sources and provides reference muxing and frame hashes. It is a probe
+dependency, **not a proposed application dependency**. The HEVC reference encoder is therefore
+not evidence that the bundled renderer can encode HEVC.
+
+### Method
+
+Four generated six-second, 640×360, 30 fps sources: OpenH264, x264 Baseline without B-frames,
+x264 High with three B-frames, and x265 Main 10. Each is split at closed-GOP keyframes into
+three two-second segments. Each fixture is checked to decode to exactly 60 frames before use.
+The initial segmenter missed the first boundary on B-frame fixtures; allowing 100 ms of timestamp
+lead corrected the fixtures before the reported runs. This was not a hybrid failure.
+
+The middle segment's pixels are inverted and encoded with the production renderer's
+`libopenh264` settings. The first and third segments are copied. Every route also has an
+unchanged copy/copy/copy control. Direct JavaCV mux uses the first stream's global parameters,
+rescales timestamps and equalises decode lead across segments; it does not drop packets to
+hide non-monotonic DTS.
+
+The oracle is the concatenation of each segment's **independently decoded RGB24 frame hashes**.
+The result is decoded sequentially by system FFmpeg and bundled JavaCV; fresh bundled grabbers
+also seek to 1.9, 2.0, 2.1, 3.9, 4.0 and 4.1 seconds and compare pixels with independently
+decoded segments. This checks both entering and leaving the changed segment.
+
+### Results
+
+All four unchanged controls decode to **180/180 frames, zero frame-hash mismatches** through
+direct JavaCV MP4 mux and reference concat to MP4 and MKV.
+
+| Source / changed middle | Direct JavaCV MP4 | Reference concat MP4 / MKV |
+|---|---|---|
+| OpenH264 / OpenH264 | 180/180, hashes match | 180/180, hashes match |
+| x264 Baseline / OpenH264 | 167/180; picture errors and bad seeks | 180/180, hashes match |
+| x264 High + B-frames / OpenH264 | 120/180; middle disappears | 180/180, hashes match |
+| HEVC Main 10 / OpenH264 | 120/180; middle disappears | 120/180; middle disappears |
+| HEVC Main 10 / newly encoded HEVC Main 10 | not tested | 120/180; middle disappears |
+| HEVC Main 10 / newly encoded HEVC, each segment first remuxed through Annex B MPEG-TS | not tested | 180/180, hashes match |
+
+H.264 concat uses FFmpeg's automatic `h264_mp4toannexb` conversion, which carries the changed
+parameter sets into the stream. That conversion is not automatically applied for HEVC by this
+concat route. Explicit `hevc_mp4toannexb` remuxing of **each** segment before concatenation makes
+the same-codec HEVC reference pass. Successful reference routes also preserve the tested seek
+positions and pixel content. The failed HEVC routes seek from 2.0 seconds straight to 4.0 seconds.
+
+Raw measurements, files, frame hashes and command logs are retained in `shared/build/me295/`;
+`results.txt` is the table from the most recent run. Small-fixture H.264 middle encodes take about
+0.1–0.2 s and final muxes about 0.01–0.06 s. These are **not** an end-to-end performance comparison:
+generation, splitting, reference preparation and verification are outside those timers.
+
+### What this settles
+
+**Hybrid rendering is possible, but adding per-clip branching to the current copy/encode API is
+insufficient.** A muxer can accept the file and report six seconds while its entire edited middle
+is missing. Parameter-set handling is an observed requirement, not just the hypothetical concern
+in §3.2. The working reference paths show that blanket rejection as technically impossible would
+also be wrong.
+
+The current production encoder always writes H.264 (`RenderEncoder.kt`); it cannot supply a
+same-codec HEVC middle for a copied HEVC track. The reference HEVC solution needs both an HEVC
+encoder and stream preparation not implemented by the application. HDR-to-SDR rendering introduces
+another incompatibility with an untouched HDR segment; that case was not measured here.
+
+**Recommendation, not an author decision:** defer ME-295 from 1.0.8. If revisited, start with a
+restricted same-size H.264 path, explicit parameter-set handling and a whole-file encode fallback.
+The current all-copy/all-encode mechanism remains unchanged; ME-295 is not marked implemented.
+
+**Author decision, 2026-11-10:** remove ME-295 from 1.0.8. It remains in the backlog without a
+replacement release; this does not cancel the feature permanently.
+
+Limits: generated SDR fixtures only (including 10-bit SDR HEVC), video only, keyframe boundaries,
+fixed resolution and frame rate. No audio sync, arbitrary-frame cuts, HDR/Dolby Vision, resized
+segments, real 4K films, hardware decoding, VLC or Windows system-player compatibility is established.
+Passing FFmpeg-based readers is evidence for the mechanism, not the cross-player shipping gate.

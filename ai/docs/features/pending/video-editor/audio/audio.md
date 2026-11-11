@@ -215,3 +215,117 @@ encodes only when it does not. It respects the cuts, because everything does.
 | 2026-09-03 | What settings does a second-row entry get? | **`TimeWindow` — the same group markup takes — plus volume and repeat** | The two ask the same three questions, and one envelope function called by both the canvas and the renderer is what keeps the export matching the preview (§3.3a) |
 | 2026-09-03 | Does `Repeat` take a count? | **No — a loop ends when the video does** | A count is a thing the editor would then have to explain every time the video's length changed |
 | 2026-09-03 | How many volumes are there? | **Three, and only two are the edit** | A clip's gain and the file's are one op under the scope switch; monitoring volume is the app's `mediaVolume` and must never reach a recipe or a render, or turning the monitor down would write a quiet file (§3.3b) |
+
+---
+
+## Measured — ME-244 and ME-245, 2026-11-10
+
+**Probes only; both features remain pending.** Windows, bundled JavaCV 1.5.14 / FFmpeg 8.1.2-1.5.14.
+System FFmpeg 8.0 generates deterministic fixtures and provides an independent selected-stream remux
+and packet inventory. The decode, resample, tempo, `amix` comparison, encode and direct copy probes
+use the application's bundled libraries. No system FFmpeg dependency is proposed for the app.
+
+```powershell
+./gradlew.bat :shared:jvmTest --rerun --tests "*AudioMixProbe" --tests "*AudioExtractProbe" --info
+```
+
+Fixtures, outputs and raw logs: `shared/build/audio-244-245/`. The full probe run passes.
+Read `mix-results.txt`, `extract-results.txt`, `cut-edges.txt`, and `gradle.log`; a reported muxer
+rejection is a measured result rather than a failed probe. The two tests and their three helpers
+are under `shared/src/jvmTest/kotlin/com/woka/probe/` and can be discarded independently of the app.
+
+### ME-244 — mixing external audio
+
+Source fixture: 12 s stereo 48 kHz WAV; external fixtures: 6 s mono 44.1 kHz WAV and 6 s 5.1
+96 kHz FLAC. Decode to one stereo 48 kHz PCM clock. The test timeline is 4970 ms: two non-aligned
+source cuts, a 2× clip and 500 ms of freeze silence. Three external entries overlap it: a trimmed
+1.25× entry with fades and an offset, a repeating entry and the downmixed surround source.
+
+| Check | Result |
+|---|---|
+| Decode and normalise the three fixtures | ~33 ms with libraries warm; 576000, 287983 and 287984 stereo sample frames |
+| Four-source mixing, 4.970 s result | ~28 ms of in-memory mixing, 238560 sample frames |
+| Same clock in 240 / 960 / 4096-frame blocks | No sample differences from a whole pass |
+| Restart at five result positions, including two clip joins | Same samples as continuous mix at those positions |
+| Independent two-source comparison against bundled FFmpeg `amix` | Equal length, max difference 1 unit of 16-bit PCM, RMS 0.501 |
+| Lossless export and fresh readback | WAV and ALAC: all 477120 interleaved samples identical |
+| AAC export and fresh readback | Container length 4.970 s; decoded PCM 32 sample frames longer (+0.67 ms), lossy differences as expected |
+
+The schedule comparison is of already decoded PCM and a shared mixer. It establishes block/offset
+arithmetic and the export boundary, **not** parity of a running editor with a rendered video.
+The bundled `amix` comparison is independent of that mixer. For the filter probe, use position-zero
+buffer slices and explicitly request the S16 output after `amix`'s float stage: the initial harness
+fed unsliced buffers and reported a false mismatch. The corrected reference is the result above.
+
+**Three details matter more than the cost of addition:**
+
+1. **Clock and seek.** WAV seeks returned the requested positions in this fixture. FLAC's first
+   buffer arrived 31–65 ms after the three requested positions even though the calls took 0–1 ms.
+   Fast seek is not exact seek. Schedule by absolute result sample position; seek early enough,
+   honour incoming PTS, trim or pad to the target, reset decoder/filter state and verify the
+   actual samples after a seek. Do not start a track's next returned buffer blindly at the cursor.
+2. **Exact length and seams.** After drain, `atempo` yielded 47719 rather than 48000 frames at 2×
+   and 115250 rather than 115200 at 1.25×. Resampled 6 s files also ended 16–17 frames short.
+   Fit each entry or clip to its planned frame count rather than letting rounding move later
+   audio. Abrupt source joins jumped 6849 / 4992 PCM units, and the repeat seam jumped 1918.
+   Applying the existing 5 ms edge ramp to the test slices reduced all measured boundary jumps
+   to zero. This is a discontinuity measurement, not a listening test or a choice of repeat UI.
+3. **Headroom.** Adding two deliberately overdriven sources clipped 54748 of 96000 interleaved
+   samples. Accumulate before clipping; keep explicit per-entry gain. A limiter, automatic
+   normalisation or other overload policy has not been chosen by this probe.
+
+**Recommendation:** proceed with ME-244. One sample clock and one bounded PCM mixer for preview
+and render are supported by the experiment. The test keeps short clips in memory; do not turn it
+into whole-film buffering. Production still needs streaming buffers, decoder seek/reset, edit
+and missing-file handling, playback/export parity, and a long run with the real audio device.
+The probe does not decide whether ME-242 is needed alongside external entries.
+
+### ME-245 — extract edited audio to M4A
+
+Bundled JavaCV `start(inputFormatContext)` + `recordPacket`, audio-only output, explicit `ipod`
+M4A muxer. Generated 12-second samples. Read every output back as PCM to check more than a
+success return from the muxer.
+
+| Whole-track input | Direct M4A copy | Readback / fallback |
+|---|---|---|
+| AAC | Accepted | Identical decoded samples to original AAC |
+| ALAC | Accepted | Identical decoded samples to original ALAC |
+| AC-3 | Accepted by this muxer | Identical decoded samples; external player compatibility not measured |
+| MP3, FLAC, Opus, PCM S16 | Rejected by this muxer | All decode and encode to AAC successfully (~0.20–0.28 s for 12 s on a warm run) |
+
+For cuts, select whole packets with PTS in each requested span, rebase them and concatenate
+their actual durations. No hidden silence or partial packet editing was added. Source packet
+sizes in these fixtures: AAC ~21.33 ms; ALAC ~85.33 ms. The short case is 24 kept spans of 73 ms.
+
+| Input / cuts | Requested | Packet-copy PCM | Worst start late / end error | Empty spans |
+|---|---:|---:|---:|---:|
+| AAC, two cuts | 3470 ms | 3477.33 ms | 2.67 / 6.00 ms | 0 |
+| AAC, 24 cuts | 1752 ms | 1749.33 ms | 20.33 / 20.00 ms | 0 |
+| ALAC, two cuts | 3470 ms | 3413.33 ms | 66.67 / 68.67 ms | 0 |
+| ALAC, 24 cuts | 1752 ms | 1792.00 ms | 70.33 / 82.67 ms | 3 |
+
+The AAC total being close does **not** mean the individual cuts are accurate. The ALAC example
+even loses three kept spans. By contrast, cutting decoded PCM and encoding ALAC reproduced all
+samples and the exact requested lengths. AAC encode put the exact requested duration in the
+container (verified with ffprobe for 3470 and 1752 ms), but JavaCV read back 7.33 and 18.67 ms
+of extra final-frame samples respectively. Respect presentation duration / padding; do not use
+the raw number of AAC samples alone as the UI's output duration. ALAC required explicitly
+choosing `S16P` in this 16-bit probe; JavaCV's default sample-format choice failed to open it.
+
+**Wrong-track trap:** a video with stereo AAC 48 kHz at stream 1 and mono AAC 44.1 kHz at stream 2.
+Passing the whole input format context to the recorder uses the **last audio stream's codec
+parameters**, even when only stream 1 packets are submitted. The resulting stream-1 copy announced
+mono 44.1 kHz and decoded to the wrong sample count. The independent `ffmpeg -map 0:1 -c:a copy`
+reference correctly announced stereo 48 kHz. Filtering packet indices alone does not fix the header.
+
+**Recommendation:** proceed with ME-245. Default to the edited PCM path for arbitrary cuts,
+speed, gain, fades, mute or external tracks. Allow fast copy only when the selected stream's
+own parameters reach the output, the codec policy permits it, and there are no edits requiring
+PCM. Whole-track AAC/ALAC is the proven simplest case. Packet-aligned cut copy would need its
+own boundary, priming and playback checks before being enabled. Do not take AC-3 acceptance as
+permission to advertise playback compatibility. Multi-track input needs a selected-stream mux
+path or a safe encode fallback.
+
+Limits: short generated signals, one machine, no device playback, no final video mux with
+the new mixer, no third-party M4A player matrix, no production 24-bit/surround export policy.
+This is a feasibility and failure-boundary measurement, not a shipping claim.
