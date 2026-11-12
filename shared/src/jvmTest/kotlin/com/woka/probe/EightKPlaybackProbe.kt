@@ -29,7 +29,8 @@ class EightKPlaybackProbe {
     @Test
     fun `measure repeatable playback at small and screen sized surfaces`() {
         assumeTrue("Opt in with woka.probe.8k", System.getProperty("woka.probe.8k") == "true")
-        val output = File("build/dv-investigation/live").also { it.mkdirs() }
+        val output = File(System.getProperty("woka.probe.8k.output", "build/dv-investigation/live"))
+            .also { it.mkdirs() }
         val report = File(output, "playback.txt")
         report.writeText("JVM ${ManagementFactory.getRuntimeMXBean().inputArguments}\n")
         withTempStorageRoot {

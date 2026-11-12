@@ -1,6 +1,7 @@
 package com.woka.probe
 
 import com.sun.management.OperatingSystemMXBean
+import org.bytedeco.javacpp.Pointer
 import java.lang.management.ManagementFactory
 import java.util.Locale
 
@@ -51,6 +52,7 @@ internal class EightKProbeMetrics {
             "gapP95Ms=${number(percentile(samples, .95))} gapMaxMs=${number(samples.lastOrNull() ?: 0.0)} " +
             "gapsOver25ms=${samples.count { it > 25 }} cpuPercent=${number(cpu)} " +
             "heapUsedMiB=${heap.used / 1048576} heapCommittedMiB=${heap.committed / 1048576} " +
+            "physicalMiB=${Pointer.physicalBytes() / 1048576} " +
             "gcMs=${gc.sumOf { it.collectionTime } - startGc} " +
             "collections=${gc.sumOf { it.collectionCount } - startCollections}"
     }

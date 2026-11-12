@@ -7,6 +7,7 @@ import com.woka.feature.viewer.video.engine.track.TrackChoice
 import com.woka.feature.viewer.video.engine.track.persistTrackPrefs
 
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.isActive
 import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_RGBA
 import org.bytedeco.ffmpeg.global.avutil.AV_SAMPLE_FMT_S16
 import org.bytedeco.javacv.FFmpegFrameGrabber
@@ -29,8 +30,8 @@ internal const val DECODE_THREADS = "4"
  * probe has run).
  */
 internal fun VideoPlayerState.openVideoGrabber(videoStreamIndex: Int = -1): FFmpegFrameGrabber {
-    val grabber = FreshFrameGrabber(file)
-    grabber.setVideoOption("threads", DECODE_THREADS) // SW decode: dodge D3D11VA half-frame scaling bugs
+    val grabber = AcceleratedFrameGrabber(file, alive = { scope.isActive })
+    grabber.setVideoOption("threads", DECODE_THREADS)
     // An interlaced or rotated file hands the decoder's own frames to the picture
     // graph, which scales and converts to RGBA after `bwdif` and the turn (VF-102/105).
     if (pictureFilter.active) grabber.imageMode = FrameGrabber.ImageMode.RAW

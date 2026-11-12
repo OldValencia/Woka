@@ -25,7 +25,7 @@ import java.io.File
  *
  * Every grabber that decodes pictures is one of these; one that reads only the header is not.
  */
-internal class FreshFrameGrabber(
+internal open class FreshFrameGrabber(
     file: File,
     /** Diagnostic probes may inspect unsupported signals; production must not display them. */
     private val allowUnsupportedColour: Boolean = false
@@ -39,7 +39,7 @@ internal class FreshFrameGrabber(
      * grabber is asked and not the frame (ME-301).
      */
     var lastPicture: AVFrame? = null
-        private set
+        protected set
 
     /** The overload every other `grab*` reaches. */
     @Synchronized
