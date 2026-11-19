@@ -3,6 +3,8 @@ package com.woka.feature.viewer.video.engine.decode
 import org.bytedeco.ffmpeg.avutil.AVFrame
 import org.bytedeco.ffmpeg.swscale.SwsContext
 import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_CUDA
+import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_BGR24
+import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_GRAY8
 import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_RGBA
 import org.bytedeco.ffmpeg.global.avutil.av_frame_alloc
 import org.bytedeco.ffmpeg.global.avutil.av_frame_copy_props
@@ -24,7 +26,11 @@ import org.bytedeco.javacv.Frame
  * Measured 2026-11-12: 24 matching pixel/metadata comparisons; ~69–79 fps with bitmap copy.
  * Output is borrowed until the next conversion or close; the existing presenter copies it.
  */
-internal class ThreadedVideoConverter(private val width: Int, private val height: Int) : AutoCloseable {
+internal class ThreadedVideoConverter(
+    private val width: Int,
+    private val height: Int,
+    private val pixelFormat: Int = AV_PIX_FMT_RGBA
+) : AutoCloseable {
     private var downloaded: AVFrame? = null
     private var output: AVFrame? = null
     private var scaler: SwsContext? = null
@@ -74,18 +80,23 @@ internal class ThreadedVideoConverter(private val width: Int, private val height
     private fun initialise(input: AVFrame, hardwareFormat: Int) {
         val options = mapOf(
             "srcw" to input.width(), "srch" to input.height(), "src_format" to input.format(),
-            "dstw" to width, "dsth" to height, "dst_format" to AV_PIX_FMT_RGBA,
+            "dstw" to width, "dsth" to height, "dst_format" to pixelFormat,
             "sws_flags" to SWS_BILINEAR, "threads" to 4
         )
         for ((key, value) in options) check(av_opt_set_int(scaler, key, value.toLong(), 0) >= 0)
         check(sws_init_context(scaler, null, null) >= 0)
         val converted = checkNotNull(output)
-        converted.width(width).height(height).format(AV_PIX_FMT_RGBA)
+        converted.width(width).height(height).format(pixelFormat)
         check(av_frame_get_buffer(converted, 32) >= 0)
         frame.imageWidth = width
         frame.imageHeight = height
         frame.imageDepth = Frame.DEPTH_UBYTE
-        frame.imageChannels = 4
+        frame.imageChannels = when (pixelFormat) {
+            AV_PIX_FMT_RGBA -> 4
+            AV_PIX_FMT_BGR24 -> 3
+            AV_PIX_FMT_GRAY8 -> 1
+            else -> error("Unsupported packed output format")
+        }
         frame.imageStride = converted.linesize(0)
         frame.image = arrayOf(converted.data(0).capacity(frame.imageStride.toLong() * height).asByteBuffer())
         frame.opaque = converted

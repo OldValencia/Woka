@@ -53,6 +53,7 @@ case "$(uname -s)" in
     *) echo 'Use build.ps1 for Windows' >&2; exit 1 ;;
 esac
 cmake --build "$build_dir/compile" --config Release
+ctest --test-dir "$build_dir/compile" -C Release --output-on-failure
 destination="$here/../../desktopApp/appResources/$os-$arch"
 mkdir -p "$destination"
 cp "$build_dir/compile/libwoka_dovi.$suffix" "$destination/"

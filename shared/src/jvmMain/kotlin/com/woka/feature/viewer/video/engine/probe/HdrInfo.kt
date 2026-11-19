@@ -19,7 +19,9 @@ data class HdrInfo(
      * This frame's scene peak from HDR10+ (ME-305). Never part of `streamHdrInfo`, which
      * stays the stable thing a memoised fold keys on (ME-205).
      */
-    val scenePeak: Float? = null
+    val scenePeak: Float? = null,
+    /** P5 outputs BT.2020 PQ even when the original stream's colour tags are unspecified. */
+    val dolbyVisionProfile5: Boolean = false
 ) {
     val needsColorManagement: Boolean
         get() = needsColorManagement(transfer, isWideGamut)

@@ -9,7 +9,6 @@ import com.woka.feature.editor.core.EditorExport
 import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.core.ToolOp
-import com.woka.feature.editor.engine.video.codedColour
 import com.woka.feature.editor.engine.video.hdrStageFor
 import com.woka.feature.editor.engine.video.previewFold
 import com.woka.feature.editor.save.renderAtNativeScale
@@ -19,6 +18,10 @@ import com.woka.feature.editor.tools.trim.totalMs
 import com.woka.feature.viewer.video.engine.decode.FreshFrameGrabber
 import com.woka.feature.viewer.video.engine.decode.toComposeBitmap
 import com.woka.feature.viewer.video.engine.probe.clockwiseQuarterTurns
+import com.woka.feature.viewer.video.engine.probe.readFrom
+import com.woka.feature.viewer.video.engine.probe.toColour
+import com.woka.feature.viewer.video.engine.probe.withSceneOf
+import com.woka.feature.viewer.video.engine.track.readStreamHdrInfo
 import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_RGBA
 import org.bytedeco.javacv.Frame
 import org.jetbrains.skia.EncodedImageFormat
@@ -56,12 +59,12 @@ internal fun saveFramePhoto(
     val at = clips?.atTimeline(atMs.coerceIn(0L, (clips.totalMs() - 1L).coerceAtLeast(0L)))
     val sourceMs = at?.sourceMs ?: atMs
     val key = at?.let { clips[it.index].key } ?: 0
-    val colour = HdrView.mode.applyTo(codedColour(source)).takeIf { it.needsColorManagement }
-    val recipe = previewFold(EditDocument(document.ops + looks(key)), registry, sourceSize)
-        .copy(source = hdrStageFor(colour), atMs = atMs)
     val decoded = decodeAt(source, sourceMs)
     decoded.exceptionOrNull()?.let { return EditSaveResult.Failed(it.message ?: "The frame could not be read.") }
-    val (frame, turns) = decoded.getOrNull() ?: return EditSaveResult.Failed("No frame at that point could be read.")
+    val (frame, turns, sourceColour) = decoded.getOrNull() ?: return EditSaveResult.Failed("No frame at that point could be read.")
+    val colour = HdrView.mode.applyTo(sourceColour).takeIf { it.needsColorManagement }
+    val recipe = previewFold(EditDocument(document.ops + looks(key)), registry, sourceSize)
+        .copy(source = hdrStageFor(colour), atMs = atMs)
     val drawn = renderAtNativeScale(frame, sourceSize, recipe)
     val upright = drawn.turnedClockwise(turns)
     val bytes = upright.encodeToData(EncodedImageFormat.JPEG, JPEG_QUALITY)?.bytes
@@ -87,7 +90,10 @@ private fun decodeAt(source: File, sourceMs: Long) = runCatching {
             shown = frame
             if (frame.timestamp - start >= wantedUs) break
         }
-        shown?.let { it.toComposeBitmap() to clockwiseQuarterTurns(grabber.displayRotation) }
+        shown?.let {
+            val colour = grabber.readStreamHdrInfo().readFrom(grabber.lastPicture).withSceneOf(grabber.lastPicture).toColour()
+            Triple(it.toComposeBitmap(), clockwiseQuarterTurns(grabber.displayRotation), colour)
+        }
     } finally {
         runCatching { grabber.stop() }
         runCatching { grabber.release() }

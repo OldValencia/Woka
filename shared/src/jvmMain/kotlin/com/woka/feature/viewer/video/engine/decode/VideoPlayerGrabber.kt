@@ -31,6 +31,7 @@ internal const val DECODE_THREADS = "4"
  */
 internal fun VideoPlayerState.openVideoGrabber(videoStreamIndex: Int = -1): FFmpegFrameGrabber {
     val grabber = AcceleratedFrameGrabber(file, alive = { scope.isActive })
+    grabber.p5Playback = true
     grabber.setVideoOption("threads", DECODE_THREADS)
     // An interlaced or rotated file hands the decoder's own frames to the picture
     // graph, which scales and converts to RGBA after `bwdif` and the turn (VF-102/105).
@@ -51,6 +52,7 @@ internal fun VideoPlayerState.openVideoGrabber(videoStreamIndex: Int = -1): FFmp
  */
 internal fun VideoPlayerState.openLaneGrabber(): FFmpegFrameGrabber {
     val grabber = FreshFrameGrabber(file)
+    grabber.p5Playback = true
     grabber.setVideoOption("threads", DECODE_THREADS)
     if (pictureFilter.active) grabber.imageMode = FrameGrabber.ImageMode.RAW
     else grabber.pixelFormat = AV_PIX_FMT_RGBA

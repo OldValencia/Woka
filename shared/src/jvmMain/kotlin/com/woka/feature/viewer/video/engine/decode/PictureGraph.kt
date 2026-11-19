@@ -52,6 +52,7 @@ internal class PictureGraph(
     private val source = AVFilterContext()
     private val sink = AVFilterContext()
     private val output: AVFrame = av_frame_alloc()
+    val lastPicture: AVFrame? get() = output.takeIf { it.width() > 0 }
 
     /**
      * Pushes [decoded] and returns the next RGBA picture, or null while `bwdif`
@@ -86,6 +87,7 @@ internal class PictureGraph(
         frame.imageChannels = 4
         frame.imageStride = stride
         frame.image = arrayOf(output.data(0).capacity(stride.toLong() * height).asByteBuffer())
+        frame.opaque = output
         // The sink's own time base: `bwdif` halves the input's so a field could
         // have a time of its own, which read in the source's doubled every time.
         val base = av_buffersink_get_time_base(sink)

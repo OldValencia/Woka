@@ -92,8 +92,9 @@ internal suspend fun VideoPlayerState.deliverPicture(
  */
 internal fun VideoPlayerState.colourOf(hdr: HdrInfo?, grabber: FFmpegFrameGrabber): HdrInfo? {
     val known = streamHdrInfo?.takeIf {
-        it.whitePoint != null && it.transfer == hdr?.transfer && it.isWideGamut == hdr.isWideGamut
+        it.whitePoint != null && it.transfer == hdr?.transfer && it.isWideGamut == hdr.isWideGamut &&
+            it.dolbyVisionProfile5 == hdr.dolbyVisionProfile5
     }
-    val picture = grabber.lastPicture
+    val picture = pictureFilter.lastPicture ?: grabber.lastPicture
     return (known ?: hdr)?.readFrom(picture)?.withSceneOf(picture)
 }

@@ -16,6 +16,13 @@ class DoviSupportTest {
     }
 
     @Test
+    fun `P5 becomes available only with its colour converter`() {
+        val p5 = DoviConfigurationRead.Present(DoviConfiguration(5, 0))
+        assertNull(unsupportedDoviReason(p5, p5Available = true))
+        assertNotNull(unsupportedDoviReason(p5, p5Available = false))
+    }
+
+    @Test
     fun `compatible Dolby profiles and non Dolby streams retain their colour path`() {
         assertNull(unsupportedDoviReason(DoviConfigurationRead.Absent))
         for (config in listOf(DoviConfiguration(7, 6), DoviConfiguration(8, 1),

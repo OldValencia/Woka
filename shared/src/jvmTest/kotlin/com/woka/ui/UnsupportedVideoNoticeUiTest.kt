@@ -40,18 +40,18 @@ class UnsupportedVideoNoticeUiTest {
     }
 
     @Test
-    fun `the viewer shows its P5 failure even when no poster could be produced`() {
+    fun `supported P5 reaches the viewer without the unavailable notice`() {
         val sample = File("D:/Movies/DV samples/Test Jellyfin 1080p DV P5.mp4")
         assumeTrue("The author's P5 sample is required", sample.isFile)
         startKoinOnce()
         onPlayer(sample) { player ->
-            awaitTrue("the P5 rejection") { player.videoFailure.message != null }
+            awaitTrue("the reconstructed P5 picture") { player.currentFrame != null }
             onUi {
                 setContent {
-                    val media = assertIs<ViewerMedia.Video>(rememberViewerMedia(null, player))
+                    val media = assertIs<ViewerMedia.Video>(rememberViewerMedia(player.currentFrame, player))
                     PlaybackHealthNotice(media.player, 0.dp)
                 }
-                onNodeWithText(UNSUPPORTED_DOVI_P5).assertIsDisplayed()
+                onNodeWithText(UNSUPPORTED_DOVI_P5).assertDoesNotExist()
             }
         }
     }

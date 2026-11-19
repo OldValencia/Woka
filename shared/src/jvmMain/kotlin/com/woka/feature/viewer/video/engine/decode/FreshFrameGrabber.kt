@@ -29,7 +29,7 @@ internal open class FreshFrameGrabber(
     file: File,
     /** Diagnostic probes may inspect unsupported signals; production must not display them. */
     private val allowUnsupportedColour: Boolean = false
-) : FFmpegFrameGrabber(file) {
+) : DoviFrameGrabber(file, allowUnsupportedColour) {
 
     private var checkedVideoStream = Int.MIN_VALUE
 
@@ -55,7 +55,8 @@ internal open class FreshFrameGrabber(
             requireSupportedVideo()
             checkedVideoStream = videoStream
         }
-        if (imageMode != FrameGrabber.ImageMode.RAW) lastPicture?.let { clearSideData(it) }
+        // P5 owns its copied properties; its seek's lastPicture may still be the RAW decoder frame.
+        if (!doviColourActive && imageMode != FrameGrabber.ImageMode.RAW) lastPicture?.let { clearSideData(it) }
         val frame = super.grabFrame(doAudio, doVideo, doProcessing, keyFrames, doData)
         if (frame?.image != null) lastPicture = frame.opaque as? AVFrame
         return frame

@@ -1,6 +1,7 @@
 package com.woka.feature.viewer.video.engine.decode
 
 import com.woka.feature.viewer.video.engine.probe.clockwiseTurns
+import com.woka.feature.viewer.video.engine.probe.isDoviProfile5
 import org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_ID_HEVC
 import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_RGBA
 import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_YUV420P10LE
@@ -17,6 +18,7 @@ internal fun FFmpegFrameGrabber.canAccelerateVideo(): Boolean {
     if (imageMode == FrameGrabber.ImageMode.RAW || pixelFormat != AV_PIX_FMT_RGBA) return false
     val format = formatContext ?: return false
     if (videoStream < 0 || videoStream >= format.nb_streams()) return false
+    if (isDoviProfile5()) return false
     val parameters = format.streams(videoStream).codecpar()
     return format.iformat().name().string.split(',').contains("mp4") &&
         parameters.codec_id() == AV_CODEC_ID_HEVC && parameters.format() == AV_PIX_FMT_YUV420P10LE &&

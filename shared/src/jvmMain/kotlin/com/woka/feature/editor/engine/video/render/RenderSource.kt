@@ -41,10 +41,11 @@ internal fun probeSource(source: File, alive: () -> Boolean = { true }): SourceP
 private fun declaredColour(grabber: FFmpegFrameGrabber): HdrInfo {
     val hdr = grabber.readStreamHdrInfo()
     if (hdr.transfer == TransferKind.SDR) return hdr
-    runCatching {
+    val decoded = runCatching {
         grabber.setTimestamp(0L)
-        grabber.grabImage()
+        checkNotNull(grabber.grabImage()) { "The first HDR frame could not be read." }
     }
+    if (hdr.dolbyVisionProfile5) decoded.getOrThrow()
     return hdr.readFrom(grabber.lastPicture)
 }
 

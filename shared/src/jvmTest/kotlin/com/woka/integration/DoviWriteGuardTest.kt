@@ -8,6 +8,9 @@ import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.core.ToolOp
 import com.woka.feature.editor.engine.video.VideoEditorEngine
+import com.woka.feature.editor.recipe.EditRecipe
+import com.woka.feature.viewer.video.engine.decode.FreshFrameGrabber
+import com.woka.feature.viewer.video.engine.probe.isDoviProfile5
 import com.woka.support.startKoinOnce
 import com.woka.support.withTempStorageRoot
 import kotlinx.coroutines.runBlocking
@@ -18,12 +21,14 @@ import java.security.DigestInputStream
 import java.security.MessageDigest
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class DoviWriteGuardTest {
     @Test
-    fun `Done rejects a P5 edit and keeps the whole source byte identical`() = withTempStorageRoot { root ->
+    fun `Done records a P5 edit and Revert restores the whole source byte for byte`() = withTempStorageRoot { root ->
         val sample = File("D:/Movies/DV samples/Test Jellyfin 1080p DV P5.mp4")
         assumeTrue("The author's P5 sample is required", sample.isFile)
         startKoinOnce()
@@ -31,8 +36,16 @@ class DoviWriteGuardTest {
         val before = hash(file)
         val registry = EditorToolRegistry(emptyList(), AppDependencies.settingsRepository)
         val engine = VideoEditorEngine(file, registry, EditCapability.Recorded)
-        val result = runBlocking { engine.save(EditLayers(EditDocument(listOf(ToolOp("adjust"))))) }
-        assertTrue(assertIs<EditSaveResult.Failed>(result).reason.contains("Profile 5"))
+        val document = EditDocument(listOf(ToolOp("adjust")))
+        val result = runBlocking { engine.save(EditLayers(document)) }
+        assertIs<EditSaveResult.Saved>(result)
+        assertEquals(document.ops, assertNotNull(EditRecipe.read(file)).ops)
+        FreshFrameGrabber(file).use { grabber ->
+            grabber.start()
+            assertTrue(grabber.isDoviProfile5())
+            assertNotNull(grabber.grabImage())
+        }
+        assertIs<EditSaveResult.Saved>(runBlocking { engine.revert() })
         assertContentEquals(before, hash(file))
     }
 
