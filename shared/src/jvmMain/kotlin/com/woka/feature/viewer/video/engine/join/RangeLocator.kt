@@ -4,6 +4,7 @@ import androidx.compose.runtime.snapshots.Snapshot
 import com.woka.core.ui.image.SourceRange
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.engine.seekInRanges
+import com.woka.feature.viewer.video.engine.setClipPace
 import com.woka.feature.viewer.video.engine.showRange
 
 /**
@@ -20,7 +21,10 @@ internal fun relocate(player: VideoPlayerState, atMs: Long) {
     val ranges = joins.ranges
     // An edit of the list may have left the index past its end.
     joins.decoding = joins.decoding.coerceIn(0, ranges.lastIndex)
-    if (ranges.getOrNull(joins.decoding)?.holds(atMs) == true) return
+    val held = ranges.getOrNull(joins.decoding)
+    // Still the same range, but the edit may have changed its speed: without this a pace set
+    // on the clip playing waited for the next seek (reported 2026-11-20). Unchanged, a no-op.
+    if (held?.holds(atMs) == true) return Snapshot.withMutableSnapshot { player.setClipPace(held.speed, joins) }
     val inside = ranges.indexOfFirst { it.holds(atMs) }
     // **Past the decoding range's end, "next" is the next in the list**, not the next in the
     // source: with the clips out of order the source's next was an earlier clip, and the end

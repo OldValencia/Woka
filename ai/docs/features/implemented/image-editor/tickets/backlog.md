@@ -68,4 +68,12 @@ were never assigned and are not reserved.
   Raised and closed the same day: ME-177 put the tone map under the decode, so the editor and the
   viewer read one mode through one pill and there was nothing to mirror.
 - Batch apply across a selection in the grid — the grid's `Edit` entry is single-selection only.
+- **An undoable Revert** — raised by the author 2026-11-20 ("probably as designed, but it would be
+  nice"). Revert removes the recipe from the file and its dialog says it cannot be undone; making
+  `Undo` bring the edit back means keeping the removed recipe somewhere for the session. Not decided.
+- **Markup orientation after a rotation or flip** — open since 2026-11-20. Markup now draws through
+  the recipe's matrix (a crop no longer moves it off its handles), so a quarter turn or a flip turns
+  captions and arrowheads with the picture, including a caption written after the turn. Keeping
+  glyphs upright means mapping points through the matrix and drawing in the output frame, and the
+  overlay's text box has to follow. Not decided.
 - RAW, layers, masks, healing — out of scope for this feature entirely.

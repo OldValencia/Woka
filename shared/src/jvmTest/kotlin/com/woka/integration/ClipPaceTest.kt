@@ -1,5 +1,8 @@
 package com.woka.integration
 
+import com.woka.core.ui.image.SourceRange
+import com.woka.feature.viewer.video.engine.join.relocate
+import com.woka.feature.viewer.video.engine.playRanges
 import com.woka.feature.viewer.video.engine.releaseClipGain
 import com.woka.feature.viewer.video.engine.releaseClipPace
 import com.woka.feature.viewer.video.engine.setClipGain
@@ -54,6 +57,21 @@ class ClipPaceTest {
         assertEquals(4f, player.playbackSpeed)
         player.releaseClipPace(staying)
         assertEquals(1f, player.playbackSpeed)
+    }
+
+    /**
+     * Reported 2026-11-20: a speed set on the clip under the play head waited for a seek. The
+     * decode loop relocates after an edit of the list, the range it was in still held the
+     * position, and nothing re-applied that range's pace.
+     */
+    @Test
+    fun `a pace edited on the clip playing applies without a seek`() = onPlayer(episodeTwoFile()) { player ->
+        val owner = Any()
+        player.playRanges(listOf(SourceRange(0L, 1_000L), SourceRange(1_000L, 2_000L)), owner)
+        relocate(player, 1_500L)
+        player.playRanges(listOf(SourceRange(0L, 1_000L), SourceRange(1_000L, 2_000L, speed = 4f)), owner)
+        relocate(player, 1_500L)
+        assertEquals(4f, player.playbackSpeed)
     }
 
     /** ME-240: the edit's gain has an owner too, for the same two-copies reason. */

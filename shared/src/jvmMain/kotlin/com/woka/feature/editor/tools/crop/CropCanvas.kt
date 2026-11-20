@@ -25,9 +25,9 @@ private const val HANDLE_THICKNESS_PX = 3f
  * What a crop looks like: everything outside it dimmed, a thirds grid inside, and eight
  * handles on its edges (ME-109).
  *
- * **Drawn in canvas coordinates, from a rect stored in source ones.** [sourceToCanvas]
- * is the only thing that knows the difference, which is what keeps the same rect drawn
- * correctly at any zoom and after any rotation the document carries.
+ * **Drawn in canvas coordinates, from a rect stored in the drawn frame's** — the picture
+ * after every rotation and flip before the crop (`CanvasTool.worksInFrame`). [sourceToCanvas]
+ * is then only the zoom and placement, which keeps the same rect right at any zoom.
  *
  * The handles are drawn at a fixed *screen* size rather than a source one — a corner
  * mark that shrank with the zoom would vanish on a large photograph and swallow a small

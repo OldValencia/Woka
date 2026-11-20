@@ -589,3 +589,121 @@ Production-изменения (не закоммичены): `D3d12Prewarm.kt` (
    до первого использования). Решить и проверить.
 3. Gradle-задача сборки образа (GraalVM, vcvars VS 18, метаданные в репозитории), упаковка MSI.
 4. Память native в простое/после видео; сравнить с JVM на одинаковых сценариях.
+
+## Native Image: `Woka.cfg` options in the image — 2026-11-20, late evening
+
+Step 2 above, done and checked by the author by double click.
+
+**Split.** The heap cap is baked at build time (`-R:MaxHeapSize=1536m`; `maxMemory` in the
+image read 1536 MiB). Everything else is a system property first read after `main` starts,
+so `NativeImageOptions.apply()` (desktopApp, first line of `main`, before `StartupPrewarm`)
+sets it from the exe's own folder — `java.home`, `compose.application.resources.dir`,
+`skiko.library.path`, `java.library.path`, JavaCPP `pathsFirst`/`findLibraries`,
+`sun.java2d.d3d=false`, `swing.globals=true`. Only in the image
+(`org.graalvm.nativeimage.imagecode == runtime`); the JVM keeps `Woka.cfg`. G1 flags, CDS/AOT
+and `jpackage.app-version` have no image counterpart (Serial GC; nobody reads the version).
+`defaultWindowSize()` moved to `WindowDefaults.kt` to keep `main.kt` under the size mandate.
+
+**Image folder = jpackage's `app\` without the jars:** `woka.exe` + JDK DLLs, `bin\jawt.dll`,
+`lib\` (fontconfig.bfc, psfontj2d.properties, tzdb.dat, tzmappings), skiko DLL, `icudtl.dat`,
+`resources\` (with `javacpp\`). The image no longer reads `desktopApp\build`, so
+`createDistributable` while it runs is safe. Checked without any `-D`: all values resolve,
+modules load from the folder (`bin\jawt.dll`, FFmpeg from `resources\javacpp`), JPEG ~250 ms
+from process start, video first frame ~340 ms warm (2.4 s on the first launch after copying
+78 MB of DLLs — cold).
+
+**Metadata gaps the double click found — agent metadata covers only paths it ran:**
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Grid → Info hung | `SimpleDateFormat`, no `en_150` locale data in the image | `-H:+IncludeAllLocales` |
+| Editor → Clips hung | `snowflake.svg` never loaded during agent runs | `composeResources/**` whole |
+| Both *hung* rather than failed | Compose's error dialog (`JOptionPane`) had no Swing UI classes | `createUI` for 104 `Windows*/Basic*/Metal*UI` |
+| ×4 on a clip: audio unchanged | JNI `AllocObject` on `AVFilter`, not registered | `unsafeAllocated` for all 294 concrete JavaCPP `Pointer` subclasses (generated from bytecode) |
+
+Image 107 → 141 MB (locales + resources). Strict mode is the audit tool: build with
+`--exact-reachability-metadata`, run with `-XX:MissingRegistrationReportingMode=Warn`, and every
+missing registration is printed even when the code catches it. First run reported
+`VarHandleSegmentAs{Shorts,Ints,Longs}Aligned` (FFM memory access in `WinRt`,
+`WindowsCommandLine`, SMTC) — not yet registered.
+
+**Two product defects found on the way, reproduced on the JVM too, fixed:**
+- A fragmented `mp4` (ending in `mfra`) was offered `Done`, and the cut was lost there with a
+  generic "could not be written". The box walk (`fitsFile`) ran only at the write;
+  `carriesWhole()` now asks it once when the editor opens (`EditorEngineFactoryImpl.create`),
+  so such a file opens `RenderOnly`. `capability()` stays cheap for menus. Its notice now says
+  "This MP4 cannot keep an edit" and why, instead of the format-wide "MP4 cannot keep an edit
+  yet" (`EditorRenderOnlyNotice(file)`). Test: `VideoEditorEngineTest`.
+- A speed set on the clip under the play head waited for a seek: `relocate` returned early when
+  the decoding range still held the position, skipping `showRange` → `setClipPace`. It now
+  re-applies that range's pace (no-op when unchanged). Test: `ClipPaceTest`.
+
+Session scripts live in `build\native-image\scripts` (`paths.ps1` shared;
+`rebuild-all.ps1 [-SkipGradle] [-Extra ...]`, `ni-live.ps1 [-Extra ...]`); metadata in
+`config\` (agent) and `config-extra\` (hand-written + generated). Not in Git.
+
+### Next, in order
+1. Metadata coverage by rule, not by run: per dependency (JavaCPP callbacks, AWT event JNI,
+   FFM downcalls from code, ImageIO/Coil `ServiceLoader`, PDFBox resources, FFM `VarHandle`s),
+   the agent over the whole `:shared` test suite, then a strict-mode manual pass.
+2. Gradle task for the image (metadata and generators in the repository), MSI packaging.
+3. Native memory idle / after video against the JVM on the same scenarios.
+
+### License — decided 2026-11-20
+
+Oracle GraalVM 25.0.4 is under the **GraalVM Free Terms and Conditions** (`LICENSE.txt` in the
+archive, last updated 12 June 2023). A native image counts as the "unmodified Program", and may be
+redistributed only if no fee is charged for its distribution or use, or for a product bundling
+it. **Woka stays free** (the author, 2026-11-20); voluntary donation links that unlock nothing
+are not such a fee. Conditions to honour: ship GraalVM's `LICENSE.txt`, `NOTICE.txt` and the
+`legal/` notices of the JDK parts that travel with the image (awt, freetype, lcms, javajpeg…)
+in the installer's `licenses\`. Should Woka ever charge, the image moves to GraalVM Community
+Edition (GPLv2 + Classpath Exception; no PGO).
+
+## Native Image: metadata by rule — 2026-11-21
+
+Step 1 of the list above, done; the author's pass through the strict image found nothing missing.
+
+**Three sources** (`build\native-image\`, outside Git), merged by the build:
+- `config\` — the agent over app runs (6 scenarios + manual sessions);
+- `config-tests\` — the agent over the whole `:shared` suite on GraalVM's java (`ni-tests.ps1`,
+  an init script; JavaCPP from the folder, or the agent crashes on its jar scan): 579 types,
+  74 resources, 22 FFM descriptors after test-only entries are filtered out; 1739/0 under GraalVM;
+- `config-rules\` — `rules-meta.py`, derived from the dependencies themselves:
+  JNI — every class named as a string literal or by an exported `Java_*` symbol in the 22 DLLs the
+  image loads, plus `java.awt.event.*` and every superclass (845 classes; drag and drop failed until
+  `SunDropTargetContextPeer`, the declaring class, was in); all concrete JavaCPP `Pointer`s
+  `unsafeAllocated` (295); all `Windows*/Basic*/Metal*UI` methods, Swing's icons and three bundles
+  (Compose's error dialog needs them to show at all); `java.rmi.MarshalledObject` (clipboard);
+  `coalesceEvents` on the app's 74 AWT/Swing components; `label` on 1363 Kotlin continuations;
+  the 14 `VarHandleSegmentAs*`; FFM descriptors parsed from the sources (43 + 2 upcalls);
+  Compose, PDFBox and FontBox resources. `-H:+IncludeAllLocales` stays on the command line.
+
+**Audit:** build with `--exact-reachability-metadata`, run with
+`-XX:MissingRegistrationReportingMode=Warn`; every gap is printed even where the code catches it.
+The last manual pass (Movies, Pictures, editor, subtitles, drag and drop, clipboard) printed
+nothing. Image 107 → 189 MB; JPEG 191–195 ms and video 349–353 ms from launch, unchanged.
+
+**Product defects found during the passes — all reproduced on the JVM first, fixed, tested:**
+- Rotate, then Crop: the rect is stored in the frame after the preceding geometry (as the fold
+  applies it and `Single` re-commits it), but the overlay turned it through that geometry again.
+  `CanvasTool.worksInFrame` (Crop: true). `CropMirrorUiTest` asserted the old reading; revised.
+- Markup after a crop drew below its handles: paints were drawn outside the recipe's matrix.
+  Now inside it, on screen and on save (`MarkupCropRenderTest`). Orientation after a turn is an open
+  question in the image editor's backlog.
+- Embedded subtitles took 30–40 s to appear on large films: a pass over the whole container
+  (32.7 s for 63.6 GB) ran before any cue existed, on every open. Replaced by `SubtitleWindow`:
+  the chosen track is read around the play head (−10 s…+3 s first, then on to +40 s), with an
+  audio stream kept as a clock so a sparse track does not read to the end, and the discarded
+  streams restored for the seek (Matroska's index is the video's: 14.6 s → 5 ms). First line at
+  0:00 / 10:00 / 60:00 of that film: 23 / 58 / 31 ms (`SubtitleWindowProbe`, opt-in).
+- From the session before: fragmented `mp4` opens `RenderOnly` with its own notice; a clip's speed
+  applies without a seek.
+
+### Next, in order
+1. Gradle task for the image (GraalVM, VS 18 vcvars, the three metadata sources and
+   `rules-meta.py` in the repository), `NativeImageOptions` layout, MSI with GraalVM's
+   LICENSE/NOTICE and `legal/` notices.
+2. Native memory idle / after video against the JVM on the same scenarios.
+3. PGO trial — kept only if a measurement shows a gain.
+4. The author's full feature pass before any release.

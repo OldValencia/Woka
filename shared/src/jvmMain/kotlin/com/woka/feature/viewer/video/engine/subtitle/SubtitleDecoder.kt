@@ -15,10 +15,14 @@ import com.woka.feature.viewer.video.model.Cue
 import com.woka.feature.viewer.video.model.SubtitleSelection
 
 /**
- * Keeps VideoPlayerTracks.activeCue in step with the play head (§2.2). Embedded
- * tracks are prepared in one container pass on open — text parsed into [Cue]
- * lists, bitmap tracks indexed — while sidecar files are opened on first
- * selection, since the picker (Step 9) can add one at any time.
+ * Keeps VideoPlayerTracks.activeCue in step with the play head (§2.2). An embedded track
+ * is opened when it is first chosen and read around the play head ([SubtitleWindow]);
+ * sidecar files are opened on first selection too, since the picker (Step 9) can add one
+ * at any time, and read whole — they are small.
+ *
+ * **No pass over the container on open** (reported 2026-11-20). One used to read every
+ * embedded track before any cue existed, which on a 63.6 GB film was 32.7 s of nothing on
+ * screen — and that whole file read again on every open, whatever was selected.
  *
  * Runs under [decoder], the video decoder's job, so `dispose()` ends it with the rest.
  * It ran on the player's long-lived scope until 2026-11-19 (ST-001): this loop never
@@ -27,16 +31,20 @@ import com.woka.feature.viewer.video.model.SubtitleSelection
  */
 internal fun VideoPlayerState.startSubtitleDecoderLoop(decoder: Job) {
     scope.launch(Dispatchers.IO + SupervisorJob(decoder)) {
-        val subtitleTracks = tracks.mediaTracks.subtitle
-        val streams = decodeEmbeddedSubtitles(
-            filepath = file.absolutePath,
-            textIndices = subtitleTracks.filter { it.isTextBased != false }.map { it.index }.toSet(),
-            bitmapIndices = subtitleTracks.filter { it.isTextBased == false }.map { it.index }.toSet()
-        )
+        val bitmapTracks = tracks.mediaTracks.subtitle.filter { it.isTextBased == false }.map { it.index }.toSet()
+        val embedded = mutableMapOf<Int, SubtitleWindow?>()
         val externalText = mutableMapOf<String, List<Cue>>()
         val externalBitmap = mutableMapOf<String, BitmapSubtitleSource?>()
         var shownSelection: SubtitleSelection? = null
         var shownCue: BitmapCue? = null
+
+        // Pictures are decoded only as the play head reaches them, and only once per cue —
+        // an index holds compressed packets, not rasters (see BitmapSubtitleSource).
+        fun showBitmap(cue: BitmapCue?, decode: (BitmapCue) -> Cue?) {
+            if (cue === shownCue) return
+            shownCue = cue
+            tracks.activeCue = cue?.let(decode)
+        }
 
         try {
             while (isActive) {
@@ -46,67 +54,49 @@ internal fun VideoPlayerState.startSubtitleDecoderLoop(decoder: Job) {
                     shownCue = null
                     tracks.activeCue = null
                 }
-                val source = bitmapSourceFor(selection, streams, externalBitmap)
-                if (source != null) {
-                    // Pictures are decoded only as the play head reaches them, and
-                    // only once per cue — the index holds compressed packets, not
-                    // rasters (see BitmapSubtitleSource).
-                    val cue = source.cueAt(subtitleTimeMs)
-                    if (cue !== shownCue) {
-                        shownCue = cue
-                        tracks.activeCue = cue?.let {
-                            Cue(startMs = it.startMs, endMs = it.endMs, image = source.decode(it))
-                        }
+                val window = (selection as? SubtitleSelection.Embedded)?.let { chosen ->
+                    embedded.getOrPut(chosen.index) {
+                        openSubtitleWindow(file.absolutePath, chosen.index, chosen.index in bitmapTracks)
                     }
-                } else {
-                    // subtitleTimeMs, not currentPositionMs: the sync offset (§3) is
-                    // applied here at lookup, so nothing has to be re-parsed.
-                    val cues = textCuesFor(selection, streams, externalText)
-                    tracks.activeCue = if (cues == null) null else findActiveCue(cues, subtitleTimeMs)
+                }
+                // subtitleTimeMs, not currentPositionMs: the sync offset (§3) is applied
+                // here at lookup, so nothing has to be re-read.
+                val atMs = subtitleTimeMs
+                val sidecar = externalBitmapFor(selection, externalBitmap)
+                when {
+                    window != null && window.isBitmap -> showBitmap(window.bitmapAt(atMs)) { cue ->
+                        Cue(startMs = cue.startMs, endMs = cue.endMs, image = window.decode(cue))
+                    }
+                    window != null -> tracks.activeCue = window.textAt(atMs)
+                    sidecar != null -> showBitmap(sidecar.cueAt(atMs)) { cue ->
+                        Cue(startMs = cue.startMs, endMs = cue.endMs, image = sidecar.decode(cue))
+                    }
+                    else -> tracks.activeCue = externalTextFor(selection, externalText)?.let { findActiveCue(it, atMs) }
                 }
                 delay(50.milliseconds)
             }
         } finally {
-            streams.close()
+            embedded.values.forEach { it?.close() }
             externalBitmap.values.forEach { it?.close() }
         }
     }
 }
 
-private fun bitmapSourceFor(
+private fun externalBitmapFor(
     selection: SubtitleSelection,
-    streams: SubtitleStreams,
     external: MutableMap<String, BitmapSubtitleSource?>
-): BitmapSubtitleSource? = when (selection) {
-    is SubtitleSelection.Off -> null
-    is SubtitleSelection.Embedded -> streams.bitmap[selection.index]
-    is SubtitleSelection.External -> if (isBitmapSubtitleFile(selection.path)) {
-        external.getOrPut(selection.path) { openBitmapSubtitleFile(selection.path) }
-    } else {
-        null
-    }
+): BitmapSubtitleSource? {
+    if (selection !is SubtitleSelection.External || !isBitmapSubtitleFile(selection.path)) return null
+    return external.getOrPut(selection.path) { openBitmapSubtitleFile(selection.path) }
 }
 
-private fun textCuesFor(
+private fun externalTextFor(
     selection: SubtitleSelection,
-    streams: SubtitleStreams,
     external: MutableMap<String, List<Cue>>
-): List<Cue>? = when (selection) {
-    is SubtitleSelection.Off -> null
-    is SubtitleSelection.Embedded -> streams.text[selection.index]
-    is SubtitleSelection.External -> if (isBitmapSubtitleFile(selection.path)) {
-        null
-    } else {
-        external.getOrPut(selection.path) { parseSubtitleFile(File(selection.path)) }
-    }
+): List<Cue>? {
+    if (selection !is SubtitleSelection.External || isBitmapSubtitleFile(selection.path)) return null
+    return external.getOrPut(selection.path) { parseSubtitleFile(File(selection.path)) }
 }
 
-private fun findActiveCue(cues: List<Cue>?, positionMs: Long): Cue? {
-    if (cues.isNullOrEmpty()) return null
-    for (cue in cues) {
-        if (positionMs in cue.startMs..cue.endMs) {
-            return cue
-        }
-    }
-    return null
-}
+private fun findActiveCue(cues: List<Cue>, positionMs: Long): Cue? =
+    cues.firstOrNull { positionMs in it.startMs..it.endMs }

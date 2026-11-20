@@ -104,11 +104,12 @@ internal fun DrawScope.drawThroughRecipe(
             // swapping the two at zoom needs no logic here at all. Shared with the
             // save path rather than written twice, so the two cannot drift.
             drawRecipeImage(source, sourceSize, recipe)
+            // Markup is in source coordinates too, so it goes through the same matrix: a
+            // crop clips an arrow and leaves it on the picture (§3.4's application order).
+            // Drawn outside it until 2026-11-20, which moved every shape off its handles by
+            // the crop's corner. After the shaders as well as the filter: markup sits on top
+            // of a sharpened picture rather than being sharpened with it (ME-165).
+            recipe.paints.forEach { paint -> paint.draw(this, recipe.atMs) }
         }
-        // Markup is drawn in source coordinates too, but *outside* the matrix:
-        // a crop must clip an arrow, not move it (§3.4's application order). After
-        // the shaders as well as the filter: markup sits on top of a sharpened
-        // picture rather than being sharpened with it (ME-165).
-        recipe.paints.forEach { paint -> paint.draw(this, recipe.atMs) }
     }
 }

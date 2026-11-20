@@ -41,28 +41,35 @@ internal class BitmapSubtitleSource(
     fun cueAt(positionMs: Long): BitmapCue? =
         cues.firstOrNull { positionMs in it.startMs..it.endMs }
 
-    fun decode(cue: BitmapCue): SubtitleImage? {
-        val sub = AVSubtitle()
-        val gotSub = IntPointer(1)
-        val pkt = AVPacket()
-        var rects: List<SubtitleImageRect> = emptyList()
-        for (payload in cue.payload) {
-            if (av_new_packet(pkt, payload.size) < 0) continue
-            pkt.data().capacity(payload.size.toLong()).put(payload, 0, payload.size)
-            val decoded = avcodec_decode_subtitle2(ctx, sub, gotSub, pkt)
-            av_packet_unref(pkt)
-            if (decoded < 0 || gotSub.get() == 0) continue
-            if (sub.num_rects() > 0) {
-                rects = sub.toImageRects()
-            }
-            avsubtitle_free(sub)
-        }
-        return if (rects.isEmpty()) null else SubtitleImage(canvasWidth, canvasHeight, rects)
-    }
+    fun decode(cue: BitmapCue): SubtitleImage? = ctx.decodeBitmapCue(cue, canvasWidth, canvasHeight)
 
     fun close() {
         avcodec_free_context(ctx)
     }
+}
+
+/**
+ * Re-feeds one cue's compressed packets and returns its picture. Shared by a sidecar
+ * source and an embedded track's window; the context must be one nothing else feeds,
+ * since a PGS decoder keeps state between the segments of a display set.
+ */
+internal fun AVCodecContext.decodeBitmapCue(cue: BitmapCue, canvasWidth: Int, canvasHeight: Int): SubtitleImage? {
+    val sub = AVSubtitle()
+    val gotSub = IntPointer(1)
+    val pkt = AVPacket()
+    var rects: List<SubtitleImageRect> = emptyList()
+    for (payload in cue.payload) {
+        if (av_new_packet(pkt, payload.size) < 0) continue
+        pkt.data().capacity(payload.size.toLong()).put(payload, 0, payload.size)
+        val decoded = avcodec_decode_subtitle2(this, sub, gotSub, pkt)
+        av_packet_unref(pkt)
+        if (decoded < 0 || gotSub.get() == 0) continue
+        if (sub.num_rects() > 0) {
+            rects = sub.toImageRects()
+        }
+        avsubtitle_free(sub)
+    }
+    return if (rects.isEmpty()) null else SubtitleImage(canvasWidth, canvasHeight, rects)
 }
 
 /**
