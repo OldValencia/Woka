@@ -13,7 +13,6 @@ import com.woka.feature.viewer.image.StillPreview
 import com.woka.feature.viewer.image.readStillColor
 import com.woka.feature.viewer.image.stillDecoderFor
 import com.woka.feature.viewer.video.engine.VideoThumbnailExtractor
-import com.woka.feature.viewer.video.engine.quietFfmpegLogs
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withContext
 
@@ -26,10 +25,6 @@ import kotlinx.coroutines.withContext
  * resolution, because the viewer draws this same bitmap full size.
  */
 object MediaThumbnails {
-
-    init {
-        quietFfmpegLogs()
-    }
 
     suspend fun loadThumbnail(item: MediaItem, frameIndex: Int = 0): ImageBitmap? {
         ImageBitmapCache[ImageBitmapCache.key(item.file.absolutePath, frameIndex)]?.let { return editedPoster(item, it) }

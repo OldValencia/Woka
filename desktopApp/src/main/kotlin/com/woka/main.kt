@@ -26,17 +26,20 @@ import com.woka.app.shell.WindowKeys
 import com.woka.core.data.WokaStorage
 import com.woka.core.system.FolderContextMenu
 import com.woka.core.system.WindowsCommandLine
+import com.woka.core.system.StartupTiming
 import java.awt.Point
 import com.woka.app.App
 import java.awt.Dimension
 import java.awt.GraphicsEnvironment
 
 fun main(rawArgs: Array<String>) {
+    StartupTiming.mark("main")
     StartupPrewarm.start()
     val args = WindowsCommandLine.resolveArgs(rawArgs).toTypedArray()
     if (!SingleInstance.startOrForward(args)) {
         return
     }
+    StartupTiming.mark("ipc")
 
     if (FolderContextMenu.isSupported() && FolderContextMenu.executablePath() != null) {
         FolderContextMenu.firstRunRegisterIfNeeded(WokaStorage.root)
@@ -46,6 +49,8 @@ fun main(rawArgs: Array<String>) {
     // publishes its stack as a StateFlow, and a screen changed underneath a live
     // composition would animate as a navigation the user did not make.
     initKoin(args.toList())
+    StartupPrewarm.media(args)
+    StartupTiming.mark("di")
     application {
         val windowState = rememberWindowState(
             size = defaultWindowSize(),
@@ -64,6 +69,7 @@ fun main(rawArgs: Array<String>) {
         ) {
             LaunchedEffect(window) {
                 SingleInstance.bindWindow(window)
+                StartupTiming.mark("window-bound")
             }
 
             window.minimumSize = Dimension(800, 580)
@@ -100,7 +106,7 @@ fun main(rawArgs: Array<String>) {
             }
 
             Column(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize().then(StartupTiming.shellModifier())
             ) {
                 App(
                     topBarArea = { content ->

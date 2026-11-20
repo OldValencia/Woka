@@ -4,6 +4,8 @@ import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.engine.sync.subtitleTimeMs
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -17,9 +19,14 @@ import com.woka.feature.viewer.video.model.SubtitleSelection
  * tracks are prepared in one container pass on open — text parsed into [Cue]
  * lists, bitmap tracks indexed — while sidecar files are opened on first
  * selection, since the picker (Step 9) can add one at any time.
+ *
+ * Runs under [decoder], the video decoder's job, so `dispose()` ends it with the rest.
+ * It ran on the player's long-lived scope until 2026-11-19 (ST-001): this loop never
+ * stopped, and its capture kept every closed video's player, 26 retained frames and the
+ * full channel alive for the session. Supervised, so a subtitle failure stays its own.
  */
-internal fun VideoPlayerState.startSubtitleDecoderLoop() {
-    scope.launch(Dispatchers.IO) {
+internal fun VideoPlayerState.startSubtitleDecoderLoop(decoder: Job) {
+    scope.launch(Dispatchers.IO + SupervisorJob(decoder)) {
         val subtitleTracks = tracks.mediaTracks.subtitle
         val streams = decodeEmbeddedSubtitles(
             filepath = file.absolutePath,

@@ -15,6 +15,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.applyTo
+import com.woka.core.system.AotTraining
+import com.woka.core.system.StartupTiming
 import com.woka.core.ui.image.AppliedVideoEdits
 import com.woka.feature.viewer.audio.AudioStage
 import com.woka.feature.viewer.image.rememberHdrModeAccess
@@ -105,6 +107,8 @@ fun MediaViewerFrame(
                     .fillMaxSize()
                     .drawWithContent {
                         drawContent()
+                        StartupTiming.mark(if (moving) "video-draw" else "image-draw")
+                        AotTraining.pictureDrawn()
                         video?.player?.frameRetention?.acknowledge(drawnFrameId)
                     }
             )

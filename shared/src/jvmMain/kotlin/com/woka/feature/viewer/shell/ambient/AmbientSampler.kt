@@ -50,8 +50,8 @@ private const val BLEND = 0.06f
  * reference, and it deliberately does *not* call `frameRetention.acknowledge` — it
  * does not draw the decoder's bitmap, and acknowledging would advance the close
  * mark for a frame no scene has drawn. The copy is safe because a frame is closed
- * only once sixteen strictly newer ones have been drawn (`FrameRetention.kt`),
- * ~660ms at 24fps, against a downscale measured in milliseconds.
+ * only once four strictly newer ones have been drawn (`FrameRetention.kt`), ~66 ms
+ * even at 60fps, and the `Image` made below holds the pixels itself from then on.
  */
 @Stable
 internal class AmbientSampler {

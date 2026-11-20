@@ -1,6 +1,8 @@
 package com.woka.feature.viewer.image
 
 import androidx.compose.ui.unit.IntSize
+import com.woka.feature.viewer.video.engine.decode.LIGHT_DECODE_THREADS
+import com.woka.feature.viewer.video.engine.quietFfmpegLogs
 import org.bytedeco.ffmpeg.avformat.AVFormatContext
 import org.bytedeco.ffmpeg.global.avformat.AV_DISPOSITION_DEPENDENT
 import org.bytedeco.ffmpeg.global.avutil.AVMEDIA_TYPE_VIDEO
@@ -56,9 +58,11 @@ internal fun <T> onGrabber(
     videoStreamIndex: Int,
     block: (FFmpegFrameGrabber) -> T
 ): T {
+    quietFfmpegLogs()
     val grabber = FFmpegFrameGrabber(file)
     grabber.pixelFormat = AV_PIX_FMT_BGRA
     grabber.setOption("max_streams", MAX_STREAMS_OPTION)
+    grabber.setVideoOption("threads", LIGHT_DECODE_THREADS)
     grabber.videoStream = videoStreamIndex
     return try {
         grabber.start()

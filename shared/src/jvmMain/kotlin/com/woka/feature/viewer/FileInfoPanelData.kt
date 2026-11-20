@@ -8,6 +8,8 @@ import com.woka.feature.viewer.shell.formatFps
 import com.woka.feature.viewer.shell.resolution
 import com.woka.feature.viewer.shell.subtitleDetail
 import com.woka.feature.viewer.shell.toReadableSize
+import com.woka.feature.viewer.video.engine.decode.LIGHT_DECODE_THREADS
+import com.woka.feature.viewer.video.engine.quietFfmpegLogs
 import com.woka.feature.viewer.video.engine.probe.probeMediaTracks
 import com.woka.feature.viewer.video.engine.sync.lengthMs
 import com.woka.feature.viewer.video.engine.track.readStreamHdrInfo
@@ -42,9 +44,11 @@ internal fun probe(item: MediaItem): Probed? = when (item) {
 }
 
 private fun probeVideo(file: File): Probed? = try {
+    quietFfmpegLogs()
     val grabber = FFmpegFrameGrabber(file).apply {
         setOption("probesize", "2000000")
         setOption("analyzeduration", "1000000")
+        setVideoOption("threads", LIGHT_DECODE_THREADS)
         start()
     }
     try {

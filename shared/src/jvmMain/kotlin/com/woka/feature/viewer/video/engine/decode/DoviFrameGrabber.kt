@@ -1,5 +1,6 @@
 package com.woka.feature.viewer.video.engine.decode
 
+import com.woka.feature.viewer.video.engine.quietFfmpegLogs
 import com.woka.feature.viewer.video.engine.probe.isDoviProfile5
 import com.woka.feature.viewer.video.engine.probe.requireSupportedVideo
 import org.bytedeco.javacv.FFmpegFrameGrabber
@@ -12,6 +13,10 @@ internal open class DoviFrameGrabber(file: File, private val inspectRaw: Boolean
     private var p5: P5GrabberState? = null
     internal var p5Playback: Boolean = false
     protected val doviColourActive: Boolean get() = p5 != null
+
+    init {
+        quietFfmpegLogs()
+    }
 
     @Synchronized
     override fun start(findStreamInfo: Boolean) {

@@ -10,6 +10,7 @@ import com.woka.core.data.markUsed
 import com.woka.core.ui.image.AppliedVideoEdits
 import com.woka.core.ui.image.ImageBitmapCache
 import com.woka.feature.viewer.video.engine.decode.FreshFrameGrabber
+import com.woka.feature.viewer.video.engine.decode.LIGHT_DECODE_THREADS
 import com.woka.feature.viewer.video.engine.sync.grabImageAt
 import com.woka.feature.viewer.video.engine.sync.lengthMs
 import com.woka.feature.viewer.video.engine.probe.clockwiseTurns
@@ -25,12 +26,14 @@ import org.jetbrains.skia.Image
 import java.io.File
 
 /**
- * Routes FFmpeg's own logging into JavaCV and silences it. Called from the
- * thumbnail facade rather than from this object's initialiser so it still runs at
- * the exact moment the old `ThumbnailLoader` object was first touched — moving it
- * to first *video* use would leave the CLI "open a video directly" path noisy.
+ * Routes FFmpeg's own logging into JavaCV and silences it, once. Called where FFmpeg is
+ * first opened — the grabbers and the still probes — not from the thumbnail facade's
+ * initialiser: touching it loaded every FFmpeg library for a JPEG that needs none of
+ * them, ~90 ms on the first viewer open and ~50 MB of DLLs (ST-001, 2026-11-19).
  */
-internal fun quietFfmpegLogs() {
+internal fun quietFfmpegLogs() = ffmpegLogsQuiet
+
+private val ffmpegLogsQuiet: Unit by lazy {
     try {
         FFmpegLogCallback.set()
         av_log_set_level(AV_LOG_QUIET)
@@ -80,6 +83,7 @@ internal object VideoThumbnailExtractor {
         val grabber = FreshFrameGrabber(file)
         return try {
             grabber.setVideoOption("hwaccel", "auto")
+            grabber.setVideoOption("threads", LIGHT_DECODE_THREADS)
             grabber.pixelFormat = AV_PIX_FMT_BGR24
             grabber.start()
             val duration = grabber.lengthMs(file) * 1000L
