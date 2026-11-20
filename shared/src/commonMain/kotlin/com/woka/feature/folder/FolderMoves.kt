@@ -36,9 +36,9 @@ fun stepAcross(current: Int, right: Boolean, count: Int): Int =
     if (count == 0) current else (current + if (right) 1 else -1).coerceIn(0, count - 1)
 
 /**
- * Where Backspace goes from [path]: its parent, while [path] lies inside a linked
- * root and is not that root. Null at a root, and for a folder opened from Explorer
- * outside every root — up from there is somewhere the library never went.
+ * Where Backspace goes from [path]: its parent, while [path] lies inside one of
+ * [roots] and is not that root. Null at a root and outside every root. The roots are
+ * the linked folders and the launch folder (`Router.upRoots`).
  */
 fun parentWithinRoot(path: String, roots: List<String>): String? {
     val root = roots.firstOrNull { isWithin(it, path) } ?: return null

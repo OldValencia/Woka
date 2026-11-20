@@ -58,7 +58,7 @@ fun FolderContent(
         if (item is MediaItem.Folder) onNavigateToFolder(target) else onOpenMedia(target)
     }
     val onKey = { event: KeyEvent ->
-        val roots = settings.linkedFolders
+        val roots = AppDependencies.router.upRoots(settings.linkedFolders)
         val context = FolderKeyContext(
             state, focus, gridState, scope, viewModel, roots, path, open, onNavigateToFolder
         )

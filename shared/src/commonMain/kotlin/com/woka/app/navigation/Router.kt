@@ -46,21 +46,38 @@ class Router {
     val stack: StateFlow<List<Screen>> = _stack.asStateFlow()
 
     /**
+     * The folder the app was last launched into ([Screen.Folder.offerPin]): from
+     * Explorer, the command line or a dropped file. Up and Backspace treat it as a root
+     * while it is not linked, so its sub-folders can be left upward but never past it
+     * (author, 2026-11-20 — before, they had no way up at all).
+     */
+    private val _launchRoot = MutableStateFlow<String?>(null)
+    val launchRoot: StateFlow<String?> = _launchRoot.asStateFlow()
+
+    /**
      * Shows the last of [screens]. Called with the launch route before the first
      * composition, and when the folder on screen stops existing (unlink). An empty
      * list is ignored so a bad argument cannot leave the app with no screen.
      */
     fun start(screens: List<Screen>) {
         val screen = screens.lastOrNull() ?: return
-        _stack.value = listOf(screen)
+        show(screen)
     }
 
     fun navigateTo(screen: Screen) {
+        show(screen)
+    }
+
+    /** The roots Up stops at: the linked folders, then the [launchRoot]. */
+    fun upRoots(linked: List<String>): List<String> = linked + listOfNotNull(_launchRoot.value)
+
+    private fun show(screen: Screen) {
+        if (screen is Screen.Folder && screen.offerPin) _launchRoot.value = screen.path
         _stack.value = listOf(screen)
     }
 
     /** The same as [navigateTo]; kept as a name for the callers that mean "this, again". */
     fun replaceTop(screen: Screen) {
-        _stack.value = listOf(screen)
+        show(screen)
     }
 }

@@ -1,5 +1,6 @@
 package com.woka
 
+import androidx.compose.runtime.withFrameNanos
 import org.jetbrains.skiko.Library
 import com.woka.core.system.StartupTiming
 import com.woka.core.system.windows.D3d12Prewarm
@@ -44,6 +45,16 @@ internal object StartupPrewarm {
             if (!file.isFile) return@thread
             if (mediaItemOrNull(file) is MediaItem.Image) MediaStartup.prepareStill(file) else MediaStartup.prewarm()
         }
+    }
+
+    /**
+     * Called once the window exists. Two frames later skiko has drawn with its own
+     * device, so the prewarmed one has done its job and is let go.
+     */
+    suspend fun windowShown() {
+        StartupTiming.mark("window-bound")
+        repeat(2) { withFrameNanos { } }
+        D3d12Prewarm.release()
     }
 
     fun start() {

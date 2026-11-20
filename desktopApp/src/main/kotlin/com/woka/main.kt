@@ -69,7 +69,7 @@ fun main(rawArgs: Array<String>) {
         ) {
             LaunchedEffect(window) {
                 SingleInstance.bindWindow(window)
-                StartupTiming.mark("window-bound")
+                StartupPrewarm.windowShown()
             }
 
             window.minimumSize = Dimension(800, 580)

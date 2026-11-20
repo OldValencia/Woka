@@ -469,7 +469,7 @@ runtime, libomp), каждая с поиском по jar, 5–7 ms. DLL из р
 4K-видео играет, `avcodec-62.dll` загружен из `app\resources\javacpp`. DLL остаются и внутри jar,
 установщик тяжелее. Тесты 1736/0.
 
-### Native Image: ~250 ms до `main` — не объяснено (2026-11-20)
+### Native Image: ~250 ms до `main` — не объяснено (2026-11-20; объяснено ниже, ETW)
 
 Hello-world в той же папке — 17 ms до `main`. У Woka-образа ~250 ms и с DLL (189 MB), и без
 (107 MB), и из папки проекта вместо Temp, и с `/DYNAMICBASE:NO` (`dumpbin`: relocations stripped)
@@ -486,8 +486,8 @@ Hello-world в той же папке — 17 ms до `main`. У Woka-образ�
 AOT-кэш при упаковке, `sun.java2d.d3d=false` + `D3d12Prewarm`, превью в первом кадре, кадры
 без staging-массива + margin 4, JavaCPP из папки. Тесты 1736/0 на последней сборке.
 
-**Следующий шаг (решение автора — доделывать Native Image):** автор ставит Windows Performance
-Toolkit (Windows ADK). Снять ETW-трейс запуска `ni\out-nodll\woka.exe` (`wpr -start CPU`,
+**Выполнено вечером 2026-11-20 — см. «Native Image: ETW» в конце файла.** Исходный план шага:
+автор ставит Windows Performance Toolkit (Windows ADK). Снять ETW-трейс запуска `ni\out-nodll\woka.exe` (`wpr -start CPU`,
 запуск, `wpr -stop`), найти ~250 ms до `main`. Затем: видео/DV в образе, сборка образа как
 Gradle-задача, упаковка (jawt в `bin\`, `-Djava.home`), сравнение с JVM+AOT через EXE.
 Не повторять: релокации/ASLR, вшитые DLL, Temp/AV, опрос модулей — исключены выше.
@@ -514,3 +514,78 @@ Gradle-задача, упаковка (jawt в `bin\`, `-Djava.home`), срав�
 | После закрытия видео | 1086 / 360 | 918 / **238** |
 | Первый постер видео в папке | 790 ms | 643 ms |
 | Native Image (эксперимент): пик физ. при JPEG | 183 (JVM) | 96 |
+
+## Native Image: ETW — 2026-11-20, вечер
+
+WPT установлен автором. `xperf` (PROC_THREAD, LOADER, PROFILE 0.12 ms, CSWITCH/ReadyThread со
+стеками, faults, file IO, registry) из повышенной сессии; Woka запускалась **не** повышенной.
+Разбор — `xperf -a dumper` + Python-скрипты (TEMPORARY, в scratchpad сессии).
+
+**1. ~250 ms до `main` — консольная подсистема EXE.** После `kernel32` (7 ms) загрузчик молчит до
+импортов `woka.exe` (`advapi32`…) ~300 ms; главный поток 306 ms в `Executive`, будит его
+`OpenConsole.exe`. GraalVM по умолчанию линкует **консольный** EXE, Windows создаёт ему консоль
+через Windows Terminal. В повышенном процессе (conhost) то же ожидание ~47 ms. Не образ, не
+ресурсы, не релокации. Fix: `-H:NativeLinkerOption=/SUBSYSTEM:WINDOWS
+-H:NativeLinkerOption=/ENTRY:mainCRTStartup` (сначала проверено `editbin` на копии):
+`main` 250–330 → **~25 ms**. Следствие: прежние замеры через консольный `java.exe` из
+PowerShell завышены тем же механизмом — сравнивать только через GUI-лаунчеры.
+
+**2. Окно ждало драйвер трижды.** В native отрезок AWT→окно ~270 ms против ~140 у JVM. Трейс
+рядом: JVM загружает `nvldumdx.dll` (загрузчик NVIDIA) один раз, native — трижды (45/185/235 ms),
+и каждый раз `crypt32 → wintrust → imagehlp` перепроверяет подписи DLL драйвера (~60–70 ms CPU).
+Native успевал создать **и освободить** prewarm-устройство до skiko — последняя ссылка уходила,
+драйвер выгружался. Гипотеза «хэшируется 107 MB `woka.exe`» отвергнута опытом: EXE +300 MB
+стартует так же. Fix (production): `D3d12Prewarm` держит устройство; `StartupPrewarm.windowShown()`
+(вместо отметки `window-bound` в `main.kt`) через 2 кадра окна вызывает `release()`.
+
+**3. Метаданные.** Агент на 6 сценариях (JPEG, Welcome, SDR, P8.1, P5, папка DV samples) с
+опциями из `Woka.cfg`, `no-builtin-caller-filter`. `WindowsLookAndFeel` агент не видит и так —
+добавлен вручную; без него при `swing.globals=true` образ падал `ClassNotFoundException` в
+зависимости от гонки потока prewarm. **Не хватает JNI для событий ввода:** при движении мыши
+`NoClassDefFoundError: MouseEvent`, `NoSuchMethodError: KeyEvent.<init>` — в прогонах агента
+не было ввода. В таком образе мышь/клавиатура не работают.
+
+GUI-лаунчеры, JPEG, 5 чередующихся запусков, тёплый кэш ОС, мс от запуска, медианы:
+
+| Режим | main | окно | JPEG | пик WS / private, MiB |
+|---|---:|---:|---:|---:|
+| JVM+AOT `Woka.exe` (до сборок в сессии) | 146 | 330 | 358 | 244 / 344 |
+| JVM+AOT `Woka.exe` (после сборок, демоны Gradle живы) | 233 | 421 | 448 | 244 / 345 |
+| Native GUI, prewarm отпускает сразу | 26 | 310 | 318 | 178 / 267 |
+| **Native GUI, удержание до кадров окна** | **29** | **182** | **189** | **178 / 269** |
+
+JVM-образ в сравнении — из jar до правки удержания; эффект удержания на JVM не измерен.
+Видео в native (первый кадр от запуска): SDR HEVC, P8.1, P5, 4K AVC, AV1 — 370–415 ms, играют.
+
+### ТОЧКА ПРОДОЛЖЕНИЯ — 2026-11-20, вечер
+
+Production-изменения (не закоммичены): `D3d12Prewarm.kt` (удержание + `release()`),
+`StartupPrewarm.kt` (`windowShown()`), `main.kt` (вызов вместо отметки, 150 строк).
+`:shared:build` — BUILD SUCCESSFUL, 1736 tests / 0 failures / 0 errors (13 skipped — opt-in probes).
+Скрипты сессии (агент, сборка, сравнение, ETW-разбор) — в её scratchpad, сессионные.
+
+**Сделано позже в тот же вечер (проверено автором руками):**
+- Метаданные ввода: агент на ручной сессии автора (мышь, клавиши, редактор, видео, диалоги) —
+  `MouseEvent`/`KeyEvent`/`MouseWheelEvent` записаны. `WindowsLookAndFeel` по-прежнему вручную.
+- Link folder падал: `Fontconfig head is null` — у образа нет `lib\fontconfig.bfc`. Кладём рядом
+  `lib\` из JDK (`fontconfig.bfc`, `psfontj2d.properties`, `tzdb.dat`, `tzmappings`). `JFileChooser`
+  и в JVM рисуется Metal — не регрессия образа.
+- **Hover/клик по карточкам: `-march=native` ломает `Matrix.invert()` Compose.** В native hover
+  слетал через 2–3 кадра, клик проходил только после остановки курсора. Логи: как только
+  hover-подъём (`graphicsLayer.translationY`) ≠ 0, `windowToLocal(localToWindow(p))` = `Infinity`,
+  `Matrix().translate(0, ty).invert()` возвращает матрицу без изменений (det = 0). A/B одного
+  сценария (автоматический проход курсора): `-march=native` — 23/24 ложных Exit, обращение
+  неверно; `-march=compatibility` — 0, `(10, 10)` верно. JVM не затронута. Сборка образа теперь
+  `-march=compatibility` (для дистрибутива и так обязательно). JPEG 189 → 192 ms — без разницы.
+- Попутно по просьбе автора: папка запуска (`offerPin`) — корень для Up/Backspace
+  (`Router.launchRoot`/`upRoots`), тест в `RouterTest`.
+- Временная диагностика клика/hover удалена (поиск `[ST-001]` пуст). `:shared:build` —
+  BUILD SUCCESSFUL, 1737 tests / 0 failures / 0 errors (13 skipped — opt-in probes).
+
+Дальше по порядку:
+1. Метаданные: прогоны агента собирать на всех сценариях продукта, проверка образа руками.
+2. Опции `Woka.cfg` в образе: GUI-EXE не получает `-D` от лаунчера — `java.home`/`jawt`,
+   `sun.java2d.d3d=false`, пути JavaCPP/skiko, heap нужно задать иначе (build-time или в `main`
+   до первого использования). Решить и проверить.
+3. Gradle-задача сборки образа (GraalVM, vcvars VS 18, метаданные в репозитории), упаковка MSI.
+4. Память native в простое/после видео; сравнить с JVM на одинаковых сценариях.
