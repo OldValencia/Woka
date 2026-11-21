@@ -35,7 +35,9 @@ fun nativeImageArguments(
     configDirs: List<File>,
     output: File,
     strict: Boolean,
-    resources: File? = null
+    resources: File? = null,
+    /** The builder JVM's heap: 16g locally; a 16 GB CI runner needs room left for the linker. */
+    builderMemory: String = "16g"
 ): List<String> =
     listOfNotNull(
         "-cp", appClasspath(appDir).joinToString(File.pathSeparator),
@@ -52,7 +54,7 @@ fun nativeImageArguments(
         "--enable-native-access=ALL-UNNAMED",
         "-R:MaxHeapSize=1536m",
         "-H:+ReportExceptionStackTraces",
-        "-J-Xmx16g",
+        "-J-Xmx$builderMemory",
         "--exact-reachability-metadata".takeIf { strict },
         "com.woka.MainKt"
     )

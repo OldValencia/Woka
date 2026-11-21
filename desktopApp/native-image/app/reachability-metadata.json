@@ -3775,6 +3775,47 @@
       "type": "kotlinx.serialization.descriptors.SerialDescriptor[]"
     },
     {
+      "type": "org.apache.commons.logging.LogFactory"
+    },
+    {
+      "type": "org.apache.commons.logging.impl.Jdk14Logger",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.apache.commons.logging.impl.Log4jApiLogFactory"
+    },
+    {
+      "type": "org.apache.commons.logging.impl.LogFactoryImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.commons.logging.impl.Slf4jLogFactory"
+    },
+    {
+      "type": "org.apache.commons.logging.impl.WeakHashtable",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.logging.slf4j.SLF4JProvider"
+    },
+    {
       "type": "org.bytedeco.ffmpeg.avcodec.AVBSFContext"
     },
     {
@@ -6739,6 +6780,22 @@
         {
           "name": "getApplicationClass",
           "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.misc.Unsafe",
+      "fields": [
+        {
+          "name": "theUnsafe"
+        }
+      ],
+      "methods": [
+        {
+          "name": "invokeCleaner",
+          "parameterTypes": [
+            "java.nio.ByteBuffer"
+          ]
         }
       ]
     },
@@ -30504,6 +30561,12 @@
       "glob": "META-INF/services/kotlinx.coroutines.internal.MainDispatcherFactory"
     },
     {
+      "glob": "META-INF/services/org.apache.commons.logging.LogFactory"
+    },
+    {
+      "glob": "commons-logging.properties"
+    },
+    {
       "glob": "composeResources/woka.shared.generated.resources/drawable/add.svg"
     },
     {
@@ -30775,22 +30838,8 @@
         "returnType": "jint",
         "parameterTypes": [
           "void*",
-          "void*"
-        ]
-      },
-      {
-        "returnType": "jint",
-        "parameterTypes": [
-          "void*",
           "void*",
           "void*"
-        ]
-      },
-      {
-        "returnType": "void*",
-        "parameterTypes": [
-          "void*",
-          "jint"
         ]
       },
       {
@@ -30800,9 +30849,17 @@
         ]
       },
       {
-        "returnType": "void*",
+        "returnType": "jint",
         "parameterTypes": [
-          "void*"
+          "void*",
+          "struct(void*,void*,void*,void*,void*,void*,void*,void*)"
+        ]
+      },
+      {
+        "returnType": "void",
+        "parameterTypes": [
+          "void*",
+          "jint"
         ]
       },
       {
@@ -30819,8 +30876,43 @@
         ]
       },
       {
-        "returnType": "void",
+        "returnType": "jint",
         "parameterTypes": [
+          "void*",
+          "jint",
+          "void*"
+        ]
+      },
+      {
+        "returnType": "jint",
+        "parameterTypes": [
+          "void*",
+          "jlong",
+          "void*",
+          "void*",
+          "void*"
+        ]
+      },
+      {
+        "returnType": "void*",
+        "parameterTypes": [
+          "void*",
+          "void*"
+        ]
+      },
+      {
+        "returnType": "jint",
+        "parameterTypes": [
+          "void*",
+          "jbyte"
+        ]
+      },
+      {
+        "returnType": "jint",
+        "parameterTypes": [
+          "void*",
+          "jlong",
+          "void*",
           "void*"
         ]
       },
@@ -30829,6 +30921,53 @@
         "parameterTypes": [
           "void*",
           "jint",
+          "void*",
+          "void*"
+        ]
+      },
+      {
+        "returnType": "jint",
+        "parameterTypes": [
+          "void*",
+          "void*",
+          "void*",
+          "jlong"
+        ]
+      },
+      {
+        "returnType": "jint",
+        "parameterTypes": [
+          "void*",
+          "void*"
+        ]
+      },
+      {
+        "returnType": "void*",
+        "parameterTypes": [
+          "void*",
+          "jint"
+        ]
+      },
+      {
+        "returnType": "void*",
+        "parameterTypes": [
+          "void*",
+          "jlong"
+        ]
+      },
+      {
+        "returnType": "void*",
+        "parameterTypes": [
+          "void*"
+        ]
+      },
+      {
+        "returnType": "jlong",
+        "parameterTypes": []
+      },
+      {
+        "returnType": "void",
+        "parameterTypes": [
           "void*"
         ]
       },
@@ -30849,10 +30988,11 @@
         ]
       },
       {
-        "returnType": "void*",
+        "returnType": "jint",
         "parameterTypes": [
           "void*",
-          "void*"
+          "void*",
+          "jlong"
         ]
       },
       {
@@ -30866,13 +31006,6 @@
         ]
       },
       {
-        "returnType": "jint",
-        "parameterTypes": [
-          "void*",
-          "jbyte"
-        ]
-      },
-      {
         "returnType": "void*",
         "parameterTypes": [
           "jint"
@@ -30889,15 +31022,6 @@
         "parameterTypes": [
           "void*",
           "jint"
-        ]
-      },
-      {
-        "returnType": "jint",
-        "parameterTypes": [
-          "void*",
-          "jint",
-          "void*",
-          "void*"
         ]
       },
       {

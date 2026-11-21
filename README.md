@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Platform-Windows%20(Tested)%20%7C%20macOS%20(Untested)%20%7C%20Linux%20(Untested)-blue?style=flat-square" alt="Platforms"/>
+  <img src="https://img.shields.io/badge/Platform-Windows%20(Tested)%20%7C%20macOS%20(Untested%2C%20no%20installer)%20%7C%20Linux%20(Untested%2C%20no%20installer)-blue?style=flat-square" alt="Platforms"/>
   <img src="https://img.shields.io/badge/Kotlin-Multiplatform-7F52FF?style=flat-square&logo=kotlin&logoColor=white" alt="Kotlin Multiplatform"/>
   <img src="https://img.shields.io/badge/UI-Compose%20for%20Desktop-4285F4?style=flat-square" alt="Compose Desktop"/>
   <img src="https://img.shields.io/badge/Engine-Skia%20%26%20FFmpeg-FF9F0A?style=flat-square" alt="Skia & FFmpeg"/>
@@ -138,7 +138,8 @@ Played on the same FFmpeg engine, with embedded cover art, tags, seeking and spe
 
 | Layer | Technologies |
 | :--- | :--- |
-| **UI Framework** | [Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform) (Desktop / JVM) |
+| **UI Framework** | [Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform) (Desktop) |
+| **Runtime** | [GraalVM Native Image](https://www.graalvm.org/latest/reference-manual/native-image/) — Woka ships as a native Windows executable, no bundled JVM: a photo is on screen in about 0.2 s |
 | **Graphics Engine** | [Skia](https://skia.org/) (via Skiko & Compose) for hardware-accelerated image pipeline and tone-mapping |
 | **Video & Audio Engine** | [JavaCV](https://github.com/bytedeco/javacv) (FFmpeg native bindings) for high-efficiency demuxing and decoding |
 | **Dependency Injection** | [Koin](https://insert-koin.io/) |
@@ -150,11 +151,12 @@ Played on the same FFmpeg engine, with embedded cover art, tags, seeking and spe
 
 ### Prerequisites
 
-- **JDK 25** or higher (Oracle JDK, OpenJDK, Temurin, or Corretto recommended)
-- **Windows 10/11** (officially tested and supported)
+- **Windows 10/11** — the only tested platform
+- **JDK 25** or higher to run from source (Oracle JDK, OpenJDK, Temurin, or Corretto)
+- To build the installer: **Oracle GraalVM for JDK 25** and **Visual Studio** with the C++ desktop tools
 
 > [!NOTE]
-> macOS and Linux support is currently experimental and untested. While the project is built on Compose Multiplatform and should theoretically run on other desktop OSes, daily development and testing are conducted primarily on Windows.
+> Woka is developed and tested on Windows only. It is built on Compose Multiplatform, so macOS and Linux may well run it from source (after building the bundled natives with `natives/*/build.sh`), but that has never been tested — which is why no DMG or DEB installers are published. Support may come if someone needs it.
 
 ### Running from Source
 
@@ -177,6 +179,18 @@ On Windows PowerShell:
 .\gradlew.bat :desktopApp:run
 ```
 
+### Building the Installer
+
+The installer is a native image built with GraalVM. Point Gradle at GraalVM once — `woka.graalvm.home`
+in `~/.gradle/gradle.properties`, or the `GRAALVM_HOME` environment variable — then:
+
+```powershell
+.\gradlew.bat :desktopApp:packageMsi "-Pwoka.native=true"
+```
+
+The MSI lands in `desktopApp/build/compose/binaries/main/msi/`. `:desktopApp:nativeAppImage` builds
+just the runnable folder. Quote the `-P` arguments in PowerShell, which otherwise splits them at the dot.
+
 ---
 
 ## Contributing & Support
@@ -194,3 +208,7 @@ If you enjoy using Woka, consider supporting ongoing development:
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
+
+The Windows installer contains runtime components of Oracle GraalVM, redistributed free of charge
+under the [GraalVM Free Terms and Conditions](https://www.oracle.com/downloads/licenses/graal-free-license.html);
+their license and notices are installed in `licenses\graalvm`.

@@ -66,5 +66,5 @@ property still runs `trainAotCache` → `aotAppImage` → `packageMsi`.
 **Done 2026-11-21.** The author installed the MSI, used the app ("everything works perfectly"),
 and uninstalled it; observed 113 MB of RAM idle with the window open and nothing loaded, and almost
 no load on a heavy file. `buildSrc` tests 5/0; `:shared:build` 1746 / 0 on the third run — the two
-before died in a native FFmpeg crash in `RenderSoundSyncTest`, unrelated to this ticket and seen
-before it (`hs_err` of 2026-11-20 20:05); recorded in the backlog.
+before died in a native FFmpeg crash in `RenderSoundSyncTest`, unrelated to this ticket and open
+since 2026-11-10 as F5 of the 1.0.7 review; recorded in the backlog as ST-007.

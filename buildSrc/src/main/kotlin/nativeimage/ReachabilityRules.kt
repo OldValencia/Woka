@@ -10,10 +10,16 @@ private val RESOURCE_GLOBS = listOf(
     "org/apache/fontbox/cmap/**", "org/apache/fontbox/unicode/**"
 )
 
+/**
+ * JDK resource bundles looked up by name: Swing's strings (an error dialog shows none without
+ * them) and `java.util.logging`'s level names, which a JXR decode reached through a log call
+ * (found by `nativeImageAudit`, 2026-11-21).
+ */
 private val SWING_BUNDLES = listOf(
     "com.sun.swing.internal.plaf.basic.resources.basic",
     "com.sun.swing.internal.plaf.metal.resources.metal",
-    "com.sun.java.swing.plaf.windows.resources.windows"
+    "com.sun.java.swing.plaf.windows.resources.windows",
+    "sun.util.logging.resources.logging"
 )
 
 /**
@@ -74,6 +80,9 @@ fun writeRules(graalHome: File, appDir: File, sources: File, out: File): Map<Str
         "reflection" to entries.values.sortedBy { it["type"] as String },
         "resources" to RESOURCE_GLOBS.map { mapOf("glob" to it) } +
             listOf("javax/swing/plaf/**", "com/sun/java/swing/plaf/**").map { mapOf("module" to "java.desktop", "glob" to it) } +
+            // A bundle's per-locale .properties are probed even where none exists; a strict image
+            // answers "absent" only for a path it was told about.
+            mapOf("module" to "java.logging", "glob" to "sun/util/logging/resources/**") +
             SWING_BUNDLES.map { mapOf("bundle" to it) },
         "foreign" to mapOf("downcalls" to downcalls.sortedBy { it.toString() }.map { it.toJson() }, "upcalls" to upcalls.map { it.toJson() })
     )

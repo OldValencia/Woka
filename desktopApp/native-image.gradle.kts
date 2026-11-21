@@ -13,6 +13,7 @@ import nativeimage.writeRules
 val graalHome = providers.gradleProperty("woka.graalvm.home")
     .orElse(providers.environmentVariable("GRAALVM_HOME"))
 val strict = providers.gradleProperty("woka.native.strict").map { it.toBoolean() }.orElse(false)
+val builderMemory = providers.gradleProperty("woka.native.builderMemory").orElse("16g")
 val appDir = layout.buildDirectory.dir("compose/binaries/main/app/Woka/app")
 val rulesDir = layout.buildDirectory.dir("native-image/rules")
 val imageDir = layout.buildDirectory.dir("native-image/image")
@@ -21,6 +22,9 @@ val metadataDir = layout.projectDirectory.dir("native-image")
 val kotlinSources = rootProject.file("shared/src/jvmMain/kotlin")
 val appVersion = providers.gradleProperty("app.version").orElse("1.0.0")
 val windowsIcon = layout.projectDirectory.file("src/main/resources/icons/woka.ico")
+
+// The tasks that refresh and audit the metadata this build reads (ST-006).
+apply(from = "native-image-metadata.gradle.kts")
 
 // Reachability metadata by rule, regenerated whenever the distributable or the sources move.
 tasks.register("nativeImageRules") {
@@ -49,6 +53,7 @@ tasks.register("nativeImage") {
     inputs.dir(rulesDir)
     inputs.dir(metadataDir)
     inputs.property("strict", strict)
+    inputs.property("builderMemory", builderMemory)
     inputs.property("version", appVersion)
     inputs.file(windowsIcon)
     outputs.dir(imageDir)
@@ -61,13 +66,14 @@ tasks.register("nativeImage") {
     val strictBuild = strict
     val version = appVersion
     val icon = windowsIcon
+    val memory = builderMemory
     doLast {
         val output = out.get().asFile.apply { mkdirs() }
         val scratch = work.get().asFile.apply { mkdirs() }
         // Woka's icon and version inside the executable (ST-005): an installer takes it as it is.
         val resources = writeResourceScript(scratch, icon.asFile, version.get())
         val dirs = configs.map { it.asFile } + rules.get().asFile
-        val arguments = nativeImageArguments(app.get().asFile, dirs, output, strictBuild.get(), resources)
+        val arguments = nativeImageArguments(app.get().asFile, dirs, output, strictBuild.get(), resources, memory.get())
         runNativeImage(graalvmHome(home), arguments, scratch, resources)
     }
 }

@@ -335,6 +335,13 @@ it costs, because a muted `mp4` of the same clip is smaller and looks better. ff
 palettegen/paletteuse over the same document, so it is a render *target* and not a second mechanism.
 *Depends on ME-292.*
 
+### F5 — the render's intermittent native crash (from the 1.0.7 review)
+`avcodec_send_packet` jumps through a null pointer in `avutil-60.dll` during a cut render, about
+320 tests into a full `:shared:jvmTest` and not every run (2026-11-10, twice in ~8; 2026-11-21,
+twice in a row). The render tests alone and together pass. Find the earlier test, then the FFmpeg
+state it leaves; the same path is `Render video…` in the app. Evidence and dumps:
+[`review-1.0.7.md`](review-1.0.7.md), F5.
+
 ---
 
 ## 300 — The shared shell

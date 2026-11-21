@@ -320,7 +320,8 @@ parsed metadata values and final tone-mapped window output were not independentl
 ### Verdict and limits
 
 **ME-236 has a measured benefit; recommendation: keep it in 1.0.8, subject to the implementation
-gate.** On the RTX, a multi-second long-GOP pre-roll becomes about half a second. This is relevant
+gate.** *Moved to 1.0.9 by the author on 2026-11-21, with the rest of the sound work: 1.0.8 had
+grown large enough (the native image, start-up, memory, subtitles).* On the RTX, a multi-second long-GOP pre-roll becomes about half a second. This is relevant
 to short consecutive clips and is different from a general claim that all playback becomes faster.
 It still does not guarantee seamless joins for arbitrarily short clips.
 

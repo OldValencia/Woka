@@ -64,6 +64,13 @@ Found 2026-11-10 in a full `:shared:build`: twice in about eight runs, once with
 no area, no markup. The rerun passes. No native frames in the dump, so the cause is not known;
 the next step is to run that test alone in a loop until it fails, then narrow it.
 
+**Again 2026-11-21:** two full runs in a row died the same way (`avutil-60.dll+0x4fe03`,
+`hs_err_pid3468` and `hs_err_pid23604` in `shared/`, `DoviFrameGrabber` on the stack in one); the
+third passed, 1746/0. Alone three times and with every other render test it passes — so it needs
+something an earlier test leaves behind, about 320 tests into the suite, not only a loop of the
+test. The path is `Render video…` in the app, where it would take the process down. Briefly tracked
+as ST-007 in the startup feature before it was moved back here.
+
 ### F2 — `EditorSession.reset()` has no caller outside tests — minor, left
 `EditorSessionResets.kt:19`. Only `EditorSessionTest` calls it.
 

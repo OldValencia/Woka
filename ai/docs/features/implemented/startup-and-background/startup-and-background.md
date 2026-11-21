@@ -2,17 +2,22 @@
 
 ## Цель и статус
 
+**Shipped 2026-11-21 — moved to `implemented/`.** Woka 1.0.8 ships as a GraalVM native image in
+an MSI: a photo on screen in ~190 ms from a double click (802 ms in 1.0.7), 113 MB idle with
+nothing open (the author's observation), subtitles in tens of milliseconds. The JVM build is
+deprecated; CI builds only the Windows native MSI. Built by Gradle (ST-004), packaged by ST-005,
+kept honest by ST-006's agent refresh and strict audit. ST-002 and ST-003 were dropped — the
+native start leaves nothing to hide — and the render crash once tracked as ST-007 belongs to the
+video editor (F5 of its 1.0.7 review). Measuring native memory against the JVM was skipped by the
+author's choice: the difference is plain. A PGO trial stays an option, kept only if measured.
+What the work taught is in [Native Image — what is known](#native-image--what-is-known); the full
+log is [ST-001](tickets/ST-001-startup-measurements.md).
+
+*The Russian sections below are the earlier record of the work (2026-11-19…20), kept as written.*
+
 **Последнее обсуждение и следующий этап исследования:** [варианты runtime и низкая RAM](runtime-options.md).
 Учитывает одного разработчика, Windows/Linux/macOS, наблюдение ~460 МБ и варианты без второго UI.
 Продолжить с профилирования памяти и проверки Native Image; архитектурная миграция не выбрана.
-
-**Continuation point 2026-11-21:** the native image runs every feature the author tried, double
-clicked, with metadata derived by rule and a clean strict-mode audit (committed `e805bd9`). Next is
-**[ST-004](tickets/ST-004-native-image-gradle-build.md) — the image built by Gradle**, then
-[ST-005](tickets/ST-005-native-image-msi.md) — its MSI; then
-native memory against the JVM, a PGO trial, and the author's full pass before release. What the
-work taught is in [Native Image — what is known](#native-image--what-is-known) below; the full log
-is the end of [ST-001](tickets/ST-001-startup-measurements.md).
 
 **Точка продолжения 2026-11-20:** конец [ST-001](tickets/ST-001-startup-measurements.md) — сделано, до/после, следующий шаг (ETW-трейс Native Image).
 
@@ -30,12 +35,13 @@ Render GIF пользователь перенёс в 1.0.9; эта работа
 | Этап | Статус |
 |---|---|
 | [ST-001: измерения и AOT](tickets/ST-001-startup-measurements.md) | Native EXE→JPEG измерен; media prewarm включён, AOT подтверждён экспериментально |
-| ST-002: минимальная RAM при закрытом окне | Анализ жизненного цикла; production не изменён |
-| Native Image | Works end to end (2026-11-21): JPEG ~190 ms, video ~350 ms from launch, peak 178/269 MiB at a JPEG; metadata by rule, strict audit clean; built by session scripts, not Gradle yet |
-| ST-003: launcher/IPC и упаковка | Backlog |
+| ~~ST-002: compact idle~~ | Dropped 2026-11-21 — native start leaves nothing to hide ([backlog](tickets/backlog.md)) |
+| Native Image | Works end to end (2026-11-21): JPEG ~190 ms, video ~350 ms from launch, peak 178/269 MiB at a JPEG; metadata by rule, strict audit clean; built by Gradle (ST-004), shipped as the 1.0.8 MSI (ST-005) |
+| ~~ST-003: launcher and packaging~~ | Dropped 2026-11-21 — the executable is native; packaging is ST-004/005 |
 | [ST-004: the native image built by Gradle](tickets/ST-004-native-image-gradle-build.md) | **Done 2026-11-21** — `:desktopApp:nativeAppImage` |
 | [ST-005: an MSI that installs the native image](tickets/ST-005-native-image-msi.md) | **Done 2026-11-21** — `packageMsi -Pwoka.native=true`; installed and checked by the author, 113 MB idle |
-| ST-006: refreshing the image's metadata from Gradle | Backlog |
+| [ST-006: refreshing the image's metadata from Gradle](tickets/ST-006-native-image-metadata-refresh.md) | **Done 2026-11-21** — agent refresh tasks + `nativeImageAudit` |
+| ~~ST-007~~ | Moved 2026-11-21 to the video editor: it is F5 of its 1.0.7 review |
 
 DV P5 предварительно закоммичен и отправлен по отдельному указанию пользователя:
 `6374e3a Add Dolby Vision P5 colour and GPU playback`, 78 файлов, `origin/release/1.0.8`.
@@ -184,6 +190,8 @@ LICENSE, NOTICE and the JDK `legal/` notices. A paid Woka would mean GraalVM Com
 | 2026-11-20 | Where do `Woka.cfg`'s options come from in the image? | Heap at build time; the rest set by `main` from the image's folder | Paths exist only at run time; one mechanism for paths and switches |
 | 2026-11-20 | Oracle GraalVM or Community? | Oracle, Woka stays free | GFTC allows free redistribution only; donations unlock nothing |
 | 2026-11-21 | How is image metadata made complete? | Rules from the dependencies + agent over tests and app runs + strict audit | Agent output alone missed four classes of call, each found by hand as a hang |
+| 2026-11-21 | What ships in 1.0.8? | **The native MSI; the JVM build is deprecated** | The author installed it and found it fast (113 MB idle) and complete; he tests it before release and bugs found are fixed in the image. The JVM path stays buildable, not maintained as a product |
+| 2026-11-21 | Installers for macOS and Linux? | **Turned off in CI** | They packaged the deprecated JVM build and were never verified; the workflow builds the Windows native MSI only |
 
 ## Новые ограничения и варианты — обсуждение 2026-11-19
 
