@@ -1,40 +1,43 @@
-# 1.0.8 — Faster start, far less memory
+# Woka 1.0.8
 
-Measured on the author's machine (Ryzen 7 9800X3D, RTX 5080, Windows 11), warm file cache,
-medians of 5 alternating launches unless noted. "Before" is the 1.0.8 branch at the start of
-the work, which behaves as 1.0.7. Details and methods: [ST-001](tickets/ST-001-startup-measurements.md).
+## Faster and lighter
+- Woka is now a native Windows application, built with GraalVM Native Image — no bundled Java
+  runtime. A photo is on screen about 0.2 s after a double-click (about 0.8 s in 1.0.7); a video
+  starts in about 0.35 s.
+- About 113 MB of memory with the app open and nothing loaded.
+- No slow first launch after installing or updating any more.
+- Playing 4K video no longer climbs into gigabytes: frames are freed as soon as they leave the
+  screen (physical memory while playing 4K: up to 17 GB before, about 0.4 GB now).
+- A folder of heavy videos builds its thumbnails with far less memory (peak 3.75 GB → 1.4 GB), and
+  a closed video's player is released completely.
+- Opening a photo no longer loads the video engine at all.
 
-## Start-up
+## Video
+- Dolby Vision Profile 5 plays with correct colours, accelerated on the GPU; 4K P5 plays smoothly.
+- 8K HEVC at 150 Mbit/s plays at 60 fps on NVIDIA GPUs (CUDA).
+- HDR video thumbnails, Dolby Vision P8.1 included, now match the player — no longer too dark.
+- Embedded subtitles appear instantly, even in very large films; they used to take 30–40 seconds.
 
-| | Before | After |
-|---|---:|---:|
-| Double-click → photo on screen (through `Woka.exe`) | 802 ms | 612 ms¹ |
-| Java start → photo on screen | 453 ms | **215 ms** — the photo is in the very first frame |
-| First launch after install or update | ~8.8 s | no extra wait — the start-up cache ships in the installer |
-| First video poster when opening a folder | 790 ms | 643 ms |
+## Editor
+- Crop works correctly after rotating or flipping a photo.
+- Markup stays exactly where it was drawn after a crop, on screen and in the saved file.
+- Changing a clip's speed takes effect immediately, without seeking.
+- Fragmented MP4 files (common from screen recorders and streams) open as render-only with a
+  clear explanation, instead of losing the cut on Done.
 
-¹ Measured before the last two start-up improvements (window and first frame), which took a
-further ~240 ms off; the double-click figure is to be re-measured.
+## Everything else
+- Up / Backspace now work from a folder Woka was launched on.
+- The installer gives Woka its own icon and version, and includes the GraalVM license notices.
 
-## Memory (private / physical)
+## Platforms
+- Windows 10 and 11. macOS and Linux installers are no longer built: they were never tested.
 
-| | Before | After |
-|---|---:|---:|
-| Empty window | 376 / 176 MB | 352 / 164 MB |
-| Folder of 16 heavy videos, peak while thumbnails build | 5.0 / 3.75 GB | 1.7 / 1.4 GB |
-| Same folder, idle | 735 / 482 MB | 420 / 224 MB |
-| Opening a 4K video, peak | 5–21 GB | ~2.4 / 1.5 GB |
-| Playing 4K video | 1.7–18 GB / 0.7–17 GB | 1.1 GB / **409 MB** |
-| After closing a video | 1086 / 360 MB | 918 / **238 MB** |
+## Coming in 1.0.9
+- Sound editing: music tracks, detaching a clip's sound, extracting audio; hardware-accelerated
+  decoding in the editor; Render GIF.
 
-## What changed
+---
 
-- Video frames are freed as soon as they are no longer drawn, even when nothing is on screen;
-  4K playback no longer depends on the garbage collector's timing.
-- A closed video's player is fully released (a subtitle loop used to keep it alive).
-- Thumbnail, probe and cover decoders use 2 threads instead of one per CPU core.
-- Idle memory is returned to the system; the initial heap no longer reserves ~500 MB.
-- Opening a JPEG no longer loads FFmpeg at all.
-- A start-up cache (JEP 483 AOT) is built at packaging time and installed with Woka.
-- The GPU driver is warmed up while the window is built; Java2D's unused Direct3D 9 is off.
-- FFmpeg's libraries load from a folder instead of being searched for inside the app's jars.
+*Sources: the memory figures for video and folders were measured on the JVM build, whose video
+engine changes the native build carries; 113 MB idle is the author's observation on the native
+build. Methods and the full log: [ST-001](tickets/ST-001-startup-measurements.md).*
