@@ -7,6 +7,7 @@ import org.jetbrains.skia.Bitmap
 import org.jetbrains.skia.ColorAlphaType
 import org.jetbrains.skia.ColorType
 import org.jetbrains.skia.ImageInfo
+import java.lang.foreign.MemorySegment
 import java.nio.ByteBuffer
 
 // A frame this far past its wall-clock slot is not worth the conversion cost.
@@ -36,6 +37,10 @@ internal class FramePacer(private val retention: FrameRetention) {
     private var skipsInARow = 0
     private var pacedSpeed = 0f
     private var nextFrameId = 1L
+
+    /** The newest [convert] result, re-sent while nothing draws (`deliverPicture`). */
+    var lastConverted: PacedFrame? = null
+        private set
 
     /**
      * Two late frames in a row: the machine is not keeping up *right now*. One late
@@ -94,32 +99,17 @@ internal class FramePacer(private val retention: FrameRetention) {
      * decoder already produced straight into the bitmap that gets drawn.
      *
      * The bitmap is handed to [FrameRetention], which closes it once the UI has
-     * drawn past it. That is what bounds memory; everything below is the backstop
-     * for when it cannot — a stalled UI, a draw site that does not report.
+     * drawn past it, and the decoder stops minting new ones while nothing draws
+     * (`FrameRetention.isBacklogged`). That is what bounds memory.
      *
-     * **The staging array is deliberately allocated per frame rather than reused.**
-     * It looks like waste and is the opposite. A frame's pixels live in native
-     * memory that the collector cannot see: it weighs 15MB and the Java wrapper
-     * holding it weighs a few dozen bytes, so with a reused buffer the heap grew by
-     * about a kilobyte a second while native memory grew by 350MB a second. The
-     * collector had no reason to run, took twenty seconds to get round to it, and
-     * seven gigabytes accumulated in between — measured, not guessed. Allocating
-     * the staging array per frame makes heap pressure track native pressure
-     * one-for-one, so any GC that keeps the heap bounded keeps the frames bounded
-     * with it. The memcpy underneath is the same either way; only the allocation is
-     * added, and it is short-lived young-gen garbage.
-     *
-     * Together with `-XX:MaxNewSize` in `desktopApp/build.gradle.kts` this is what
-     * held the ceiling before [FrameRetention] existed, and it stays as the path
-     * that catches anything the retention rule deliberately refuses to free.
+     * **No Java staging array any more** (ST-001, 2026-11-19). One used to be
+     * allocated per frame on purpose, so heap pressure tracked the native frames
+     * while the collector was what freed them. Since retention closes them itself,
+     * all it did was churn: 4K playback held ~420 MB of committed heap for it. The
+     * pixels now go from the decoder's buffer straight into the bitmap's own.
      */
     fun convert(frame: Frame): PacedFrame {
-        val size = frame.imageStride * frame.imageHeight
-        val staging = ByteArray(size)
-        val buffer = frame.image[0] as ByteBuffer
-        buffer.rewind()
-        buffer.get(staging, 0, size)
-        buffer.rewind()
+        val size = frame.imageStride.toLong() * frame.imageHeight
         // OPAQUE, not UNPREMUL: swscale writes 255 into every alpha byte, and
         // saying so spares Skia an un-premultiply pass when it uploads the texture.
         val info = ImageInfo(
@@ -129,14 +119,27 @@ internal class FramePacer(private val retention: FrameRetention) {
             ColorAlphaType.OPAQUE
         )
         val bitmap = Bitmap()
-        check(bitmap.installPixels(info, staging, frame.imageStride)) {
-            "installPixels rejected ${frame.imageWidth}x${frame.imageHeight} stride ${frame.imageStride}"
+        check(bitmap.allocPixels(info, frame.imageStride)) {
+            "allocPixels rejected ${frame.imageWidth}x${frame.imageHeight} stride ${frame.imageStride}"
         }
+        val pixels = checkNotNull(bitmap.peekPixels()) { "no pixels behind a freshly allocated bitmap" }
+        try {
+            // Skia sizes the block as stride × (height − 1) + width × 4: a padded last row
+            // has no tail. Copying stride × height wrote past it — a heap corruption, and an
+            // access violation when the block ended on a page (caught by the suite).
+            val bytes = pixels.computeByteSize().toLong()
+            check(bytes <= size) { "bitmap of $bytes bytes for a $size-byte frame" }
+            val source = MemorySegment.ofBuffer((frame.image[0] as ByteBuffer).duplicate().rewind())
+            MemorySegment.ofAddress(pixels.addr).reinterpret(bytes).copyFrom(source.asSlice(0, bytes))
+        } finally {
+            pixels.close()
+        }
+        bitmap.notifyPixelsChanged()
         // Skia only lets an Image share a bitmap's storage when the bitmap can no
         // longer change; without this every draw would copy the frame instead.
         bitmap.setImmutable()
         val id = nextFrameId++
         retention.register(id, bitmap)
-        return PacedFrame(bitmap.asComposeImageBitmap(), id)
+        return PacedFrame(bitmap.asComposeImageBitmap(), id).also { lastConverted = it }
     }
 }

@@ -1,5 +1,6 @@
 package com.woka.feature.viewer.audio
 
+import com.woka.feature.viewer.video.engine.quietFfmpegLogs
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import java.io.File
 
@@ -41,6 +42,7 @@ data class AudioTags(
 
         /** Container tags, then the audio stream's own: Ogg and Opus keep theirs on the stream. */
         private fun rawTags(file: File): Map<String, String> {
+            quietFfmpegLogs()
             val grabber = FFmpegFrameGrabber(file)
             grabber.videoStream = Int.MAX_VALUE
             try {

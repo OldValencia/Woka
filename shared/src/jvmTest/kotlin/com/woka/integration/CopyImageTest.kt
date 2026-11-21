@@ -10,6 +10,7 @@ import com.woka.feature.editor.core.ToolOp
 import com.woka.feature.editor.engine.image.RecipeStillEdits
 import com.woka.feature.editor.recipe.EditRecipe
 import com.woka.feature.editor.tools.transform.TransformTool
+import com.woka.feature.viewer.image.stillDecoderFor
 import com.woka.fixtures.SampleMedia
 import com.woka.fixtures.STILL_JPG
 import com.woka.support.withTempStorageRoot
@@ -20,6 +21,8 @@ import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.test.assertFalse
+import kotlin.test.assertContentEquals
 
 /**
  * `Copy` hands over the **picture**, drawn (2026-08-19).
@@ -63,6 +66,7 @@ class CopyImageTest {
             val contents = drawnImageOf(file.absolutePath, 0)
 
             assertTrue(contents.isDataFlavorSupported(DataFlavor.imageFlavor))
+            assertEquals(listOf(file), contents.getTransferData(DataFlavor.javaFileListFlavor))
             assertEquals(640 to 480, contents.getTransferData(DataFlavor.imageFlavor).size())
         }
     }
@@ -73,9 +77,20 @@ class CopyImageTest {
             assertTrue(EditRecipe.write(file, quarterTurn()).isSuccess)
             ImageBitmapCache.remove(ImageBitmapCache.key(file.absolutePath, 0))
 
-            val copied = drawnImageOf(file.absolutePath, 0).getTransferData(DataFlavor.imageFlavor)
-
-            assertEquals(480 to 640, copied.size(), "the clipboard got the unedited picture")
+            val before = file.readBytes()
+            val contents = drawnImageOf(file.absolutePath, 0)
+            val copied = (contents.getTransferData(DataFlavor.javaFileListFlavor) as List<*>).single() as File
+            try {
+                assertEquals(480 to 640, contents.getTransferData(DataFlavor.imageFlavor).size())
+                val decoded = stillDecoderFor(copied).frame(copied, 0)
+                assertEquals(480 to 640, decoded.width to decoded.height)
+                assertFalse(EditRecipe.carries(copied))
+                assertContentEquals(before, file.readBytes())
+                assertEquals(file.name, copied.name)
+            } finally {
+                copied.delete()
+                copied.parentFile.delete()
+            }
         }
     }
 }

@@ -108,6 +108,8 @@ object CropTool : CanvasTool {
     /** The rectangle *is* the preview; folding it in as well makes it measure itself. */
     override val previewsThroughOverlay = true
 
+    override val worksInFrame = true
+
     @Composable
     override fun Overlay(scope: EditorToolScope) = CropOverlay(scope)
 }

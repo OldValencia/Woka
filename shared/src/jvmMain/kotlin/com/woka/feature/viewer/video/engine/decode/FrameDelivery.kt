@@ -75,7 +75,11 @@ internal suspend fun VideoPlayerState.deliverPicture(
         return
     }
     generation.isBehind = false
-    val paced = pacer.convert(picture)
+    // Nothing is drawing what was already made: the picture's time, the end and the
+    // edit's cuts still travel on, carried by the last bitmap rather than a new one
+    // nobody can close — as `JoinStep` re-sends a held frame (ST-001).
+    val held = pacer.lastConverted
+    val paced = if (held != null && frameRetention.isBacklogged) held else pacer.convert(picture)
     videoChannel.send(
         VideoFrame(paced.bitmap, frameTsMs, frameGeneration, colourOf(hdrInfo, grabber), paced.id)
     )
@@ -92,8 +96,9 @@ internal suspend fun VideoPlayerState.deliverPicture(
  */
 internal fun VideoPlayerState.colourOf(hdr: HdrInfo?, grabber: FFmpegFrameGrabber): HdrInfo? {
     val known = streamHdrInfo?.takeIf {
-        it.whitePoint != null && it.transfer == hdr?.transfer && it.isWideGamut == hdr.isWideGamut
+        it.whitePoint != null && it.transfer == hdr?.transfer && it.isWideGamut == hdr.isWideGamut &&
+            it.dolbyVisionProfile5 == hdr.dolbyVisionProfile5
     }
-    val picture = grabber.lastPicture
+    val picture = pictureFilter.lastPicture ?: grabber.lastPicture
     return (known ?: hdr)?.readFrom(picture)?.withSceneOf(picture)
 }

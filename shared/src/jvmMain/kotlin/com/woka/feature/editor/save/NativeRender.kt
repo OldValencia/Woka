@@ -47,10 +47,10 @@ internal fun renderAtNativeScale(
             // chain written twice is how a saved file starts disagreeing with the
             // preview the user approved.
             drawRecipeImage(source, sourceSize, recipe)
+            // Inside the transform, exactly as on screen: markup is in source pixels, and a
+            // crop clips it rather than moving it (§3.4's application order).
+            recipe.paints.forEach { paint -> paint.draw(this, recipe.atMs) }
         }
-        // Outside the transform, exactly as on screen: a crop clips markup rather
-        // than moving it (§3.4's application order).
-        recipe.paints.forEach { paint -> paint.draw(this, recipe.atMs) }
     }
     surface.makeImageSnapshot()
 }

@@ -129,6 +129,10 @@ that waits on a lane already part way there, never longer than a seek. Idle lane
 3 s instead of 10.
 
 ### ME-236 — Hardware decoding for the lanes
+**Probe done 2026-11-10; not implemented.** Native HEVC + CUDA preserves pixels and HDR/DV metadata
+and reduces the worst measured pre-roll under playback from 3467 to 460 ms on RTX 5080. D3D11VA
+on the integrated AMD is much less useful; `hevc_cuvid` loses frame side data. Full evidence and
+limits: [`playback/playback.md` — Measured ME-236](playback/playback.md#measured--me-236-2026-11-10).
 The only thing measured to move the pre-roll bound. Needs a hardware device context JavaCV does
 not set up for a grabber, and a way past the D3D11VA scaling bugs that made the player decode in
 software (`openVideoGrabber`). Probe first: GPU HEVC pre-roll time and memory on S02E01, and
@@ -317,6 +321,8 @@ path already renders a recipe at native scale; this is that, given a frame inste
 *Depends on ME-260.*
 
 ### ME-295 — Per-segment hybrid render
+**Deferred from 1.0.8 by the author, 2026-11-10; no replacement version assigned.** Probe results:
+[`render/render.md` — Measured ME-295](render/render.md#measured--me-295-2026-11-10).
 The refinement ME-292 gives up: copy the segments with no pixel work and encode only the rest, so a
 tweak on one clip out of five leaves the other four bit-identical. It needs a probe in front of it —
 splicing a copied and an encoded segment means a parameter-set change some players refuse.
@@ -328,6 +334,13 @@ result is short — 30 s is the starting threshold, to be set when this is promo
 it costs, because a muted `mp4` of the same clip is smaller and looks better. ffmpeg's
 palettegen/paletteuse over the same document, so it is a render *target* and not a second mechanism.
 *Depends on ME-292.*
+
+### F5 — the render's intermittent native crash (from the 1.0.7 review)
+`avcodec_send_packet` jumps through a null pointer in `avutil-60.dll` during a cut render, about
+320 tests into a full `:shared:jvmTest` and not every run (2026-11-10, twice in ~8; 2026-11-21,
+twice in a row). The render tests alone and together pass. Find the earlier test, then the FFmpeg
+state it leaves; the same path is `Render video…` in the app. Evidence and dumps:
+[`review-1.0.7.md`](review-1.0.7.md), F5.
 
 ---
 

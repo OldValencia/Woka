@@ -1,22 +1,19 @@
 package com.woka.feature.folder
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import com.woka.core.data.MediaItem
 import com.woka.core.data.WatchRecord
 import com.woka.core.data.isReadOnlyMedia
 import com.woka.core.data.mayHoldFrames
 import com.woka.core.ui.components.DropdownItem
 import com.woka.core.ui.theme.Theme
-import com.woka.core.utils.copyFilesToClipboard
-import com.woka.core.utils.copyImageToClipboard
+import com.woka.feature.editor.copyMedia
 import com.woka.core.utils.openDirectoryPicker
 import com.woka.feature.editor.VIDEO_EDITING_ENABLED
 import com.woka.feature.editor.core.EditorEngineFactory
 import com.woka.feature.editor.isEditable
 import com.woka.feature.editor.offersMp4Copy
 import com.woka.feature.editor.saveAsMp4
-import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -51,8 +48,6 @@ internal fun FolderItemContextMenu(
 ) {
     val target = item.file.absolutePath
     val engineFactory = EditorMenuDependencies.factory
-    // The decode a picture copy needs; the menu is gone by the time it finishes.
-    val scope = rememberCoroutineScope()
 
     if (item is MediaItem.Folder) {
         DropdownItem("Open") { dismiss(); onNavigateToFolder(target) }
@@ -96,17 +91,11 @@ internal fun FolderItemContextMenu(
         }
     }
     DropdownItem("Rename") { dismiss(); overlays.itemToRename = target }
-    // **Copy is the picture**, not the file (2026-08-19). Putting the file on the
-    // clipboard made this a second Duplicate — and Duplicate is right below. Pasting
-    // now gives the photograph as it is drawn, edit folded in. A video has no picture
-    // to hand over, so there Copy still means the file.
+    // Copy includes baked photo pixels; Duplicate keeps the original file and its recipe.
     DropdownItem("Copy") {
         dismiss()
-        if (item is MediaItem.Image) {
-            scope.launch { copyImageToClipboard(target) }
-        } else {
-            copyFilesToClipboard(listOf(target))
-        }
+        // Runs past the menu, which `dismiss` has just closed (`copyMedia`).
+        copyMedia(item)
     }
     DropdownItem("Duplicate") {
         dismiss()

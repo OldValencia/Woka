@@ -3,6 +3,8 @@ package com.woka.feature.viewer.audio
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import com.woka.core.ui.image.ImageBitmapCache
+import com.woka.feature.viewer.video.engine.decode.LIGHT_DECODE_THREADS
+import com.woka.feature.viewer.video.engine.quietFfmpegLogs
 import org.bytedeco.ffmpeg.global.avformat.AV_DISPOSITION_ATTACHED_PIC
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.jetbrains.skia.Image
@@ -33,7 +35,9 @@ object AudioCover {
     }
 
     private fun embedded(file: File): ByteArray? {
+        quietFfmpegLogs()
         val grabber = FFmpegFrameGrabber(file)
+        grabber.setVideoOption("threads", LIGHT_DECODE_THREADS)
         try {
             grabber.start()
             val context = grabber.formatContext ?: return null

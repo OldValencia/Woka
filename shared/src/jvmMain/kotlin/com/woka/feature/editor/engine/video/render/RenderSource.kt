@@ -5,6 +5,7 @@ import com.woka.feature.viewer.video.engine.decode.FreshFrameGrabber
 import com.woka.feature.viewer.video.engine.decode.lastPicture
 import com.woka.feature.viewer.video.engine.probe.HdrInfo
 import com.woka.feature.viewer.video.engine.probe.readFrom
+import com.woka.feature.viewer.video.engine.probe.requireSupportedVideo
 import com.woka.feature.viewer.video.engine.sync.lengthMs
 import com.woka.feature.viewer.video.engine.track.readStreamHdrInfo
 import org.bytedeco.javacv.FFmpegFrameGrabber
@@ -24,6 +25,8 @@ internal class SourceProbe(
 )
 
 internal fun probeSource(source: File, alive: () -> Boolean = { true }): SourceProbe = withGrabber(source) { grabber ->
+    // No edited export while its colours cannot be previewed faithfully, including packet copies.
+    grabber.requireSupportedVideo()
     val keyframes = keyframesMs(grabber, alive)
     // The player's length, which counts a file whose header states none (VF-001); the header's
     // 0 rendered a `[0, 0)` film into an empty file reported as saved (1.0.6 review).
@@ -38,10 +41,11 @@ internal fun probeSource(source: File, alive: () -> Boolean = { true }): SourceP
 private fun declaredColour(grabber: FFmpegFrameGrabber): HdrInfo {
     val hdr = grabber.readStreamHdrInfo()
     if (hdr.transfer == TransferKind.SDR) return hdr
-    runCatching {
+    val decoded = runCatching {
         grabber.setTimestamp(0L)
-        grabber.grabImage()
+        checkNotNull(grabber.grabImage()) { "The first HDR frame could not be read." }
     }
+    if (hdr.dolbyVisionProfile5) decoded.getOrThrow()
     return hdr.readFrom(grabber.lastPicture)
 }
 

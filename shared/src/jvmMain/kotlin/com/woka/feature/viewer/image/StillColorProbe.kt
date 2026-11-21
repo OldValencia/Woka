@@ -25,7 +25,7 @@ import java.io.File
  * *not* decode here — PNG, JPEG, TIFF — need the deeper probe, those being the
  * small files anyway.
  */
-internal fun readStillColor(file: File): StillColorInfo = runCatching {
+internal fun readStillColor(file: File): StillColorInfo = if (isJpeg(file)) StillColorInfo.Sdr else runCatching {
     // A container that FFmpeg also decodes carries its colour in a box that
     // `avformat_open_input` has already read. Everything else keeps it in the
     // codec header, where only `find_stream_info` finds it — measured: without
@@ -41,6 +41,15 @@ internal fun readStillColor(file: File): StillColorInfo = runCatching {
         )
     }
 }.getOrDefault(StillColorInfo.Sdr)
+
+/**
+ * JPEG has no field for a PQ or HLG transfer — nothing like PNG's `cICP` or HEIF's
+ * `nclx` — so FFmpeg's answer for one is SDR, and asking cost the first direct open a
+ * header decode plus loading every FFmpeg library (ST-001, 2026-11-19).
+ */
+internal fun isJpeg(file: File): Boolean = file.extension.lowercase() in JPEG_EXTENSIONS
+
+private val JPEG_EXTENSIONS = setOf("jpg", "jpeg", "jfif", "jpe")
 
 /**
  * The first video stream of any kind, tile or not: a tiled HEIF's colour tags

@@ -10,6 +10,7 @@ import com.woka.feature.editor.engine.image.ImageEditorEngine
 import com.woka.feature.editor.engine.video.VideoEditorEngine
 import com.woka.feature.editor.recipe.carrierFor
 import com.woka.feature.editor.recipe.carriesHere
+import com.woka.feature.editor.recipe.carriesWhole
 import com.woka.feature.editor.save.formatFor
 import java.io.File
 
@@ -89,7 +90,8 @@ class EditorEngineFactoryImpl(
         // that holds several. A video has one stream and its position is time, so the
         // video engine takes no frame — which is also why it is not keyed on one.
         return when (file.mediaKind()) {
-            MediaKind.Video -> VideoEditorEngine(file, registry, capability)
+            // `capability` stays cheap for menus; the box walk it skips is asked once, here.
+            MediaKind.Video -> VideoEditorEngine(file, registry, if (carriesWhole(file)) capability else EditCapability.RenderOnly)
             else -> ImageEditorEngine(file, frameIndex, registry, capability)
         }
     }

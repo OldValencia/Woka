@@ -13,6 +13,7 @@ import com.woka.feature.editor.tools.trim.TrimClip
 import com.woka.feature.editor.tools.trim.TrimTool
 import com.woka.feature.editor.tools.trim.wholeSource
 import com.woka.feature.viewer.video.engine.probe.toColour
+import com.woka.feature.viewer.video.engine.probe.isDoviProfile5
 import org.bytedeco.javacv.FFmpegFrameRecorder
 import java.io.File
 import java.nio.file.Files
@@ -109,6 +110,8 @@ private fun copyClips(
 ) = withGrabber(source) { grabber ->
     val recorder = FFmpegFrameRecorder(target, grabber.imageWidth, grabber.imageHeight, grabber.audioChannels)
     recorder.format = format
+    // movenc otherwise drops the dvcC/dvvC record while retaining P5 packets (DV5-102).
+    if (grabber.isDoviProfile5()) recorder.setOption("strict", "unofficial")
     recorder.start(grabber.formatContext)
     val sink = PacketSink(recorder)
     val totalMs = clips.sumOf { it.lengthMs }.coerceAtLeast(1L)

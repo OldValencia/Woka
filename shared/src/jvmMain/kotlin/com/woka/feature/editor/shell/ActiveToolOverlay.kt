@@ -45,7 +45,8 @@ internal fun ActiveToolOverlay(
         session = session,
         cardinality = canvasTool.manifest.cardinality,
         geometry = geometry,
-        previewMatrix = previewMatrix,
+        // A tool stored in the drawn frame is already past the preceding geometry.
+        previewMatrix = if (canvasTool.worksInFrame) Matrix() else previewMatrix,
         selection = held,
         canvasKeys = canvasKeys,
         selectOnly = selectOnly

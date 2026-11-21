@@ -68,6 +68,7 @@ internal fun VideoPlayerState.resumePositionMs(): Long? {
  * seconds and each write schedules a `settings.json` save.
  */
 internal fun VideoPlayerState.saveResumePosition() {
+    if (videoFailure.message != null) return
     val repository = AppDependencies.settingsRepository
     val settings = repository.settings.value
     if (!settings.resumeAppliesTo(durationMs)) return

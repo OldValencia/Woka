@@ -4,10 +4,14 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.ui.image.ImageBitmapCache
+import com.woka.core.ui.image.StillCopy
 import com.woka.core.ui.image.StillEdits
+import com.woka.core.ui.image.copiesAsFileOnly
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.recipe.EditRecipe
+import com.woka.feature.editor.save.bakeGif
 import com.woka.feature.editor.save.renderAtNativeScale
+import com.woka.feature.editor.save.renderStill
 import com.woka.feature.viewer.image.stillDecoderFor
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -29,6 +33,20 @@ import java.io.File
 internal class RecipeStillEdits(
     private val registry: EditorToolRegistry
 ) : StillEdits {
+
+    /** One decode: the bake's own pixels go to the clipboard; a GIF bakes every frame. */
+    override fun copyOf(file: File, frameIndex: Int, directory: File): StillCopy {
+        val document = EditRecipe.documentIn(file, frameIndex) ?: return StillCopy(file)
+        if (document.isEmpty) return StillCopy(file)
+        val size = nativeFrameSize(file, frameIndex)
+        val recipe = fold(document, registry, size)
+        if (file.copiesAsFileOnly) return StillCopy(bakeGif(file, size, recipe, directory))
+        var picture: ImageBitmap? = null
+        val target = renderStill(file, frameIndex, size, recipe, directory, onImage = {
+            picture = it.toComposeImageBitmap()
+        })
+        return StillCopy(target, picture)
+    }
 
     override suspend fun carries(file: File): Boolean =
         withContext(ImageBitmapCache.ioDispatcher) {

@@ -13,6 +13,8 @@ import com.woka.feature.viewer.video.engine.probe.HdrInfo
 import com.woka.feature.viewer.video.engine.sync.lengthMs
 import com.woka.feature.viewer.video.engine.track.readStreamHdrInfo
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.job
 import org.bytedeco.javacv.FFmpegFrameGrabber
 
 /**
@@ -105,7 +107,7 @@ internal suspend fun VideoPlayerState.probeTracksAndChapters(grabber: FFmpegFram
         tracks.selectedVideoIndex
             ?.takeIf { it != grabber.videoStream }
             ?.let { pendingVideoReopenIndex = it }
-        startSubtitleDecoderLoop()
+        startSubtitleDecoderLoop(currentCoroutineContext().job)
     } catch (e: Exception) {
         e.printStackTrace()
     }

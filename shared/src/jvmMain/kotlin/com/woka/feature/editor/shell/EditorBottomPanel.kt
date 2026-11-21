@@ -82,7 +82,7 @@ internal fun BoxScope.EditorBottomPanel(
         // carrier is stated before the work, never after it (§4.5).
         when (engine.capability) {
             EditCapability.Destructive -> EditorNoHistoryNotice()
-            EditCapability.RenderOnly -> EditorRenderOnlyNotice(session.media.file.extension)
+            EditCapability.RenderOnly -> EditorRenderOnlyNotice(session.media.file)
             else -> Unit
         }
         // Above the inspector and independent of it: the warning has to be visible

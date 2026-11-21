@@ -56,6 +56,9 @@ internal class PictureFilter {
     /** Whether this grabber's frames go through the graph — RAW frames only. */
     val filtering: Boolean get() = graph != null
 
+    /** The graph may return the previous frame; its RPU must follow that output. */
+    val lastPicture: AVFrame? get() = graph?.lastPicture
+
     /** True the first time a frame carries the interlaced flag. */
     fun observe(frame: Frame): Boolean {
         if (seen) return false

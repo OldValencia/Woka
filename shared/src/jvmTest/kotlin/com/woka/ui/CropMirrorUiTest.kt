@@ -36,20 +36,20 @@ class CropMirrorUiTest {
     private val source = IntSize(640, 480)
 
     /**
-     * **The overlay has to follow what the engine drew** (2026-08-22).
+     * **The overlay has to follow what the engine drew** (2026-08-22, revised 2026-11-20).
      *
-     * With a flip in the document the canvas draws the picture mirrored — source
-     * `(0, y)` lands at the right-hand edge — while the stored rect stays in source
-     * coordinates. An overlay that placed it through the canvas geometry alone put the
-     * rectangle on the far side of the picture from the region it keeps, which by hand
-     * looked like it flying off the picture entirely.
+     * The fold applies a crop *after* the geometry before it (`RasterFold`), so its rect is
+     * a rect of the **drawn frame** — the mirrored picture, here — and the overlay places it
+     * without turning it through that geometry again (`CanvasTool.worksInFrame`). This
+     * test first asserted the opposite, a rect in source pixels mirrored onto the canvas;
+     * that disagreed with the fold, and after Rotate right it put the rect beside the
+     * picture (reported 2026-11-20).
      *
-     * Grabbing the **visual left** edge must therefore take hold of the rect's *right*
-     * edge; before the fix it took the left one, and the rectangle grew away from the
-     * cursor.
+     * Grabbing the **visual left** edge therefore takes hold of the rect's *left* edge, and
+     * the right one stays where it was.
      */
     @Test
-    fun `a mirrored preview mirrors where the handles are`() {
+    fun `a mirrored preview keeps the handles where the frame shows them`() {
         val mirrored = FixtureEngine(
             sourceSize = source,
             previewMatrixOf = { Matrix().apply { translate(source.width.toFloat(), 0f); scale(-1f, 1f) } }
@@ -68,8 +68,8 @@ class CropMirrorUiTest {
                 onNodeWithTag("editor-tool-crop").performClick()
                 waitForIdle()
 
-                // Just inside the picture's left edge on screen, which is the source's
-                // right edge once the preview is mirrored.
+                // Just inside the picture's left edge on screen, which is the frame's
+                // left edge too.
                 onNodeWithTag(CROP_OVERLAY_TAG).performMouseInput {
                     moveTo(centerLeft + Offset(3f, 0f))
                     press()
@@ -80,8 +80,52 @@ class CropMirrorUiTest {
 
                 val rect = harness.session.document.value.ops
                     .last().params[CropTool.Rect]
-                assertEquals(0, rect.left, "the left edge moved — the grab was mirrored wrongly")
-                assertTrue(rect.width < source.width, "nothing was resized at all")
+                assertEquals(source.width, rect.left + rect.width, "the right edge moved — the grab was mirrored")
+                assertTrue(rect.left > 0, "the left edge did not follow the cursor")
+            }
+        }
+    }
+
+    /**
+     * The report itself (2026-11-20): Rotate right, then Crop. The canvas draws the turned
+     * picture in a 480×640 frame; turning the rect through the quarter turn again put it
+     * beside the picture, and the visual left edge took hold of its top or bottom instead.
+     */
+    @Test
+    fun `after a quarter turn the visual left edge is the rect's left edge`() {
+        val turned = IntSize(source.height, source.width)
+        val quarter = FixtureEngine(
+            sourceSize = source,
+            drawnSizeOf = { turned },
+            previewMatrixOf = { Matrix().apply { translate(source.height.toFloat(), 0f); rotateZ(90f) } }
+        )
+        onEditor(listOf(CropTool)) { harness ->
+            onUi {
+                setContent {
+                    EditorScreen(
+                        session = harness.session,
+                        engine = quarter,
+                        registry = harness.registry,
+                        onCancel = {},
+                        onDone = {}
+                    )
+                }
+                onNodeWithTag("editor-tool-crop").performClick()
+                waitForIdle()
+
+                onNodeWithTag(CROP_OVERLAY_TAG).performMouseInput {
+                    moveTo(centerLeft + Offset(3f, 0f))
+                    press()
+                    moveTo(centerLeft + Offset(80f, 0f))
+                    release()
+                }
+                waitForIdle()
+
+                val rect = harness.session.document.value.ops
+                    .last().params[CropTool.Rect]
+                assertTrue(rect.left > 0, "the left edge did not follow the cursor")
+                assertEquals(turned.width, rect.left + rect.width, "the right edge moved")
+                assertEquals(turned.height, rect.height, "the grab changed the height — it was turned")
             }
         }
     }

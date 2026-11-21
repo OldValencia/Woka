@@ -2,8 +2,11 @@ package com.woka.unit
 
 import com.woka.app.navigation.Router
 import com.woka.app.navigation.Screen
+import com.woka.feature.folder.parentWithinRoot
+import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 /**
  * One screen, no history (SIDE-003): every navigation replaces what is shown, so
@@ -45,5 +48,20 @@ class RouterTest {
         router.start(emptyList())
 
         assertEquals(listOf<Screen>(films), router.stack.value)
+    }
+
+    @Test
+    fun `a launched folder becomes a root for Up, a navigated one does not`() {
+        val router = Router().apply { start(listOf(Screen.Folder("D:/Pictures", offerPin = true))) }
+
+        router.navigateTo(series)
+
+        assertEquals("D:/Pictures", router.launchRoot.value)
+        assertEquals(listOf("D:/Media", "D:/Pictures"), router.upRoots(listOf("D:/Media")))
+        assertEquals(
+            File("D:/Pictures").absoluteFile.normalize().path,
+            parentWithinRoot("D:/Pictures/Screenshots", router.upRoots(emptyList()))
+        )
+        assertNull(parentWithinRoot("D:/Pictures", router.upRoots(emptyList())))
     }
 }

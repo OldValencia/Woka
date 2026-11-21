@@ -32,6 +32,17 @@ interface CanvasTool : EditorTool {
     val previewsThroughOverlay: Boolean get() = false
 
     /**
+     * Whether this tool's stored coordinates are pixels of the **frame the canvas drew** —
+     * after every geometry operation before it — rather than of the source.
+     *
+     * True for a crop: its rect is clamped to that frame and the fold applies it there, so
+     * the overlay must not turn it through the preceding rotation a second time (reported
+     * 2026-11-20: after Rotate right the rect landed beside the picture). False for markup,
+     * whose shapes are source pixels mapped through the whole recipe.
+     */
+    val worksInFrame: Boolean get() = false
+
+    /**
      * "This document holds something of mine that is worth selecting" (ME-149).
      *
      * Asked of every canvas tool when **no** tool is open, so the shell can mount one

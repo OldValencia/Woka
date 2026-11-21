@@ -5,6 +5,8 @@ import com.woka.feature.viewer.video.engine.decode.VideoFrame
 import com.woka.feature.viewer.video.engine.decode.openVideoGrabber
 import com.woka.feature.viewer.video.engine.probe.HdrInfo
 import com.woka.feature.viewer.video.engine.probe.readHdrInfo
+import com.woka.feature.viewer.video.engine.probe.isDoviProfile5
+import com.woka.core.data.TransferKind
 import com.woka.feature.viewer.video.engine.sync.videoSeekTo
 
 import kotlinx.coroutines.channels.Channel
@@ -12,6 +14,7 @@ import org.bytedeco.javacv.FFmpegFrameGrabber
 
 /** HDR metadata of the video stream this grabber is currently decoding. */
 internal fun FFmpegFrameGrabber.readStreamHdrInfo(): HdrInfo {
+    if (isDoviProfile5()) return HdrInfo(TransferKind.PQ, true, dolbyVisionProfile5 = true)
     val codecpar = formatContext.streams(videoStream).codecpar()
     return readHdrInfo(codecpar.color_trc(), codecpar.color_primaries())
 }

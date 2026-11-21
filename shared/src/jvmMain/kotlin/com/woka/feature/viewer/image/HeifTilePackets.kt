@@ -1,5 +1,6 @@
 package com.woka.feature.viewer.image
 
+import com.woka.feature.viewer.video.engine.quietFfmpegLogs
 import org.bytedeco.ffmpeg.avcodec.AVPacket
 import org.bytedeco.ffmpeg.avformat.AVFormatContext
 import org.bytedeco.ffmpeg.avutil.AVDictionary
@@ -35,6 +36,7 @@ internal fun <T> onFormatContext(
     findStreamInfo: Boolean = false,
     block: (AVFormatContext) -> T
 ): T {
+    quietFfmpegLogs()
     val format = AVFormatContext(null)
     val options = AVDictionary(null)
     av_dict_set(options, "max_streams", MAX_STREAMS_OPTION, 0)

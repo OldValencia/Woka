@@ -13,6 +13,7 @@ import androidx.compose.ui.text.TextStyle
 import com.woka.core.data.MediaItem
 import com.woka.core.data.MediaKind
 import com.woka.core.data.mediaKind
+import com.woka.core.data.mediaItemOrNull
 import com.woka.core.data.isReadOnlyMedia
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.editor.EditorNoticeStatus
@@ -102,14 +103,14 @@ fun FolderScreen(
         }
     }
 
-    // Remembered, not filtered inline: a fresh list every recomposition changes
-    // identity and invalidates everything the viewer keys on it (§10.8). Opened on a
-    // track, the viewer walks the folder's audio only; on a picture, never into it (AP-003).
+    // Remembered: a fresh list each recomposition invalidates what the viewer keys on (§10.8).
+    // A track walks the folder's audio only (AP-003). Until the listing lands the opened file
+    // stands alone, so a direct open starts its decode ~120 ms sooner (ST-001, 2026-11-19).
     val openedAudio = viewerMediaId?.let { File(it).mediaKind() } == MediaKind.Audio
-    val viewerItems = remember(state.items, openedAudio) {
+    val viewerItems = remember(state.items, openedAudio, viewerMediaId) {
         state.items.filter {
             if (openedAudio) it is MediaItem.Audio else it is MediaItem.Image || it is MediaItem.Video
-        }
+        }.ifEmpty { listOfNotNull(viewerMediaId?.let { mediaItemOrNull(File(it)) }) }
     }
 
     if (viewerMediaId != null) {

@@ -76,6 +76,18 @@ internal class BitmapTrackIndexer(
         pending.clear()
     }
 
+    /** The cues closed since the last call — for a reader that indexes a track in windows. */
+    fun takeClosed(): List<BitmapCue> = cues.toList().also { cues.clear() }
+
+    /**
+     * The cue still waiting for the event that ends it, with its end guessed the way
+     * [closeAt] would cap it — so a window that stops mid-cue still shows it.
+     */
+    fun openCue(): BitmapCue? = openCue?.let { open ->
+        val end = if (open.endMs > open.startMs) open.endMs else open.startMs + MAX_GUESSED_CUE_MS
+        open.copy(endMs = end)
+    }
+
     fun finish(): List<BitmapCue> {
         val open = openCue ?: return cues.toList()
         val end = if (open.endMs > open.startMs) open.endMs else open.startMs + TRAILING_CUE_MS

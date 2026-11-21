@@ -65,6 +65,7 @@ internal fun AVFrame.declaredWhitePoint(): Float {
  * above it. No HLG film in the corpus carries the metadata to measure otherwise.
  */
 internal fun HdrInfo.readFrom(picture: AVFrame?): HdrInfo {
+    if (dolbyVisionProfile5) return withDoviPeaks(picture)
     if (whitePoint != null || transfer != TransferKind.PQ || picture == null) return this
     return copy(whitePoint = picture.declaredWhitePoint())
 }
@@ -75,7 +76,8 @@ internal fun HdrInfo.readFrom(picture: AVFrame?): HdrInfo {
  * the editor's thumbnail flickered to the assumed one (1.0.6 review).
  */
 internal fun HdrInfo.keptOn(previous: HdrInfo?): HdrInfo =
-    if (previous != null && previous.transfer == transfer && previous.isWideGamut == isWideGamut) {
+    if (previous != null && previous.transfer == transfer && previous.isWideGamut == isWideGamut &&
+        previous.dolbyVisionProfile5 == dolbyVisionProfile5) {
         copy(whitePoint = previous.whitePoint)
     } else {
         this
@@ -88,6 +90,7 @@ internal fun HdrInfo.keptOn(previous: HdrInfo?): HdrInfo =
  * pixels would not.
  */
 internal fun AVFrame.scenePeak(): Float? {
+    convertedDoviPeaks()?.let { return it.scenePeak ?: it.sourceWhite }
     val side = av_frame_get_side_data(this, AV_FRAME_DATA_DYNAMIC_HDR_PLUS) ?: return null
     val meta = AVDynamicHDRPlus(side.data())
     if (meta.num_windows().toInt() == 0) return null
@@ -102,4 +105,13 @@ internal fun AVFrame.scenePeak(): Float? {
 
 /** This frame's [scenePeak] on a PQ stream; anything else is left as it is. */
 internal fun HdrInfo.withSceneOf(picture: AVFrame?): HdrInfo =
-    if (transfer == TransferKind.PQ) copy(scenePeak = picture?.scenePeak()) else this
+    when {
+        dolbyVisionProfile5 -> withDoviPeaks(picture)
+        transfer == TransferKind.PQ -> copy(scenePeak = picture?.scenePeak())
+        else -> this
+    }
+
+private fun HdrInfo.withDoviPeaks(picture: AVFrame?): HdrInfo {
+    val peaks = DoviFrameMetadata.peaks(picture) ?: return copy(scenePeak = null)
+    return copy(whitePoint = peaks.sourceWhite, scenePeak = peaks.scenePeak)
+}

@@ -84,3 +84,15 @@ internal fun carriesHere(file: File): Boolean {
     val head = file.leading(HEAD_PROBE) ?: return false
     return carrier.accepts(head) && carrier.fits(head, file.length())
 }
+
+/**
+ * [carriesHere] plus the walk it leaves out: whether an append lands after everything in
+ * the file (`fitsFile`). Asked once, when an editor opens — never while a menu draws, since
+ * a fragmented film has thousands of boxes. Without it a fragmented `mp4` was offered
+ * `Done`, and the cut was lost there (reported 2026-11-20).
+ */
+internal fun carriesWhole(file: File): Boolean {
+    if (!carriesHere(file)) return false
+    val carrier = carrierFor(file)
+    return carrier !is TailRecipeCarrier || carrier.fitsFile(file)
+}

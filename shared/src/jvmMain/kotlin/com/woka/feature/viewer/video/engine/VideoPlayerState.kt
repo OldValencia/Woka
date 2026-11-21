@@ -60,6 +60,7 @@ class VideoPlayerState(
     // written is the usual one (VF-103). Shown as a notice instead of a still poster.
     var openFailed by mutableStateOf(false)
         internal set
+    internal val videoFailure = VideoPlaybackFailure()
 
     // Repeat (§6). Only File is a decoder concern — it re-seeks to 0 at EOF.
     // Folder is navigation, so the decoder treats it exactly like Off and lets

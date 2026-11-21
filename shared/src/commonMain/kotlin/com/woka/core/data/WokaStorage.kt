@@ -14,8 +14,12 @@ import java.security.MessageDigest
  *
  * v5 is the same kind (VF-105): a video's poster is now turned by its display matrix,
  * so a phone's portrait clip cached on its side would never be redrawn upright.
+ * v6 (1.0.8): video posters now contain the viewer's HDR tone map; old unmapped WebP
+ * entries must not be served under the same path, size, mtime and view mode.
+ * v7 (P5 guard): posters of unsupported Dolby signals must not retain false colours.
+ * v8 (DV5-102): P5 posters use reconstructed BT.2020 PQ and current RPU peaks.
  */
-private const val KEY_SCHEMA_MARKER = ".keys-v5"
+private const val KEY_SCHEMA_MARKER = ".keys-v8"
 
 /**
  * What an entry is written as. WebP rather than PNG since v3 — a poster is a

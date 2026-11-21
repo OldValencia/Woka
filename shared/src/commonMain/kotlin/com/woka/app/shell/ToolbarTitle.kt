@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,7 +34,8 @@ import java.io.File
 
 /**
  * `‹` before the title: up one folder, the same step Backspace takes in the grid
- * (`parentWithinRoot`). Absent at a linked root and outside every root.
+ * (`parentWithinRoot`). Absent at a root and outside every root; the roots are the
+ * linked folders and the folder the app was launched into (`Router.launchRoot`).
  *
  * **Up, not history** (2026-11-01). History Back was removed on 2026-10-17 and stays
  * removed — the author: "where I was before" reads as unintuitive. Up is the step a
@@ -43,7 +45,10 @@ import java.io.File
 fun FolderUpButton(path: String) {
     val settingsRepo = remember { AppDependencies.settingsRepository }
     val linked by settingsRepo.collectField { it.linkedFolders }
-    val parent = remember(path, linked) { parentWithinRoot(path, linked) } ?: return
+    val launchRoot by AppDependencies.router.launchRoot.collectAsState()
+    val parent = remember(path, linked, launchRoot) {
+        parentWithinRoot(path, AppDependencies.router.upRoots(linked))
+    } ?: return
     val name = remember(parent) { File(parent).name.ifEmpty { parent } }
     ToolbarIconButton(Icons.Static.ChevronLeft, "Back to $name", onClick = {
         AppDependencies.router.navigateTo(Screen.Folder(parent))

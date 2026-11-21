@@ -1,6 +1,8 @@
 package com.woka.core.utils
 
 import androidx.compose.ui.graphics.toAwtImage
+import com.woka.core.ui.image.AppliedStillEdits
+import com.woka.core.ui.image.copiesAsFileOnly
 import com.woka.feature.viewer.image.ImageLoader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -11,25 +13,14 @@ import java.awt.datatransfer.Transferable
 import java.awt.datatransfer.UnsupportedFlavorException
 import java.io.File
 
-/**
- * `ImageLoader`, so the clipboard gets exactly what the viewer draws: the recipe is
- * folded in on that path and the native bitmap is cached, which usually makes this a
- * cache hit for the picture already on screen.
- *
- * **On the IO dispatcher and knowingly expensive.** `toAwtImage` copies the picture
- * onto the JVM heap — 138 MB for a 36-megapixel photograph — which is why every
- * drawing path in the app avoids it and why this one, an explicit action on one file,
- * can afford it.
- *
- * **Never throws.** A file that cannot be decoded answers `false` and leaves whatever
- * was on the clipboard alone, because a `Copy` that empties the clipboard is worse
- * than one that does nothing.
- */
+/** Decode and bake on IO; publishing failure leaves the previous clipboard intact. */
 actual suspend fun copyImageToClipboard(path: String, frameIndex: Int): Boolean =
     withContext(Dispatchers.IO) {
         runCatching {
             val contents = drawnImageOf(path, frameIndex)
             Toolkit.getDefaultToolkit().systemClipboard.setContents(contents, null)
+            val copied = contents.getTransferData(DataFlavor.javaFileListFlavor) as List<*>
+            ClipboardCopies.keep(copied.single() as File)
             true
         }.getOrElse { false }
     }
@@ -39,22 +30,42 @@ actual suspend fun copyImageToClipboard(path: String, frameIndex: Int): Boolean 
  * that the picture handed over is the edited one without replacing what the person at
  * the keyboard had copied.
  */
-internal fun drawnImageOf(path: String, frameIndex: Int): Transferable =
-    ImageOnClipboard(ImageLoader.load(File(path), frameIndex).toAwtImage())
+internal fun drawnImageOf(path: String, frameIndex: Int): Transferable {
+    val file = File(path)
+    val directory = ClipboardCopies.newDirectory()
+    try {
+        val copy = AppliedStillEdits.copyOf(file, frameIndex, directory)
+        // The bake's own pixels when a bake ran (one decode, and none of the copy's JPEG
+        // generation); the source through `ImageLoader` when the file goes over as it is.
+        val image = when {
+            file.copiesAsFileOnly -> null
+            else -> (copy.picture ?: ImageLoader.load(file, frameIndex)).toAwtImage()
+        }
+        if (copy.file == file) directory.delete()
+        return ImageOnClipboard(image, copy.file)
+    } catch (failure: Throwable) {
+        directory.listFiles()?.forEach { it.delete() }
+        directory.delete()
+        throw failure
+    }
+}
 
 /**
- * One flavour, `imageFlavor`, which is what AWT turns into the platform's own picture
- * format — DIB on Windows — for every program that pastes.
+ * AWT maps the image to DIB on Windows; Explorer consumes the accompanying file list.
+ * No [image] — a GIF — offers the file list alone, so a chat pastes the animation.
  */
-private class ImageOnClipboard(private val image: Image) : Transferable {
+private class ImageOnClipboard(private val image: Image?, private val file: File) : Transferable {
 
-    override fun getTransferDataFlavors(): Array<DataFlavor> = arrayOf(DataFlavor.imageFlavor)
+    override fun getTransferDataFlavors(): Array<DataFlavor> =
+        if (image == null) arrayOf(DataFlavor.javaFileListFlavor)
+        else arrayOf(DataFlavor.imageFlavor, DataFlavor.javaFileListFlavor)
 
     override fun isDataFlavorSupported(flavor: DataFlavor?): Boolean =
-        flavor == DataFlavor.imageFlavor
+        flavor in getTransferDataFlavors()
 
     override fun getTransferData(flavor: DataFlavor?): Any {
-        if (flavor == DataFlavor.imageFlavor) return image
+        if (flavor == DataFlavor.imageFlavor && image != null) return image
+        if (flavor == DataFlavor.javaFileListFlavor) return listOf(file)
         throw UnsupportedFlavorException(flavor)
     }
 }

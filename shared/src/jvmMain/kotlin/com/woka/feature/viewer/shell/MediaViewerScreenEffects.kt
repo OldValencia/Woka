@@ -8,6 +8,7 @@ import com.woka.app.AppDependencies
 import com.woka.core.data.MediaItem
 import com.woka.core.data.WokaSettings
 import com.woka.core.ui.image.rememberReloadKey
+import com.woka.feature.viewer.MediaStartup
 import com.woka.feature.viewer.audio.AudioSession
 import com.woka.feature.viewer.pip.PipManager
 import com.woka.feature.viewer.video.VideoAlreadyOpenedDialog
@@ -130,8 +131,9 @@ internal fun MediaViewerActiveItemEffects(
         val frame = state.frameIndex
         // A track with no cover must not show the previous file's picture as its own.
         if (activeItem is MediaItem.Audio) state.imageBitmap = null
-        state.sourceSize = thumbnails.sourceSize(activeItem)
-        state.stillColor = thumbnails.stillColor(activeItem)
+        val early = MediaStartup.takeStill(activeItem, frame) // a direct open's, unsuspended: frame one
+        state.sourceSize = early?.size ?: thumbnails.sourceSize(activeItem)
+        state.stillColor = early?.color ?: thumbnails.stillColor(activeItem)
         val alreadyDecoded = thumbnails.cachedFull(activeItem, frame)
         if (alreadyDecoded != null) {
             // Going back to a picture still in the cache: showing the preview
@@ -139,7 +141,7 @@ internal fun MediaViewerActiveItemEffects(
             state.imageBitmap = alreadyDecoded
             return@LaunchedEffect
         }
-        thumbnails.preview(activeItem, frame)?.let { state.imageBitmap = it }
+        (early?.preview ?: thumbnails.preview(activeItem, frame))?.let { state.imageBitmap = it }
         // Null means this picture could not be decoded — keep whatever is on
         // screen rather than blanking it, which is what a frame index left over
         // from the previous file would otherwise do for one composition.

@@ -12,7 +12,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
@@ -26,17 +25,20 @@ import com.woka.app.shell.WindowKeys
 import com.woka.core.data.WokaStorage
 import com.woka.core.system.FolderContextMenu
 import com.woka.core.system.WindowsCommandLine
+import com.woka.core.system.StartupTiming
 import java.awt.Point
 import com.woka.app.App
 import java.awt.Dimension
-import java.awt.GraphicsEnvironment
 
 fun main(rawArgs: Array<String>) {
+    NativeImageOptions.apply()
+    StartupTiming.mark("main")
     StartupPrewarm.start()
     val args = WindowsCommandLine.resolveArgs(rawArgs).toTypedArray()
     if (!SingleInstance.startOrForward(args)) {
         return
     }
+    StartupTiming.mark("ipc")
 
     if (FolderContextMenu.isSupported() && FolderContextMenu.executablePath() != null) {
         FolderContextMenu.firstRunRegisterIfNeeded(WokaStorage.root)
@@ -46,6 +48,8 @@ fun main(rawArgs: Array<String>) {
     // publishes its stack as a StateFlow, and a screen changed underneath a live
     // composition would animate as a navigation the user did not make.
     initKoin(args.toList())
+    StartupPrewarm.media(args)
+    StartupTiming.mark("di")
     application {
         val windowState = rememberWindowState(
             size = defaultWindowSize(),
@@ -64,6 +68,7 @@ fun main(rawArgs: Array<String>) {
         ) {
             LaunchedEffect(window) {
                 SingleInstance.bindWindow(window)
+                StartupPrewarm.windowShown()
             }
 
             window.minimumSize = Dimension(800, 580)
@@ -100,7 +105,7 @@ fun main(rawArgs: Array<String>) {
             }
 
             Column(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize().then(StartupTiming.shellModifier())
             ) {
                 App(
                     topBarArea = { content ->
@@ -127,18 +132,4 @@ fun main(rawArgs: Array<String>) {
             }
         }
     }
-}
-
-/**
- * The window a first launch opens at: 80 % of the screen's usable area, no larger
- * than 1440×900 and no smaller than the 800×580 minimum (SIDE-003). It was a fixed
- * 1100×720, which with a 236.dp sidebar left the toolbar and grid cramped on any
- * screen big enough to have room to spare. AWT reports the area in the same scaled
- * units Compose calls dp, so no density conversion is needed.
- */
-private fun defaultWindowSize(): DpSize {
-    val area = GraphicsEnvironment.getLocalGraphicsEnvironment().maximumWindowBounds
-    val width = (area.width * 0.8f).coerceIn(800f, 1440f)
-    val height = (area.height * 0.8f).coerceIn(580f, 900f)
-    return DpSize(width.dp, height.dp)
 }

@@ -143,3 +143,33 @@ tasks.withType<Test>().configureEach {
     )
     jvmArgs("--enable-native-access=ALL-UNNAMED")
 }
+
+// The whole suite under GraalVM's tracing agent (ST-006): what the tests touch becomes part of
+// the native image's metadata (`:desktopApp:nativeImageAgentTests` merges and filters it).
+// Registered only where a GraalVM is configured, and never part of `build`. JavaCPP loads from
+// the distributable's folder, as the app does: its jar scan crashed the agent (ST-001).
+val graalvmHome = providers.gradleProperty("woka.graalvm.home")
+    .orElse(providers.environmentVariable("GRAALVM_HOME"))
+if (graalvmHome.isPresent) {
+    val jvmTest = tasks.named<Test>("jvmTest")
+    val agentOut = layout.buildDirectory.dir("native-image-agent/tests")
+    val javacpp = rootProject.file("desktopApp/build/compose/binaries/main/app/Woka/app/resources/javacpp")
+    tasks.register<Test>("agentTest") {
+        description = "Runs jvmTest on GraalVM's java under the native-image agent."
+        dependsOn(":desktopApp:createDistributable")
+        testClassesDirs = jvmTest.get().testClassesDirs
+        classpath = jvmTest.get().classpath
+        useJUnit()
+        javaLauncher.set(null as JavaLauncher?)
+        executable = File(graalvmHome.get(), "bin/java.exe").path
+        systemProperty("java.library.path", javacpp.path)
+        systemProperty("org.bytedeco.javacpp.pathsFirst", "true")
+        systemProperty("org.bytedeco.javacpp.findLibraries", "false")
+        jvmArgs("-agentlib:native-image-agent=config-output-dir=${agentOut.get().asFile.path.replace('\\', '/')}/{pid}")
+        // The suite's verdict is jvmTest's; this run only records.
+        ignoreFailures = true
+        outputs.upToDateWhen { false }
+        val out = agentOut
+        doFirst { out.get().asFile.deleteRecursively() }
+    }
+}

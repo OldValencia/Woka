@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.editor.EditorNoticeStatus
+import com.woka.feature.editor.recipe.carrierFor
 import java.io.File
 
 /**
@@ -45,13 +46,30 @@ internal fun EditorNoHistoryNotice() = EditorFormatNotice(
 /**
  * A film's bucket B (ME-289): nowhere to keep the edit, so `Done` is the render — mockup
  * state 9's words, shown for the whole session for this notice's own reason.
+ *
+ * **A format that has a carrier gets its own words** (reported 2026-11-20): one `mp4` kept
+ * its edit and the next refused, and "MP4 cannot keep an edit" read as a contradiction. The
+ * refusal is about how that one file is laid out, so the notice says so.
  */
 @Composable
-internal fun EditorRenderOnlyNotice(extension: String) = EditorFormatNotice(
-    title = "${extension.uppercase()} cannot keep an edit yet",
-    body = "Done is unavailable for this format. Render writes a new file; the original is untouched.",
-    tag = "editor-render-only-notice"
-)
+internal fun EditorRenderOnlyNotice(file: File) {
+    val extension = file.extension.uppercase()
+    if (carrierFor(file) == null) {
+        EditorFormatNotice(
+            title = "$extension cannot keep an edit yet",
+            body = "Done is unavailable for this format. Render writes a new file; the original is untouched.",
+            tag = "editor-render-only-notice"
+        )
+    } else {
+        EditorFormatNotice(
+            title = "This $extension cannot keep an edit",
+            body = "Woka keeps an edit at the end of the file, and this one has no room there: it was " +
+                "saved in fragments, as a stream or in parts, or the recording was cut short. Done is " +
+                "unavailable; Render writes a new file and the original is untouched.",
+            tag = "editor-render-only-file-notice"
+        )
+    }
+}
 
 /**
  * A target the factory refuses (ME-289): the reason in the notice strip, then the close —

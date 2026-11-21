@@ -5,7 +5,8 @@ import com.woka.fixtures.BITMAP_SUBS
 import com.woka.fixtures.BROKEN
 import com.woka.fixtures.SampleMedia
 import com.woka.support.firstCueStart
-import com.woka.support.onSubtitleStreams
+import com.woka.support.onSubtitleWindows
+import com.woka.support.playThrough
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -20,19 +21,21 @@ class BitmapSubtitleTest {
 
     @Test
     fun `both bitmap formats in one container are indexed`() {
-        onSubtitleStreams(bitmapSubs()) { streams ->
-            assertEquals(2, streams.bitmap.size, "indexed: ${streams.bitmap.keys}")
-            assertTrue(streams.text.isEmpty(), "a bitmap track was parsed as text")
-            streams.bitmap.forEach { (index, source) ->
-                assertTrue(source.cueCount > 0, "stream #$index indexed no cues")
+        onSubtitleWindows(bitmapSubs()) { windows ->
+            assertEquals(2, windows.size, "opened: ${windows.keys}")
+            windows.forEach { (index, window) ->
+                assertTrue(window.isBitmap, "stream #$index was opened as text")
+                window.playThrough()
+                assertTrue(window.cueCount > 0, "stream #$index indexed no cues")
             }
         }
     }
 
     @Test
     fun `the index keeps compressed payloads, not pictures`() {
-        onSubtitleStreams(bitmapSubs()) { streams ->
-            streams.bitmap.forEach { (index, source) ->
+        onSubtitleWindows(bitmapSubs()) { windows ->
+            windows.forEach { (index, source) ->
+                source.playThrough()
                 assertTrue(source.retainedBytes > 0, "stream #$index retained nothing")
                 val perCue = source.retainedBytes / source.cueCount
                 // A single 1920×1080 RGBA rectangle would be 8 MB on its own.
@@ -43,9 +46,9 @@ class BitmapSubtitleTest {
 
     @Test
     fun `a cue expands to at least one positioned rectangle`() {
-        onSubtitleStreams(bitmapSubs()) { streams ->
-            streams.bitmap.forEach { (index, source) ->
-                val cue = assertNotNull(source.cueAt(firstCueStart(source)), "stream #$index")
+        onSubtitleWindows(bitmapSubs()) { windows ->
+            windows.forEach { (index, source) ->
+                val cue = assertNotNull(source.bitmapAt(firstCueStart(source)), "stream #$index")
                 val image = assertNotNull(source.decode(cue), "stream #$index decoded to nothing")
                 assertTrue(image.rects.isNotEmpty(), "stream #$index produced no rectangles")
                 image.rects.forEach {
@@ -58,12 +61,12 @@ class BitmapSubtitleTest {
 
     @Test
     fun `a cue is released once the play head passes its end`() {
-        onSubtitleStreams(bitmapSubs()) { streams ->
-            streams.bitmap.forEach { (index, source) ->
-                val cue = assertNotNull(source.cueAt(firstCueStart(source)), "stream #$index")
+        onSubtitleWindows(bitmapSubs()) { windows ->
+            windows.forEach { (index, source) ->
+                val cue = assertNotNull(source.bitmapAt(firstCueStart(source)), "stream #$index")
                 assertTrue(cue.endMs > cue.startMs, "stream #$index: $cue never ends")
-                assertEquals(cue, source.cueAt(cue.endMs), "stream #$index dropped a cue early")
-                val after = source.cueAt(cue.endMs + 1)
+                assertEquals(cue, source.bitmapAt(cue.endMs), "stream #$index dropped a cue early")
+                val after = source.bitmapAt(cue.endMs + 1)
                 assertTrue(after == null || after != cue, "stream #$index held $cue past its end")
             }
         }
@@ -71,10 +74,10 @@ class BitmapSubtitleTest {
 
     @Test
     fun `nothing is showing before the first cue`() {
-        onSubtitleStreams(bitmapSubs()) { streams ->
-            streams.bitmap.forEach { (index, source) ->
+        onSubtitleWindows(bitmapSubs()) { windows ->
+            windows.forEach { (index, source) ->
                 val start = firstCueStart(source)
-                if (start > 0L) assertNull(source.cueAt(0L), "stream #$index shows a cue at zero")
+                if (start > 0L) assertNull(source.bitmapAt(0L), "stream #$index shows a cue at zero")
             }
         }
     }

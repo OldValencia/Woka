@@ -2,17 +2,19 @@ package com.woka.feature.viewer.video.engine
 
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
+import com.woka.core.data.HdrView
+import com.woka.core.data.HdrViewMode
 import com.woka.core.data.MediaItem
 import com.woka.core.data.WokaStorage
 import com.woka.core.data.markUsed
 import com.woka.core.ui.image.AppliedVideoEdits
 import com.woka.core.ui.image.ImageBitmapCache
-import com.woka.core.ui.image.encodeWebp
 import com.woka.feature.viewer.video.engine.decode.FreshFrameGrabber
+import com.woka.feature.viewer.video.engine.decode.LIGHT_DECODE_THREADS
 import com.woka.feature.viewer.video.engine.sync.grabImageAt
 import com.woka.feature.viewer.video.engine.sync.lengthMs
 import com.woka.feature.viewer.video.engine.probe.clockwiseTurns
-import com.woka.feature.viewer.video.engine.probe.rotatedClockwise
+import com.woka.feature.viewer.video.engine.probe.UnsupportedVideoException
 import org.bytedeco.ffmpeg.global.avutil.AV_LOG_QUIET
 import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_BGR24
 import org.bytedeco.ffmpeg.global.avutil.av_log_set_level
@@ -21,18 +23,17 @@ import org.bytedeco.javacv.FFmpegLogCallback
 import org.bytedeco.javacv.Frame
 import org.bytedeco.javacv.Java2DFrameConverter
 import org.jetbrains.skia.Image
-import java.awt.RenderingHints
-import java.awt.image.BufferedImage
 import java.io.File
-import kotlin.math.min
 
 /**
- * Routes FFmpeg's own logging into JavaCV and silences it. Called from the
- * thumbnail facade rather than from this object's initialiser so it still runs at
- * the exact moment the old `ThumbnailLoader` object was first touched — moving it
- * to first *video* use would leave the CLI "open a video directly" path noisy.
+ * Routes FFmpeg's own logging into JavaCV and silences it, once. Called where FFmpeg is
+ * first opened — the grabbers and the still probes — not from the thumbnail facade's
+ * initialiser: touching it loaded every FFmpeg library for a JPEG that needs none of
+ * them, ~90 ms on the first viewer open and ~50 MB of DLLs (ST-001, 2026-11-19).
  */
-internal fun quietFfmpegLogs() {
+internal fun quietFfmpegLogs() = ffmpegLogsQuiet
+
+private val ffmpegLogsQuiet: Unit by lazy {
     try {
         FFmpegLogCallback.set()
         av_log_set_level(AV_LOG_QUIET)
@@ -46,11 +47,13 @@ internal object VideoThumbnailExtractor {
 
     fun load(item: MediaItem.Video): ImageBitmap? {
         val previewFile = WokaStorage.thumbnailFile(item.file)
+        val cacheKey = ImageBitmapCache.key(item.file.absolutePath, 0)
+        val mode = HdrView.mode
         readCached(previewFile)?.let { cached ->
-            ImageBitmapCache[item.file.absolutePath] = cached
+            ImageBitmapCache[cacheKey] = cached
             return cached
         }
-        return extract(item.file, previewFile)
+        return extract(item.file, previewFile, cacheKey, mode)
     }
 
     /**
@@ -76,32 +79,37 @@ internal object VideoThumbnailExtractor {
         return bitmap
     }
 
-    private fun extract(file: File, previewFile: File): ImageBitmap? {
+    private fun extract(file: File, previewFile: File, cacheKey: String, mode: HdrViewMode): ImageBitmap? {
         val grabber = FreshFrameGrabber(file)
         return try {
             grabber.setVideoOption("hwaccel", "auto")
+            grabber.setVideoOption("threads", LIGHT_DECODE_THREADS)
             grabber.pixelFormat = AV_PIX_FMT_BGR24
             grabber.start()
             val duration = grabber.lengthMs(file) * 1000L
             // The author's cover (ME-287) is taken as it is, dark or not; else the guess.
             val chosen = AppliedVideoEdits.editOf(file)?.coverMs
             val timestamps = chosen?.let { listOf(it * 1000L) } ?: buildTimestampCandidates(duration)
-            var selectedImage: BufferedImage? = null
+            var selectedImage: VideoPosterFrame? = null
             val converter = Java2DFrameConverter()
             for (ts in timestamps) {
                 val candidate = grabFrameAt(grabber, converter, ts, duration) ?: continue
-                if (selectedImage == null) selectedImage = candidate
-                if (chosen != null || !isMonochrome(candidate)) {
+                if (chosen != null || !isMonochrome(candidate.image)) {
                     selectedImage = candidate
                     break
                 }
+                // The converter reuses its full-size image; retain only a small fallback
+                // so later candidates cannot pair new pixels with the old HDR metadata.
+                if (selectedImage == null) selectedImage = candidate.copy(image = scaledVideoPoster(candidate.image))
             }
             // Every candidate past the end: a one-frame `.bik` (VF-001) still has a picture.
             if (selectedImage == null) selectedImage = grabFrameAt(grabber, converter, 0L, duration)
             // Upright before it is scaled and cached: JavaCV never applies the
             // display matrix, so a phone's portrait clip arrived on its side (VF-105).
             val turns = grabber.clockwiseTurns
-            selectedImage?.let { saveAndDecode(it.rotatedClockwise(turns), previewFile, file) }
+            selectedImage?.let { saveVideoPoster(it, turns, previewFile, cacheKey, mode) }
+        } catch (_: UnsupportedVideoException) {
+            null
         } finally {
             // Guarded, or a `start()` that threw is masked by whatever `stop()`
             // throws on top of it and the real cause never leaves this method (F5).
@@ -115,36 +123,17 @@ internal object VideoThumbnailExtractor {
         converter: Java2DFrameConverter,
         targetTs: Long,
         duration: Long
-    ): BufferedImage? {
+    ): VideoPosterFrame? {
         if (duration !in 1..targetTs) {
-            return grabber.grabImageAt(targetTs)?.let { converter.getBufferedImage(it) }
+            return grabber.grabImageAt(targetTs)?.let { grabber.posterFrame(it, converter) }
         }
         (0 until 15).forEach { _ ->
             val frame: Frame? = grabber.grabImage()
             if (frame != null && frame.image != null) {
-                return converter.getBufferedImage(frame)
+                return grabber.posterFrame(frame, converter)
             }
         }
         return null
     }
 
-    private fun saveAndDecode(image: BufferedImage, previewFile: File, file: File): ImageBitmap {
-        val scale = min(400.0 / image.width, 400.0 / image.height).coerceAtMost(1.0)
-        val w = (image.width * scale).toInt()
-        val h = (image.height * scale).toInt()
-        val scaled = BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB)
-        scaled.createGraphics().apply {
-            setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
-            drawImage(image, 0, 0, w, h, null)
-            dispose()
-        }
-        // Through Skia rather than `ImageIO.write`, which has no WebP encoder at all.
-        // It also removes a round trip the old code paid without needing to: the
-        // poster used to be encoded to PNG bytes only so that Skia could decode them
-        // straight back for the bitmap this returns.
-        val bitmap = scaled.toComposeImageBitmap()
-        previewFile.writeBytes(bitmap.encodeWebp())
-        ImageBitmapCache[file.absolutePath] = bitmap
-        return bitmap
-    }
 }

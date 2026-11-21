@@ -17,6 +17,7 @@ import com.woka.support.episodeTwoFile
 import com.woka.support.toolOp
 import com.woka.support.withFoldRegistry
 import java.io.File
+import java.nio.ByteBuffer
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -79,6 +80,32 @@ class VideoEditorEngineTest {
                 dir.deleteRecursively()
             }
         }
+
+    /**
+     * A fragmented `mp4` ends in `mfra`, which an append may not follow. `capability` stays
+     * cheap and does not walk the boxes; the editor that opens on it does, and offers the
+     * render rather than a `Done` that loses the cut (reported 2026-11-20).
+     */
+    @Test
+    fun `a fragmented mp4 opens render-only, an ordinary one Recorded`() =
+        withFoldRegistry(emptyList()) { registry, _ ->
+            val factory = EditorEngineFactoryImpl(registry)
+            val dir = Files.createTempDirectory("woka-fragmented").toFile()
+            try {
+                val head = box("ftyp", 8) + box("moov", 32)
+                val plain = File(dir, "plain.mp4").apply { writeBytes(head + box("mdat", 64)) }
+                val fragmented = File(dir, "fragmented.mp4")
+                    .apply { writeBytes(head + box("moof", 16) + box("mdat", 32) + box("mfra", 16)) }
+
+                assertEquals(EditCapability.Recorded, factory.create(plain.absolutePath)?.capability)
+                assertEquals(EditCapability.RenderOnly, factory.create(fragmented.absolutePath)?.capability)
+            } finally {
+                dir.deleteRecursively()
+            }
+        }
+
+    private fun box(type: String, body: Int): ByteArray =
+        ByteBuffer.allocate(8 + body).putInt(8 + body).put(type.toByteArray(Charsets.US_ASCII)).array()
 
     @Test
     fun `sourceSize is the coded frame, and a crop moves the drawn frame`() {

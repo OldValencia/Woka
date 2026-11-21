@@ -10,8 +10,13 @@ import org.jetbrains.skia.Bitmap
  * the main one, which closes itself immediately afterwards
  * (`MediaViewerScreen.kt:124`). Nothing else needs covering: a scene that stalls
  * or stops drawing stops moving the mark with it.
+ *
+ * Measured 2026-11-19 (ST-001) on 4K playback across six fullscreen toggles and
+ * minimise/maximise/restore: no draw site ever drew more than **one** frame behind
+ * the newest drawn. Four keeps that margin four times over; sixteen held a further
+ * twelve frames for nothing — ~40 MB at the 1204×677 picture of a 1440×900 window.
  */
-private const val CLOSE_MARGIN_FRAMES = 16
+private const val CLOSE_MARGIN_FRAMES = 4
 
 /**
  * Past this many tracked frames the oldest reference is dropped rather than
@@ -21,6 +26,13 @@ private const val CLOSE_MARGIN_FRAMES = 16
  * path, so the worst case here is exactly the old behaviour and never worse.
  */
 private const val MAX_TRACKED = 64
+
+/**
+ * Converted frames no draw scope has reached yet before the decoder stops minting new
+ * bitmaps. A view that keeps up holds this near the channel's eight; see
+ * [FrameRetention.isBacklogged].
+ */
+private const val UNDRAWN_LIMIT = 16
 
 /**
  * Frees a decoded frame's pixels the moment nothing can draw them any more.
@@ -60,6 +72,16 @@ internal class FrameRetention {
     fun acknowledge(frameId: Long) {
         if (frameId > lastDrawnId) lastDrawnId = frameId
     }
+
+    /**
+     * True while [UNDRAWN_LIMIT] frames wait that nothing has drawn: a spinner over the
+     * picture, a minimised window, a player behind another screen. Converting more then
+     * only feeds [MAX_TRACKED]'s drop path, which leaves 15 MB frames to the collector.
+     * Measured 2026-11-19 (ST-001): `acks=0` for the first 900 frames of a 4K open,
+     * 886 dropped, 21 GB private. Decoder thread only, like [register].
+     */
+    val isBacklogged: Boolean
+        get() = live.count { it.id > lastDrawnId } >= UNDRAWN_LIMIT
 
     /** Takes ownership of a freshly produced bitmap, then frees what is now unreachable. */
     fun register(frameId: Long, bitmap: Bitmap) {
