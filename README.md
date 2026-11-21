@@ -60,7 +60,8 @@ A minimalist player for the music already on your disk: cover art and tags read 
 - **Fast Media Browsing:** Instantly traverse folders containing thousands of high-resolution stills and raw clips without UI stalls.
 - **Fluid Inspection & Zoom:** Smooth sub-pixel pan and zoom gestures (`Ctrl` + scroll, trackpad pinch) with auto-centering and fit presets.
 - **True HDR & Wide Color:** Skia-powered tone-mapping pipeline for HDR10, PQ, and HLG content, displaying accurate highlights and shadows on any display.
-- **High-Performance Video Playback:** Powered by JavaCV and Bytedeco FFmpeg. Handles HEVC, AV1, VP9, ProRes, and H.264 up to 4K/8K with low CPU overhead.
+- **Dolby Vision, Profile 5 included:** Plays Dolby Vision films with correct colours — including Profile 5, which many releases use and most players show green and purple. Profile 5 is converted on the GPU, so 4K plays smoothly.
+- **High-Performance Video Playback:** Powered by JavaCV and Bytedeco FFmpeg. Handles HEVC, AV1, VP9, ProRes, and H.264 up to 4K/8K with low CPU overhead. 8K HEVC at 150 Mbit/s plays at 60 fps on NVIDIA GPUs (CUDA decoding).
 - **Subtitles & Multi-Track Audio:** Full subtitle stream extraction (SRT, ASS, VTT) with configurable styling, language selection, and volume boost.
 - **Picture-in-Picture (PiP):** Detach any video into an independent, borderless floating window that stays on top while you browse other folders.
 - **Minimalist Audio Player:** Embedded cover art (or `cover.jpg` beside the file), title and artist from the tags, repeat, shuffle and playback speed. A folder plays through on its own, even with the viewer closed; album, sample rate and bitrate are in the Info panel.
@@ -107,7 +108,7 @@ Powered by bundled **FFmpeg 8.x** with frame-accurate scrubbing and hardware-acc
 
 | Category | Extensions | Features |
 | :--- | :--- | :--- |
-| **Modern & Web Video** | `.mp4`, `.m4v`, `.mov`, `.webm`, `.mkv`, `.mk3d` | 4K/8K playback, HDR (PQ/HLG), multi-track audio, subtitles (SRT, ASS, VTT), Picture-in-Picture |
+| **Modern & Web Video** | `.mp4`, `.m4v`, `.mov`, `.webm`, `.mkv`, `.mk3d` | 4K/8K playback, HDR (PQ/HLG, Dolby Vision incl. Profile 5), multi-track audio, subtitles (SRT, ASS, VTT), Picture-in-Picture |
 | **Broadcast & Transport Streams** | `.ts`, `.m2ts`, `.mts`, `.tp`, `.tod`, `.rec` | MPEG transport stream demuxing, multi-channel audio, frame-accurate seeking |
 | **Optical Disc & Production** | `.vob`, `.vro`, `.evo`, `.mxf` | DVD Video Object, Enhanced VOB, broadcast Material Exchange Format |
 | **MPEG Standards** | `.mpg`, `.mpeg`, `.mpeg1`, `.mpeg2`, `.mpeg4`, `.mpg4`, `.mpv`, `.mpv2` | MPEG-1/2/4 video streams and elementary streams |
