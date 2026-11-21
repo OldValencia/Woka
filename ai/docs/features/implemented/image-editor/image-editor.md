@@ -30,6 +30,8 @@ Build order is top to bottom. This table is the only place a ticket's state is r
 
 | Ticket                                                                     | Title | State |
 |----------------------------------------------------------------------------|---|---|
+| [ME-183](tickets/implemented/ME-183-render-photo.md) | Render photo into a new file | **done** 2026-11-21 — author manually verified; focused tests and strict native audit passed |
+| [ME-184](tickets/implemented/ME-184-copy-edited-photo.md) | Copy edited photo pixels and file | **done** 2026-11-21 — author manually verified; focused tests and strict native audit passed |
 | [ME-001](tickets/implemented/ME-001-toolchain-refresh.md)                  | Toolchain and dependency refresh | **done** 2026-08-16 |
 | [ME-013](tickets/implemented/ME-013-ffmpeg-8-1-2.md)                       | JavaCV 1.5.14 / FFmpeg 8.1.2 | **done** 2026-08-16 |
 | [ME-002](tickets/implemented/ME-002-package-skeleton.md)                   | Editor package skeleton and DI seam | **done** 2026-08-16 |
@@ -732,6 +734,7 @@ sheet instead of a dead Edit button.
 
 | Date | Question | Decision | Why |
 |---|---|---|---|
+| 2026-11-21 | How do edited photos leave Woka? | **Render photo…** writes a new sibling using the native raster pipeline. **Copy** supplies both a baked file and an image; an unedited photo supplies the original file. Duplicate and copying to a folder remain unchanged. Video Copy keeps the original and points to Render video… | Author confirmed the scope. This supersedes the image-only Copy decision of 2026-08-19; Done still records a non-destructive recipe. |
 | 2026-08-16 | One op type or one per tool? | One `ToolOp` + generic `ParamSet` | No polymorphic serialiser, history is a list copy, the shell renders panels it does not know |
 | 2026-08-16 | `Map<String, Any>` for params? | No — closed `ParamValue` hierarchy | `Any` cannot round-trip through `kotlinx.serialization` |
 | 2026-08-16 | Does `stage()` return `RasterStage`? | No — a `ToolStage` marker | A trim stage is not a matrix; without this the video editor cannot reuse the tool contract |

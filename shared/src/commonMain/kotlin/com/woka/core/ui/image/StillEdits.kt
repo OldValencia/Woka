@@ -19,6 +19,9 @@ import java.io.File
  */
 interface StillEdits {
 
+    /** A file whose pixels include the edit, or the original when it has no edits. */
+    fun fileForCopy(file: File, frameIndex: Int, directory: File): File = file
+
     /**
      * Whether [file] carries an edit at all — a few kilobytes off its head, no decode.
      *
@@ -77,6 +80,9 @@ private object NoStillEdits : StillEdits {
  * they did before the editor existed. That is also what makes them testable without one.
  */
 object AppliedStillEdits : StillEdits {
+
+    override fun fileForCopy(file: File, frameIndex: Int, directory: File): File =
+        installed.fileForCopy(file, frameIndex, directory)
 
     @Volatile
     private var installed: StillEdits = NoStillEdits

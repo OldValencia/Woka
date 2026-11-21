@@ -8,6 +8,9 @@ import com.woka.core.data.MediaItem
 import com.woka.core.data.isMedia
 import com.woka.core.data.mediaItemOrNull
 import com.woka.feature.viewer.MediaStartup
+import com.woka.core.utils.ClipboardCopies
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.awt.GraphicsEnvironment
 import kotlin.concurrent.thread
@@ -55,6 +58,7 @@ internal object StartupPrewarm {
         StartupTiming.mark("window-bound")
         repeat(2) { withFrameNanos { } }
         D3d12Prewarm.release()
+        withContext(Dispatchers.IO) { ClipboardCopies.start() }
     }
 
     fun start() {

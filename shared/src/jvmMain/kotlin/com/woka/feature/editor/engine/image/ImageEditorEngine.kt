@@ -8,18 +8,10 @@ import com.woka.core.data.MediaKind
 import com.woka.core.data.StillColorInfo
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
-import com.woka.feature.editor.core.EditLayers
-import com.woka.feature.editor.core.EditSaveResult
-import com.woka.feature.editor.core.EditorEngine
 import com.woka.feature.editor.core.EditorFrames
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.core.SourceStats
-import com.woka.feature.editor.core.EditScope
-import com.woka.feature.editor.save.SourceStamp
-import com.woka.feature.editor.save.evictCachesFor
 import com.woka.feature.viewer.image.readStillColor
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
@@ -35,8 +27,8 @@ internal class ImageEditorEngine(
     private val frameIndex: Int,
     private val registry: EditorToolRegistry,
     /** Passed in, never re-derived: the factory has already asked (§5.1). */
-    override val capability: EditCapability
-) : EditorEngine {
+    capability: EditCapability
+) : ImageEditorOutputs(file, frameIndex, capability) {
 
     override val kind = MediaKind.Image
 
@@ -56,8 +48,7 @@ internal class ImageEditorEngine(
 
     override fun storedBase(): EditDocument = storedBaseIn(file)
 
-    internal fun recipe(document: EditDocument): RasterRecipe =
-        fold(document, registry, sourceSize)
+    override fun recipe(document: EditDocument): RasterRecipe = fold(document, registry, sourceSize)
 
     /** The frame the recipe produces — a crop's dimensions, not the original's. */
     override fun drawnSize(document: EditDocument): IntSize = recipe(document).outputSize
@@ -98,49 +89,4 @@ internal class ImageEditorEngine(
     override fun Thumbnail(document: EditDocument, modifier: Modifier) =
         ImageCanvas(file, frameIndex, playback, sourceSize, recipe(document), modifier, fill = true)
 
-    /**
-     * The stamp is taken **when the engine is built**, not when a save starts.
-     *
-     * The window the stale guard covers is the editing session — from the decode the
-     * canvas is drawing to the write. Reading it at save time would compare the file
-     * to itself and catch nothing.
-     *
-     * A `var`, and re-read after every successful write, because a save now lands on
-     * the file the editor is still holding open: without this the second `Done` of a
-     * sitting would report the user's own first one as somebody else's change.
-     */
-    private var stamp = SourceStamp.of(file)
-
-    /**
-     * The write, then the two things that follow it. Which write it is, is [writeFor]'s
-     * — §5.1's buckets are a branch over a value this class only carries.
-     */
-    override suspend fun save(layers: EditLayers): EditSaveResult =
-        withContext(Dispatchers.IO) {
-            val result = writeFor(capability, file, layers, frameIndex, stamp, ::reEncode)
-            if (result is EditSaveResult.Saved) {
-                stamp = SourceStamp.of(file)
-                evictCachesFor(file)
-            }
-            result
-        }
-
-    /**
-     * Back to as shot (ME-107) — the only place that *removes* rather than writes, and
-     * answered by the same [EditSaveResult] as a save so the shell draws one banner.
-     * **Scoped since ME-176**, and `revertRecipe` holds what each scope takes.
-     */
-    override suspend fun revert(scope: EditScope, frameIndex: Int): EditSaveResult =
-        withContext(Dispatchers.IO) {
-            val result = revertRecipe(file, scope, frameIndex)
-            if (result is EditSaveResult.Saved) {
-                stamp = SourceStamp.of(file)
-                evictCachesFor(file)
-            }
-            result
-        }
-
-    /** Bucket B, in `ImageEditWrites` since ME-302 — its whole reasoning is there. */
-    private fun reEncode(document: EditDocument): EditSaveResult =
-        reEncodeStill(file, frameIndex, sourceSize, stamp, ::recipe, document)
 }

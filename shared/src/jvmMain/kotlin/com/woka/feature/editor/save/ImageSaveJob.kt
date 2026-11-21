@@ -4,9 +4,6 @@ import androidx.compose.ui.unit.IntSize
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditSaveResult
 import com.woka.feature.editor.engine.image.RasterRecipe
-import androidx.compose.ui.graphics.toComposeImageBitmap
-import com.woka.feature.viewer.image.displayable
-import com.woka.feature.viewer.image.stillDecoderFor
 import java.io.File
 
 /** The one container Skia cannot write and ME-181 can. */
@@ -92,15 +89,6 @@ internal class ImageSaveJob(
      *
      * A null [format] means AVIF, which Skia cannot encode and ME-181 can.
      */
-    private fun encode(document: EditDocument, format: SaveFormat?): ByteArray {
-        // Native, once, and released when this returns.
-        val native = displayable(file, stillDecoderFor(file).frame(file, frameIndex))
-        val rendered = renderAtNativeScale(native, sourceSize, recipeOf(document))
-        if (format == null) return rendered.use { encodeSdrAvif(it.toComposeImageBitmap()) }
-        val encoded = rendered.use {
-            it.encodeToData(format.skia, format.quality)?.bytes
-                ?: error("the ${format.name} encoder produced nothing")
-        }
-        return if (format.carriesExif) spliceExif(encoded, file) else encoded
-    }
+    private fun encode(document: EditDocument, format: SaveFormat?): ByteArray =
+        bakeStill(file, frameIndex, sourceSize, recipeOf(document), format)
 }

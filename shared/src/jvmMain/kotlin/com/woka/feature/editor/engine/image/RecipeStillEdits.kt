@@ -8,6 +8,7 @@ import com.woka.core.ui.image.StillEdits
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.recipe.EditRecipe
 import com.woka.feature.editor.save.renderAtNativeScale
+import com.woka.feature.editor.save.renderStill
 import com.woka.feature.viewer.image.stillDecoderFor
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -29,6 +30,13 @@ import java.io.File
 internal class RecipeStillEdits(
     private val registry: EditorToolRegistry
 ) : StillEdits {
+
+    override fun fileForCopy(file: File, frameIndex: Int, directory: File): File {
+        val document = EditRecipe.documentIn(file, frameIndex) ?: return file
+        if (document.isEmpty) return file
+        val size = nativeFrameSize(file, frameIndex)
+        return renderStill(file, frameIndex, size, fold(document, registry, size), directory)
+    }
 
     override suspend fun carries(file: File): Boolean =
         withContext(ImageBitmapCache.ioDispatcher) {

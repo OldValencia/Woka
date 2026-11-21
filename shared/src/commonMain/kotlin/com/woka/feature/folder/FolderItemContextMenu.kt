@@ -8,8 +8,7 @@ import com.woka.core.data.isReadOnlyMedia
 import com.woka.core.data.mayHoldFrames
 import com.woka.core.ui.components.DropdownItem
 import com.woka.core.ui.theme.Theme
-import com.woka.core.utils.copyFilesToClipboard
-import com.woka.core.utils.copyImageToClipboard
+import com.woka.feature.editor.copyMediaToClipboard
 import com.woka.core.utils.openDirectoryPicker
 import com.woka.feature.editor.VIDEO_EDITING_ENABLED
 import com.woka.feature.editor.core.EditorEngineFactory
@@ -96,17 +95,10 @@ internal fun FolderItemContextMenu(
         }
     }
     DropdownItem("Rename") { dismiss(); overlays.itemToRename = target }
-    // **Copy is the picture**, not the file (2026-08-19). Putting the file on the
-    // clipboard made this a second Duplicate — and Duplicate is right below. Pasting
-    // now gives the photograph as it is drawn, edit folded in. A video has no picture
-    // to hand over, so there Copy still means the file.
+    // Copy includes baked photo pixels; Duplicate keeps the original file and its recipe.
     DropdownItem("Copy") {
         dismiss()
-        if (item is MediaItem.Image) {
-            scope.launch { copyImageToClipboard(target) }
-        } else {
-            copyFilesToClipboard(listOf(target))
-        }
+        scope.launch { copyMediaToClipboard(item) }
     }
     DropdownItem("Duplicate") {
         dismiss()

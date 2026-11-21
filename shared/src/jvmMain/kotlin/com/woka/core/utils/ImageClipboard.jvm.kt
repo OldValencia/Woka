@@ -1,6 +1,7 @@
 package com.woka.core.utils
 
 import androidx.compose.ui.graphics.toAwtImage
+import com.woka.core.ui.image.AppliedStillEdits
 import com.woka.feature.viewer.image.ImageLoader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -11,25 +12,14 @@ import java.awt.datatransfer.Transferable
 import java.awt.datatransfer.UnsupportedFlavorException
 import java.io.File
 
-/**
- * `ImageLoader`, so the clipboard gets exactly what the viewer draws: the recipe is
- * folded in on that path and the native bitmap is cached, which usually makes this a
- * cache hit for the picture already on screen.
- *
- * **On the IO dispatcher and knowingly expensive.** `toAwtImage` copies the picture
- * onto the JVM heap — 138 MB for a 36-megapixel photograph — which is why every
- * drawing path in the app avoids it and why this one, an explicit action on one file,
- * can afford it.
- *
- * **Never throws.** A file that cannot be decoded answers `false` and leaves whatever
- * was on the clipboard alone, because a `Copy` that empties the clipboard is worse
- * than one that does nothing.
- */
+/** Decode and bake on IO; publishing failure leaves the previous clipboard intact. */
 actual suspend fun copyImageToClipboard(path: String, frameIndex: Int): Boolean =
     withContext(Dispatchers.IO) {
         runCatching {
             val contents = drawnImageOf(path, frameIndex)
             Toolkit.getDefaultToolkit().systemClipboard.setContents(contents, null)
+            val copied = contents.getTransferData(DataFlavor.javaFileListFlavor) as List<*>
+            ClipboardCopies.keep(copied.single() as File)
             true
         }.getOrElse { false }
     }
@@ -39,22 +29,36 @@ actual suspend fun copyImageToClipboard(path: String, frameIndex: Int): Boolean 
  * that the picture handed over is the edited one without replacing what the person at
  * the keyboard had copied.
  */
-internal fun drawnImageOf(path: String, frameIndex: Int): Transferable =
-    ImageOnClipboard(ImageLoader.load(File(path), frameIndex).toAwtImage())
+internal fun drawnImageOf(path: String, frameIndex: Int): Transferable {
+    val file = File(path)
+    val directory = ClipboardCopies.newDirectory()
+    try {
+        val copied = AppliedStillEdits.fileForCopy(file, frameIndex, directory)
+        // The picture from the source with its recipe — the same pixels as the baked file,
+        // without its JPEG generation, and cached under the source's key rather than a
+        // temporary copy's that nothing will read again.
+        val image = ImageLoader.load(file, frameIndex).toAwtImage()
+        if (copied == file) directory.delete()
+        return ImageOnClipboard(image, copied)
+    } catch (failure: Throwable) {
+        directory.listFiles()?.forEach { it.delete() }
+        directory.delete()
+        throw failure
+    }
+}
 
-/**
- * One flavour, `imageFlavor`, which is what AWT turns into the platform's own picture
- * format — DIB on Windows — for every program that pastes.
- */
-private class ImageOnClipboard(private val image: Image) : Transferable {
+/** AWT maps the image to DIB on Windows; Explorer consumes the accompanying file list. */
+private class ImageOnClipboard(private val image: Image, private val file: File) : Transferable {
 
-    override fun getTransferDataFlavors(): Array<DataFlavor> = arrayOf(DataFlavor.imageFlavor)
+    override fun getTransferDataFlavors(): Array<DataFlavor> =
+        arrayOf(DataFlavor.imageFlavor, DataFlavor.javaFileListFlavor)
 
     override fun isDataFlavorSupported(flavor: DataFlavor?): Boolean =
-        flavor == DataFlavor.imageFlavor
+        flavor == DataFlavor.imageFlavor || flavor == DataFlavor.javaFileListFlavor
 
     override fun getTransferData(flavor: DataFlavor?): Any {
         if (flavor == DataFlavor.imageFlavor) return image
+        if (flavor == DataFlavor.javaFileListFlavor) return listOf(file)
         throw UnsupportedFlavorException(flavor)
     }
 }

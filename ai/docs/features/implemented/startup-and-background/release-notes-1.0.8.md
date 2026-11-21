@@ -19,6 +19,10 @@
 - Embedded subtitles appear instantly, even in very large films; they used to take 30–40 seconds.
 
 ## Editor
+- Render photo… saves a new file beside the original, with edits visible in other applications.
+- Copy supplies edited photos as both an image and a file for pasting into Explorer or other apps.
+  Duplicate and copying to a folder still keep the original file and its editable recipe.
+- Copying an edited video keeps the original and points to Render video… to include the edits.
 - Crop works correctly after rotating or flipping a photo.
 - Markup stays exactly where it was drawn after a crop, on screen and in the saved file.
 - Changing a clip's speed takes effect immediately, without seeking.
