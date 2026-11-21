@@ -14,10 +14,13 @@ internal fun renderStill(
     sourceSize: IntSize,
     recipe: RasterRecipe,
     destination: File? = null,
+    /** Sees the baked pixels before they are encoded — Copy keeps them for the clipboard. */
+    onImage: (Image) -> Unit = {},
     checkActive: () -> Unit = {}
 ): File {
     val stamp = SourceStamp.of(source)
     val (extension, bytes) = withBakedStill(source, frameIndex, sourceSize, recipe) { image ->
+        onImage(image)
         val format = outputFormat(source, image)
         (format?.extension ?: "avif") to encodeStill(image, source, format)
     }

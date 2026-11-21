@@ -20,7 +20,7 @@ import java.io.File
 interface StillEdits {
 
     /** A file whose pixels include the edit, or the original when it has no edits. */
-    fun fileForCopy(file: File, frameIndex: Int, directory: File): File = file
+    fun copyOf(file: File, frameIndex: Int, directory: File): StillCopy = StillCopy(file)
 
     /**
      * Whether [file] carries an edit at all — a few kilobytes off its head, no decode.
@@ -81,8 +81,8 @@ private object NoStillEdits : StillEdits {
  */
 object AppliedStillEdits : StillEdits {
 
-    override fun fileForCopy(file: File, frameIndex: Int, directory: File): File =
-        installed.fileForCopy(file, frameIndex, directory)
+    override fun copyOf(file: File, frameIndex: Int, directory: File): StillCopy =
+        installed.copyOf(file, frameIndex, directory)
 
     @Volatile
     private var installed: StillEdits = NoStillEdits

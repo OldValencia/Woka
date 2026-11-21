@@ -1,21 +1,19 @@
 package com.woka.feature.folder
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import com.woka.core.data.MediaItem
 import com.woka.core.data.WatchRecord
 import com.woka.core.data.isReadOnlyMedia
 import com.woka.core.data.mayHoldFrames
 import com.woka.core.ui.components.DropdownItem
 import com.woka.core.ui.theme.Theme
-import com.woka.feature.editor.copyMediaToClipboard
+import com.woka.feature.editor.copyMedia
 import com.woka.core.utils.openDirectoryPicker
 import com.woka.feature.editor.VIDEO_EDITING_ENABLED
 import com.woka.feature.editor.core.EditorEngineFactory
 import com.woka.feature.editor.isEditable
 import com.woka.feature.editor.offersMp4Copy
 import com.woka.feature.editor.saveAsMp4
-import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -50,8 +48,6 @@ internal fun FolderItemContextMenu(
 ) {
     val target = item.file.absolutePath
     val engineFactory = EditorMenuDependencies.factory
-    // The decode a picture copy needs; the menu is gone by the time it finishes.
-    val scope = rememberCoroutineScope()
 
     if (item is MediaItem.Folder) {
         DropdownItem("Open") { dismiss(); onNavigateToFolder(target) }
@@ -98,7 +94,8 @@ internal fun FolderItemContextMenu(
     // Copy includes baked photo pixels; Duplicate keeps the original file and its recipe.
     DropdownItem("Copy") {
         dismiss()
-        scope.launch { copyMediaToClipboard(item) }
+        // Runs past the menu, which `dismiss` has just closed (`copyMedia`).
+        copyMedia(item)
     }
     DropdownItem("Duplicate") {
         dismiss()

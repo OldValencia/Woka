@@ -2,6 +2,7 @@ package com.woka.core.utils
 
 import androidx.compose.ui.graphics.toAwtImage
 import com.woka.core.ui.image.AppliedStillEdits
+import com.woka.core.ui.image.copiesAsFileOnly
 import com.woka.feature.viewer.image.ImageLoader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -33,13 +34,15 @@ internal fun drawnImageOf(path: String, frameIndex: Int): Transferable {
     val file = File(path)
     val directory = ClipboardCopies.newDirectory()
     try {
-        val copied = AppliedStillEdits.fileForCopy(file, frameIndex, directory)
-        // The picture from the source with its recipe — the same pixels as the baked file,
-        // without its JPEG generation, and cached under the source's key rather than a
-        // temporary copy's that nothing will read again.
-        val image = ImageLoader.load(file, frameIndex).toAwtImage()
-        if (copied == file) directory.delete()
-        return ImageOnClipboard(image, copied)
+        val copy = AppliedStillEdits.copyOf(file, frameIndex, directory)
+        // The bake's own pixels when a bake ran (one decode, and none of the copy's JPEG
+        // generation); the source through `ImageLoader` when the file goes over as it is.
+        val image = when {
+            file.copiesAsFileOnly -> null
+            else -> (copy.picture ?: ImageLoader.load(file, frameIndex)).toAwtImage()
+        }
+        if (copy.file == file) directory.delete()
+        return ImageOnClipboard(image, copy.file)
     } catch (failure: Throwable) {
         directory.listFiles()?.forEach { it.delete() }
         directory.delete()
@@ -47,17 +50,21 @@ internal fun drawnImageOf(path: String, frameIndex: Int): Transferable {
     }
 }
 
-/** AWT maps the image to DIB on Windows; Explorer consumes the accompanying file list. */
-private class ImageOnClipboard(private val image: Image, private val file: File) : Transferable {
+/**
+ * AWT maps the image to DIB on Windows; Explorer consumes the accompanying file list.
+ * No [image] — a GIF — offers the file list alone, so a chat pastes the animation.
+ */
+private class ImageOnClipboard(private val image: Image?, private val file: File) : Transferable {
 
     override fun getTransferDataFlavors(): Array<DataFlavor> =
-        arrayOf(DataFlavor.imageFlavor, DataFlavor.javaFileListFlavor)
+        if (image == null) arrayOf(DataFlavor.javaFileListFlavor)
+        else arrayOf(DataFlavor.imageFlavor, DataFlavor.javaFileListFlavor)
 
     override fun isDataFlavorSupported(flavor: DataFlavor?): Boolean =
-        flavor == DataFlavor.imageFlavor || flavor == DataFlavor.javaFileListFlavor
+        flavor in getTransferDataFlavors()
 
     override fun getTransferData(flavor: DataFlavor?): Any {
-        if (flavor == DataFlavor.imageFlavor) return image
+        if (flavor == DataFlavor.imageFlavor && image != null) return image
         if (flavor == DataFlavor.javaFileListFlavor) return listOf(file)
         throw UnsupportedFlavorException(flavor)
     }
