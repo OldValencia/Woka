@@ -295,6 +295,8 @@ compose.desktop {
 // `-XX:AOTCache` starts with no archive at all, so only the image that carries the
 // file gets the flag; `createDistributable` keeps the self-made AppCDS archive.
 if (System.getProperty("os.name").startsWith("Windows")) {
+    // The GraalVM native image beside the JVM build (ST-004); nothing here depends on it.
+    apply(from = "native-image.gradle.kts")
     afterEvaluate {
         tasks.withType<AbstractJPackageTask>().configureEach {
             launcherJvmArgs.addAll(AotTrainingRun.APP_CDS_FLAGS + JAVACPP_FROM_FOLDER)
@@ -333,9 +335,18 @@ if (System.getProperty("os.name").startsWith("Windows")) {
                 filter { line -> AotTrainingRun.cfgLine(line) }
             }
         }
+        // `-Pwoka.native=true` installs the GraalVM native image instead (ST-005): jpackage
+        // takes its folder as an app image, so the MSI keeps this product's upgrade UUID,
+        // shortcuts and file associations — and replaces an installed JVM Woka, or back.
+        val nativeMsi = providers.gradleProperty("woka.native").map { it.toBoolean() }.getOrElse(false)
         tasks.named<AbstractJPackageTask>("packageMsi") {
-            dependsOn(aotAppImage)
-            appImage.set(aotImage.map { it.dir("Woka") })
+            if (nativeMsi) {
+                dependsOn("nativeAppImage")
+                appImage.set(layout.buildDirectory.dir("compose/binaries/main/native-image/Woka"))
+            } else {
+                dependsOn(aotAppImage)
+                appImage.set(aotImage.map { it.dir("Woka") })
+            }
         }
     }
 }

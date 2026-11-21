@@ -6,6 +6,14 @@
 Учитывает одного разработчика, Windows/Linux/macOS, наблюдение ~460 МБ и варианты без второго UI.
 Продолжить с профилирования памяти и проверки Native Image; архитектурная миграция не выбрана.
 
+**Continuation point 2026-11-21:** the native image runs every feature the author tried, double
+clicked, with metadata derived by rule and a clean strict-mode audit (committed `e805bd9`). Next is
+**[ST-004](tickets/ST-004-native-image-gradle-build.md) — the image built by Gradle**, then
+[ST-005](tickets/ST-005-native-image-msi.md) — its MSI; then
+native memory against the JVM, a PGO trial, and the author's full pass before release. What the
+work taught is in [Native Image — what is known](#native-image--what-is-known) below; the full log
+is the end of [ST-001](tickets/ST-001-startup-measurements.md).
+
 **Точка продолжения 2026-11-20:** конец [ST-001](tickets/ST-001-startup-measurements.md) — сделано, до/после, следующий шаг (ETW-трейс Native Image).
 
 **Checkpoint 2026-11-19, продолжение:** первый JPEG измерен через собранный EXE с учётом
@@ -23,8 +31,11 @@ Render GIF пользователь перенёс в 1.0.9; эта работа
 |---|---|
 | [ST-001: измерения и AOT](tickets/ST-001-startup-measurements.md) | Native EXE→JPEG измерен; media prewarm включён, AOT подтверждён экспериментально |
 | ST-002: минимальная RAM при закрытом окне | Анализ жизненного цикла; production не изменён |
-| Native Image | Эксперимент: ~250 ms до main = консольная подсистема (fix `/SUBSYSTEM:WINDOWS`); JPEG ~189 ms, видео играет; нет JNI для ввода — конец ST-001 |
+| Native Image | Works end to end (2026-11-21): JPEG ~190 ms, video ~350 ms from launch, peak 178/269 MiB at a JPEG; metadata by rule, strict audit clean; built by session scripts, not Gradle yet |
 | ST-003: launcher/IPC и упаковка | Backlog |
+| [ST-004: the native image built by Gradle](tickets/ST-004-native-image-gradle-build.md) | **Done 2026-11-21** — `:desktopApp:nativeAppImage` |
+| [ST-005: an MSI that installs the native image](tickets/ST-005-native-image-msi.md) | **Done 2026-11-21** — `packageMsi -Pwoka.native=true`; installed and checked by the author, 113 MB idle |
+| ST-006: refreshing the image's metadata from Gradle | Backlog |
 
 DV P5 предварительно закоммичен и отправлен по отдельному указанию пользователя:
 `6374e3a Add Dolby Vision P5 colour and GPU playback`, 78 файлов, `origin/release/1.0.8`.
@@ -101,6 +112,60 @@ heap used/committed, native/graphics по доступным counters. Прой�
 папку, фото, 4K P5, многократные open/close. Не путать trimming working set с освобождением.
 Xms и GC менять по одному; проверять 4K/8K playback, seek и крупные изображения.
 
+## Native Image — what is known
+
+Learned 2026-11-20…21 building Woka with Oracle GraalVM 25.0.4 on Windows; the full log with
+numbers is ST-001. Each line below cost a failure to learn — do not relearn them.
+
+**Toolchain.** GraalVM's own Visual Studio detection knows VS 2022 only; on VS 18 the build runs
+inside `vcvars64.bat`, with System32 prepended to `PATH` and the arguments in an `@argfile` (the
+classpath is too long for a command line). A build takes ~80–100 s and up to 16 GB of builder heap.
+
+**Linking.** Link as a GUI program (`/SUBSYSTEM:WINDOWS`, `/ENTRY:mainCRTStartup`): a console EXE
+waits ~250–300 ms for Windows Terminal to create a console before `main`, which ETW showed and no
+amount of image tuning would have fixed. The same delay inflates any console `java.exe` timing, so
+startup is measured only through GUI launchers. **Never `-march=native`**: on this CPU it
+miscompiled Compose's `Matrix.invert()`, and hover and clicks on lifted cards broke;
+`-march=compatibility` is required anyway for a distributable and cost nothing measurable.
+
+**Options.** The JVM gets its options from `Woka.cfg`; the image gets none. The heap cap is baked
+at build time (`-R:MaxHeapSize`); everything else is a system property first read after `main`, so
+the image sets them itself as the first thing `main` does, from its own folder — `java.home` (skiko
+finds `bin\jawt.dll` there, AWT `lib\fontconfig.bfc`), the resources and JavaCPP paths, the
+Java2D and Swing switches. Build-time `-D` is not used: the paths are only known at run time.
+G1 flags and CDS have no counterpart (Serial GC on Windows, no class loading to cache).
+
+**Folder.** The image is laid out like jpackage's `app\` without the jars: `woka.exe` and the JDK
+DLLs, `bin\jawt.dll`, `lib\` (fontconfig.bfc, psfontj2d.properties, tzdb.dat, tzmappings), the
+skiko DLL and `icudtl.dat`, `resources\` with `javacpp\`. Nothing is read from the build tree.
+
+**Metadata — by rule, not by run.** The tracing agent records only what executed while it watched,
+and every miss surfaces at the moment of the call — in this app as a hung window, because the
+error dialog Compose raises needs Swing UI classes that were missed too. The image therefore takes
+three sources: the agent over app runs, the agent over the whole test suite (run on GraalVM's java,
+with JavaCPP loading from the folder — scanning jars under the agent crashes it), and rules derived
+from the dependencies themselves:
+- JNI: every class named as a string literal or by an exported `Java_*` symbol in the DLLs the
+  image loads, **and every superclass** — JNI resolves a member through the class it is asked on,
+  the image registers it on the declaring one (drag and drop failed on exactly that);
+- JavaCPP: every concrete `Pointer` subclass may be allocated by JNI (`unsafeAllocated`);
+- Swing: all `*UI` classes' methods, its icons and resource bundles; the clipboard's reflective
+  `java.rmi.MarshalledObject`; `coalesceEvents` on app components; `label` on Kotlin continuations;
+- FFM: descriptors parsed from the sources, plus the agents for the dynamic ones; the
+  `VarHandleSegmentAs*` accessors memory segments use;
+- resources loaded by path (Compose, PDFBox), and all locales (`SimpleDateFormat` in a region
+  the build machine is not in hung the Info panel).
+
+**Audit.** Build with `--exact-reachability-metadata`, run with
+`-XX:MissingRegistrationReportingMode=Warn`: every missing registration is printed, including those
+the code catches and turns into a generic error. A clean log over a manual pass is the bar. Before
+blaming the image for wrong behaviour, reproduce it on the JVM — two "native" bugs in one evening
+were product bugs.
+
+**License.** Oracle GraalVM is under the GraalVM Free Terms and Conditions: the image may be
+redistributed only free of charge. Woka stays free (2026-11-20); the installer carries GraalVM's
+LICENSE, NOTICE and the JDK `legal/` notices. A paid Woka would mean GraalVM Community Edition.
+
 ## Источники
 
 - [JDK 25 java command, AOT cache](https://docs.oracle.com/en/java/javase/25/docs/specs/man/java.html#ahead-of-time-cache):
@@ -116,6 +181,9 @@ Xms и GC менять по одному; проверять 4K/8K playback, see
 | 2026-11-19 | Приоритет idle? | Минимальная RAM, compact JVM проверить первой | Прямое указание пользователя |
 | 2026-11-19 | Пробовать JEP 483? | Да, сначала отдельный opt-in smoke | Работает на bundled JDK; AOT classes реально включены |
 | 2026-11-19 | Менять production flags по smoke? | Пока нет | Нет first-draw и playback/GC измерений |
+| 2026-11-20 | Where do `Woka.cfg`'s options come from in the image? | Heap at build time; the rest set by `main` from the image's folder | Paths exist only at run time; one mechanism for paths and switches |
+| 2026-11-20 | Oracle GraalVM or Community? | Oracle, Woka stays free | GFTC allows free redistribution only; donations unlock nothing |
+| 2026-11-21 | How is image metadata made complete? | Rules from the dependencies + agent over tests and app runs + strict audit | Agent output alone missed four classes of call, each found by hand as a hang |
 
 ## Новые ограничения и варианты — обсуждение 2026-11-19
 
