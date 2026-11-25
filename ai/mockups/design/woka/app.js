@@ -13,7 +13,7 @@ function commit(change){const before=JSON.stringify(state);change();state.dirty=
 function undo(){if(!history.length)return;future.push(JSON.stringify(state));state=JSON.parse(history.pop());render();}
 function redo(){if(!future.length)return;history.push(JSON.stringify(state));state=JSON.parse(future.pop());render();}
 function toast(message,canUndo=false){$('#toast').innerHTML=`<span>${escapeHtml(message)}</span>${canUndo?button('toast-undo','Undo','quiet'):''}`;$('#toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(hideToast,canUndo?7000:4500);}
-function modal(title,html){$('#dialog-title').textContent=title;$('#dialog-content').innerHTML=html;$('#dialog').showModal();}
+function modal(title,html,cls=''){$('#dialog').className=cls;$('#dialog-title').textContent=title;$('#dialog-content').innerHTML=html;$('#dialog').showModal();}
 /* A scene's document as it opens. withKeptEdits=false is the file with nothing kept on it, which is
    what "is this file edited" compares against; Palms.jpg opens with the Warm style already kept, so
    the prototype has an edited file without a round trip through the editor. */
@@ -213,4 +213,4 @@ document.addEventListener('keydown',event=>{
   if(event.key==='Delete'&&!viewerMode){if(selectedAudio())action('delete-audio');else if(selectedClip())action('delete-clip');else if(state.selection==='caption')action('remove-text');}
 });
 window.addEventListener('resize',updatePlayhead);
-initTimeline();initCrop();initWoka();initTransport();initNowPlaying();initFullscreen();setScene('photo');initExperience();initRefine();initInstruments();
+initTimeline();initCrop();initWoka();initTransport();initNowPlaying();initFullscreen();initDialogs();setScene('photo');initExperience();initRefine();initInstruments();

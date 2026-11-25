@@ -9,10 +9,6 @@ ticket's. No file lists here.
 The size popover names the kind its mode is remembered for. Drawn when the 1.0.9 per-kind size
 plan has fixed the kinds and the boundary; until then this block waits on that plan.
 
-### PT-105 — Dialogs section
-File info as the app draws it (stream cards, track tags), rename, create a copy, keep changes,
-revert — each a scene under Dialogs, opened over the viewer or editor it belongs to.
-
 ## Library
 
 ### PT-201 — Sidebar, toolbar, grid

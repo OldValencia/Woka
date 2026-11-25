@@ -85,7 +85,6 @@ function initWoka(){
   $('#previous-media').onclick=()=>{const items=folderItems(),index=items.findIndex(item=>item.id===currentScene);if(index>0)openMedia(items[index-1].id);};
   $('#next-media').onclick=()=>{const items=folderItems(),index=items.findIndex(item=>item.id===currentScene);if(index<items.length-1)openMedia(items[index+1].id);};
   $('#pill-minus').onclick=()=>{state.zoom=clamp(state.zoom-.15,1,4);updatePicture();};$('#pill-plus').onclick=()=>{state.zoom=clamp(state.zoom+.15,1,4);updatePicture();};$('#size-menu').onclick=zoomPopover;
-  $('#media-info').onclick=()=>chromePopover($('#media-info'),'File information',`<div class="info-line"><span>Name</span><span>${currentMedia().name}</span></div><div class="info-line"><span>Dimensions</span><span>${state.mode==='video'?'1920 × 1080':'4032 × 3024'}</span></div><div class="info-line"><span>Colour</span><span>${state.mode==='video'?'HDR · PQ':'SDR · sRGB'}</span></div>`);
   document.addEventListener('click',event=>{
     const media=event.target.closest('[data-media]');if(media){if($('#dialog').open)$('#dialog').close();openMedia(media.dataset.media);return;}
     const folder=event.target.closest('[data-folder]');if(folder){activeFolder=folder.dataset.folder;renderLibrary();openMedia(folderItems()[0].id);return;}

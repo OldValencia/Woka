@@ -4,7 +4,7 @@ const SECTIONS=[
   {id:'library',label:'Library',later:'PT-201',scenes:[]},
   {id:'viewer',label:'Viewer',scenes:[['photo','Photo'],['palm','Edited photo'],['frames','Frame set'],['gif','GIF'],['video','Video'],['fullscreen','Fullscreen'],['pip','PiP'],['track','Track']]},
   {id:'editor',label:'Editor',scenes:[['photo','Photo'],['crop','Portrait crop'],['frames','Frame set'],['gif','GIF'],['video','Video'],['audio','Video + music']]},
-  {id:'dialogs',label:'Dialogs',later:'PT-105',scenes:[]}
+  {id:'dialogs',label:'Dialogs',scenes:[['info','File information'],['rename','Rename'],['copy','Create a copy'],['keep','Keep changes'],['revert','Revert']]}
 ];
 let route={section:'viewer',scene:'photo'};
 /* Fullscreen and PiP are the video in another window, not another file. */
@@ -29,7 +29,9 @@ function go(section,scene){
   const entry=SECTIONS.find(item=>item.id===section&&!item.later);
   if(!entry)return false;
   if(!canShow(section,scene))scene=entry.scenes[0][0];
-  if(section==='viewer'&&WINDOW_SCENES.includes(scene)){openMedia('video');setWindowMode(scene);}
+  if($('#dialog').open)$('#dialog').close();
+  if(section==='dialogs')DIALOG_SCENES[scene]();
+  else if(section==='viewer'&&WINDOW_SCENES.includes(scene)){openMedia('video');setWindowMode(scene);}
   else if(section==='viewer'){openMedia(scene);setWindowMode('window');}
   else setScene(scene);
   route={section,scene};writeRoute();
@@ -46,6 +48,8 @@ function readHash(){
 let followQueued=false;
 function followApp(){
   followQueued=false;
+  // A Dialogs scene is the dialog over its screen; the bar follows the screen once it closes.
+  if(route.section==='dialogs'&&$('#dialog').open)return;
   const section=viewerMode?'viewer':'editor',scene=viewerMode&&windowMode!=='window'?windowMode:currentScene;
   if(!canShow(section,scene)||(route.section===section&&route.scene===scene))return;
   route={section,scene};writeRoute();
@@ -65,6 +69,7 @@ function initSections(){
     const link=event.target.closest('[data-route]');
     if(link){const [target,scene]=link.dataset.route.split('/');go(target,scene);}
   });
+  $('#dialog').addEventListener('close',()=>setTimeout(followApp,0));
   const followHash=()=>{if(!readHash())writeRoute();};
   addEventListener('hashchange',followHash);
   followHash();

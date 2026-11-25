@@ -24,7 +24,8 @@ Plan agreed with the author 2026-11-25, in conversation.
 | [PT-002 — one transport, GIF, frame strip on the left](tickets/PT-002-viewer-transport.md) | done 2026-11-25, accepted by the author |
 | [PT-101 — audio in the viewer and Now Playing](tickets/PT-101-audio.md) | done 2026-11-25, accepted by the author |
 | [PT-102 — carousel badges and Original in the viewer](tickets/PT-102-badges-original.md) | done 2026-11-25, accepted by the author |
-| [PT-103 — fullscreen and PiP](tickets/PT-103-fullscreen-pip.md) | built 2026-11-25 |
+| [PT-103 — fullscreen and PiP](tickets/PT-103-fullscreen-pip.md) | done 2026-11-25, accepted by the author |
+| [PT-105 — dialogs section](tickets/PT-105-dialogs.md) | built 2026-11-25 |
 | PT-104…PT-301 | [backlog](tickets/backlog.md) |
 
 ## Starting point (read 2026-11-25)
