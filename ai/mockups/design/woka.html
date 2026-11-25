@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Woka — prototype</title>
+  <link rel="stylesheet" href="woka/tokens.css">
+  <link rel="stylesheet" href="woka/base.css">
+  <link rel="stylesheet" href="woka/shell.css">
+  <link rel="stylesheet" href="woka/viewer.css">
+  <link rel="stylesheet" href="woka/editor.css">
+</head>
+<body>
+  <div class="prototype-bar">
+    <span class="prototype-title">Woka <span>/</span> prototype</span>
+    <nav class="scenarios" id="prototype-nav" aria-label="Prototype scenes"></nav>
+    <div class="row"><button id="theme" class="icon-button" aria-label="Switch theme"></button></div>
+  </div>
+  <div class="app-shell" id="app-shell">
+    <aside class="library-sidebar" id="library-sidebar" aria-label="Library navigation">
+      <div class="sidebar-heading"><img src="../../../logo/woka-logo.svg" alt="Woka"><button id="hide-library" class="icon-button" aria-label="Hide sidebar"></button></div>
+      <nav id="library-folders" class="library-folders" aria-label="Folders"></nav>
+      <footer class="sidebar-foot"><button id="link-folder" class="quiet">＋ Link folder…</button></footer>
+    </aside>
+  <main class="editor" id="editor">
+    <header class="app-header">
+      <div class="header-leading"><button id="show-library" class="icon-button" aria-label="Show sidebar"></button><button id="folder-back" class="icon-button" aria-label="Back to folder"></button><button id="back-viewer" class="quiet" data-tip="Return to the viewer. You can keep or discard any new changes.">Cancel</button><span class="edit-history"><button id="undo" class="icon-button" aria-label="Undo (Ctrl+Z)" disabled></button><button id="redo" class="icon-button" aria-label="Redo (Ctrl+Shift+Z)" disabled></button></span></div>
+      <div class="viewer-pill" aria-label="Viewing controls">
+        <button id="pill-minus" class="icon-button" aria-label="Zoom out">−</button><button id="size-menu" class="size-label" aria-haspopup="dialog" aria-expanded="false">Fit · <span id="size-percent">42%</span><span class="down-chevron">⌄</span></button><button id="pill-plus" class="icon-button" aria-label="Zoom in">+</button>
+        <span class="pill-divider"></span><button id="media-info" class="icon-button" aria-label="File information"></button>
+        <div class="viewer-actions" hidden><button id="toggle-carousel" class="icon-button" aria-label="Hide filmstrip" aria-pressed="true"></button><span class="pill-divider"></span><button id="enter-editor" class="pill-edit" data-tip="Open the editor. The picture stays in view while panels change around it.">Edit</button></div>
+      </div>
+      <div class="header-trailing"><div class="header-actions"><button id="compare" class="quiet" aria-pressed="false" data-tip="Show the original. Click again to return, or press and hold. Shortcut: hold \"></button><button id="help" class="icon-button" aria-label="Tips for this task">?</button><button id="focus" class="icon-button" aria-label="Hide settings (F6)"></button><span class="divider"></span><button id="output" class="quiet" data-tip="Make a separate file with your edits applied, ready for other apps.">Create a copy…</button><button id="done" class="primary" data-tip="Keep your edits for Woka and return to the viewer. You can edit again later.">Done</button></div><div class="window-buttons" aria-hidden="true"><span>−</span><span>□</span><span>×</span></div></div>
+    </header>
+    <div class="workspace">
+      <section class="work-area" aria-label="Canvas">
+        <div id="stage" class="stage">
+          <div id="picture" class="picture">
+            <svg id="photo" viewBox="350 55 1000 720" role="img" aria-label="A beach with palms and sun loungers"><image href="../../../assets/screenshots/photo-viewer.png" width="1440" height="900"/></svg>
+            <div id="caption" class="caption" hidden>Nowhere else to be.</div>
+            <div id="crop-box" class="crop-box" hidden role="group" aria-label="Crop area"><div class="thirds"></div><button class="crop-handle top" data-edge="top" aria-label="Top edge; use the up and down arrow keys"></button><button class="crop-handle bottom" data-edge="bottom" aria-label="Bottom edge; use the up and down arrow keys"></button><button class="crop-handle left" data-edge="left" aria-label="Left edge; use the left and right arrow keys"></button><button class="crop-handle right" data-edge="right" aria-label="Right edge; use the left and right arrow keys"></button><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i></div>
+          </div>
+          <span class="original-label" hidden>Original</span>
+          <span id="skim-badge" class="skim-badge" hidden></span>
+        </div>
+        <div class="viewer-layer" id="viewer-layer">
+          <button id="previous-media" class="media-nav previous" aria-label="Previous file"></button><button id="next-media" class="media-nav next" aria-label="Next file"></button>
+          <div class="viewer-bottom" id="viewer-bottom">
+            <div class="viewer-playback" id="viewer-playback" hidden>
+              <button id="viewer-play" class="icon-button" aria-label="Play (Space)"></button><span id="viewer-time" class="playback-time">00:08</span><button id="skip-back" class="icon-button skip" aria-label="Back 5 seconds">↶<small>5</small></button>
+              <div class="seek-wrap"><input id="viewer-seek" class="media-range" type="range" min="0" max="32" step=".1" value="8" aria-label="Playback position"><div id="seek-preview" class="seek-preview" hidden><div id="seek-image"></div><span id="seek-time">00:08</span></div></div>
+              <button id="skip-forward" class="icon-button skip" aria-label="Forward 5 seconds">↷<small>5</small></button><button id="viewer-duration" class="playback-time quiet" data-tip="Click to switch between duration and time remaining.">00:32</button>
+              <button id="viewer-volume-button" class="icon-button" aria-label="Listening volume" aria-haspopup="dialog" aria-expanded="false"></button><button id="viewer-settings" class="icon-button" aria-label="Playback settings" aria-haspopup="dialog" aria-expanded="false"></button><button id="viewer-fullscreen" class="icon-button" aria-label="Focus view"></button>
+            </div>
+            <div class="carousel-well" id="carousel-well"><div id="media-carousel" class="media-carousel" role="list" aria-label="Files in the current folder"></div></div>
+            <div class="viewer-caption"><span id="viewer-status">Seaside.jpg</span><span id="viewer-index">1 of 7</span></div>
+          </div>
+        </div>
+        <div id="frames" class="frames" hidden></div>
+      </section>
+      <aside class="inspector" aria-label="Editing settings"><div id="scope"></div><nav id="tools" class="tools" data-indicator="tools" aria-label="Tools"></nav><div id="panel" class="panel"></div><footer class="inspector-footer"><button id="reset" class="quiet">Revert to original…</button></footer></aside>
+      <section id="timeline" class="timeline" aria-label="Timeline" hidden>
+        <div id="timeline-resizer" class="timeline-resizer" role="separator" aria-label="Timeline height; use the up and down arrow keys" aria-orientation="horizontal" tabindex="0"></div>
+        <div class="transport"><div class="row"><button id="play" class="play-button" aria-label="Play (Space)"></button><span id="time" class="time">00:08.0 <span>/ 00:32.0</span></span></div><div class="row"><button id="split" class="secondary" data-tip="Split the clip at the playhead (S)"></button><button id="add-audio" class="secondary" data-tip="Add music or a voice recording. You can also drop a file onto the timeline."></button><span class="divider"></span><button id="tl-zoom-out" class="icon-button small" aria-label="Show more of the video (Ctrl + wheel)">−</button><button id="tl-zoom-in" class="icon-button small" aria-label="Show more detail (Ctrl + wheel)">+</button></div></div>
+        <div class="timeline-scroll" id="timeline-scroll"><div id="tracks" class="tracks"></div></div>
+        <div class="drop-hint" aria-hidden="true"><span class="drop-icon"></span>Drop to add music at <b id="drop-time">00:00.0</b></div>
+      </section>
+    </div>
+  </main>
+  </div>
+  <div id="chrome-popover" class="chrome-popover" role="dialog" aria-label="Viewer settings" hidden></div>
+  <dialog id="dialog" aria-labelledby="dialog-title"><div class="dialog-heading"><h2 id="dialog-title"></h2><button id="close-dialog" class="icon-button" aria-label="Close">×</button></div><div id="dialog-content"></div></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="tooltip" class="tooltip" role="tooltip" hidden></div>
+  <div id="context-menu" class="context-menu" role="menu" hidden></div>
+  <div id="drag-badge" class="drag-badge" hidden></div>
+  <input id="audio-file" type="file" accept="audio/*" hidden>
+  <script src="woka/phosphor.js"></script>
+  <script src="woka/panels.js"></script>
+  <script src="woka/timeline.js"></script>
+  <script src="woka/experience.js"></script>
+  <script src="woka/woka.js"></script>
+  <script src="woka/refine.js"></script>
+  <script src="woka/instruments.js"></script>
+  <script src="woka/app.js"></script>
+  <script src="woka/sections.js"></script>
+</body>
+</html>
