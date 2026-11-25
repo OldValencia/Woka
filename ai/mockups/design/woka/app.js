@@ -19,7 +19,7 @@ function modal(title,html,cls=''){$('#dialog').className=cls;$('#dialog-title').
    the prototype has an edited file without a round trip through the editor. */
 function sceneState(scene,withKeptEdits=true){
   const s=initialState(),media=libraryMedia.find(item=>item.id===scene);
-  s.mode=['video','audio'].includes(scene)||media?.audioOnly?'video':'photo';
+  s.mode=['video','audio'].includes(scene)||media?.video||media?.audioOnly?'video':'photo';
   if(scene==='crop'){s.portrait=true;s.tool='crop';}
   if(media?.frames>1){s.frames=Array.from({length:media.frames},()=>({settings:{}}));s.frameIndex=0;s.frameScope='all';}
   if(scene==='video'){s.tool='clip';s.selection='c2';}
@@ -29,6 +29,7 @@ function sceneState(scene,withKeptEdits=true){
 }
 function setScene(scene){
   if(transitionBusy)return;
+  hideLibrary();
   handOverSound();
   if(currentScene){flushInput();sceneSessions.set(currentScene,{state:JSON.stringify(state),history:[...history],future:[...future],saved:savedSnapshot});}
   currentScene=scene;compareOriginal=false;hideTooltip();
@@ -213,4 +214,4 @@ document.addEventListener('keydown',event=>{
   if(event.key==='Delete'&&!viewerMode){if(selectedAudio())action('delete-audio');else if(selectedClip())action('delete-clip');else if(state.selection==='caption')action('remove-text');}
 });
 window.addEventListener('resize',updatePlayhead);
-initTimeline();initCrop();initWoka();initTransport();initNowPlaying();initFullscreen();initDialogs();setScene('photo');initExperience();initRefine();initInstruments();
+initTimeline();initCrop();initWoka();initTransport();initNowPlaying();initFullscreen();initDialogs();initSettings();initLibrary();setScene('photo');initExperience();initRefine();initInstruments();

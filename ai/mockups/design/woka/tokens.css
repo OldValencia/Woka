@@ -169,4 +169,18 @@
   --on-primary:#20170c;
   --clip-label-fill:#141519a8;
   --original-label-fill:#151515c9;
+  --black-18:rgba(0,0,0,.18);
+  --black-42:rgba(0,0,0,.42);
+  --black-50:rgba(0,0,0,.5);
+  --black-62:rgba(0,0,0,.62);
+  --black-86:rgba(0,0,0,.86);
+  --white-10:rgba(255,255,255,.1);
+  --white-30:rgba(255,255,255,.3);
+  --white-62:rgba(255,255,255,.62);
+  --white-82:rgba(255,255,255,.82);
+  --white-90:rgba(255,255,255,.9);
+  --close-red:#e81123;
+  --match-fill:rgba(255,214,10,.35);
+  --switch-on:#34c759;
+  --confirm-red:#ff3b30;
 }

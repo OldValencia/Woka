@@ -9,18 +9,6 @@ ticket's. No file lists here.
 The size popover names the kind its mode is remembered for. Drawn when the 1.0.9 per-kind size
 plan has fixed the kinds and the boundary; until then this block waits on that plan.
 
-## Library
-
-### PT-201 — Sidebar, toolbar, grid
-Ported from the code: sidebar tree with counts, Pinned, Link folder…; toolbar with folder name,
-View (Show, Size S·M·L, Sort), Pin, search box, Info, Settings; grid with folder mosaic and stack
-cards and media cards with watched progress; empty folder. Scenes: a photo folder, a series folder,
-an empty folder. The viewer's sidebar becomes this sidebar.
-
-### PT-202 — Search, Info panel, Settings, Quick Look, selection
-Search results inside the window, the Info panel (Ctrl+I), the Settings overlay with its panels,
-Quick Look on Space, the selection bar with several items selected.
-
 ## Status
 
 ### PT-301 — Visual truth switches to `woka.html`

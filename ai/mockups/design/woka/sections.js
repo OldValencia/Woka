@@ -1,7 +1,7 @@
 /* The prototype bar: which part of the app is on screen, and a link to every scene, #section/scene.
    The bar names a few scenes per section; a link may name any scene the section can show. */
 const SECTIONS=[
-  {id:'library',label:'Library',later:'PT-201',scenes:[]},
+  {id:'library',label:'Library',scenes:[['pictures','Photo folder'],['movies','Video folder'],['series','Series'],['empty','Empty folder'],['select','Selecting'],['search','Search'],['info','Info'],['quicklook','Quick Look'],['settings','Settings'],['welcome','First run']]},
   {id:'viewer',label:'Viewer',scenes:[['photo','Photo'],['palm','Edited photo'],['frames','Frame set'],['gif','GIF'],['video','Video'],['fullscreen','Fullscreen'],['pip','PiP'],['track','Track']]},
   {id:'editor',label:'Editor',scenes:[['photo','Photo'],['crop','Portrait crop'],['frames','Frame set'],['gif','GIF'],['video','Video'],['audio','Video + music']]},
   {id:'dialogs',label:'Dialogs',scenes:[['info','File information'],['rename','Rename'],['copy','Create a copy'],['keep','Keep changes'],['revert','Revert']]}
@@ -10,6 +10,7 @@ let route={section:'viewer',scene:'photo'};
 /* Fullscreen and PiP are the video in another window, not another file. */
 const WINDOW_SCENES=['fullscreen','pip'];
 function canShow(section,scene){
+  if(section==='library'&&FOLDERS[scene])return true;
   if(section==='viewer')return WINDOW_SCENES.includes(scene)||libraryMedia.some(item=>item.id===scene);
   return SECTIONS.find(entry=>entry.id===section)?.scenes.some(([id])=>id===scene)??false;
 }
@@ -23,14 +24,17 @@ function renderPrototypeNav(){
 }
 /* history.replaceState throws on a file:// page (its origin is opaque), so the hash is replaced as a
    fragment navigation; the hashchange it raises finds the route already there and stops. */
-const routeHash=()=>`#${route.section}/${route.scene}`;
+const routeHash=()=>`#${route.section}/${encodeURIComponent(route.scene)}`;
 function writeRoute(){renderPrototypeNav();if(location.hash!==routeHash())location.replace(routeHash());}
 function go(section,scene){
   const entry=SECTIONS.find(item=>item.id===section&&!item.later);
   if(!entry)return false;
   if(!canShow(section,scene))scene=entry.scenes[0][0];
   if($('#dialog').open)$('#dialog').close();
-  if(section==='dialogs')DIALOG_SCENES[scene]();
+  closeSettings();libraryEmpty=section==='library'&&scene==='welcome';
+  if(section==='library')lib.info=scene==='info';
+  if(section==='library')(LIBRARY_SCENES[scene]??(()=>showLibrary(scene)))();
+  else if(section==='dialogs')DIALOG_SCENES[scene]();
   else if(section==='viewer'&&WINDOW_SCENES.includes(scene)){openMedia('video');setWindowMode(scene);}
   else if(section==='viewer'){openMedia(scene);setWindowMode('window');}
   else setScene(scene);
@@ -39,7 +43,7 @@ function go(section,scene){
 }
 function readHash(){
   if(location.hash===routeHash()&&$('#prototype-nav').childElementCount)return true;
-  const [section,scene]=location.hash.slice(1).split('/');return go(section,scene);
+  const [section,scene]=location.hash.slice(1).split('/');return go(section,decodeURIComponent(scene||''));
 }
 /* The prototype's own controls move between scenes too — Edit, Cancel, Done, the carousel — and so
    can a script. Every one of them goes through setScene or setViewer, so the bar follows those two.
@@ -50,12 +54,17 @@ function followApp(){
   followQueued=false;
   // A Dialogs scene is the dialog over its screen; the bar follows the screen once it closes.
   if(route.section==='dialogs'&&$('#dialog').open)return;
+  // The library: the bar names the folder on screen, or keeps the Library scene that shows it.
+  if(libraryShown()){
+    if(route.section==='library'&&(LIBRARY_FOLDER[route.scene]??route.scene)===activeFolder)return;
+    route={section:'library',scene:Object.keys(LIBRARY_FOLDER).find(key=>LIBRARY_FOLDER[key]===activeFolder)??activeFolder};writeRoute();return;
+  }
   const section=viewerMode?'viewer':'editor',scene=viewerMode&&windowMode!=='window'?windowMode:currentScene;
   if(!canShow(section,scene)||(route.section===section&&route.scene===scene))return;
   route={section,scene};writeRoute();
 }
 function initSections(){
-  for(const name of ['setScene','setViewer','setWindowMode']){
+  for(const name of ['setScene','setViewer','setWindowMode','showLibrary']){
     const original=window[name];
     window[name]=function(...args){const result=original.apply(this,args);if(!followQueued){followQueued=true;setTimeout(followApp,0);}return result;};
   }

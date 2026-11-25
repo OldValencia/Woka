@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="woka/shell.css">
   <link rel="stylesheet" href="woka/viewer.css">
   <link rel="stylesheet" href="woka/editor.css">
+  <link rel="stylesheet" href="woka/library.css">
 </head>
 <body>
   <div class="prototype-bar">
@@ -67,7 +68,22 @@
       </section>
     </div>
   </main>
+  <main class="library" id="library" hidden>
+    <header class="library-bar">
+      <div class="lib-leading"><button id="lib-show-sidebar" class="ib" aria-label="Show sidebar"></button><button id="lib-up" class="ib" aria-label="Back to parent folder"></button><h1 id="lib-title" class="lib-title"></h1></div>
+      <div class="lib-trailing"><button id="lib-view" class="ib lib-folder-only" aria-label="View" aria-haspopup="dialog"></button><button id="lib-pin" class="ib lib-folder-only" aria-label="Pin"></button><label class="lib-search lib-folder-only"><span id="lib-search-icon"></span><input id="lib-search" placeholder="Search" aria-label="Search" spellcheck="false"><span id="lib-search-hint" class="lib-search-hint">Ctrl+F</span></label><button id="lib-info" class="ib lib-folder-only" aria-label="Info  Ctrl+I"></button><button id="lib-settings" class="ib" aria-label="Settings"></button><div class="window-buttons lib-window" aria-hidden="true"><span>−</span><span>□</span><span>×</span></div></div>
+    </header>
+    <div class="lib-body">
+      <div class="lib-scroll" id="lib-scroll"><div id="lib-content"></div></div>
+      <aside id="lib-info-panel" class="lib-info-panel" aria-label="Info" hidden></aside>
+      <div id="lib-selection" class="lib-floating lib-selection" hidden></div>
+      <div id="lib-quicklook" class="lib-quicklook" hidden></div>
+      <div id="lib-hud" class="lib-hud" role="status" hidden></div>
+    </div>
+  </main>
   </div>
+  <div id="lib-view-menu" class="lib-menu" role="dialog" aria-label="View" hidden></div>
+  <div id="settings-overlay" class="settings-overlay" hidden></div>
   <div id="now-playing-bubble" class="np-bubble" hidden></div>
   <div id="chrome-popover" class="chrome-popover" role="dialog" aria-label="Viewer settings" hidden></div>
   <dialog id="dialog" aria-labelledby="dialog-title"><div class="dialog-heading"><h2 id="dialog-title"></h2><button id="close-dialog" class="icon-button" aria-label="Close">×</button></div><div id="dialog-content"></div></dialog>
@@ -87,6 +103,9 @@
   <script src="woka/nowplaying.js"></script>
   <script src="woka/fullscreen.js"></script>
   <script src="woka/dialogs.js"></script>
+  <script src="woka/library.js"></script>
+  <script src="woka/library-actions.js"></script>
+  <script src="woka/settings.js"></script>
   <script src="woka/transport.js"></script>
   <script src="woka/app.js"></script>
   <script src="woka/sections.js"></script>

@@ -6,7 +6,7 @@
 const nowPlaying={id:null,time:0,length:32,playing:false,running:false,last:0,owner:'scene'};
 const RING=2*Math.PI*22;
 function slotItem(){return libraryMedia.find(item=>item.id===nowPlaying.id);}
-function slotOnScreen(){return viewerMode&&currentScene===nowPlaying.id;}
+function slotOnScreen(){return viewerMode&&!libraryShown()&&currentScene===nowPlaying.id;}
 /* From the viewer's sync: a track that plays fills the slot, and the slot follows its time. */
 function mirrorSound(){
   if(!currentMedia().audioOnly||!viewerMode||nowPlaying.owner==='slot')return;
@@ -18,7 +18,7 @@ function mirrorSound(){
 }
 /* Called before setScene replaces the scene: a playing track goes on in the slot. */
 function handOverSound(){
-  if(!currentScene||currentScene!==nowPlaying.id)return;
+  if(!currentScene||currentScene!==nowPlaying.id||nowPlaying.owner==='slot')return;
   Object.assign(nowPlaying,{time:state.time,length:duration(),playing,owner:'slot'});
   if(playing)startSlotClock();
 }
