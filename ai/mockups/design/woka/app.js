@@ -21,7 +21,8 @@ function setScene(scene){
   playing=false;state=initialState();history=[];future=[];inputBefore=null;
   state.mode=['video','audio'].includes(scene)?'video':'photo';
   if(scene==='crop'){state.portrait=true;state.tool='crop';}
-  if(scene==='frames'){state.frames=Array.from({length:4},()=>({settings:{}}));state.frameIndex=0;state.frameScope='all';}
+  const media=libraryMedia.find(item=>item.id===scene);
+  if(media?.frames>1){state.frames=Array.from({length:media.frames},()=>({settings:{}}));state.frameIndex=0;state.frameScope='all';}
   if(scene==='video'){state.tool='clip';state.selection='c2';}
   if(scene==='audio'){state.tool='sound';state.audio=[{id:'a1',name:'Sea breeze.m4a',start:4,duration:26,settings:{volume:55,fadeIn:1.5,fadeOut:3}}];state.selection='a1';}
   const remembered=sceneSessions.get(scene);
@@ -56,9 +57,7 @@ function render(){
   const video=state.mode==='video';$('#editor').classList.toggle('video',video);$('#timeline').hidden=!video;
   showDirty();
   $('#undo').disabled=!history.length;$('#redo').disabled=!future.length;
-  $('#frames').hidden=!state.frames;
-  if(state.frames)$('#frames').innerHTML=`<span class="muted">Frames in this file</span><div class="frame-strip">${state.frames.map((frame,index)=>button('frame',`${photoSvg()}<span>${index+1}${Object.keys(frame.settings).length?' · edited':''}</span>`,state.frameIndex===index?'selected':'',`data-frame="${index}"`)).join('')}</div><span class="muted">${state.frameIndex+1} of ${state.frames.length}</span>`;
-  renderInspector();renderTimeline();updatePicture();
+  renderFrameStrip();renderInspector();renderTimeline();updatePicture();
 }
 function setTool(tool){
   flushInput();
@@ -103,7 +102,7 @@ function action(name,node){
   if(name.startsWith('mute-track:')){const audio=state.audio.find(a=>a.id===name.slice(11));commit(()=>audio.settings.mute=!audio.settings.mute);return;}
   const commands={
     'scope-all':()=>{const wasAudio=!!selectedAudio();state.selection=null;if(wasAudio)state.tool='sound';if(['clip','markup'].includes(state.tool))state.tool='styles';render();},
-    'frame':()=>{state.frameIndex=+node.dataset.frame;state.frameScope='single';render();},
+    'frame':()=>{frameClock.playing=false;state.frameIndex=+node.dataset.frame;if(!viewerMode)state.frameScope='single';render();},
     'frame-scope':()=>{state.frameScope=node.dataset.scope;render();},
     'adjust-group':()=>{state.group=node.dataset.group;renderInspector();},
     auto:()=>{easePhoto();commit(()=>Object.assign(settings(),{exposure:12,contrast:8,shadows:18,highlights:-16}));},
@@ -164,7 +163,7 @@ function initCrop(){
   });
   box.addEventListener('keydown',event=>{if(!event.key.startsWith('Arrow'))return;event.preventDefault();const step=event.shiftKey?5:1;commit(()=>change(state.crop,event.target.dataset.edge,event.key==='ArrowRight'?step:event.key==='ArrowLeft'?-step:0,event.key==='ArrowDown'?step:event.key==='ArrowUp'?-step:0));$('.crop-handle.'+event.target.dataset.edge)?.focus();});
 }
-function play(){if(state.mode!=='video')return;playing=!playing;if(playing&&state.time>=duration())state.time=0;lastTick=performance.now();updatePlayhead();if(playing)requestAnimationFrame(tick);}
+function play(){if(currentMedia().gif&&viewerMode){setFramePlaying(!frameClock.playing);return;}if(state.mode!=='video')return;playing=!playing;if(playing&&state.time>=duration())state.time=0;lastTick=performance.now();updatePlayhead();if(playing)requestAnimationFrame(tick);}
 function tick(now){if(!playing)return;state.time=Math.min(duration(),state.time+(now-lastTick)/1000*(viewerMode?viewerSpeed:1));lastTick=now;if(state.time>=duration())playing=false;updatePlayhead();if(playing)requestAnimationFrame(tick);}
 document.addEventListener('click',event=>{
   const tool=event.target.closest('[data-tool]');if(tool){setTool(tool.dataset.tool);return;}
@@ -206,4 +205,4 @@ document.addEventListener('keydown',event=>{
   if(event.key==='Delete'&&!viewerMode){if(selectedAudio())action('delete-audio');else if(selectedClip())action('delete-clip');else if(state.selection==='caption')action('remove-text');}
 });
 window.addEventListener('resize',updatePlayhead);
-initTimeline();initCrop();initWoka();setScene('photo');initExperience();initRefine();initInstruments();
+initTimeline();initCrop();initWoka();initTransport();setScene('photo');initExperience();initRefine();initInstruments();

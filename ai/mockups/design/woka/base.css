@@ -129,3 +129,8 @@ button:active:not(:disabled){filter:brightness(.93)}
 .context-menu button.danger{color:var(--e-danger)}
 .context-menu kbd{font:inherit;font-size:11px;font-family:var(--mono);color:var(--e-faint)}
 .context-menu hr{border:0;border-top:1px solid var(--border);margin:4px 6px;border-top-color:var(--e-line)}
+
+/* The transport's play button: one geometry for the viewer's bar and the editor's timeline. */
+.transport-play{background:var(--surface-raised);color:var(--text-primary)}
+:is(.viewer-playback,.timeline) .icon-button.transport-play{width:32px;height:32px;min-height:32px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+:is(.viewer-playback,.timeline) .icon-button.transport-play svg{width:15px;height:15px}

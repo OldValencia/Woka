@@ -122,9 +122,11 @@ function dumpStyles() {
   // Custom properties are left out: they are the tokens' names, not what is drawn.
   const names = [...getComputedStyle(document.body)].filter(name => !name.startsWith('--'));
   const read = style => names.map(name => style.getPropertyValue(name)).join('\u0001');
+  // Anchored at the nearest id, so a sibling added elsewhere does not renumber every element after it.
   const path = element => {
     const parts = [];
     for (let node = element; node && node !== document.documentElement; node = node.parentElement) {
+      if (node.id) { parts.unshift('#' + node.id); break; }
       parts.unshift(`${node.tagName.toLowerCase()}:${[...node.parentElement.children].indexOf(node)}`);
     }
     return parts.join('>');

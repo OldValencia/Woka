@@ -2,8 +2,8 @@
    The bar names a few scenes per section; a link may name any scene the section can show. */
 const SECTIONS=[
   {id:'library',label:'Library',later:'PT-201',scenes:[]},
-  {id:'viewer',label:'Viewer',scenes:[['photo','Photo'],['video','Video']]},
-  {id:'editor',label:'Editor',scenes:[['photo','Photo'],['crop','Portrait crop'],['frames','Frame set'],['video','Video'],['audio','Video + music']]},
+  {id:'viewer',label:'Viewer',scenes:[['photo','Photo'],['frames','Frame set'],['gif','GIF'],['video','Video']]},
+  {id:'editor',label:'Editor',scenes:[['photo','Photo'],['crop','Portrait crop'],['frames','Frame set'],['gif','GIF'],['video','Video'],['audio','Video + music']]},
   {id:'dialogs',label:'Dialogs',later:'PT-105',scenes:[]}
 ];
 let route={section:'viewer',scene:'photo'};

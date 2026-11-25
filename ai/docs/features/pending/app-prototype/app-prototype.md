@@ -20,8 +20,8 @@ Plan agreed with the author 2026-11-25, in conversation.
 
 | Ticket | Status |
 |---|---|
-| [PT-001 — rename, one token file, sections and links](tickets/PT-001-structure.md) | built 2026-11-25, computed styles unchanged outside the bar; author's look pending |
-| [PT-002 — one transport, GIF, frame strip on the left](tickets/PT-002-viewer-transport.md) | specified |
+| [PT-001 — rename, one token file, sections and links](tickets/PT-001-structure.md) | done 2026-11-25, accepted by the author |
+| [PT-002 — one transport, GIF, frame strip on the left](tickets/PT-002-viewer-transport.md) | built 2026-11-25; play-button geometry for the author to confirm |
 | PT-101…PT-301 | [backlog](tickets/backlog.md) |
 
 ## Starting point (read 2026-11-25)

@@ -27,6 +27,7 @@
       <div class="header-leading"><button id="show-library" class="icon-button" aria-label="Show sidebar"></button><button id="folder-back" class="icon-button" aria-label="Back to folder"></button><button id="back-viewer" class="quiet" data-tip="Return to the viewer. You can keep or discard any new changes.">Cancel</button><span class="edit-history"><button id="undo" class="icon-button" aria-label="Undo (Ctrl+Z)" disabled></button><button id="redo" class="icon-button" aria-label="Redo (Ctrl+Shift+Z)" disabled></button></span></div>
       <div class="viewer-pill" aria-label="Viewing controls">
         <button id="pill-minus" class="icon-button" aria-label="Zoom out">−</button><button id="size-menu" class="size-label" aria-haspopup="dialog" aria-expanded="false">Fit · <span id="size-percent">42%</span><span class="down-chevron">⌄</span></button><button id="pill-plus" class="icon-button" aria-label="Zoom in">+</button>
+        <span class="pill-divider hdr-part" hidden></span><button id="hdr-mode" class="size-label hdr-part" aria-haspopup="dialog" aria-expanded="false" data-tip="How the picture's colour is read" hidden>Auto<span class="down-chevron">⌄</span></button>
         <span class="pill-divider"></span><button id="media-info" class="icon-button" aria-label="File information"></button>
         <div class="viewer-actions" hidden><button id="toggle-carousel" class="icon-button" aria-label="Hide filmstrip" aria-pressed="true"></button><span class="pill-divider"></span><button id="enter-editor" class="pill-edit" data-tip="Open the editor. The picture stays in view while panels change around it.">Edit</button></div>
       </div>
@@ -46,22 +47,17 @@
         <div class="viewer-layer" id="viewer-layer">
           <button id="previous-media" class="media-nav previous" aria-label="Previous file"></button><button id="next-media" class="media-nav next" aria-label="Next file"></button>
           <div class="viewer-bottom" id="viewer-bottom">
-            <div class="viewer-playback" id="viewer-playback" hidden>
-              <button id="viewer-play" class="icon-button" aria-label="Play (Space)"></button><span id="viewer-time" class="playback-time">00:08</span><button id="skip-back" class="icon-button skip" aria-label="Back 5 seconds">↶<small>5</small></button>
-              <div class="seek-wrap"><input id="viewer-seek" class="media-range" type="range" min="0" max="32" step=".1" value="8" aria-label="Playback position"><div id="seek-preview" class="seek-preview" hidden><div id="seek-image"></div><span id="seek-time">00:08</span></div></div>
-              <button id="skip-forward" class="icon-button skip" aria-label="Forward 5 seconds">↷<small>5</small></button><button id="viewer-duration" class="playback-time quiet" data-tip="Click to switch between duration and time remaining.">00:32</button>
-              <button id="viewer-volume-button" class="icon-button" aria-label="Listening volume" aria-haspopup="dialog" aria-expanded="false"></button><button id="viewer-settings" class="icon-button" aria-label="Playback settings" aria-haspopup="dialog" aria-expanded="false"></button><button id="viewer-fullscreen" class="icon-button" aria-label="Focus view"></button>
-            </div>
+            <div class="viewer-playback" id="viewer-playback" hidden></div>
             <div class="carousel-well" id="carousel-well"><div id="media-carousel" class="media-carousel" role="list" aria-label="Files in the current folder"></div></div>
             <div class="viewer-caption"><span id="viewer-status">Seaside.jpg</span><span id="viewer-index">1 of 7</span></div>
           </div>
         </div>
-        <div id="frames" class="frames" hidden></div>
+        <div id="frame-column" class="frame-column" role="list" aria-label="Frames in this file" hidden></div>
       </section>
       <aside class="inspector" aria-label="Editing settings"><div id="scope"></div><nav id="tools" class="tools" data-indicator="tools" aria-label="Tools"></nav><div id="panel" class="panel"></div><footer class="inspector-footer"><button id="reset" class="quiet">Revert to original…</button></footer></aside>
       <section id="timeline" class="timeline" aria-label="Timeline" hidden>
         <div id="timeline-resizer" class="timeline-resizer" role="separator" aria-label="Timeline height; use the up and down arrow keys" aria-orientation="horizontal" tabindex="0"></div>
-        <div class="transport"><div class="row"><button id="play" class="play-button" aria-label="Play (Space)"></button><span id="time" class="time">00:08.0 <span>/ 00:32.0</span></span></div><div class="row"><button id="split" class="secondary" data-tip="Split the clip at the playhead (S)"></button><button id="add-audio" class="secondary" data-tip="Add music or a voice recording. You can also drop a file onto the timeline."></button><span class="divider"></span><button id="tl-zoom-out" class="icon-button small" aria-label="Show more of the video (Ctrl + wheel)">−</button><button id="tl-zoom-in" class="icon-button small" aria-label="Show more detail (Ctrl + wheel)">+</button></div></div>
+        <div class="transport"><div class="row"><button id="play" class="icon-button transport-play" aria-label="Play (Space)"></button><span id="time" class="time">00:08.0 <span>/ 00:32.0</span></span></div><div class="row"><button id="split" class="secondary" data-tip="Split the clip at the playhead (S)"></button><button id="add-audio" class="secondary" data-tip="Add music or a voice recording. You can also drop a file onto the timeline."></button><span class="divider"></span><button id="tl-zoom-out" class="icon-button small" aria-label="Show more of the video (Ctrl + wheel)">−</button><button id="tl-zoom-in" class="icon-button small" aria-label="Show more detail (Ctrl + wheel)">+</button></div></div>
         <div class="timeline-scroll" id="timeline-scroll"><div id="tracks" class="tracks"></div></div>
         <div class="drop-hint" aria-hidden="true"><span class="drop-icon"></span>Drop to add music at <b id="drop-time">00:00.0</b></div>
       </section>
@@ -82,6 +78,8 @@
   <script src="woka/woka.js"></script>
   <script src="woka/refine.js"></script>
   <script src="woka/instruments.js"></script>
+  <script src="woka/frames.js"></script>
+  <script src="woka/transport.js"></script>
   <script src="woka/app.js"></script>
   <script src="woka/sections.js"></script>
 </body>

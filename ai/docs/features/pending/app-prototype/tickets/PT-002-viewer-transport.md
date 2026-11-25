@@ -56,3 +56,37 @@ What the author sees: `#viewer/gif` playing with visible controls, `#viewer/burs
 - The HDR control is in the pill at `#viewer/video` and `#editor/video`, absent at `#viewer/photo`.
 - `#editor/photo` and `#editor/crop` PNGs unchanged against PT-001's (neither has a transport or
   a strip); `#editor/video` and `#editor/audio` differ only in the transport's left group.
+
+## Result — 2026-11-25
+
+Built. New `woka/transport.js` (slot table, GIF clock, frame step, HDR menu) and `woka/frames.js`
+(the strip); the static playback markup and the bottom `#frames` strip are gone from `woka.html`,
+their bindings from `woka.js` and `app.js`, their rules from `editor.css`.
+
+**Checked** (headless Edge, `shot.mjs`): `#viewer/gif` — Space pauses, `.` from frame 1 reads
+`2 / 24`, `,` steps back, loop off stops at `24 / 24`, a click on the picture plays again. The
+strip's first thumbnail sits 12 px / 23 px from the canvas's corner at both `#viewer/frames` and
+`#editor/frames`. Play, time and seek start at the same x and y for video and GIF (280/322/418 at
+1440 px). The HDR control shows at `#viewer/video` and `#editor/video`, not at `#viewer/photo`.
+Computed styles against PT-001's commit, keyed from the nearest id: the photo editor scenes
+(photo, crop, adjust, markup, focus) and the photo viewer differ only in hidden elements and the
+timeline's play button; the frame-set canvas is 65 px taller (the bottom strip is gone); the video
+pill is wider by the HDR control.
+
+**Where the result differs from the steps.**
+- The burst scene is `#viewer/frames`, not `#viewer/burst`: a scene id is the library item's id,
+  and the burst item is `frames` in both sections. `gif` is in the editor's scenes too, or the bar
+  could not follow Edit from the GIF.
+- **The play button is one 32 px round knob in both places** — the editor's was a 36 px knob, the
+  viewer's a bare glyph. Sharing geometry needed one of the two; the knob kept the editor's look.
+  Author to confirm.
+- A click on the picture also plays and pauses a video, as it does in the app.
+- Subtitles opens a placeholder popover (Off / English); the app's subtitle menu is not drawn.
+- The time label has a 48 px minimum, so the seek bar does not move between kinds or when the GIF
+  label switches to frame numbers.
+- `shot.mjs` keys an element by the nearest ancestor id: two buttons added to the pill renumbered
+  every element after them under the old index path.
+
+**Seen, not touched.** At 600 px wide the prototype draws nothing below its bar — already so in
+`editor-next.html`. At 880 px the editor's pill overlaps `Original`; it did before, the HDR control
+widens it.

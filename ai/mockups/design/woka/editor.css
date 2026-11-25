@@ -28,7 +28,6 @@
 .timeline-resizer{position:absolute;left:0;right:0;top:-4px;height:8px;cursor:ns-resize;z-index:5}
 .transport{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 18px 9px;flex-wrap:wrap;flex-shrink:0}
 .transport button{font-size:12px}
-.play-button{background:var(--surface-raised);width:34px;height:34px;display:flex;align-items:center;justify-content:center}
 .time{font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .time span{color:var(--text-secondary);margin-left:5px}
 .timeline-scroll{overflow:auto;min-height:0;flex:1;scrollbar-width:thin;padding-bottom:6px}
@@ -71,8 +70,6 @@ dialog th{color:var(--text-secondary);font-weight:500}
 .output-option{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border);padding:14px;margin:10px 0;border-radius:8px;gap:15px}
 .output-option strong{display:block}
 .output-option p{font-size:12px;margin:4px 0 0}
-.frame-strip{display:flex;gap:5px;margin:10px 0}
-.frame-strip button{flex:1;background:var(--surface-raised);border:1px solid var(--border)}
 @media(min-width:1550px){
   .stage{padding:34px 54px}
 }
@@ -101,14 +98,10 @@ dialog th{color:var(--text-secondary);font-weight:500}
   .scenarios button{font-size:10px}
   .stage{padding:25px}
 }
-.frames{display:flex;align-items:center;justify-content:center;gap:16px;flex-shrink:0;border-top:1px solid var(--border);padding:8px 20px;font-size:12px;background:var(--surface)}
-.frames .frame-strip{margin:0}
-.frames button svg{width:100%;height:100%;opacity:.7}
-.frames button span{position:absolute;bottom:2px;left:5px;font-size:10px;color:var(--white);text-shadow:0 1px 4px var(--black)}
 .scope .segmented{margin-bottom:8px}
 .track-label small{display:block;color:var(--text-secondary);margin-top:1px;font-size:10px}
 .audio .clip-handle{background:var(--sound)}
-.editor.viewing .inspector,.editor.viewing .timeline,.editor.viewing #frames,.editor.viewing #focus,.editor.viewing #back-viewer{display:none!important}
+.editor.viewing .inspector,.editor.viewing .timeline,.editor.viewing #focus,.editor.viewing #back-viewer{display:none!important}
 .editor.viewing .work-area{grid-column:1;grid-row:1}
 .editor.viewing #crop-box{display:none!important}
 .motion-ghost{position:fixed!important;z-index:12;pointer-events:none!important;overflow:hidden;transform-origin:center;box-sizing:border-box;contain:layout style}
@@ -393,9 +386,8 @@ button.crumb:hover{color:var(--e-text);background:var(--e-hover-strong)}
 /* Timeline */
 .app-shell.editing .timeline{background:var(--e-panel);border-top:1px solid var(--e-line)}
 .timeline .transport{padding:10px 14px 6px;background:transparent}
-.timeline .play-button{width:36px;height:36px;min-height:36px;border-radius:50%;background:var(--e-well-2);color:var(--e-text)}
-.timeline .play-button:hover{background:var(--e-knob)}
-.timeline .play-button svg{width:15px;height:15px}
+.timeline .transport-play{background:var(--e-well-2);color:var(--e-text)}
+.timeline .transport-play:hover{background:var(--e-knob)}
 .timeline .time{margin-left:6px;font:500 12px var(--mono);color:var(--e-text)}
 .timeline .time span{color:var(--e-faint)}
 .transport .secondary{display:inline-flex;align-items:center;gap:6px;height:32px;min-height:32px;padding:0 10px;border:0;border-radius:8px;background:transparent!important;color:var(--e-muted);font-size:12px}
@@ -435,9 +427,6 @@ button.crumb:hover{color:var(--e-text);background:var(--e-hover-strong)}
 .timeline-resizer:after{content:"";position:absolute;width:34px;height:3px;border-radius:3px;top:2px;left:calc(50% - 17px);opacity:.6;transition:width 140ms ease,background 140ms ease;background:var(--e-faint)}
 .timeline-resizer:hover:after,.timeline-resizer:focus-visible:after{width:56px;left:calc(50% - 28px);background:var(--e-accent)}
 .drop-hint{display:none;position:absolute;inset:8px;border:1.5px dashed var(--sound);border-radius:10px;align-items:center;justify-content:center;gap:6px;font-size:13px;z-index:8;pointer-events:none;border-color:var(--e-accent-line);background:color-mix(in srgb,var(--e-panel) 82%,var(--e-accent));color:var(--e-text)}
-.app-shell.editing .frames{background:var(--e-panel);border-top:1px solid var(--e-line)}
-.frames button{position:relative;width:66px;height:48px;overflow:hidden;padding:0;border-radius:8px}
-.frames button.selected{border:0;box-shadow:0 0 0 2px var(--e-accent)}
 .skim-badge,.drag-badge{font-family:var(--mono)}
 .skim-badge{background:var(--e-tip);color:var(--e-tip-text);border:0;backdrop-filter:none}
 .drag-badge{background:var(--e-tip);color:var(--e-tip-text)}
@@ -454,8 +443,8 @@ dialog .segmented button.selected{background:var(--e-knob);color:var(--e-text)}
 dialog .toggle{padding:8px 0}
 
 /* Press feedback: a small, springy give. */
-:is(.tools button,.segmented>button,.ratio-tile,.style-tile,.well-button,.swatch-row button,#done,#output,.play-button,.text-action,.crumb){transition:transform 160ms var(--spring),background-color 140ms ease,color 140ms ease,box-shadow 180ms ease}
-:is(.tools button,.segmented>button,.ratio-tile,.style-tile,.well-button,.swatch-row button,#done,#output,.play-button,.text-action,.crumb):active:not(:disabled){transform:scale(.95);filter:none}
+:is(.tools button,.segmented>button,.ratio-tile,.style-tile,.well-button,.swatch-row button,#done,#output,.transport-play,.text-action,.crumb){transition:transform 160ms var(--spring),background-color 140ms ease,color 140ms ease,box-shadow 180ms ease}
+:is(.tools button,.segmented>button,.ratio-tile,.style-tile,.well-button,.swatch-row button,#done,#output,.transport-play,.text-action,.crumb):active:not(:disabled){transform:scale(.95);filter:none}
 @media(prefers-reduced-motion:reduce){
   .indicator,.dial-scale,.scrub-thumb,#done::before{transition:none!important}
 }

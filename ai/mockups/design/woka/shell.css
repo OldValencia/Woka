@@ -92,3 +92,15 @@
   .prototype-bar .prototype-title{display:none}
   .prototype-bar{padding:0 8px}
 }
+
+/* The frame strip: inside one file, on the left of the canvas, at the same place in viewer and editor. */
+.frame-column{position:absolute;left:12px;top:16px;max-height:calc(100% - 32px);z-index:5;display:flex;flex-direction:column;gap:6px;padding:6px;overflow-y:auto;scrollbar-width:none;border-radius:12px;background:var(--glass);border:1px solid var(--border);backdrop-filter:blur(20px)}
+.editor.viewing .frame-column{max-height:calc(100% - 212px)}
+.frame-thumb{position:relative;flex:none;width:56px;height:42px;min-height:0;padding:0;border-radius:7px;overflow:hidden;background:var(--surface-raised)}
+.frame-thumb svg{display:block;width:100%;height:100%}
+.frame-thumb.selected::after{content:'';position:absolute;inset:0;border:2px solid var(--accent);border-radius:7px}
+.frame-dot{position:absolute;right:4px;top:4px;width:7px;height:7px;border-radius:50%;background:var(--accent-editor);box-shadow:0 0 0 1.5px var(--black-40)}
+.work-area.has-frames .media-nav.previous{left:96px}
+.app-shell.editing .work-area.has-frames .stage{padding-left:104px}
+.app-shell.editing .frame-column{background:var(--e-panel);border-color:var(--e-line);backdrop-filter:none}
+.app-shell.editing .frame-thumb.selected::after{border-color:var(--e-accent)}

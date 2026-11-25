@@ -3,8 +3,9 @@ const libraryMedia=[
   {id:'palm',name:'Palms.jpg',view:'600 55 700 525'},
   {id:'crop',name:'Seaside-portrait.jpg',view:'650 60 520 693.3'},
   {id:'shade',name:'Under the palms.jpg',view:'500 200 800 600'},
-  {id:'frames',name:'Seaside-burst.heic',view:'350 55 960 720'},
-  {id:'video',name:'A day by the sea.mp4',view:'350 100 1000 562.5',video:true},
+  {id:'frames',name:'Seaside-burst.heic',view:'350 55 960 720',frames:4},
+  {id:'gif',name:'Waves.gif',view:'350 55 960 720',frames:24,fps:12,gif:true},
+  {id:'video',name:'A day by the sea.mp4',view:'350 100 1000 562.5',video:true,hdr:true},
   {id:'audio',name:'Sea breeze edit.mp4',view:'350 100 1000 562.5',video:true}
 ];
 let libraryHidden=false,carouselShown=true,activeFolder='Vacation',popoverAnchor=null,remainingTime=false,listenVolume=70,viewerSpeed=1,carouselKey='';
@@ -19,37 +20,31 @@ Object.assign(icons,{
 });
 function currentMedia(){return libraryMedia.find(item=>item.id===currentScene)||libraryMedia[0];}
 function shortTime(value){return `${String(Math.floor(value/60)).padStart(2,'0')}:${String(Math.floor(value%60)).padStart(2,'0')}`;}
-function folderItems(){return activeFolder==='Videos'||activeFolder==='Movies'?libraryMedia.filter(item=>item.video):activeFolder==='Pictures'||activeFolder==='Screenshots'?libraryMedia.filter(item=>!item.video):libraryMedia;}
+function folderItems(folder=activeFolder){return folder==='Videos'||folder==='Movies'?libraryMedia.filter(item=>item.video):folder==='Pictures'||folder==='Screenshots'?libraryMedia.filter(item=>!item.video):libraryMedia;}
 function renderLibrary(){
-  $('#library-folders').innerHTML='<div class="library-section">Folders</div>'+['Movies','Pictures','Screenshots','Vacation','Videos'].map(folder=>`<button class="folder-row ${activeFolder===folder?'selected':''}" data-folder="${folder}"><span class="chevron">›</span>${icon('folder')}<span class="folder-name">${folder}</span><span class="count">${folder==='Vacation'?7:folder==='Videos'||folder==='Movies'?2:5}</span></button>`).join('')+'<div class="library-section">Pinned</div><button class="folder-row pinned" data-folder="Vacation">'+icon('pin')+'<span class="folder-name">Vacation<small>Pictures</small></span></button><button class="folder-row pinned" data-folder="Pictures">'+icon('pin')+'<span class="folder-name">Pictures<small>OldValencia</small></span></button>';
+  $('#library-folders').innerHTML='<div class="library-section">Folders</div>'+['Movies','Pictures','Screenshots','Vacation','Videos'].map(folder=>`<button class="folder-row ${activeFolder===folder?'selected':''}" data-folder="${folder}"><span class="chevron">›</span>${icon('folder')}<span class="folder-name">${folder}</span><span class="count">${folderItems(folder).length}</span></button>`).join('')+'<div class="library-section">Pinned</div><button class="folder-row pinned" data-folder="Vacation">'+icon('pin')+'<span class="folder-name">Vacation<small>Pictures</small></span></button><button class="folder-row pinned" data-folder="Pictures">'+icon('pin')+'<span class="folder-name">Pictures<small>OldValencia</small></span></button>';
 }
 function syncWokaChrome(){
   const item=currentMedia();$('#app-shell').classList.toggle('editing',!viewerMode);$('#app-shell').classList.toggle('sidebar-hidden',libraryHidden);
   if(!viewerMode)$('#app-shell').classList.remove('focus-view');
   $('#viewer-layer').inert=!viewerMode;$('#library-sidebar').inert=!viewerMode||libraryHidden;
-  $('#viewer-playback').hidden=state.mode!=='video';$('#carousel-well').hidden=!carouselShown;
+  $('#carousel-well').hidden=!carouselShown;
   $('#viewer-status').textContent=item.name;
-  $('#photo').setAttribute('viewBox',state.mode==='video'?frameView(skimTime??state.time):item.view);
+  $('#photo').setAttribute('viewBox',state.mode==='video'?frameView(skimTime??state.time):stillFrameView(item,state.frameIndex));
+  document.querySelectorAll('.hdr-part').forEach(node=>node.hidden=!item.hdr);
   const media=folderItems(),index=media.findIndex(entry=>entry.id===item.id);
   $('#viewer-index').textContent=`${Math.max(0,index)+1} of ${media.length}`;
   $('#previous-media').disabled=index<=0;$('#next-media').disabled=index===media.length-1;
   $('#toggle-carousel').setAttribute('aria-pressed',carouselShown);$('#toggle-carousel').setAttribute('aria-label',carouselShown?'Hide filmstrip':'Show filmstrip');
   const key=activeFolder+':'+currentScene;
   if(carouselKey!==key){carouselKey=key;$('#media-carousel').innerHTML=media.map(entry=>`<button class="carousel-item ${entry.id===item.id?'selected':''}" data-media="${entry.id}" aria-label="${entry.name}" aria-current="${entry.id===item.id}">${photoSvg(entry.view)}${entry.video?`<span class="media-badge">${icon('play')}</span>`:''}</button>`).join('');}
-  measurePicture();syncViewerPlayback();
+  measurePicture();renderTransport();
 }
 function measurePicture(){
   const stage=$('#stage');if(!stage)return;const style=getComputedStyle(stage),view=currentMedia().view.split(' ').map(Number),ratio=view[2]/view[3];
   const width=Math.max(1,stage.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight)),height=Math.max(1,stage.clientHeight-parseFloat(style.paddingTop)-parseFloat(style.paddingBottom));
   const fitWidth=Math.min(width,height*ratio);Object.assign($('#picture').style,{width:`${fitWidth}px`,height:`${fitWidth/ratio}px`,flexShrink:0,maxWidth:'none'});
   $('#size-percent').textContent=`${Math.round(fitWidth/(state.mode==='video'?1920:state.portrait?3024:4032)*state.zoom*100)}%`;
-}
-function syncViewerPlayback(){
-  if(!document.querySelector('#viewer-seek'))return;
-  $('#viewer-time').textContent=shortTime(state.time);$('#viewer-duration').textContent=(remainingTime?'−':'')+shortTime(remainingTime?duration()-state.time:duration());
-  const seek=$('#viewer-seek');seek.max=duration();seek.value=state.time;seek.style.setProperty('--range-fill',`${state.time/duration()*100}%`);
-  $('#viewer-play').innerHTML=icon(playing?'pause':'play');$('#viewer-play').setAttribute('aria-label',playing?'Pause (Space)':'Play (Space)');
-  $('#viewer-volume-button').style.opacity=listenVolume===0?.45:1;
 }
 function openMedia(id){
   if(transitionBusy)return;closeChromePopover();setScene(id);setViewer(true,false);syncWokaChrome();
@@ -63,7 +58,7 @@ function chromePopover(anchor,title,content){
 function zoomPopover(){chromePopover($('#size-menu'),'Image size',`<div class="segmented">${button('view-fit','Fit','selected')}${button('view-fill','Fill')}${button('view-actual','100%')}</div><label>Zoom relative to Fit<input id="chrome-zoom" class="media-range" type="range" min="100" max="300" value="${state.zoom*100}" step="5" aria-label="Zoom relative to Fit"></label>`);}
 function showFolder(){modal(activeFolder,`<div class="folder-grid">${folderItems().map(item=>`<button data-media="${item.id}">${photoSvg(item.view)}<span>${item.name}</span></button>`).join('')}</div>`);}
 function initWoka(){
-  [['hide-library','focus'],['show-library','focus'],['folder-back','chevronLeft'],['media-info','info'],['toggle-carousel','carousel'],['previous-media','chevronLeft'],['next-media','chevronRight'],['viewer-volume-button','sound'],['viewer-settings','settings'],['viewer-fullscreen','expand']].forEach(([id,name])=>$('#'+id).innerHTML=icon(name));
+  [['hide-library','focus'],['show-library','focus'],['folder-back','chevronLeft'],['media-info','info'],['toggle-carousel','carousel'],['previous-media','chevronLeft'],['next-media','chevronRight']].forEach(([id,name])=>$('#'+id).innerHTML=icon(name));
   $('#enter-editor').innerHTML=icon('markup')+' Edit';renderLibrary();
   $('#hide-library').onclick=()=>{libraryHidden=true;syncWokaChrome();};$('#show-library').onclick=()=>{libraryHidden=false;syncWokaChrome();};$('#folder-back').onclick=showFolder;
   $('#toggle-carousel').onclick=()=>{carouselShown=!carouselShown;syncWokaChrome();};
@@ -71,12 +66,6 @@ function initWoka(){
   $('#next-media').onclick=()=>{const items=folderItems(),index=items.findIndex(item=>item.id===currentScene);if(index<items.length-1)openMedia(items[index+1].id);};
   $('#pill-minus').onclick=()=>{state.zoom=clamp(state.zoom-.15,1,4);updatePicture();};$('#pill-plus').onclick=()=>{state.zoom=clamp(state.zoom+.15,1,4);updatePicture();};$('#size-menu').onclick=zoomPopover;
   $('#media-info').onclick=()=>chromePopover($('#media-info'),'File information',`<div class="info-line"><span>Name</span><span>${currentMedia().name}</span></div><div class="info-line"><span>Dimensions</span><span>${state.mode==='video'?'1920 × 1080':'4032 × 3024'}</span></div><div class="info-line"><span>Colour</span><span>${state.mode==='video'?'HDR · PQ':'SDR · sRGB'}</span></div>`);
-  $('#viewer-play').onclick=play;$('#skip-back').onclick=()=>{state.time=clamp(state.time-5,0,duration());updatePlayhead();};$('#skip-forward').onclick=()=>{state.time=clamp(state.time+5,0,duration());updatePlayhead();};$('#viewer-duration').onclick=()=>{remainingTime=!remainingTime;syncViewerPlayback();};
-  $('#viewer-seek').oninput=event=>{state.time=+event.target.value;updatePlayhead();};
-  $('#viewer-seek').onpointermove=event=>{const rect=event.target.getBoundingClientRect(),fraction=clamp((event.clientX-rect.left)/rect.width,0,1);$('#seek-preview').hidden=false;$('#seek-preview').style.left=`${clamp(fraction*rect.width,72,Math.max(72,rect.width-72))}px`;$('#seek-time').textContent=shortTime(fraction*duration());};$('#viewer-seek').onpointerleave=()=>$('#seek-preview').hidden=true;$('#seek-image').innerHTML=photoSvg();
-  $('#viewer-volume-button').onclick=()=>chromePopover($('#viewer-volume-button'),'Listening volume',`<label>Only on this device<input id="chrome-volume" class="media-range" type="range" min="0" max="100" value="${listenVolume}" aria-label="Listening volume"></label><div class="popover-value"><span id="volume-value">${listenVolume}%</span>${button('view-mute',listenVolume?'Mute':'Unmute','secondary')}</div>`);
-  $('#viewer-settings').onclick=()=>chromePopover($('#viewer-settings'),'Playback',`<label>Speed<select id="chrome-speed" aria-label="Playback speed">${[.5,1,1.5,2].map(speed=>`<option ${speed===viewerSpeed?'selected':''}>${speed}</option>`).join('')}</select></label>`);
-  $('#viewer-fullscreen').onclick=()=>{$('#app-shell').classList.toggle('focus-view');measurePicture();};
   document.addEventListener('click',event=>{
     const media=event.target.closest('[data-media]');if(media){if($('#dialog').open)$('#dialog').close();openMedia(media.dataset.media);return;}
     const folder=event.target.closest('[data-folder]');if(folder){activeFolder=folder.dataset.folder;renderLibrary();openMedia(folderItems()[0].id);return;}
