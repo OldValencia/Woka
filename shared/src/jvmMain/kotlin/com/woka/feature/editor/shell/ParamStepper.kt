@@ -50,7 +50,7 @@ internal fun IntStepper(
         modifier = Modifier
             .height(26.dp)
             .clip(RoundedCornerShape(8.dp))
-            .border(1.dp, Theme.viewer.onScrimBorder, RoundedCornerShape(8.dp))
+            .border(1.dp, Theme.room.line, RoundedCornerShape(8.dp))
             .testTag(testTag),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -67,12 +67,12 @@ internal fun IntStepper(
             ) {
                 BasicText(
                     text = "$value",
-                    style = TextStyle(color = Theme.viewer.onScrim, fontSize = 12.sp)
+                    style = TextStyle(color = Theme.room.text, fontSize = 12.sp)
                 )
                 if (unit != null) {
                     BasicText(
                         text = unit,
-                        style = TextStyle(color = Theme.viewer.onScrimDisabled, fontSize = 10.5.sp)
+                        style = TextStyle(color = Theme.room.faint, fontSize = 10.5.sp)
                     )
                 }
             }
@@ -94,7 +94,7 @@ private fun StepperButton(label: String, tag: String, enabled: Boolean, onClick:
                     Modifier
                         .pointerHoverIcon(PointerIcon.Hand)
                         .clickable(onClick = onClick)
-                        .background(Theme.viewer.onScrimHover.copy(alpha = 0f))
+                        .background(Theme.room.hover.copy(alpha = 0f))
                 } else {
                     Modifier
                 }
@@ -105,7 +105,7 @@ private fun StepperButton(label: String, tag: String, enabled: Boolean, onClick:
         BasicText(
             text = label,
             style = TextStyle(
-                color = if (enabled) Theme.viewer.onScrim else Theme.viewer.onScrimDisabled,
+                color = if (enabled) Theme.room.text else Theme.room.faint,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium
             )

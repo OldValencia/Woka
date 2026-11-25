@@ -54,8 +54,8 @@ internal fun PadParamRow(spec: PadParam, params: ParamSet, writer: ParamWriter) 
     val slot = rememberAccessorySlot("param-${spec.key}")
     val open = slot.open
     val point = params[spec]
-    val crosshair = Theme.viewer.onScrimBorder
-    val outline = if (point == spec.default) crosshair else Theme.colors.accentEditor
+    val crosshair = Theme.room.line
+    val outline = if (point == spec.default) crosshair else Theme.room.accent
 
     Column(
         modifier = Modifier
@@ -75,7 +75,7 @@ internal fun PadParamRow(spec: PadParam, params: ParamSet, writer: ParamWriter) 
             modifier = Modifier
                 .size(INDICATOR)
                 .clip(RoundedCornerShape(INDICATOR_RADIUS))
-                .background(Theme.viewer.onScrimHover)
+                .background(Theme.room.hover)
                 .border(1.dp, outline, RoundedCornerShape(INDICATOR_RADIUS))
         ) {
             Canvas(modifier = Modifier.fillMaxSize()) {
@@ -86,7 +86,7 @@ internal fun PadParamRow(spec: PadParam, params: ParamSet, writer: ParamWriter) 
             text = spec.label,
             modifier = Modifier.padding(top = 4.dp),
             style = TextStyle(
-                color = Theme.viewer.onScrimSecondary,
+                color = Theme.room.muted,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold
             )

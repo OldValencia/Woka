@@ -57,7 +57,7 @@ internal fun Transport(playing: Boolean, onToggle: () -> Unit) {
         Box(
             modifier = Modifier
                 .size(TRANSPORT)
-                .clip(RoundedCornerShape(EditorTokens.Rail.itemRadius))
+                .clip(RoundedCornerShape(EditorTokens.Band.itemRadius))
                 .pointerHoverIcon(PointerIcon.Hand)
                 .clickable(onClick = onToggle)
                 .testTag("editor-band-transport"),
@@ -82,7 +82,7 @@ internal fun FrameStep(direction: Int, onStep: () -> Unit) {
         Box(
             modifier = Modifier
                 .size(STEP_WIDTH, TRANSPORT)
-                .clip(RoundedCornerShape(EditorTokens.Rail.itemRadius))
+                .clip(RoundedCornerShape(EditorTokens.Band.itemRadius))
                 .pointerHoverIcon(PointerIcon.Hand)
                 .clickable(onClick = onStep)
                 .testTag(if (back) "editor-band-frame-back" else "editor-band-frame-on"),

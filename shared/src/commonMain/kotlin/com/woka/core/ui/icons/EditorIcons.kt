@@ -40,6 +40,11 @@ abstract class EditorIcons {
     /** Held down, the editor draws the picture as shot (ME-173). */
     val PeekOriginal = Res.drawable.paintbrush_slash
 
+    // The editor's header (RD-201): undo, redo, and the inspector's show/hide (F6).
+    val Undo = Res.drawable.arrow_uturn_backward
+    val Redo = Res.drawable.arrow_uturn_forward
+    val PanelToggle = Res.drawable.sidebar_left
+
     // Crop's orientation, as a pair — a tall frame and a wide one (ME-144).
     val Portrait = Res.drawable.rectangle_portrait
     val Landscape = Res.drawable.rectangle

@@ -84,8 +84,8 @@ internal fun ColorCompact(
             modifier = Modifier
                 .height(STEPPER_HEIGHT)
                 .clip(RoundedCornerShape(STEPPER_RADIUS))
-                .background(if (open) Theme.viewer.onScrimSelected else Theme.viewer.onScrimHover)
-                .border(1.dp, Theme.viewer.onScrimBorder, RoundedCornerShape(STEPPER_RADIUS))
+                .background(if (open) Theme.room.hoverStrong else Theme.room.hover)
+                .border(1.dp, Theme.room.line, RoundedCornerShape(STEPPER_RADIUS))
                 .pointerHoverIcon(PointerIcon.Hand)
                 .clickable {
                     if (open) writer.settle()
@@ -103,7 +103,7 @@ internal fun ColorCompact(
                     .size(BUTTON_SWATCH)
                     .clip(shape)
                     .background(swatchFill(selected))
-                    .border(1.dp, Theme.viewer.onScrimBorder, shape),
+                    .border(1.dp, Theme.room.line, shape),
                 contentAlignment = Alignment.Center
             ) {
                 if (spec.swatchShape == ParamSwatchShape.Plate) {
@@ -121,7 +121,7 @@ internal fun ColorCompact(
                 painter = painterResource(Icons.Static.ChevronDown),
                 contentDescription = null,
                 modifier = Modifier.padding(start = 4.dp).size(8.dp).rotate(chevron),
-                colorFilter = ColorFilter.tint(Theme.viewer.onScrimSecondary)
+                colorFilter = ColorFilter.tint(Theme.room.muted)
             )
         }
     }

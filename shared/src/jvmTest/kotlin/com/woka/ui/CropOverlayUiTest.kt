@@ -53,7 +53,7 @@ class CropOverlayUiTest {
                         onDone = {}
                     )
                 }
-                onNodeWithTag("editor-tool-crop").performClick()
+                onNodeWithTag("editor-tab-crop").performClick()
                 waitForIdle()
 
                 assertTrue(harness.session.document.value.isEmpty, "opening the tool edited something")
@@ -113,7 +113,7 @@ class CropOverlayUiTest {
                         onDone = {}
                     )
                 }
-                onNodeWithTag("editor-tool-crop").performClick()
+                onNodeWithTag("editor-tab-crop").performClick()
                 waitForIdle()
                 val before = harness.session.document.value
 

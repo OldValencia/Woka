@@ -53,6 +53,7 @@ object CoverTool : EditorTool {
         icon = Icons.Static.Image,
         domain = ToolDomain.Output,
         order = 2,
+        tabbed = false,
         supports = setOf(MediaKind.Video),
         cardinality = ToolCardinality.Single,
         interaction = ToolInteraction.Instant

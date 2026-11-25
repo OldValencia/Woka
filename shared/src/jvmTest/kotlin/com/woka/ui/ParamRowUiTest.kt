@@ -41,7 +41,7 @@ class ParamRowUiTest {
                 setContent {
                     EditorScreen(harness.session, FixtureEngine(), harness.registry, {}, {})
                 }
-                onNodeWithTag("editor-tool-adjust").performClick()
+                onNodeWithTag("editor-tab-adjust").performClick()
 
                 listOf(
                     FixtureParams.Amount, FixtureParams.Count, FixtureParams.Flag,
@@ -67,7 +67,7 @@ class ParamRowUiTest {
                 setContent {
                     EditorScreen(harness.session, FixtureEngine(), harness.registry, {}, {})
                 }
-                onNodeWithTag("editor-tool-adjust").performClick()
+                onNodeWithTag("editor-tab-adjust").performClick()
                 onNodeWithTag("param-${FixtureParams.Flag.key}").performClick()
                 waitForIdle()
             }
@@ -88,7 +88,7 @@ class ParamRowUiTest {
                 setContent {
                     EditorScreen(harness.session, FixtureEngine(), harness.registry, {}, {})
                 }
-                onNodeWithTag("editor-tool-adjust").performClick()
+                onNodeWithTag("editor-tab-adjust").performClick()
 
                 // `Count` opens at 1 in a 0..10 range.
                 onNodeWithTag("param-$key-plus").performClick()

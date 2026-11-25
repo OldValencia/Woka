@@ -1,6 +1,7 @@
 package com.woka.feature.editor.shell
 
 import androidx.compose.runtime.Composable
+import com.woka.feature.editor.core.CanvasTool
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditorEngine
 import com.woka.feature.editor.core.EditorSession
@@ -35,12 +36,15 @@ internal fun EditorCanvasOverlay(
     // A crop frame or a markup handle left up while the original is shown would point
     // at where the pixels used to be (ME-173).
     if (peeking) return
+    // A tab is always open since RD-201, so "nothing open" is now "nothing that draws over
+    // the picture" — Styles, Adjust, a hidden panel.
+    val drawing = activeTool as? CanvasTool
     ActiveToolOverlay(
-        // With nothing open, the tool that owns a mark is mounted anyway, so the mark
-        // can still be moved (ME-149) — `idleCanvasTool` holds why it is one tool and
+        // With no canvas tool open, the tool that owns a mark is mounted anyway, so the
+        // mark can still be moved (ME-149) — `idleCanvasTool` holds why it is one tool and
         // not all of them.
-        tool = activeTool ?: idleCanvasTool(tools, document),
-        selectOnly = activeTool == null,
+        tool = drawing ?: idleCanvasTool(tools, document),
+        selectOnly = drawing == null,
         session = session,
         geometry = geometry,
         previewMatrix = engine.previewMatrix(document),

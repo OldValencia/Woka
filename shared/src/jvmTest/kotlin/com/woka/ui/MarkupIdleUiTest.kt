@@ -2,6 +2,7 @@ package com.woka.ui
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performMouseInput
 import com.woka.feature.editor.shell.CanvasKeys
@@ -13,6 +14,7 @@ import com.woka.feature.editor.tools.markup.markupShapes
 import com.woka.support.MainDispatcherRule
 import com.woka.support.chooseMarkupPen
 import com.woka.support.clickPicture
+import com.woka.support.OtherTab
 import com.woka.support.closeMarkupTool
 import com.woka.support.drawArrow
 import com.woka.support.onEditor
@@ -44,13 +46,13 @@ class MarkupIdleUiTest {
 
     @Test
     fun `a click selects a mark with no tool open, and Delete removes it`() {
-        onEditor(listOf(MarkupTool)) { harness ->
+        onEditor(listOf(OtherTab, MarkupTool)) { harness ->
             val canvasKeys = CanvasKeys()
             onUi {
                 drawArrow(harness, canvasKeys)
                 closeMarkupTool()
 
-                onNodeWithTag("editor-inspector").assertDoesNotExist()
+                onNodeWithTag("editor-tab-markup").assertIsNotSelected()
                 onNodeWithTag(MARKUP_OVERLAY_TAG).assertExists()
 
                 // Deselected first: a shape is selected as it is drawn, so without this
@@ -72,7 +74,7 @@ class MarkupIdleUiTest {
 
     @Test
     fun `a drag moves a mark with no tool open, in one undo step`() {
-        onEditor(listOf(MarkupTool)) { harness ->
+        onEditor(listOf(OtherTab, MarkupTool)) { harness ->
             onUi {
                 val drawn = drawArrow(harness, CanvasKeys())
                 closeMarkupTool()
@@ -108,7 +110,7 @@ class MarkupIdleUiTest {
     /** The pen is off: neither a drag nor a click with the text pen last out creates. */
     @Test
     fun `nothing is created with no tool open`() {
-        onEditor(listOf(MarkupTool)) { harness ->
+        onEditor(listOf(OtherTab, MarkupTool)) { harness ->
             onUi {
                 drawArrow(harness, CanvasKeys())
                 chooseMarkupPen("Text")

@@ -34,7 +34,7 @@ object SoundTool : EditorTool {
 
     override val manifest = ToolManifest(
         id = "sound",
-        title = "Audio",
+        title = "Sound",
         summary = "Mute, volume and fades",
         icon = Icons.Static.SpeakerWave2Fill,
         domain = ToolDomain.Sound,

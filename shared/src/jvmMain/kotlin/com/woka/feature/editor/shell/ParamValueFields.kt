@@ -73,8 +73,8 @@ internal fun ValueField(spec: FloatParam, value: Float, writer: ParamWriter) {
             .width(FIELD_WIDTH)
             .height(28.dp)
             .clip(RoundedCornerShape(8.dp))
-            .background(Theme.viewer.onScrimHover)
-            .border(1.dp, Theme.viewer.onScrimBorder, RoundedCornerShape(8.dp))
+            .background(Theme.room.hover)
+            .border(1.dp, Theme.room.line, RoundedCornerShape(8.dp))
             // The same gesture the track and the chips answer: right-click is reset
             // wherever a value is shown, so nothing has to be remembered per control.
             .resetOnRightClick { writer.resetTo(spec) }
@@ -89,11 +89,11 @@ internal fun ValueField(spec: FloatParam, value: Float, writer: ParamWriter) {
             },
             singleLine = true,
             textStyle = TextStyle(
-                color = Theme.viewer.onScrim,
+                color = Theme.room.text,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium
             ),
-            cursorBrush = SolidColor(Theme.viewer.onScrim),
+            cursorBrush = SolidColor(Theme.room.text),
             modifier = Modifier
                 .weight(1f)
                 .testTag("param-${spec.key}-field")
@@ -112,7 +112,7 @@ internal fun ValueField(spec: FloatParam, value: Float, writer: ParamWriter) {
         if (unit != null) {
             BasicText(
                 text = unit,
-                style = TextStyle(color = Theme.viewer.onScrimDisabled, fontSize = 11.sp)
+                style = TextStyle(color = Theme.room.faint, fontSize = 11.sp)
             )
         }
     }
@@ -136,7 +136,7 @@ internal fun ResetButton(enabled: Boolean, tag: String, onClick: () -> Unit) {
                 contentDescription = null,
                 modifier = Modifier.size(RESET_GLYPH),
                 colorFilter = ColorFilter.tint(
-                    if (enabled) Theme.colors.accentEditor else Theme.viewer.onScrimDisabled
+                    if (enabled) Theme.room.accentText else Theme.room.faint
                 )
             )
         }

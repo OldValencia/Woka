@@ -22,9 +22,8 @@ import com.woka.feature.editor.core.ParamSet
 /**
  * The pad, beside the card.
  *
- * **It paints no plate of its own** since ME-155: `GooeyPair` draws both cards' plates
- * through one filter so they merge, and a second background here would sit on top of that
- * as a plain rectangle — exactly the seam the filter exists to remove.
+ * **It paints no plate of its own:** `EditorAccessoryFloat` draws the card it sits in
+ * (RD-201), and a second background here would be a rectangle on a rectangle.
  *
  * Split out of `ParamRowPad` when the footer gained its second button, which took that
  * file past its length.
@@ -84,7 +83,7 @@ private fun ColumnScope.PadFooter(
                 }
                 .testTag("param-${spec.key}-close"),
             style = TextStyle(
-                color = Theme.viewer.onScrimSecondary,
+                color = Theme.room.muted,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold
             )

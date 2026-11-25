@@ -65,7 +65,7 @@ class CropMirrorUiTest {
                         onDone = {}
                     )
                 }
-                onNodeWithTag("editor-tool-crop").performClick()
+                onNodeWithTag("editor-tab-crop").performClick()
                 waitForIdle()
 
                 // Just inside the picture's left edge on screen, which is the frame's
@@ -110,7 +110,7 @@ class CropMirrorUiTest {
                         onDone = {}
                     )
                 }
-                onNodeWithTag("editor-tool-crop").performClick()
+                onNodeWithTag("editor-tab-crop").performClick()
                 waitForIdle()
 
                 onNodeWithTag(CROP_OVERLAY_TAG).performMouseInput {

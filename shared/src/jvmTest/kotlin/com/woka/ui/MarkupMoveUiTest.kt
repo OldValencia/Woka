@@ -50,7 +50,7 @@ class MarkupMoveUiTest {
                         onDone = {}
                     )
                 }
-                onNodeWithTag("editor-tool-markup").performClick()
+                onNodeWithTag("editor-tab-markup").performClick()
                 waitForIdle()
 
                 onNodeWithTag(MARKUP_OVERLAY_TAG).performMouseInput {

@@ -2,6 +2,7 @@ package com.woka.ui
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performMouseInput
@@ -13,6 +14,7 @@ import com.woka.feature.editor.tools.markup.captionBand
 import com.woka.feature.editor.tools.markup.markupShapes
 import com.woka.support.EditorHarness
 import com.woka.support.MainDispatcherRule
+import com.woka.support.OtherTab
 import com.woka.support.closeMarkupTool
 import com.woka.support.finishCaret
 import com.woka.support.onEditor
@@ -47,7 +49,7 @@ class MarkupIdleCaptionUiTest {
 
     @Test
     fun `a caption's corner resizes it with no tool open`() {
-        onEditor(listOf(MarkupTool)) { harness ->
+        onEditor(listOf(OtherTab, MarkupTool)) { harness ->
             var before = 0f
             onUi {
                 openCaret(harness)
@@ -65,7 +67,7 @@ class MarkupIdleCaptionUiTest {
                 closeMarkupTool()
                 before = harness.caption().width
 
-                onNodeWithTag("editor-inspector").assertDoesNotExist()
+                onNodeWithTag("editor-tab-markup").assertIsNotSelected()
                 val band = requireNotNull(captionBand(harness.caption()))
                 val corner = Offset(placed.x, placed.y + band.start * scale)
                 onNodeWithTag(MARKUP_OVERLAY_TAG).performMouseInput {

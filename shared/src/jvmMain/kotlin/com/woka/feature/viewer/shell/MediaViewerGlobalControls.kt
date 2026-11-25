@@ -28,11 +28,13 @@ fun MediaViewerControlsContainer(
     arrangement: Arrangement.Horizontal = Arrangement.spacedBy(PILL_GAP),
     content: @Composable RowScope.() -> Unit
 ) {
+    // In the editor's room the pill is a flat well — no hairline, no shadow (RD-201).
+    val editing = LocalCanvasOverride.current.editing
     Row(
         modifier = modifier
-            .shadow(12.dp, RoundedCornerShape(30.dp), spotColor = Color.Black.copy(alpha = 0.1f))
-            .background(Theme.colors.surface, RoundedCornerShape(30.dp))
-            .border(1.dp, Theme.colors.border, RoundedCornerShape(30.dp))
+            .shadow(if (editing) 0.dp else 12.dp, RoundedCornerShape(30.dp), spotColor = Color.Black.copy(alpha = 0.1f))
+            .background(if (editing) Theme.room.well else Theme.colors.surface, RoundedCornerShape(30.dp))
+            .border(1.dp, if (editing) Color.Transparent else Theme.colors.border, RoundedCornerShape(30.dp))
             .padding(horizontal = 6.dp, vertical = 6.dp),
         horizontalArrangement = arrangement,
         verticalAlignment = Alignment.CenterVertically

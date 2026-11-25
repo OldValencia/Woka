@@ -53,7 +53,7 @@ class PreviewChoiceRowUiTest {
                         onDone = {}
                     )
                 }
-                onNodeWithTag("editor-tool-filter").performClick()
+                onNodeWithTag("editor-tab-filter").performClick()
                 waitForIdle()
 
                 // Unmerged: each option's card is `clickable`, which merges its
@@ -86,7 +86,7 @@ class PreviewChoiceRowUiTest {
                         onDone = {}
                     )
                 }
-                onNodeWithTag("editor-tool-filter").performClick()
+                onNodeWithTag("editor-tab-filter").performClick()
                 waitForIdle()
 
                 val asked = engine.thumbnailsDrawn
@@ -121,7 +121,7 @@ class PreviewChoiceRowUiTest {
                         onDone = {}
                     )
                 }
-                onNodeWithTag("editor-tool-filter").performClick()
+                onNodeWithTag("editor-tab-filter").performClick()
                 waitForIdle()
 
                 val expected = PhotoFilter.entries.size + PhotoUndertone.entries.size
@@ -153,7 +153,7 @@ class PreviewChoiceRowUiTest {
                         onDone = {}
                     )
                 }
-                onNodeWithTag("editor-tool-filter").performClick()
+                onNodeWithTag("editor-tab-filter").performClick()
                 waitForIdle()
 
                 onNodeWithTag("param-undertone-section").assertExists()
@@ -184,7 +184,7 @@ class PreviewChoiceRowUiTest {
                         onDone = {}
                     )
                 }
-                onNodeWithTag("editor-tool-filter").performClick()
+                onNodeWithTag("editor-tab-filter").performClick()
                 waitForIdle()
 
                 // Unmerged throughout: an option's card is `clickable`, which merges

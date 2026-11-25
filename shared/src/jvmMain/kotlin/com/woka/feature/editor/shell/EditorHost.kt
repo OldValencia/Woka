@@ -80,12 +80,10 @@ internal fun EditorHost(
 
     EditorPresenceEffect(engine, session, file.name, editScope, onClose, onSaved)
 
-    val canUndo by session.canUndo.collectAsState()
-    val canRedo by session.canRedo.collectAsState()
-
     // Built here so its lifetime is the editor's: the key handler below reads it, and
     // the active canvas tool — two composables down — writes it (ME-114).
     val canvasKeys = remember(session) { CanvasKeys() }
+    val panel = remember(session) { EditorPanelState() }
 
     EditorHostControls(
         engine = engine,
@@ -100,22 +98,23 @@ internal fun EditorHost(
         onClose = onClose,
         onSaved = onSaved
     ) { actions ->
-        // `Done ▾`'s other entries (ME-291), read by the bar through `LocalDoneChoices`; on
-        // a film that cannot keep the edit the render takes `Done`'s place (ME-289).
+        // The engine's exports, read by the bar through `LocalDoneChoices`: on a film that
+        // cannot keep the edit the render takes `Done`'s place (ME-289).
         val exports = exportAction(engine, session, file, editScope, onClose, onSaved)
         val choices = doneChoicesOf(engine, exports)
         val done = choices.instead ?: actions.done
         EditorKeyEffect(
             globalShortcuts = LocalGlobalShortcuts.current,
-            canUndo = canUndo,
-            canRedo = canRedo,
+            canUndo = session.canUndo.collectAsState().value,
+            canRedo = session.canRedo.collectAsState().value,
             onCancel = actions.leave,
             onUndo = session::undo,
             onRedo = session::redo,
             onDone = done,
             onTogglePlayback = engine::togglePlayback,
             onStep = engine::stepPlayHead,
-            canvasKeys = canvasKeys
+            canvasKeys = canvasKeys,
+            onTogglePanel = panel::toggle
         )
 
         CompositionLocalProvider(LocalDoneChoices provides choices, LocalCanvasKeys provides canvasKeys) {
@@ -124,6 +123,7 @@ internal fun EditorHost(
                 engine = engine,
                 registry = dependencies.registry,
                 canvasKeys = canvasKeys,
+                panel = panel,
                 onCancel = actions.leave,
                 onDone = done,
                 canRevert = actions.canRevert,

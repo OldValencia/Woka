@@ -88,9 +88,9 @@ internal fun VideoEditorBand(
         modifier = modifier
             .padding(top = room)
             .width(BAND_WIDTH)
-            .clip(RoundedCornerShape(EditorTokens.Rail.containerRadius))
+            .clip(RoundedCornerShape(EditorTokens.Band.containerRadius))
             .background(Theme.viewer.popoverScrim)
-            .padding(horizontal = BAND_PADDING, vertical = EditorTokens.Rail.containerPadding)
+            .padding(horizontal = BAND_PADDING, vertical = EditorTokens.Band.containerPadding)
             .bandZoomWheel(zoom)
             .testTag(EDITOR_BAND_TAG),
         verticalAlignment = Alignment.CenterVertically,

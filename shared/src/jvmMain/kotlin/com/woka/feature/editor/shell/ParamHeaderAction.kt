@@ -102,7 +102,7 @@ internal fun HeaderAction(spec: ActionParam, writer: ParamWriter) {
                 contentDescription = null,
                 modifier = Modifier.size(ACTION_GLYPH),
                 colorFilter = ColorFilter.tint(
-                    if (over) Theme.viewer.onScrim else Theme.viewer.onScrimSecondary
+                    if (over) Theme.room.text else Theme.room.muted
                 )
             )
         }

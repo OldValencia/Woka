@@ -5,7 +5,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import com.woka.core.ui.components.SegmentedControl
-import com.woka.core.ui.components.SegmentedControlDefaults
 import com.woka.feature.editor.core.ChoiceParam
 import com.woka.feature.editor.core.ParamSet
 
@@ -57,7 +56,7 @@ internal fun <E : Enum<E>> ChoiceControl(
                     spec.options.firstOrNull { spec.labelOf(it) == label }
                         ?.let { writer.edit(spec, it) }
                 },
-                colors = SegmentedControlDefaults.onScrim
+                colors = RoomControls.segmented
             )
         } else {
             ParamChipRow(

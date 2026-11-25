@@ -50,7 +50,9 @@ internal fun EditorKeyEffect(
      * The open canvas tool's `Delete`, through the editor's one keyboard slot (ME-114).
      * Null when no such tool is open, which is every tool but Markup today.
      */
-    canvasKeys: CanvasKeys? = null
+    canvasKeys: CanvasKeys? = null,
+    /** F6 shows or hides the inspector (RD-201, `#focus` in the prototype). */
+    onTogglePanel: () -> Unit = {}
 ) {
     val curCancel by rememberUpdatedState(onCancel)
     val curUndo by rememberUpdatedState(onUndo)
@@ -61,6 +63,7 @@ internal fun EditorKeyEffect(
     val curTogglePlayback by rememberUpdatedState(onTogglePlayback)
     val curStep by rememberUpdatedState(onStep)
     val curCanvasKeys by rememberUpdatedState(canvasKeys)
+    val curTogglePanel by rememberUpdatedState(onTogglePanel)
 
     DisposableEffect(globalShortcuts) {
         val previous = globalShortcuts.onPreviewKey
@@ -97,6 +100,7 @@ internal fun EditorKeyEffect(
                 event.key == Key.Spacebar -> consume { curTogglePlayback() }
                 event.key == Key.DirectionLeft -> curStep(-1, !event.isAltPressed)
                 event.key == Key.DirectionRight -> curStep(1, !event.isAltPressed)
+                event.key == Key.F6 -> consume { curTogglePanel() }
                 else -> false
             }
         }

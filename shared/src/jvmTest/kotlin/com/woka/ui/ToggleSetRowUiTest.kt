@@ -46,7 +46,7 @@ class ToggleSetRowUiTest {
                 setContent {
                     EditorScreen(harness.session, FixtureEngine(), harness.registry, {}, {})
                 }
-                onNodeWithTag("editor-tool-adjust").performClick()
+                onNodeWithTag("editor-tab-adjust").performClick()
 
                 onNodeWithTag("param-${spec.key}").assertIsDisplayed()
                 FixtureChoice.entries.forEach { onNodeWithTag(tagOf(it)).assertIsDisplayed() }
@@ -80,7 +80,7 @@ class ToggleSetRowUiTest {
                 setContent {
                     EditorScreen(harness.session, FixtureEngine(), harness.registry, {}, {})
                 }
-                onNodeWithTag("editor-tool-adjust").performClick()
+                onNodeWithTag("editor-tab-adjust").performClick()
 
                 onNodeWithTag(tagOf(FixtureChoice.First)).performClick()
                 waitForIdle()

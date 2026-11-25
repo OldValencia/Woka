@@ -60,7 +60,7 @@ internal fun ColorSwatch(
             .size(EditorTokens.Inspector.swatchSize)
             .border(
                 width = 2.dp,
-                color = if (ringed) Theme.colors.accentEditor else Color.Transparent,
+                color = if (ringed) Theme.room.accent else Color.Transparent,
                 shape = CircleShape
             )
             .then(

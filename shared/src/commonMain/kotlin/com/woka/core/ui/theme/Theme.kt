@@ -101,6 +101,8 @@ val DarkColors = Colors(
 
 val LocalColors = staticCompositionLocalOf { LightColors }
 
+val LocalRoomColors = staticCompositionLocalOf { LightRoom }
+
 object Theme {
     val colors: Colors
         @Composable
@@ -110,6 +112,12 @@ object Theme {
     /** Tokens for chrome drawn over media; theme-independent, see [ViewerChrome]. */
     val viewer: ViewerChrome
         get() = ViewerChrome
+
+    /** The editor's room, which follows the theme; see [RoomColors]. */
+    val room: RoomColors
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalRoomColors.current
 }
 
 @Composable
@@ -128,6 +136,7 @@ fun Theme(
 
     CompositionLocalProvider(
         LocalColors provides colors,
+        LocalRoomColors provides if (darkTheme) DarkRoom else LightRoom,
         LocalScrollbarStyle provides scrollbarStyle,
         content = content
     )

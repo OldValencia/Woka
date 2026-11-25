@@ -36,7 +36,7 @@ internal fun SoundRowToggle() {
         Box(
             modifier = Modifier
                 .size(TOGGLE_WIDTH, TOGGLE_HEIGHT)
-                .clip(RoundedCornerShape(EditorTokens.Rail.itemRadius))
+                .clip(RoundedCornerShape(EditorTokens.Band.itemRadius))
                 .pointerHoverIcon(PointerIcon.Hand)
                 .clickable { SoundRows.shown = !shown }
                 .testTag(SOUND_ROW_TOGGLE_TAG),

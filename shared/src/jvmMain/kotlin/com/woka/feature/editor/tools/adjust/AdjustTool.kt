@@ -46,7 +46,7 @@ object AdjustTool : AdjustParams(), EditorTool {
         // Its own glyph. Two tools sharing one is a mistake this rail has made twice.
         icon = Icons.Static.Adjust,
         domain = ToolDomain.Color,
-        order = 0,
+        order = 1,
         cardinality = ToolCardinality.Single,
         // Preview while the knob moves, one history entry on release — declared here so
         // a slider physically cannot mint two hundred undo steps (`ParamWriter`).

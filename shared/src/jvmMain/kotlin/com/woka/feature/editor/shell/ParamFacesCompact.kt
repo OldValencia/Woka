@@ -65,8 +65,8 @@ internal fun <E : Enum<E>> FacesCompact(
             modifier = Modifier
                 .height(STEPPER_HEIGHT)
                 .clip(RoundedCornerShape(STEPPER_RADIUS))
-                .border(1.dp, Theme.viewer.onScrimBorder, RoundedCornerShape(STEPPER_RADIUS))
-                .background(if (open) Theme.viewer.onScrimSelected else Theme.viewer.onScrimHover)
+                .border(1.dp, Theme.room.line, RoundedCornerShape(STEPPER_RADIUS))
+                .background(if (open) Theme.room.hoverStrong else Theme.room.hover)
                 .pointerHoverIcon(PointerIcon.Hand)
                 .clickable { slot.toggle() }
                 .resetOnRightClick { writer.resetTo(spec) }
@@ -83,7 +83,7 @@ internal fun <E : Enum<E>> FacesCompact(
                 painter = painterResource(Icons.Static.ChevronDown),
                 contentDescription = null,
                 modifier = Modifier.padding(start = 5.dp).size(8.dp).rotate(chevron),
-                colorFilter = ColorFilter.tint(Theme.viewer.onScrimSecondary)
+                colorFilter = ColorFilter.tint(Theme.room.muted)
             )
         }
     }
@@ -118,7 +118,7 @@ private fun sampleStyle(faces: Set<ParamFace>): TextStyle {
     return TextStyle(
         // The accent when anything is on, so the button says "set" from across the panel
         // before the sample itself is read.
-        color = if (faces.isEmpty()) Theme.viewer.onScrim else Theme.colors.accentEditor,
+        color = if (faces.isEmpty()) Theme.room.text else Theme.room.accentText,
         fontSize = 13.sp,
         fontWeight = if (ParamFace.Bold in faces) FontWeight.Bold else FontWeight.Medium,
         fontStyle = if (ParamFace.Italic in faces) FontStyle.Italic else FontStyle.Normal,

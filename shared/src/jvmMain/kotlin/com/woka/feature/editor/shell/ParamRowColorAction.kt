@@ -120,13 +120,13 @@ internal fun ActionParamRow(spec: ActionParam, writer: ParamWriter) {
         text = spec.label,
         modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
-            .border(1.dp, Theme.viewer.onScrimBorder, RoundedCornerShape(8.dp))
+            .border(1.dp, Theme.room.line, RoundedCornerShape(8.dp))
             .pointerHoverIcon(PointerIcon.Hand)
             .clickable { writer.edit(spec, true) }
             .padding(horizontal = 12.dp, vertical = 7.dp)
             .testTag("param-${spec.key}"),
         style = TextStyle(
-            color = Theme.viewer.onScrim,
+            color = Theme.room.text,
             fontSize = 12.sp,
             fontWeight = FontWeight.SemiBold
         )

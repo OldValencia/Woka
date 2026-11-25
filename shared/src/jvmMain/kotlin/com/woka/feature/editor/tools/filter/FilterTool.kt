@@ -29,9 +29,9 @@ import com.woka.feature.editor.engine.image.RasterStage
  * `ColorMatrix` and colour matrices multiply, so nothing about §3.2 changes and the
  * engine needed no edit at all: a whole style costs a filter rebuild and no pixel work.
  *
- * `order = 1` puts it after Adjustments in the rail; application order is the fold's
- * domain rank, and both are `Color`, so a style and a correction compose in the order
- * the user made them.
+ * `order = 0` puts Styles before Adjust in the inspector's tabs, as the prototype has
+ * them (RD-201); application order is the fold's domain rank, and both are `Color`, so a
+ * style and a correction compose in the order the user made them.
  */
 object FilterTool : EditorTool {
 
@@ -95,7 +95,7 @@ object FilterTool : EditorTool {
         // The wand went to Auto, which is what a wand means (ME-174).
         icon = Icons.Static.Palette,
         domain = ToolDomain.Color,
-        order = 1,
+        order = 0,
         cardinality = ToolCardinality.Single,
         interaction = ToolInteraction.Continuous
     )

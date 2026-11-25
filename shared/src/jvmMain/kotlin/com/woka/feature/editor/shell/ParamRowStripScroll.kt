@@ -42,7 +42,7 @@ import org.jetbrains.compose.resources.painterResource
  */
 @Composable
 internal fun StripScrollButton(back: Boolean, enabled: Boolean, onClick: () -> Unit) {
-    val tint = if (enabled) Theme.viewer.onScrim else Theme.viewer.onScrimBorder
+    val tint = if (enabled) Theme.room.text else Theme.room.line
     Box(
         modifier = Modifier
             .size(CHEVRON_BOX)

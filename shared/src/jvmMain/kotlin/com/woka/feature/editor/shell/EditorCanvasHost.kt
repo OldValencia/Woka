@@ -13,7 +13,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -122,13 +124,14 @@ internal fun EditorCanvasHost(
                         geometry.clampedPan.x.roundToInt(),
                         geometry.clampedPan.y.roundToInt()
                     )
-                }
+                }.shadow(EditorTokens.Canvas.shadow, EditorTokens.Canvas.pictureShape, clip = false)
             ) {
                 // What the engine draws at, published rather than passed: `Surface`
                 // takes no zoom by design (§3.3), and this is the only surface in the
                 // editor allowed to answer with a native decode (ME-116).
                 CompositionLocalProvider(LocalCanvasScale provides geometry.scale) {
-                    engine.Surface(document, Modifier.fillMaxSize())
+                    // Rounded, while the overlay above it is not: a crop handle may stand on the corner.
+                    engine.Surface(document, Modifier.fillMaxSize().clip(EditorTokens.Canvas.pictureShape))
                 }
                 overlay(geometry)
             }

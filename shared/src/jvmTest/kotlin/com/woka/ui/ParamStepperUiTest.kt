@@ -117,7 +117,7 @@ class ParamStepperUiTest {
         setContent {
             EditorScreen(harness.session, FixtureEngine(), harness.registry, {}, {})
         }
-        onNodeWithTag("editor-tool-adjust").performClick()
+        onNodeWithTag("editor-tab-adjust").performClick()
         waitForIdle()
     }
 }

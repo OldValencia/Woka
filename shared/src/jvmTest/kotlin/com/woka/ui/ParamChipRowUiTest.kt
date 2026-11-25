@@ -1,6 +1,9 @@
 package com.woka.ui
 
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -65,11 +68,12 @@ class ParamChipRowUiTest {
         onEditor(listOf(CropTool)) { harness ->
             onUi {
                 setContent { EditorUnderShell(harness, TopBarAccessoriesState()) }
-                onNodeWithTag("editor-tool-crop").performClick()
+                onNodeWithTag("editor-tab-crop").performClick()
                 waitForIdle()
 
+                // Inside the panel: the header's `Original` is the other button by that name.
                 CropAspect.entries.forEach { aspect ->
-                    onNodeWithText(aspect.label).assertExists()
+                    onNode(hasText(aspect.label) and hasAnyAncestor(hasTestTag("editor-panel"))).assertExists()
                 }
                 onNodeWithContentDescription(CropAspect.Square.label).assertDoesNotExist()
             }

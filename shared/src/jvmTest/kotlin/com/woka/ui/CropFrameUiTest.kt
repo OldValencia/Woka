@@ -5,12 +5,14 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.IntSize
 import com.woka.feature.editor.core.EditDocument
+import com.woka.feature.editor.core.ToolDomain
 import com.woka.feature.editor.core.ToolOp
 import com.woka.feature.editor.shell.EditorScreen
 import com.woka.feature.editor.tools.crop.CropRect
 import com.woka.feature.editor.tools.crop.CropTool
 import com.woka.feature.editor.tools.transform.TransformTool
 import com.woka.support.FixtureEngine
+import com.woka.support.FixtureTool
 import com.woka.support.MainDispatcherRule
 import com.woka.support.onEditor
 import com.woka.support.onUi
@@ -61,7 +63,8 @@ class CropFrameUiTest {
     @Test
     fun `the canvas is drawn without the crop while the crop tool is open`() {
         val engine = croppingEngine()
-        onEditor(listOf(CropTool), documentWith(kept)) { harness ->
+        // Adjust first in the tabs, so the editor opens on it and the crop is closed (RD-201).
+        onEditor(listOf(FixtureTool(id = "adjust", domain = ToolDomain.Color), CropTool), documentWith(kept)) { harness ->
             onUi {
                 setContent {
                     EditorScreen(
@@ -79,7 +82,7 @@ class CropFrameUiTest {
                     "the crop was missing from the canvas before its tool was even open"
                 )
 
-                onNodeWithTag("editor-tool-crop").performClick()
+                onNodeWithTag("editor-tab-crop").performClick()
                 waitForIdle()
 
                 // Open, it is the overlay's to show — and folding it in as well is what
@@ -98,7 +101,7 @@ class CropFrameUiTest {
     fun `another tool's work stays on the canvas when it is open`() {
         val engine = croppingEngine()
         val document = documentWith(kept)
-        onEditor(listOf(TransformTool, CropTool), document) { harness ->
+        onEditor(listOf(FixtureTool(id = "adjust", domain = ToolDomain.Color), TransformTool, CropTool), document) { harness ->
             onUi {
                 setContent {
                     EditorScreen(
@@ -109,12 +112,12 @@ class CropFrameUiTest {
                         onDone = {}
                     )
                 }
-                onNodeWithTag("editor-tool-transform").performClick()
+                onNodeWithTag("editor-tab-adjust").performClick()
                 waitForIdle()
 
                 assertTrue(
                     engine.documentsDrawn.last().opsOf(CropTool.manifest.id).isNotEmpty(),
-                    "opening Transform hid the crop the picture already carried"
+                    "opening Adjust hid the crop the picture already carried"
                 )
             }
         }

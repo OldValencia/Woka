@@ -53,7 +53,7 @@ class MarkupRestyleUiTest {
                         onDone = {}
                     )
                 }
-                onNodeWithTag("editor-tool-markup").performClick()
+                onNodeWithTag("editor-tab-markup").performClick()
                 waitForIdle()
 
                 // Drawn is selected, so the pen row is now describing this shape.
@@ -102,7 +102,7 @@ class MarkupRestyleUiTest {
                         onDone = {}
                     )
                 }
-                onNodeWithTag("editor-tool-markup").performClick()
+                onNodeWithTag("editor-tab-markup").performClick()
                 waitForIdle()
 
                 onNodeWithTag(MARKUP_OVERLAY_TAG).performMouseInput {

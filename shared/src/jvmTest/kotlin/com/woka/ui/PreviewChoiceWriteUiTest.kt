@@ -52,7 +52,7 @@ class PreviewChoiceWriteUiTest {
                         onDone = {}
                     )
                 }
-                onNodeWithTag("editor-tool-filter").performClick()
+                onNodeWithTag("editor-tab-filter").performClick()
                 waitForIdle()
 
                 // Scrolled to first: since ME-141 the undertone and the look share
@@ -90,7 +90,7 @@ class PreviewChoiceWriteUiTest {
                         onDone = {}
                     )
                 }
-                onNodeWithTag("editor-tool-filter").performClick()
+                onNodeWithTag("editor-tab-filter").performClick()
                 waitForIdle()
 
                 assertEquals(

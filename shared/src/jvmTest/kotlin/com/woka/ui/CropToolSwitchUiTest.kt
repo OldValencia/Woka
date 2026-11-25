@@ -5,11 +5,13 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performMouseInput
+import com.woka.feature.editor.core.ToolDomain
 import com.woka.feature.editor.shell.EditorScreen
 import com.woka.feature.editor.tools.crop.CROP_OVERLAY_TAG
 import com.woka.feature.editor.tools.crop.CropTool
 import com.woka.feature.editor.tools.transform.TransformTool
 import com.woka.support.FixtureEngine
+import com.woka.support.FixtureTool
 import com.woka.support.MainDispatcherRule
 import com.woka.support.onEditor
 import com.woka.support.onUi
@@ -39,7 +41,7 @@ class CropToolSwitchUiTest {
      */
     @Test
     fun `moving to another tool keeps the crop that was dragged`() {
-        onEditor(listOf(TransformTool, CropTool)) { harness ->
+        onEditor(listOf(FixtureTool(id = "adjust", domain = ToolDomain.Color), TransformTool, CropTool)) { harness ->
             onUi {
                 setContent {
                     EditorScreen(
@@ -50,7 +52,7 @@ class CropToolSwitchUiTest {
                         onDone = {}
                     )
                 }
-                onNodeWithTag("editor-tool-crop").performClick()
+                onNodeWithTag("editor-tab-transform").performClick()
                 waitForIdle()
 
                 onNodeWithTag(CROP_OVERLAY_TAG).performMouseInput {
@@ -63,7 +65,7 @@ class CropToolSwitchUiTest {
                 val cropped = harness.session.document.value.ops
                     .last { it.toolId == CropTool.manifest.id }.params[CropTool.Rect]
 
-                onNodeWithTag("editor-tool-transform").performClick()
+                onNodeWithTag("editor-tab-adjust").performClick()
                 waitForIdle()
 
                 assertEquals(

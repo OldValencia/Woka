@@ -30,7 +30,7 @@ class EditorRevertUiTest {
     val mainDispatcher = MainDispatcherRule(UnconfinedTestDispatcher())
 
     @Test
-    fun `the control sits beside Back and asks rather than acts`() {
+    fun `the control sits at the inspector's foot and asks rather than acts`() {
         var asked = 0
         onEditor(listOf(FixtureTool())) { harness ->
             onUi {

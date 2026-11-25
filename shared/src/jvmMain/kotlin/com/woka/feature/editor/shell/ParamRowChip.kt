@@ -78,11 +78,11 @@ internal fun ParamChipRow(chips: List<ParamChip>) {
     ) {
         chips.forEachIndexed { index, chip ->
             val tint =
-                if (chip.selected) Theme.colors.accentEditor else Theme.viewer.onScrimSecondary
+                if (chip.selected) Theme.room.accentText else Theme.room.muted
             val modifier = Modifier
                 .clip(RoundedCornerShape(7.dp))
                 .background(
-                    if (chip.selected) Theme.viewer.onScrimSelected else Theme.viewer.onScrimHover
+                    if (chip.selected) Theme.room.hoverStrong else Theme.room.hover
                 )
                 .pointerHoverIcon(PointerIcon.Hand)
                 .clickable(onClick = chip.onClick)

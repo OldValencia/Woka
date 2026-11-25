@@ -55,8 +55,8 @@ internal fun PadCanvas(spec: PadParam, params: ParamSet, writer: ParamWriter) {
     // then deltas, so the absolute position is accumulated rather than read back out
     // of a composition that has not recomposed yet.
     var at by remember { mutableStateOf(Offset.Zero) }
-    val crosshair = Theme.viewer.onScrimBorder
-    val axisStyle = TextStyle(color = Theme.viewer.onScrimSecondary, fontSize = AXIS_SIZE)
+    val crosshair = Theme.room.line
+    val axisStyle = TextStyle(color = Theme.room.muted, fontSize = AXIS_SIZE)
 
     fun write(position: Offset) = writer.edit(spec, spec.pointAt(position, side), settled = false)
 
@@ -64,7 +64,7 @@ internal fun PadCanvas(spec: PadParam, params: ParamSet, writer: ParamWriter) {
         modifier = Modifier
             .size(PAD_SIZE)
             .clip(RoundedCornerShape(PAD_RADIUS))
-            .background(Theme.viewer.onScrimHover)
+            .background(Theme.room.hover)
             .border(1.dp, crosshair, RoundedCornerShape(PAD_RADIUS))
             .pointerHoverIcon(PointerIcon.Hand)
             .testTag("param-${spec.key}")

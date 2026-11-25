@@ -3,81 +3,66 @@ package com.woka.feature.editor.shell
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
  * Every chrome measurement the editor draws with, mirroring
- * `ai/mockups/design/legacy/editor.html` — which is the spec, not a proposal. A
+ * `ai/mockups/design/woka.html` (its `#editor` scenes) — which is the spec, not a proposal. A
  * disagreement is settled by changing the mockup first.
  *
- * **No colour is declared here.** `Theme.viewer` (`ViewerChrome`) owns both halves
- * of the on-media pair — the dark scrims and the light `onScrim*` foregrounds — and
- * `Theme.colors` owns everything that is *not* over media: the overwrite
- * confirmation, the conversion sheet, the Settings rows. Re-declaring `popoverScrim`
- * or a text colour under an editor name would create a second value to keep in
- * step, and the second one is the one that drifts. This object holds only what is
- * genuinely new: the rail, the inspector and the editor's own top bar.
- *
- * The editor therefore **follows the theme** exactly as the rest of the app does.
- * What stays fixed is only the on-media layer, and that is a property of sitting on
- * a photograph rather than of the editor.
+ * **No colour is declared here.** The room the editor stands in — header, inspector,
+ * tabs — is `Theme.room` (`RoomColors`), which follows the theme; what still sits over
+ * the picture (the notices, the video band) keeps `Theme.viewer` (`ViewerChrome`).
  */
 object EditorTokens {
 
     /**
-     * The tool rail — the dock's geometry, reused rather than re-invented. The dock
-     * itself was deleted in SIDE-003; these values are now the rail's own.
+     * The video band's frame — the old tool rail's geometry, which the band borrowed. The rail
+     * itself became the inspector's tabs (RD-201); [Panel] holds theirs.
      */
-    object Rail {
-
-        /** As the dock's items were: 40.dp tall, 14.dp radius. */
+    object Band {
         val itemRadius = 14.dp
-
-        val iconSize = 16.dp
-
-        /**
-         * A rail button is an icon **and its name** (2026-08-21). It was the icon
-         * alone, with the name in a tooltip — which meant two tools whose glyphs had
-         * not been drawn yet were two identical squares, and finding a tool meant
-         * hovering over each in turn.
-         */
-        val itemHeight = 40.dp
-        val labelSize = 12.sp
-        val labelGap = 7.dp
-        val itemPadding = 12.dp
-
-        val itemGap = 4.dp
-
-        /** Container: the dock's 6.dp inset and 20.dp radius. */
         val containerPadding = 6.dp
         val containerRadius = 20.dp
 
-        /** One 1×20 divider per `ToolDomain` boundary, 4.dp of air either side. */
-        val dividerWidth = 1.dp
-        val dividerHeight = 20.dp
-        val dividerGap = 4.dp
-
-        /** Clear of the inspector above it, which clears the canvas. */
+        /** Clear of the window's bottom edge. */
         val bottomInset = 28.dp
     }
 
-    /** The schema-driven inspector: one card, one row per `ParamSpec`. */
+    /** The right-hand inspector (RD-201, `editor.css` `.inspector`, `.tools`, `.panel`). */
+    object Panel {
+        val width = 294.dp
+
+        /** The tab well: inset from the panel, padded, its tabs spaced. */
+        val tabsMargin = PaddingValues(start = 12.dp, top = 12.dp, end = 12.dp)
+        val tabsPadding = 4.dp
+        val tabsGap = 2.dp
+        val tabsRadius = 12.dp
+        val tabHeight = 54.dp
+        val tabRadius = 9.dp
+        val tabGlyph = 20.dp
+        val tabLabel = 11.sp
+        val tabLabelGap = 5.dp
+
+        val bodyPadding = PaddingValues(start = 14.dp, top = 14.dp, end = 14.dp, bottom = 22.dp)
+
+        /** Between two tools sharing a tab — Transform's crop and rotate/flip. */
+        val sectionGap = 18.dp
+
+        val footPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+        val footLabel = 12.sp
+
+        /** The side panel a row opens, floated left of the inspector. */
+        val accessoryRadius = 12.dp
+        val accessoryInset = 12.dp
+    }
+
+    /** The schema-driven rows inside the panel: one row per `ParamSpec`. */
     object Inspector {
 
-        /**
-         * A range, not a fixed width — corrected 2026-08-18.
-         *
-         * It was fixed at 420 dp on the reasoning that a card growing per tool would
-         * move the rail under the cursor. **That reasoning was wrong**: the inspector
-         * and the rail are independent children of a `CenterHorizontally` column, so
-         * the rail is centred whatever the card measures and does not move at all.
-         *
-         * What the fixed width actually bought was a Transform panel of four small
-         * buttons floating in 420 dp of empty space, with `Reset` three buttons' worth
-         * of nothing away from anything.
-         */
-        /** 200, not 240: at 240 a card of collapsed buttons had an empty right column. */
+        /** The notices still float over the canvas and keep the card's old range. */
         val minWidth = 200.dp
         val maxWidth = 420.dp
 
@@ -95,10 +80,10 @@ object EditorTokens {
 
         val padding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
 
-        /** Gap to the rail below. */
+        /** Between the notices and the band over the canvas's bottom edge. */
         val bottomInset = 12.dp
 
-        /** Between the rows of a panel opened beside the card. */
+        /** Between the rows of a panel opened beside the inspector. */
         val accessoryGap = 10.dp
 
         /** Above and below a compact line: [rowGap] is for rows that carry their own height. */
@@ -114,24 +99,34 @@ object EditorTokens {
         val swatchGap = 8.dp
     }
 
-    /** The accessory top bar: Cancel, title, HDR, undo/redo, Done. */
+    /** The picture in the room (RD-201, `.stage`, `.picture`). */
+    object Canvas {
+        val sideInset = 34.dp
+        val topInset = 26.dp
+        val pictureShape = RoundedCornerShape(4.dp)
+        val shadow = 28.dp
+    }
+
+    /** The header (RD-201, `editor.css` `.edit-history`, `.header-actions`, `#done`). */
     object TopBar {
-
-        /** The app shell's header height, so entering the editor shifts nothing. */
-        val height = 60.dp
-        val sidePadding = 24.dp
-
-        val controlHeight = 34.dp
+        val controlHeight = 32.dp
         val controlRadius = 8.dp
-        val controlGap = 6.dp
+        val controlGap = 4.dp
+        val glyphSize = 18.dp
+        val textPadding = 10.dp
+        val labelSize = 13.sp
+
+        /** `Original`: icon and word, 11.dp aside, 7.dp between. */
+        val originalPadding = 11.dp
+        val originalGap = 7.dp
 
         /** `Done` is a pill, not a rectangle — it is the one affirmative action. */
-        val doneRadius = 17.dp
+        val doneRadius = 16.dp
         val donePadding = PaddingValues(horizontal = 18.dp)
 
-        /** The dirty mark after the filename: "photo.jpg · Edited". */
-        val titleStyle = 15.sp
-        val subtitleStyle = 13.sp
+        /** The hairline between the view controls and the ways out. */
+        val dividerHeight = 18.dp
+        val dividerGap = 6.dp
     }
 
     /** Motion, one curve for everything so nothing feels bolted on. */

@@ -16,6 +16,8 @@ import com.woka.feature.editor.tools.markup.markupShapes
 import com.woka.support.EditorHarness
 import com.woka.support.FixtureEngine
 import com.woka.support.MainDispatcherRule
+import com.woka.support.OtherTab
+import com.woka.support.closeMarkupTool
 import com.woka.support.onEditor
 import com.woka.support.onUi
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -98,15 +100,14 @@ class MarkupDeleteUiTest {
     /** The slot is given back on dispose: a handler left behind deletes out of a closed tool. */
     @Test
     fun `closing the tool clears the delete handler`() {
-        onEditor(listOf(MarkupTool)) { harness ->
+        onEditor(listOf(OtherTab, MarkupTool)) { harness ->
             val canvasKeys = CanvasKeys()
             onUi {
                 openMarkup(harness, canvasKeys)
                 assertTrue(canvasKeys.onDelete != null, "an open canvas tool registered no handler")
 
-                // The rail toggles: a second click on the active tool closes it.
-                onNodeWithTag("editor-tool-markup").performClick()
-                waitForIdle()
+                // Moving to another tab closes it (RD-201).
+                closeMarkupTool()
                 assertTrue(canvasKeys.onDelete == null, "the handler outlived the tool that owned it")
             }
         }
@@ -144,6 +145,6 @@ private fun ComposeUiTest.openMarkup(harness: EditorHarness, canvasKeys: CanvasK
             canvasKeys = canvasKeys
         )
     }
-    onNodeWithTag("editor-tool-markup").performClick()
+    onNodeWithTag("editor-tab-markup").performClick()
     waitForIdle()
 }

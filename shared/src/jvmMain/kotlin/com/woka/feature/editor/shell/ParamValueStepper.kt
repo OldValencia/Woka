@@ -65,8 +65,8 @@ internal fun ParamValueStepper(
             modifier = Modifier
                 .height(STEPPER_HEIGHT)
                 .clip(RoundedCornerShape(STEPPER_RADIUS))
-                .background(Theme.viewer.onScrimHover)
-                .border(1.dp, Theme.viewer.onScrimBorder, RoundedCornerShape(STEPPER_RADIUS))
+                .background(Theme.room.hover)
+                .border(1.dp, Theme.room.line, RoundedCornerShape(STEPPER_RADIUS))
                 .resetOnRightClick(onReset)
                 .testTag(tag),
             verticalAlignment = Alignment.CenterVertically
@@ -76,7 +76,7 @@ internal fun ParamValueStepper(
                 modifier = Modifier
                     .width(VALUE_WIDTH)
                     .height(STEPPER_HEIGHT)
-                    .background(if (open) Theme.viewer.onScrimSelected else Color.Transparent)
+                    .background(if (open) Theme.room.hoverStrong else Color.Transparent)
                     .pointerHoverIcon(PointerIcon.Hand)
                     .clickable(onClick = onToggle)
                     .testTag("$tag-value"),
@@ -89,7 +89,7 @@ internal fun ParamValueStepper(
                     // is what every test asking for it means (ME-155).
                     modifier = Modifier.testTag("$tag-readout"),
                     style = TextStyle(
-                        color = Theme.viewer.onScrim,
+                        color = Theme.room.text,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         textAlign = TextAlign.Center
@@ -124,7 +124,7 @@ private fun StepEnd(symbol: String, tag: String, enabled: Boolean, onClick: () -
         BasicText(
             text = symbol,
             style = TextStyle(
-                color = if (enabled) Theme.viewer.onScrim else Theme.viewer.onScrimDisabled,
+                color = if (enabled) Theme.room.text else Theme.room.faint,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium
             )

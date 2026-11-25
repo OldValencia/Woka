@@ -46,8 +46,8 @@ private fun RowLabel(text: String, modifier: Modifier) {
         text = text,
         modifier = modifier,
         style = TextStyle(
-            color = Theme.viewer.onScrimSecondary,
-            fontSize = EditorTokens.TopBar.subtitleStyle
+            color = Theme.room.muted,
+            fontSize = EditorTokens.TopBar.labelSize
         )
     )
 }

@@ -78,6 +78,7 @@ object CropTool : CanvasTool {
         // made things in, so turning after a crop turns the cropped picture and
         // cropping after a turn cuts the turned one (§3.4).
         order = 1,
+        joins = "transform",
         cardinality = ToolCardinality.Single,
         interaction = ToolInteraction.Canvas
     )

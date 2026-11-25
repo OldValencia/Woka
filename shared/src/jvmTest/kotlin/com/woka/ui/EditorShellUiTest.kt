@@ -3,6 +3,8 @@ package com.woka.ui
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -36,7 +38,7 @@ class EditorShellUiTest {
         ToolDomain.entries.map { FixtureTool(id = it.name.lowercase(), domain = it) }
 
     @Test
-    fun `the rail lists one tool per domain with a divider at each boundary`() {
+    fun `the inspector has one tab per domain and opens on the first`() {
         val tools = toolsInEveryDomain()
         onEditor(tools) { harness ->
             onUi {
@@ -50,53 +52,54 @@ class EditorShellUiTest {
                     )
                 }
                 ToolDomain.entries.forEach {
-                    onNodeWithTag("editor-tool-${it.name.lowercase()}").assertIsDisplayed()
+                    onNodeWithTag("editor-tab-${it.name.lowercase()}").assertIsDisplayed()
                 }
-                // One boundary fewer than there are domains — never a divider per tool.
-                // Counted off the enum since ME-210 prepended `Time` and made it five.
-                onAllNodesWithTag("editor-rail-divider").assertCountEquals(ToolDomain.entries.size - 1)
+                // One tab is always open (RD-201): the first, which is a film's Clip.
+                onAllNodesWithTag("editor-inspector").assertCountEquals(1)
+                onNodeWithTag("editor-tab-time").assertIsSelected()
             }
         }
     }
 
     @Test
-    fun `clicking a tool opens its inspector and clicking it again closes it`() {
-        val tool = FixtureTool(id = "adjust", domain = ToolDomain.Color)
-        onEditor(listOf(tool)) { harness ->
+    fun `clicking a tab switches the inspector to it`() {
+        onEditor(twoTabs()) { harness ->
             onUi {
                 setContent {
                     EditorScreen(harness.session, FixtureEngine(), harness.registry, {}, {})
                 }
-                onNodeWithTag("editor-inspector").assertDoesNotExist()
+                onNodeWithTag("editor-tab-adjust").assertIsSelected()
 
-                onNodeWithTag("editor-tool-adjust").performClick()
-                onNodeWithTag("editor-inspector-title").assertIsDisplayed()
-
-                onNodeWithTag("editor-tool-adjust").performClick()
-                onNodeWithTag("editor-inspector").assertDoesNotExist()
+                onNodeWithTag("editor-tab-markup").performClick()
+                onNodeWithTag("editor-tab-markup").assertIsSelected()
+                onNodeWithTag("editor-tab-adjust").assertIsNotSelected()
+                onAllNodesWithTag("editor-inspector").assertCountEquals(1)
             }
         }
     }
 
     @Test
-    fun `disabling the active tool closes its inspector with nothing clicked`() {
-        val tool = FixtureTool(id = "adjust", domain = ToolDomain.Color)
-        onEditor(listOf(tool)) { harness ->
+    fun `disabling the open tab's tool moves the inspector to the next tab`() {
+        onEditor(twoTabs()) { harness ->
             onUi {
                 setContent {
                     EditorScreen(harness.session, FixtureEngine(), harness.registry, {}, {})
                 }
-                onNodeWithTag("editor-tool-adjust").performClick()
-                onNodeWithTag("editor-inspector").assertIsDisplayed()
+                onNodeWithTag("editor-tab-adjust").assertIsSelected()
 
                 harness.settings.setEditorToolEnabled("adjust", enabled = false)
                 waitForIdle()
 
-                onNodeWithTag("editor-inspector").assertDoesNotExist()
-                onNodeWithTag("editor-tool-adjust").assertDoesNotExist()
+                onNodeWithTag("editor-tab-adjust").assertDoesNotExist()
+                onNodeWithTag("editor-tab-markup").assertIsSelected()
             }
         }
     }
+
+    private fun twoTabs() = listOf(
+        FixtureTool(id = "adjust", domain = ToolDomain.Color),
+        FixtureTool(id = "markup", domain = ToolDomain.Annotate)
+    )
 
     @Test
     fun `the skipped notice appears when a committed op's tool is switched off`() {

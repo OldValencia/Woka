@@ -54,7 +54,13 @@ private fun CanvasHostWith(
     EditorCanvasHost(
         engine = engine,
         document = document,
-        modifier = Modifier.fillMaxSize().padding(start = canvasInsetFor(frameControls)),
+        // The room's margin round the picture (RD-201, `.stage` 26 × 34), beside the frame strip.
+        modifier = Modifier.fillMaxSize().padding(
+            start = canvasInsetFor(frameControls) + EditorTokens.Canvas.sideInset,
+            end = EditorTokens.Canvas.sideInset,
+            top = EditorTokens.Canvas.topInset,
+            bottom = EditorTokens.Canvas.topInset
+        ),
         // Back to Fit whenever the tool changes: a crop opened at 100 % on a
         // corner of the picture is a crop nobody can frame (§4.3).
         resetKey = activeTool?.manifest?.id,

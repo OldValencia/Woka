@@ -1,5 +1,8 @@
 package com.woka.app.shell
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
@@ -35,6 +38,11 @@ fun MainShell(
     val globalShortcuts = remember { GlobalShortcutState() }
     val canvasOverride = remember { CanvasOverrideState() }
     val openSearch by rememberUpdatedState(onOpenSearch)
+    // The editor's room takes the whole window, header included (RD-201).
+    val background by animateColorAsState(
+        if (canvasOverride.editing) Theme.room.room else Theme.colors.background,
+        tween(250, easing = FastOutSlowInEasing)
+    )
     DisposableEffect(Unit) {
         WindowKeys.handler = { event ->
             shellKey(event, openSearch) ||
@@ -51,7 +59,7 @@ fun MainShell(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Theme.colors.background)
+                .background(background)
                 .fileDrops()
                 // Runs in the preview (tunneling) phase from the root, so a
                 // registered screen shortcut sees keys before any focused button

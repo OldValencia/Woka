@@ -67,7 +67,7 @@ class EditorReopenUiTest {
                 setContent {
                     EditorScreen(harness.session, FixtureEngine(), harness.registry, {}, {})
                 }
-                onNodeWithTag("editor-tool-adjust").performClick()
+                onNodeWithTag("editor-tab-adjust").performClick()
 
                 // The spec's default is 1; 7 can only have come from the document.
                 onNodeWithText("7").assertIsDisplayed()

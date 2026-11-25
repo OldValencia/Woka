@@ -52,7 +52,7 @@ class MarkupOverlayUiTest {
                         onDone = {}
                     )
                 }
-                onNodeWithTag("editor-tool-markup").performClick()
+                onNodeWithTag("editor-tab-markup").performClick()
                 waitForIdle()
                 assertTrue(harness.session.document.value.isEmpty, "opening the tool edited something")
                 assertFalse(harness.session.canUndo.value, "opening the tool made an undo step")
@@ -106,7 +106,7 @@ class MarkupOverlayUiTest {
                         onDone = {}
                     )
                 }
-                onNodeWithTag("editor-tool-markup").performClick()
+                onNodeWithTag("editor-tab-markup").performClick()
                 waitForIdle()
 
                 onNodeWithTag(MARKUP_OVERLAY_TAG).performMouseInput {

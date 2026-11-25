@@ -62,8 +62,8 @@ internal fun ColorPickerPopover(
         Column(
             modifier = Modifier
                 .width(PANEL_WIDTH)
-                .background(Theme.viewer.popoverScrim, RoundedCornerShape(12.dp))
-                .border(1.dp, Theme.viewer.onScrimBorder, RoundedCornerShape(12.dp))
+                .background(Theme.room.menu, RoundedCornerShape(12.dp))
+                .border(1.dp, Theme.room.line, RoundedCornerShape(12.dp))
                 .padding(10.dp)
                 .testTag("color-picker"),
             verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -93,7 +93,7 @@ private fun PickedColorReadout(argb: Long) {
         BasicText(
             text = hexOf(argb),
             style = TextStyle(
-                color = Theme.viewer.onScrim,
+                color = Theme.room.text,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium
             )

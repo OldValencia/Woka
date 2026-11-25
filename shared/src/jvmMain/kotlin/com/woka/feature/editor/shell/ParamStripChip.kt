@@ -56,7 +56,7 @@ internal fun StripChip(
         modifier = Modifier
             .height(STEPPER_HEIGHT)
             .clip(RoundedCornerShape(STEPPER_RADIUS))
-            .background(if (selected) Theme.viewer.onScrimSelected else Theme.viewer.onScrimHover)
+            .background(if (selected) Theme.room.hoverStrong else Theme.room.hover)
             .pointerHoverIcon(PointerIcon.Hand)
             .clickable(onClick = onClick)
             // The rule the editor already has everywhere (ME-150), and here it reaches an
@@ -68,7 +68,7 @@ internal fun StripChip(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(STRIP_CHIP_GAP)
     ) {
-        val tint = if (selected) Theme.viewer.onScrim else Theme.viewer.onScrimSecondary
+        val tint = if (selected) Theme.room.text else Theme.room.muted
         // **The glyph joins the name, it does not replace it** (asked for by hand
         // 2026-09-01, reversing this ticket's own first reading). Icons alone were
         // refused on screen, which is the same answer ME-109 got from the rail: an
@@ -92,8 +92,8 @@ internal fun StripChip(
                 .width(EditorTokens.Inspector.readoutWidth)
                 .testTag("param-chip-${spec.key}-readout"),
             style = TextStyle(
-                color = if (value == spec.detent) Theme.viewer.onScrimDisabled
-                else Theme.viewer.onScrim,
+                color = if (value == spec.detent) Theme.room.faint
+                else Theme.room.text,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.End

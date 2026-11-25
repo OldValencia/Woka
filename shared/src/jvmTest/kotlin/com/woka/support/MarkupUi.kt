@@ -33,7 +33,7 @@ fun ComposeUiTest.openMarkupTool(
             registry = harness.registry, onCancel = {}, onDone = {}
         )
     }
-    onNodeWithTag("editor-tool-markup").performClick()
+    onNodeWithTag("editor-tab-markup").performClick()
     waitForIdle()
 }
 

@@ -16,7 +16,8 @@ the tree as it is (`tickets.md` §1). The prototype itself is finished —
 |---|---|
 | Open questions answered | done 2026-11-25 |
 | [RD-101 — Theme colours](tickets/RD-101-theme-colours.md) | **done** 2026-11-25 |
-| RD-201…RD-802 | [backlog](tickets/backlog.md); next: promote RD-201 |
+| [RD-201 — Editor frame](tickets/RD-201-editor-frame.md) | **done** 2026-11-25 |
+| RD-202…RD-802 | [backlog](tickets/backlog.md); next: promote RD-202 |
 
 ## The spec, scene by scene
 
@@ -82,7 +83,8 @@ subtitles or settings), resizes from its free corner at the film's proportions a
    palette). `accentEditor` stays #FF9F0A as a fill in both themes; light gets a text tone, #AD6500,
    because #FF9F0A text on white is 2.1 : 1. The prototype's extra colours (`surfaceRaised`,
    `accentEditorSoft`, `canvas`, `glass`, `sound`, the room's `--e-*`) join Theme in the ticket that
-   first draws them — RD-201, `sound` in RD-301 (re-cut when RD-101 was written, `tickets.md` §4).
+   first draws them — the room `--e-*` in RD-201 (`core/ui/theme/EditorRoom.kt`), `sound` in RD-301,
+   the rest with the viewer (re-cut when RD-101 was written, `tickets.md` §4).
 2. **Tabs.** The tab is **Transform**, not Crop — crop is one action, Transform the family: crop,
    straighten, rotate, flip. Resize goes to `Create a copy`'s size; **HDR goes to saving** —
    `Create a copy` offers Standard colours (SDR) for an HDR file, photo or video — and Settings →
@@ -117,4 +119,7 @@ pill with HDR met `Original` at 960 px, measured 2026-11-25), so the window's mi
 | 2026-11-25 | Dialog primary colour | Editor orange in the editor, app accent elsewhere | Matches `Done` in the editor and the app's accent elsewhere; already so in the prototype |
 | 2026-11-25 | Minimum window size | 1024 × 700 | The author allows a cap; 1024 px is where the editor header stops overlapping |
 | 2026-11-25 | Where the prototype's extra colours land | In the ticket that first draws them (RD-201, RD-301), not RD-101 | `tickets.md` §4: in RD-101 nothing would read them |
+| 2026-11-25 | Resize, HDR, Cover until their new homes | Leave the tabs in RD-201, unreachable until RD-401 / RD-301 | The author: 1.0.9 ships only whole, no stopgaps |
+| 2026-11-25 | Crop and Transform | One Transform tab in RD-201: crop frame, Crop's rows, then rotate/flip | The author |
+| 2026-11-25 | Ticket size | A backlog block is one ticket, built whole | The author: «не разбивай тикет на меньшие тикеты» |
 | 2026-11-25 | Editor orange in the light prototype | `--accent-editor` back to #FF9F0A as the fill; new `--accent-editor-text` #AD6500 for text and focus | Answer 1; the prototype had #AD6500 on its fills too (edited dots) |

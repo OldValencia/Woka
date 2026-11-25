@@ -1,48 +1,49 @@
 package com.woka.feature.editor.shell
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.woka.app.shell.LocalCanvasOverride
 import com.woka.app.shell.LocalTopBarAccessories
+import com.woka.core.ui.icons.Icons
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.viewer.shell.CanvasZoomPill
 
 /**
- * The editor takes over the **shell's** top bar rather than drawing a second one.
- *
- * It used to draw its own, which put two bars on screen at once and left the shell's
- * showing the folder path — a breadcrumb trail that did nothing when clicked, above an
- * editor that had already said which file it was editing.
+ * The editor takes over the **shell's** top bar rather than drawing a second one (RD-201,
+ * `#editor/photo`): Cancel, undo and redo on the left; the viewer's pill in the middle;
+ * Original, the inspector's toggle and Done on the right. No Back chevron and no Revert —
+ * Cancel is the way out, and Revert sits at the inspector's foot.
  *
  * The centre is **not** claimed. The viewer's pill is already there and the editor only
- * repoints it (`CanvasOverrideState`): the size control drives this canvas, and the
- * carousel eye and `Edit` retract, because a slot filled wholesale is a different
- * subtree at the same position — Compose disposes it and there is nothing to animate
- * between. Opened straight from the grid there is no pill to borrow, so it brings one.
+ * repoints it (`CanvasOverrideState`); opened straight from the grid there is no pill to
+ * borrow, so it brings one.
  *
  * **Everything is saved and restored**, for the reason `EditorKeyEffect` documents: the
- * viewer registers its accessories in a `DisposableEffect(Unit)` that will not re-run
- * when this one overwrites them, so clearing to null on dispose would leave the viewer
- * underneath with no controls and a Back button that exits the folder.
- *
- * `Cancel` is gone with the second bar. Back *is* cancel now — one control, one
- * meaning, which is what the viewer already does.
+ * viewer registers its accessories in a `DisposableEffect(Unit)` that will not re-run when
+ * this one overwrites them, so clearing to null on dispose would leave the viewer underneath
+ * with no controls and a Back button that exits the folder.
  */
 @Composable
 internal fun EditorTopBarSetup(
     isEdited: Boolean,
     canUndo: Boolean,
     canRedo: Boolean,
-    canRevert: Boolean,
     peek: PeekState,
+    panel: EditorPanelState,
     onLeave: () -> Unit,
-    onRevert: () -> Unit,
     onUndo: () -> Unit,
     onRedo: () -> Unit,
     onDone: () -> Unit
@@ -50,27 +51,20 @@ internal fun EditorTopBarSetup(
     val accessories = LocalTopBarAccessories.current
     val override = LocalCanvasOverride.current
 
-    // Registered once, reading live values — re-registering per keystroke would
-    // rebuild the accessory while the user is looking at it.
+    // Registered once, reading live values — re-registering per keystroke would rebuild
+    // the accessory while the user is looking at it.
     val curCanUndo by rememberUpdatedState(canUndo)
-    val curCanRevert by rememberUpdatedState(canRevert)
-    val curPeek by rememberUpdatedState(peek)
-    val curRevert by rememberUpdatedState(onRevert)
     val curCanRedo by rememberUpdatedState(canRedo)
+    val curPeek by rememberUpdatedState(peek)
+    val curPanel by rememberUpdatedState(panel)
     val curLeave by rememberUpdatedState(onLeave)
     val curUndo by rememberUpdatedState(onUndo)
     val curRedo by rememberUpdatedState(onRedo)
     val curDone by rememberUpdatedState(onDone)
     val curChoices by rememberUpdatedState(LocalDoneChoices.current)
 
-    // Where the edited mark went when the file name left the top bar: the pill has no
-    // room for a word, and Information is the panel that already answers "what is this
-    // file" (§4.4, 2026-08-18).
-    //
-    // **The document, not `isDirty`** (decided by hand 2026-08-19). Since ME-134 a
-    // session opened on an edited photograph is *clean* — it matches the file — and
-    // marking only unsaved work left an edited picture reading as an original one. The
-    // discard dialog keeps the other meaning; these are two different questions.
+    // The edited mark lives in the Information panel (§4.4): **the document, not
+    // `isDirty`** (2026-08-19) — an edited picture opened clean still reads as edited.
     SideEffect { override.edited = isEdited }
 
     DisposableEffect(Unit) {
@@ -81,39 +75,26 @@ internal fun EditorTopBarSetup(
         val previousBack = accessories.backActionOverride
 
         override.editing = true
-        // Beside Back, not beside Undo/Redo: those two give work back and this one
-        // throws it away, and three controls in a row read as three steps of one kind
-        // (ME-107). Always drawn, disabled when there is nothing to remove — a control
-        // that appears and vanishes is a control nobody learns the position of.
         accessories.leadingAccessory = {
-            TopBarButton(
-                label = "Revert",
-                tag = "editor-revert",
-                enabled = curCanRevert,
-                color = Theme.colors.danger,
-                onClick = { curRevert() }
-            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(EditorTokens.TopBar.controlGap)) {
+                TopBarButton("Cancel", "editor-cancel", onClick = { curLeave() })
+                TopBarIconButton(Icons.Static.Undo, "Undo", "editor-undo", enabled = curCanUndo, onClick = { curUndo() })
+                TopBarIconButton(Icons.Static.Redo, "Redo", "editor-redo", enabled = curCanRedo, onClick = { curRedo() })
+            }
         }
         // Empty centre means no viewer underneath — opened from the grid's context menu.
-        if (previousCenter == null) {
-            accessories.centerAccessory = { CanvasZoomPill() }
-        }
-        // **Its own slot, not the centre** (ME-173). Opened from the viewer the centre is
-        // that viewer's pill and must stay the very same lambda — wrapping it would
-        // replay its enter animation — so the peek button goes beside it instead. Opened
-        // from the grid it lands beside the zoom pill. Present on both paths either way.
-        accessories.centerTrailingAccessory = { EditorPeekButton(curPeek) }
+        if (previousCenter == null) accessories.centerAccessory = { CanvasZoomPill() }
+        accessories.centerTrailingAccessory = null
         accessories.rightAccessory = {
-            EditorActions(
-                canUndo = curCanUndo,
-                canRedo = curCanRedo,
-                onUndo = { curUndo() },
-                onRedo = { curRedo() },
-                onDone = { curDone() },
-                choices = curChoices
-            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(EditorTokens.TopBar.controlGap)) {
+                EditorPeekButton(curPeek)
+                TopBarIconButton(Icons.Static.PanelToggle, "Show or hide the panel (F6)", "editor-panel-toggle", onClick = { curPanel.toggle() })
+                HeaderDivider()
+                DoneButton({ curDone() }, curChoices)
+            }
         }
-        accessories.backActionOverride = { curLeave() }
+        // Cancel is the way out; a Back chevron beside it would be a second one.
+        accessories.backActionOverride = null
 
         onDispose {
             override.editing = false
@@ -127,21 +108,14 @@ internal fun EditorTopBarSetup(
     }
 }
 
+/** The hairline between the view controls and the ways out (`.header-actions .divider`). */
 @Composable
-private fun EditorActions(
-    canUndo: Boolean,
-    canRedo: Boolean,
-    onUndo: () -> Unit,
-    onRedo: () -> Unit,
-    onDone: () -> Unit,
-    choices: DoneChoices
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(EditorTokens.TopBar.controlGap)
-    ) {
-        TopBarButton("↶", "editor-undo", enabled = canUndo, onClick = onUndo)
-        TopBarButton("↷", "editor-redo", enabled = canRedo, onClick = onRedo)
-        DoneButton(onDone, choices)
-    }
+private fun HeaderDivider() {
+    Box(
+        Modifier
+            .padding(horizontal = EditorTokens.TopBar.dividerGap)
+            .width(1.dp)
+            .height(EditorTokens.TopBar.dividerHeight)
+            .background(Theme.room.line)
+    )
 }

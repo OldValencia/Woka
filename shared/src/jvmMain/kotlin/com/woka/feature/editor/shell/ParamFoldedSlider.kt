@@ -48,21 +48,21 @@ internal fun FoldedSlider(spec: FloatParam, params: ParamSet, writer: ParamWrite
         ) {
             BasicText(
                 text = spec.label,
-                style = TextStyle(color = Theme.viewer.onScrimSecondary, fontSize = 11.sp)
+                style = TextStyle(color = Theme.room.muted, fontSize = 11.sp)
             )
             BasicText(
                 text = formatFloat(value, spec),
                 modifier = Modifier.testTag("param-${spec.key}-readout"),
-                style = TextStyle(color = Theme.viewer.onScrim, fontSize = 11.sp)
+                style = TextStyle(color = Theme.room.text, fontSize = 11.sp)
             )
         }
         DetentSlider(
             fraction = toFraction(value),
             colors = DetentSliderColors(
-                track = Theme.viewer.onScrimHover,
-                detent = Theme.viewer.onScrimBorder,
-                knob = Theme.viewer.onScrim,
-                fill = Theme.viewer.onScrim
+                track = Theme.room.hover,
+                detent = Theme.room.line,
+                knob = Theme.room.text,
+                fill = Theme.room.text
             ),
             detents = listOf(toFraction(spec.detent)),
             gestureKey = spec.key,

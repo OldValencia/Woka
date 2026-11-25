@@ -124,7 +124,7 @@ class EditorFrameScopeUiTest {
     @Test
     fun `a single picture still shows nothing once a tool is open`() =
         scoped(EditorFrames()) {
-            onNodeWithTag("editor-tool-adjust").performClick()
+            onNodeWithTag("editor-tab-adjust").performClick()
             waitForIdle()
 
             onNodeWithTag(SCOPE_TAG).assertDoesNotExist()

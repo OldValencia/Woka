@@ -57,7 +57,7 @@ internal fun <E : Enum<E>> PreviewChoiceOption(
     isSelected: Boolean,
     content: @Composable (Modifier) -> Unit
 ) {
-    val outline = if (isSelected) Theme.colors.accentEditor else Theme.viewer.onScrimBorder
+    val outline = if (isSelected) Theme.room.accent else Theme.room.line
     // **Not on the default option.** `Neutral` and `Original` are the absence of an
     // effect, so scaling them scales nothing — the same rule that keeps `Fill` off a
     // stroked pen's panel.
@@ -78,7 +78,7 @@ internal fun <E : Enum<E>> PreviewChoiceOption(
                 Modifier
                     .size(THUMBNAIL)
                     .clip(RoundedCornerShape(THUMBNAIL_RADIUS))
-                    .background(Theme.viewer.onScrimHover)
+                    .background(Theme.room.hover)
                     .border(1.dp, outline, RoundedCornerShape(THUMBNAIL_RADIUS))
             )
             if (strength != null) {
@@ -89,7 +89,7 @@ internal fun <E : Enum<E>> PreviewChoiceOption(
             text = spec.labelOf(option),
             modifier = Modifier.padding(top = 4.dp),
             style = TextStyle(
-                color = if (isSelected) Theme.colors.accentEditor else Theme.viewer.onScrimSecondary,
+                color = if (isSelected) Theme.room.accentText else Theme.room.muted,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold
             )
@@ -118,17 +118,17 @@ private fun StrengthSlider(
         modifier = modifier
             .fillMaxWidth()
             .height(STRENGTH_HEIGHT)
-            .background(Theme.viewer.popoverScrim)
+            .background(Theme.room.well)
             .padding(horizontal = STRENGTH_INSET),
         contentAlignment = Alignment.Center
     ) {
         DetentSlider(
             fraction = toFraction(params[spec]),
             colors = DetentSliderColors(
-                track = Theme.viewer.onScrimBorder,
-                detent = Theme.viewer.onScrimBorder,
-                knob = Theme.viewer.onScrim,
-                fill = Theme.viewer.onScrim
+                track = Theme.room.line,
+                detent = Theme.room.line,
+                knob = Theme.room.text,
+                fill = Theme.room.text
             ),
             detents = listOf(toFraction(spec.detent)),
             gestureKey = spec.key,

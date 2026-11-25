@@ -2,6 +2,8 @@ package com.woka.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import com.woka.app.shell.CanvasOverrideState
@@ -19,6 +21,7 @@ import org.junit.Rule
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
@@ -69,7 +72,7 @@ class EditorTopBarUiTest {
     }
 
     @Test
-    fun `Back cancels the editor, and there is no second Cancel button`() {
+    fun `Cancel leaves the editor, and there is no Back chevron beside it`() {
         var cancels = 0
         onEditor(listOf(FixtureTool())) { harness ->
             onUi {
@@ -77,13 +80,31 @@ class EditorTopBarUiTest {
                 setContent { EditorUnderShell(harness, accessories, onCancel = { cancels++ }) }
                 waitForIdle()
 
-                // The editor overrides Back rather than adding a control beside it —
-                // one meaning, one button, as the viewer already does.
-                onNodeWithTag("editor-cancel").assertDoesNotExist()
-                accessories.backActionOverride?.invoke()
+                // RD-201: Cancel is the way out, so the shell draws no Back beside it.
+                assertNull(accessories.backActionOverride)
+                onNodeWithTag("editor-cancel").performClick()
             }
         }
         assertEquals(1, cancels)
+    }
+
+    @Test
+    fun `undo and redo sit in the header and follow the history`() {
+        val tool = FixtureTool(id = "adjust")
+        onEditor(listOf(tool)) { harness ->
+            onUi {
+                setContent { EditorUnderShell(harness, TopBarAccessoriesState()) }
+                onNodeWithTag("editor-undo").assertIsNotEnabled()
+
+                harness.apply(ToolOp("adjust", tool.defaults()), ToolCardinality.Single)
+                waitForIdle()
+                onNodeWithTag("editor-undo").assertIsEnabled().performClick()
+                waitForIdle()
+
+                assertTrue(harness.session.document.value.isEmpty)
+                onNodeWithTag("editor-redo").assertIsEnabled()
+            }
+        }
     }
 
     @Test
@@ -102,7 +123,7 @@ class EditorTopBarUiTest {
                 // The centre is *not* claimed: replacing it would take the zoom control
                 // away and leave the eye and Edit nothing to animate out of.
                 assertSame(viewersPill, accessories.centerAccessory)
-                assertTrue(accessories.backActionOverride !== viewersBack)
+                assertNull(accessories.backActionOverride)
             }
         }
 

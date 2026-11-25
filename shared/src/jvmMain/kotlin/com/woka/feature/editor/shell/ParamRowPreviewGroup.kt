@@ -53,7 +53,7 @@ internal fun <E : Enum<E>> PreviewChoiceGroup(
                 modifier = Modifier
                     .padding(end = SECTION_GAP, top = SECTION_TOP)
                     .testTag("param-${spec.key}-section"),
-                style = TextStyle(color = Theme.viewer.onScrimSecondary, fontSize = SECTION_SIZE)
+                style = TextStyle(color = Theme.room.muted, fontSize = SECTION_SIZE)
             )
         }
         spec.options.forEach { option ->
@@ -81,7 +81,7 @@ internal fun GroupDivider() {
             .padding(horizontal = DIVIDER_GAP, vertical = DIVIDER_INSET)
             .width(1.dp)
             .height(THUMBNAIL)
-            .background(Theme.viewer.onScrimBorder)
+            .background(Theme.room.line)
     )
 }
 

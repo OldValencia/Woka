@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.woka.app.AppDependencies
 import com.woka.app.collectField
 import com.woka.app.navigation.Screen
+import com.woka.app.shell.LocalCanvasOverride
 import com.woka.app.shell.nowplaying.NowPlayingRow
 import com.woka.core.data.PinnedSession
 import com.woka.core.ui.theme.Theme
@@ -99,8 +100,11 @@ fun Sidebar(
     // Hidden by width, not by removal (SIDE-003): the tree keeps its open rows and
     // its cache, and the column slides out to the left at its full width.
     val visible by settingsRepo.collectField { it.sidebarVisible }
+    // The editor takes the window (RD-201): the column slides out while it is open and back
+    // after, without touching the setting.
+    val editing = LocalCanvasOverride.current.editing
     val width by animateDpAsState(
-        if (visible) SidebarTokens.Width else 0.dp,
+        if (visible && !editing) SidebarTokens.Width else 0.dp,
         tween(250, easing = FastOutSlowInEasing)
     )
     Box(modifier = Modifier.width(width).fillMaxHeight().clipToBounds()) {

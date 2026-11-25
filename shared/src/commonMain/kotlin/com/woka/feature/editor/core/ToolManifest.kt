@@ -27,6 +27,7 @@ import org.jetbrains.compose.resources.DrawableResource
  * | [interaction] | commit on change, on release, or hand to the overlay |
  * | [shortcut] | the keyboard table and the `?` popover |
  * | [multipliesShared] | where an open clip's panel starts (`panelDocument`) |
+ * | [tabbed], [joins] | whether the tool has an inspector tab, and whose it shares (RD-201) |
  */
 @Immutable
 data class ToolManifest(
@@ -47,5 +48,10 @@ data class ToolManifest(
     // 1.0.7, F3): a clip's sound is the film's times its own, so its panel starts neutral.
     val multipliesShared: Boolean = false,
     // Rows only the whole film carries (ME-246): hidden while one clip is selected.
-    val filmOnly: Set<String> = emptySet()
+    val filmOnly: Set<String> = emptySet(),
+    // False: no tab — the tool's ops still fold, but nothing in the inspector opens it
+    // (Resize and HDR wait for `Create a copy`, Cover for the clip menu; RD-201).
+    val tabbed: Boolean = true,
+    // The id of the tool whose tab this one shares: Crop draws inside Transform's (RD-201).
+    val joins: String? = null
 )

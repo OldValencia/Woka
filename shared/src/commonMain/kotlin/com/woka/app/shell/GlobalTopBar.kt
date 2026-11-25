@@ -76,7 +76,8 @@ fun GlobalTopBar(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    if (!sidebarVisible) {
+                    // Nothing to show while editing: the sidebar steps aside for the editor.
+                    if (!sidebarVisible && !LocalCanvasOverride.current.editing) {
                         ToolbarSidebarButton(
                             "Show sidebar",
                             onClick = { settingsRepo.setSidebarVisible(true) }

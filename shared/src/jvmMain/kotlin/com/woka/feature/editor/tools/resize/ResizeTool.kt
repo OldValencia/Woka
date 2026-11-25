@@ -87,6 +87,7 @@ object ResizeTool : EditorTool {
         icon = Icons.Static.Collapse,
         domain = ToolDomain.Output,
         order = 0,
+        tabbed = false,
         cardinality = ToolCardinality.Single,
         // The slider previews while it moves and commits on release, so one drag is one
         // undo step — decided by the manifest, never by the row (`ParamWriter`).

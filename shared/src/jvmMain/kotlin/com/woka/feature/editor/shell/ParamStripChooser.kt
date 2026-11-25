@@ -17,7 +17,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.woka.core.ui.components.SegmentedControl
-import com.woka.core.ui.components.SegmentedControlDefaults
 import com.woka.feature.editor.core.FloatParam
 import com.woka.feature.editor.core.ParamSet
 import kotlinx.coroutines.launch
@@ -37,7 +36,7 @@ internal fun SectionControl(sections: List<String>, selected: String, onSelect: 
         onSelect = onSelect,
         // The card is drawn on a scrim over the photograph, and this palette exists for
         // exactly that surface — the editor's inspector is named in its own KDoc.
-        colors = SegmentedControlDefaults.onScrim
+        colors = RoomControls.segmented
     )
 }
 

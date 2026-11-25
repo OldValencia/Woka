@@ -76,10 +76,10 @@ internal fun ParamValueControls(spec: FloatParam, params: ParamSet, writer: Para
             DetentSlider(
                 fraction = toFraction(value),
                 colors = DetentSliderColors(
-                    track = Theme.viewer.onScrimHover,
-                    detent = Theme.viewer.onScrimBorder,
-                    knob = Theme.viewer.onScrim,
-                    fill = Theme.viewer.onScrim
+                    track = Theme.room.hover,
+                    detent = Theme.room.line,
+                    knob = Theme.room.text,
+                    fill = Theme.room.text
                 ),
                 detents = listOf(toFraction(spec.detent)),
                 // Keyed on the spec for the reason `FloatControl` recorded before the

@@ -36,14 +36,17 @@ internal fun EditorUnderShell(
     /** Null is a file holding one picture, which is what most tests are (ME-156). */
     frameControls: EditorFrameControls? = null
 ) {
+    // The pill the editor brings when no viewer lent one reads the HDR setting through Koin;
+    // without this a test passed or failed by which test happened to start Koin first.
+    startKoinOnce()
     CompositionLocalProvider(
         LocalTopBarAccessories provides accessories,
         LocalCanvasOverride provides override
     ) {
         Column {
             Row {
-                // The leading slot too: Revert lives beside Back, and a test that
-                // rendered only the other two would report it as missing (ME-107).
+                // The leading slot too: Cancel, undo and redo live there (RD-201), and a
+                // test that rendered only the other two would report them as missing.
                 accessories.leadingAccessory?.invoke()
                 accessories.centerAccessory?.invoke()
                 accessories.rightAccessory?.invoke()

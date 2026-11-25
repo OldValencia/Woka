@@ -41,7 +41,7 @@ object TrimTool : EditorTool {
 
     override val manifest = ToolManifest(
         id = "trim",
-        title = "Clips",
+        title = "Clip",
         summary = "Cut, order, speed and freeze",
         icon = Icons.Static.Trim,
         domain = ToolDomain.Time,

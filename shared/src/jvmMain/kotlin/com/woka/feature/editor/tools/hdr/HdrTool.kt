@@ -69,6 +69,7 @@ object HdrTool : EditorTool {
         // After Resize, which is order 0: a resize is about the picture, this is about
         // the file it becomes.
         order = 1,
+        tabbed = false,
         // **The first `supports` override in the app** (ME-264). Every other tool takes
         // the default — both media kinds — and that default is what makes reusing the
         // rail on video free. This one cannot take it: what it decides is *what a save

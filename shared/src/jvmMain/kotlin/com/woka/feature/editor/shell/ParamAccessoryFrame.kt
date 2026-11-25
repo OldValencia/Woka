@@ -24,9 +24,8 @@ import androidx.compose.ui.unit.Dp
  * `LocalInspectorAccessory` it is a sibling of the inspector instead, so the panel grows
  * sideways and nothing it came from is covered.
  *
- * **It paints no plate of its own.** The two cards' backgrounds are drawn together, and
- * through one filter, by `GooeyPair` — which is what lets them merge and separate like
- * liquid rather than appear as a second rectangle.
+ * **It paints no plate of its own.** `EditorAccessoryFloat` draws the card it sits in,
+ * floated left of the docked inspector (RD-201).
  */
 @Composable
 internal fun ParamAccessory(
