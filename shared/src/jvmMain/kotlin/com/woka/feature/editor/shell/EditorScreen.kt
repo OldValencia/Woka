@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -66,7 +65,6 @@ internal fun EditorScreen(
     val peek = remember { PeekState() }
     // Hoisted out of the overlay's scope (ME-114): the inspector restyles what the canvas selected.
     val selection = remember(session) { ToolSelection() }
-    val accessory = remember { InspectorAccessory() }
 
     // The editor takes over the shell's bar rather than drawing a second one — see EditorTopBarSetup.
     EditorTopBarSetup(
@@ -120,25 +118,22 @@ internal fun EditorScreen(
             EditorCanvasLayer(engine, session, tools, activeTool, canvasDocument, perFrame, canvasKeys, selection, peek)
             if (perFrame != null) EditorFrameBand(perFrame, session.media.file)
             EditorBottomPanel(session, engine, registry, document, tools, activeTool, skipped) { selection.id }
-            EditorAccessoryFloat(accessory)
         }
         Box(modifier = Modifier.width(panelWidth).fillMaxHeight().clipToBounds()) {
             Row(modifier = Modifier.wrapContentWidth(Alignment.Start, unbounded = true)) {
                 Box(Modifier.width(1.dp).fillMaxHeight().background(Theme.room.line))
-                CompositionLocalProvider(LocalInspectorAccessory provides accessory) {
-                    EditorInspectorPanel(
-                        tabs = tabs.tabs,
-                        tab = tab,
-                        unavailable = blocked,
-                        onSelectTab = tabs::choose,
-                        session = session,
-                        engine = engine,
-                        document = document,
-                        selectedId = { selection.id },
-                        canRevert = canRevert,
-                        onRevert = onRevert
-                    )
-                }
+                EditorInspectorPanel(
+                    tabs = tabs.tabs,
+                    tab = tab,
+                    unavailable = blocked,
+                    onSelectTab = tabs::choose,
+                    session = session,
+                    engine = engine,
+                    document = document,
+                    selectedId = { selection.id },
+                    canRevert = canRevert,
+                    onRevert = onRevert
+                )
             }
         }
     }

@@ -3,7 +3,11 @@ package com.woka.ui
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performMouseInput
@@ -20,7 +24,6 @@ import com.woka.support.finishCaret
 import com.woka.support.onEditor
 import com.woka.support.onUi
 import com.woka.support.openMarkupTool
-import com.woka.support.toggleControl
 import com.woka.support.typeIntoCaret
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -66,15 +69,14 @@ class MarkupSelectionReadbackUiTest {
                 // Three, not six: the fixture is 640 x 480 and a stroke starts at 0.6 %
                 // of the shorter edge (ME-159).
                 clickPicture(Offset(400f, 300f))
-                repeat(4) {
-                    onNodeWithTag("param-${MarkupTool.Width.key}-plus").performClick()
-                    waitForIdle()
-                }
-                readout(MarkupTool.Width.key).assertTextEquals("7px")
+                readout(MarkupTool.Width.key).performTextReplacement("7")
+                readout(MarkupTool.Width.key).performKeyInput { pressKey(Key.Enter) }
+                waitForIdle()
+                readout(MarkupTool.Width.key).assertTextEquals("7")
 
                 clickPicture(Offset(90f, 80f))
 
-                readout(MarkupTool.Width.key).assertTextEquals("3px")
+                readout(MarkupTool.Width.key).assertTextEquals("3")
                 assertEquals(
                     3f,
                     harness.session.document.value.markupShapes().single().width,
@@ -98,22 +100,17 @@ class MarkupSelectionReadbackUiTest {
                 clickPicture(Offset(60f, 60f))
                 typeIntoCaret("Woka")
 
-                toggleControl(MarkupTool.Faces.key)
                 onNodeWithTag("param-faces-${TextFace.Bold.name}").performClick()
                 waitForIdle()
-                toggleControl(MarkupTool.Faces.key)
                 finishCaret()
 
                 // Nothing selected: this moves the pen alone.
-                toggleControl(MarkupTool.Faces.key)
                 onNodeWithTag("param-faces-${TextFace.Bold.name}").performClick()
                 waitForIdle()
-                toggleControl(MarkupTool.Faces.key)
 
                 clickPicture(Offset(70f, 90f))
                 // Pressing the chip now must *clear* the caption's face, which it can only
                 // do if the panel was reporting the caption rather than the pen.
-                toggleControl(MarkupTool.Faces.key)
                 onNodeWithTag("param-faces-${TextFace.Bold.name}").performClick()
                 waitForIdle()
             }
@@ -129,7 +126,7 @@ class MarkupSelectionReadbackUiTest {
 
     /** The number the frame reports, which merges into a clickable node — hence unmerged. */
     private fun ComposeUiTest.readout(key: String) =
-        onNodeWithTag("param-$key-readout", useUnmergedTree = true)
+        onNodeWithTag("param-$key-field")
 
     private fun ComposeUiTest.drawStroke() {
         onNodeWithTag(MARKUP_OVERLAY_TAG).performMouseInput {

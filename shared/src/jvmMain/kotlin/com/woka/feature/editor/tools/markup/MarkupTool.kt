@@ -109,12 +109,9 @@ object MarkupTool : CanvasTool {
     override fun rows(params: ParamSet, sourceSize: IntSize, selectedId: String?, timelineMs: Long?) =
         markupRows(params, sourceSize, selectedId, timelineMs)
 
-    /** The pen on one line and its style on the next, both compact (ME-155). */
-    override fun lines(rows: List<ParamSpec<*>>): List<List<ParamSpec<*>>> = markupLines(rows)
-
-    /** And the plate's roundness inside the plate's own button — `markupFolded`. */
-    override fun folded(spec: ParamSpec<*>, rows: List<ParamSpec<*>>): List<ParamSpec<*>> =
-        markupFolded(spec, rows)
+    /** Text is placed on the picture, not in the panel — said where the Text pen is chosen (RD-203). */
+    override fun footnote(params: ParamSet, frame: IntSize): String? =
+        "Click the picture to add text".takeIf { params[Kind] == MarkupKind.Text }
 
     /** Every shape in one stage, each at its own time on a film — `markupStage`. */
     override fun stage(params: ParamSet): ToolStage? = markupStage(params)

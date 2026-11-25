@@ -36,7 +36,6 @@ import androidx.compose.ui.unit.sp
 import com.woka.core.ui.components.resetOnRightClick
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.editor.core.FloatParam
-import com.woka.feature.editor.core.ParamSet
 import org.jetbrains.compose.resources.painterResource
 import kotlin.math.abs
 
@@ -54,8 +53,9 @@ import kotlin.math.abs
  * without travel settles at once.
  */
 @Composable
-internal fun ScrubRow(spec: FloatParam, params: ParamSet, writer: ParamWriter) {
-    val value = params[spec]
+internal fun ScrubRow(level: ScrubLevel) {
+    val spec = level.spec
+    val value = level.value
     val changed = value != spec.detent
     val span = spec.range.endInclusive - spec.range.start
     var width by remember { mutableStateOf(1) }
@@ -74,20 +74,20 @@ internal fun ScrubRow(spec: FloatParam, params: ParamSet, writer: ParamWriter) {
             .hoverable(hover)
             .pointerHoverIcon(PointerIcon.Hand)
             .onSizeChanged { width = it.width.coerceAtLeast(1) }
-            .resetOnRightClick { writer.resetTo(spec) }
+            .resetOnRightClick { level.reset() }
             // Keyed on the spec: Markup swaps one size for another in the same place, and a
             // gesture that outlived the swap wrote the wrong key (`FloatControl`, 2026-08).
-            .pointerInput(spec.key) { detectTapGestures { writer.edit(spec, valueAt(it.x), settled = true) } }
+            .pointerInput(spec.key) { detectTapGestures { level.write(valueAt(it.x), settled = true) } }
             .pointerInput(spec.key) {
                 val release = {
                     dragging = false
-                    writer.settle()
+                    level.settle()
                 }
                 detectHorizontalDragGestures(
                     onDragStart = { dragging = true },
                     onDragEnd = release,
                     onDragCancel = release
-                ) { change, _ -> writer.edit(spec, valueAt(change.position.x), settled = false) }
+                ) { change, _ -> level.write(valueAt(change.position.x), settled = false) }
             }
             .testTag("param-${spec.key}")
     ) {
@@ -111,8 +111,8 @@ internal fun ScrubRow(spec: FloatParam, params: ParamSet, writer: ParamWriter) {
                 overflow = TextOverflow.Ellipsis,
                 style = TextStyle(color = room.text, fontSize = 13.sp)
             )
-            ScrubReset(visible = changed && hovered, tag = "param-${spec.key}-reset") { writer.resetTo(spec) }
-            ScrubField(spec, value, changed, writer)
+            ScrubReset(visible = changed && hovered, tag = "param-${spec.key}-reset") { level.reset() }
+            ScrubField(level, changed)
         }
         ScrubTrack(
             spec = spec,

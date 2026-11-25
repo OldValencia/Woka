@@ -14,7 +14,6 @@ import com.woka.support.chooseMarkupPen
 import com.woka.support.onEditor
 import com.woka.support.onUi
 import com.woka.support.openMarkupTool
-import com.woka.support.toggleControl
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Rule
@@ -60,50 +59,37 @@ class MarkupBarUiTest {
         }
     }
 
-    /**
-     * The plate's own button holds both the colours and the roundness — the one place two
-     * specs share a control, and the reason `EditorTool.folded` exists.
-     */
+    /** A plate's roundness is a row of its own once there is a plate to round (RD-203). */
     @Test
-    fun `the plate button holds its palette and its corner`() {
+    fun `the corner appears under the plate once a plate is chosen`() {
         onEditor(listOf(MarkupTool)) { harness ->
             onUi {
                 openMarkupTool(harness)
                 chooseMarkupPen("Text")
-
-                // Closed, the card is a button and nothing else.
-                onNodeWithTag("param-${MarkupTool.Fill.key}-swatch-0").assertDoesNotExist()
-
-                toggleControl(MarkupTool.Fill.key)
                 onNodeWithTag("param-${MarkupTool.Fill.key}-swatch-0").assertIsDisplayed()
-                // Still nothing to round, so still no slider — ME-146's rule, one level in.
+                // Still nothing to round, so still no row — ME-146's rule.
                 onNodeWithTag("param-${MarkupTool.Corner.key}").assertDoesNotExist()
 
                 onNodeWithTag("param-${MarkupTool.Fill.key}-swatch-1").performClick()
                 waitForIdle()
-                onNodeWithTag("param-${MarkupTool.Corner.key}-slider").assertIsDisplayed()
+                onNodeWithTag("param-${MarkupTool.Corner.key}").assertIsDisplayed()
             }
         }
     }
 
     @Test
-    fun `right-clicking the plate button clears the plate`() {
+    fun `right-clicking the plate's swatches clears the plate`() {
         onEditor(listOf(MarkupTool)) { harness ->
             onUi {
                 openMarkupTool(harness)
                 chooseMarkupPen("Text")
-
-                toggleControl(MarkupTool.Fill.key)
                 onNodeWithTag("param-${MarkupTool.Fill.key}-swatch-1").performClick()
                 waitForIdle()
-                toggleControl(MarkupTool.Fill.key)
                 assertTrue(harness.fill() != 0L, "the plate was never set")
 
                 onNodeWithTag("param-${MarkupTool.Fill.key}").performMouseInput { rightClick() }
                 waitForIdle()
-
                 assertEquals(0L, harness.fill(), "the plate survived a right-click")
-                onNodeWithTag("param-${MarkupTool.Fill.key}-popover").assertDoesNotExist()
             }
         }
     }

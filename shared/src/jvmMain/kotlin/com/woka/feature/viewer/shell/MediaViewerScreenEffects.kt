@@ -7,8 +7,6 @@ import androidx.compose.runtime.remember
 import com.woka.app.AppDependencies
 import com.woka.core.data.MediaItem
 import com.woka.core.data.WokaSettings
-import com.woka.core.ui.image.rememberReloadKey
-import com.woka.feature.viewer.MediaStartup
 import com.woka.feature.viewer.audio.AudioSession
 import com.woka.feature.viewer.pip.PipManager
 import com.woka.feature.viewer.video.VideoAlreadyOpenedDialog
@@ -98,53 +96,6 @@ internal fun MediaViewerActiveItemEffects(
         )
     }
 
-    // The decode, for both paths: a plain file change, and the reload after the
-    // PiP conflict above is confirmed and `showConflictDialog` goes false.
-    //
-    // **Two stages, on purpose.** The full decode of a 36-megapixel HEIC is a
-    // quarter of a second plus a 138 MB texture upload, and until it landed the
-    // *previous* file stayed on screen — paging looked like a freeze and then a
-    // jump. The preview is the one the carousel already built, so it is a disk
-    // read or a cache hit, and `ContentScale.Fit` draws it in exactly the
-    // rectangle the full picture will occupy. `sourceSize` is read first so the
-    // zoom presets mean native pixels from the very first paint.
-    //
-    // Keyed on the frame too, so stepping through a burst goes through the same
-    // two stages as opening a file does.
-    //
-    // ...and on the reload key, which is how a save reaches the screen (ME-135). The
-    // editor is mounted over a viewer that stays composed, so nothing above moves
-    // while an edit is made: `Done` changed nothing until the viewer was re-entered.
-    // ...and on the HDR view mode, because since ME-177 that decides what the decoded
-    // pixels *are*, not how they are drawn (ME-180). Without it the cache key moved and
-    // nothing asked for the new entry: flipping the switch changed the picture only after
-    // the file was reopened.
-    val reloadKey = rememberReloadKey(activeItem?.file?.absolutePath)
-    LaunchedEffect(
-        activeItem,
-        showConflictDialog,
-        state.frameIndex,
-        reloadKey,
-        settings.hdrViewMode
-    ) {
-        if (showConflictDialog || activeItem == null) return@LaunchedEffect
-        val frame = state.frameIndex
-        // A track with no cover must not show the previous file's picture as its own.
-        if (activeItem is MediaItem.Audio) state.imageBitmap = null
-        val early = MediaStartup.takeStill(activeItem, frame) // a direct open's, unsuspended: frame one
-        state.sourceSize = early?.size ?: thumbnails.sourceSize(activeItem)
-        state.stillColor = early?.color ?: thumbnails.stillColor(activeItem)
-        val alreadyDecoded = thumbnails.cachedFull(activeItem, frame)
-        if (alreadyDecoded != null) {
-            // Going back to a picture still in the cache: showing the preview
-            // first would be a frame of blur bought for nothing.
-            state.imageBitmap = alreadyDecoded
-            return@LaunchedEffect
-        }
-        (early?.preview ?: thumbnails.preview(activeItem, frame))?.let { state.imageBitmap = it }
-        // Null means this picture could not be decoded — keep whatever is on
-        // screen rather than blanking it, which is what a frame index left over
-        // from the previous file would otherwise do for one composition.
-        thumbnails.full(activeItem, frame)?.let { state.imageBitmap = it }
-    }
+    // The decode, for both paths — `MediaViewerStillLoad.kt`.
+    StillLoadEffect(state, activeItem, settings, showConflictDialog, thumbnails)
 }

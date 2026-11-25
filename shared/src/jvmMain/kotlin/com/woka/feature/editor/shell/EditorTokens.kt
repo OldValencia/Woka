@@ -51,6 +51,9 @@ object EditorTokens {
         /** Between two tools sharing a tab — Transform's crop and rotate/flip. */
         val sectionGap = 18.dp
 
+        /** Between a tool's groups: tiles, a well, a choice and its name (`.panel .group`). */
+        val groupGap = 16.dp
+
         val footPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
         val footLabel = 12.sp
 

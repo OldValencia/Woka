@@ -1,10 +1,13 @@
 package com.woka.feature.editor.engine.image
 
+import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.IntSize
+import com.woka.core.ui.image.ImageBitmapCache
 import com.woka.feature.editor.core.LocalCanvasScale
 import java.io.File
 
@@ -56,7 +59,15 @@ internal fun ImageCanvas(
      */
     onProxy: suspend (ImageBitmap) -> Unit = {}
 ) {
-    val source = rememberCanvasSource(file, frameIndex, playback, sourceSize) ?: return
+    val source = rememberCanvasSource(file, frameIndex, playback, sourceSize)
+    if (source == null) {
+        // Until the editor's own copy is decoded, the picture the viewer was showing — the
+        // same file with the same stored edit, already in memory — rather than an empty room
+        // (the author, 2026-11-25: entering the editor blinked). Never for a thumbnail, which
+        // is one option's picture rather than the file's.
+        if (!fill) ViewerPicture(file, frameIndex, modifier)
+        return
+    }
     LaunchedEffect(source) { onProxy(source) }
     RasterSurface(
         source = source,
@@ -108,4 +119,11 @@ internal fun rememberCanvasSource(
         !frame.isAnimating &&
         LocalCanvasScale.current > proxyScale * SHARPEN_MARGIN
     return rememberNativeFrame(file, frameIndex, sourceSize, wanted) ?: proxy
+}
+
+/** The viewer's decode of [file], drawn as it is — it already carries the stored edit. */
+@Composable
+private fun ViewerPicture(file: File, frameIndex: Int, modifier: Modifier) {
+    val picture = ImageBitmapCache[ImageBitmapCache.key(file.absolutePath, frameIndex)] ?: return
+    Image(picture, contentDescription = null, modifier = modifier, contentScale = ContentScale.FillBounds)
 }

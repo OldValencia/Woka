@@ -22,54 +22,6 @@ internal fun FloatParamRow(spec: FloatParam, params: ParamSet, writer: ParamWrit
 }
 
 /**
- * The stepper frame, so a compact line can put it beside a swatch with no label column at
- * all (ME-155).
- */
-@Composable
-internal fun FloatControl(spec: FloatParam, params: ParamSet, writer: ParamWriter) {
-    val value = params[spec]
-    val slot = rememberAccessorySlot("param-${spec.key}")
-    val step = stepOf(spec)
-
-    ParamValueStepper(
-        text = formatFloat(value, spec),
-        name = spec.label,
-        open = slot.open,
-        canStepDown = value > spec.range.start,
-        canStepUp = value < spec.range.endInclusive,
-        tag = "param-${spec.key}",
-        onStepDown = { writer.edit(spec, (value - step).coerceIn(spec.range)) },
-        onStepUp = { writer.edit(spec, (value + step).coerceIn(spec.range)) },
-        onToggle = {
-            // Settled on the way out, so sliding through fifty values inside the panel is
-            // one history entry — the rule `ColorPickerPopover` already applies.
-            if (slot.open) writer.settle()
-            slot.toggle()
-        },
-        onReset = { writer.resetTo(spec) }
-    )
-
-    if (slot.open) {
-        ParamValuePanel(spec, params, writer)
-    }
-}
-
-/**
- * What one press of an end is worth.
- *
- * One unit on the spans the editor actually uses — `-100..100` — and five on the one that
- * is an order of magnitude wider, because 64 px to 128 px is sixty-four presses at one.
- * Anything further from the current value than a few nudges is what the slider and the
- * field are for.
- *
- * **A spec may name its own instead**, and markup's two sizes do: their range is one wide
- * constant while their default follows the picture (ME-159), so the span stopped being a
- * usable proxy for what a nudge should be worth.
- */
-private fun stepOf(spec: FloatParam): Float =
-    spec.step ?: if (spec.range.endInclusive - spec.range.start > 200f) 5f else 1f
-
-/**
  * Signed only when the range crosses zero.
  *
  * A brightness of `+12` says which way it was moved; a size of `+1280` says nothing

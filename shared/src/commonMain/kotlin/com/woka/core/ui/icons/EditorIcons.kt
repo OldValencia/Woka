@@ -45,6 +45,17 @@ abstract class EditorIcons {
     val Redo = Res.drawable.arrow_uturn_forward
     val PanelToggle = Res.drawable.sidebar_left
 
+    // Transform's four presses and Crop's shapes, drawn as tiles (RD-203).
+    val RotateLeft = Res.drawable.rotate_left
+    val RotateRight = Res.drawable.rotate_right
+    val FlipHorizontal = Res.drawable.flip_horizontal
+    val FlipVertical = Res.drawable.flip_vertical
+    val AspectFree = Res.drawable.aspect_free
+    val AspectSquare = Res.drawable.aspect_square
+    val AspectFourThree = Res.drawable.aspect_4_3
+    val AspectThreeTwo = Res.drawable.aspect_3_2
+    val AspectSixteenNine = Res.drawable.aspect_16_9
+
     // Crop's orientation, as a pair — a tall frame and a wide one (ME-144).
     val Portrait = Res.drawable.rectangle_portrait
     val Landscape = Res.drawable.rectangle

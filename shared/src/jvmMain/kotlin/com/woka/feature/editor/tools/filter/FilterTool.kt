@@ -42,7 +42,8 @@ object FilterTool : EditorTool {
         range = 0f..100f,
         default = 100f,
         detent = 100f,
-        unit = "%"
+        unit = "%",
+        icon = Icons.Static.Tint
     )
 
     val Intensity = FloatParam(
@@ -51,7 +52,8 @@ object FilterTool : EditorTool {
         range = 0f..100f,
         default = 100f,
         detent = 100f,
-        unit = "%"
+        unit = "%",
+        icon = Icons.Static.Vibrance
     )
 
     val Undertone = PreviewChoiceParam(
@@ -84,7 +86,9 @@ object FilterTool : EditorTool {
         yLabel = "Brightness",
         xRange = -100f..100f,
         yRange = -100f..100f,
-        default = ParamPoint(0f, 0f)
+        default = ParamPoint(0f, 0f),
+        xIcon = Icons.Static.Saturation,
+        yIcon = Icons.Static.Brightness
     )
 
     override val manifest = ToolManifest(
@@ -100,43 +104,25 @@ object FilterTool : EditorTool {
         interaction = ToolInteraction.Continuous
     )
 
-    /** One scrolling line of fourteen squares uses every pixel the dock is wide. */
-    override val wideInspector = true
-
-    /**
-     * Every parameter the document carries. The two strengths are declared here and
-     * **not** drawn as rows of their own — see [rows].
-     */
+    /** Every parameter the document carries, in the order the panel reads in. */
     override val params: List<ParamSpec<*>> =
         listOf(Undertone, Filter, Palette, Intensity, Tone)
 
     /**
-     * The two strips, then the pad — and neither strength.
-     *
-     * `Palette` and `Intensity` are drawn *inside* the square they scale, so a row for
-     * each would be the same number twice. Hidden rather than removed: the values are
-     * still declared, still written and still folded, which is the whole contract
-     * [rows] carries (§3.4). The strips are adjacent so they share one scrolling line.
-     *
-     * **The pad is always shown**, including on an untouched panel (reversed by hand
-     * 2026-08-28, having been hidden on defaults for one sitting). It costs 40 dp at
-     * the end of a line that is there anyway, and hiding it made the panel's width
-     * change the moment a look was picked — a control that appears is a control nobody
-     * knew was there.
+     * Both rows of tiles, then the well — only what can do something (RD-203, decided by the
+     * author 2026-11-25). Palette scales the undertone, so it shows once one is chosen;
+     * Intensity and the look's shape (Vividness, Brightness — the pad's two axes as scrub
+     * rows) act on the look, so they show once a look is chosen. At Neutral and Original
+     * the panel is the two rows of tiles and nothing else.
      */
     override fun rows(params: ParamSet, sourceSize: IntSize): List<ParamSpec<*>> =
-        listOf(Undertone, Filter, Tone)
-
-    /**
-     * **Why the pad appears to do nothing** (reported 2026-09-03). ME-150 made the axes
-     * shape the *chosen look*, and left the row visible and inert at `Original` — hiding
-     * it had been tried and reversed. What it did not do is *say* so, and an inert
-     * control reads on screen as a broken one. Dimming the square needs a "this row is
-     * inert" the schema has not got; that is still ME-150's named follow-on.
-     */
-    override fun footnote(params: ParamSet, frame: IntSize): String? =
-        "Pick a look — the pad shapes the look, not the photograph"
-            .takeIf { params[Filter] == PhotoFilter.Original }
+        listOfNotNull(
+            Undertone,
+            Filter,
+            Palette.takeIf { params[Undertone] != Undertone.default },
+            Intensity.takeIf { params[Filter] != Filter.default },
+            Tone.takeIf { params[Filter] != Filter.default }
+        )
 
     /**
      * Nothing when none of the four parts does anything — the rule every tool follows,

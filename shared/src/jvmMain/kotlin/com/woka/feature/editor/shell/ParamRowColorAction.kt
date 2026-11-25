@@ -1,5 +1,7 @@
 package com.woka.feature.editor.shell
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +25,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.woka.core.ui.components.resetOnRightClick
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.editor.core.ActionParam
 import com.woka.feature.editor.core.ColorParam
@@ -46,8 +49,10 @@ import com.woka.feature.editor.core.ParamSet
  */
 @Composable
 internal fun ColorParamRow(spec: ColorParam, params: ParamSet, writer: ParamWriter) {
-    ParamRowFrame(spec.label) {
-        ColorControl(spec, params, writer, Modifier.weight(1f))
+    // The name above the swatches, as the room's groups are headed (RD-203).
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        GroupLabel(spec.label)
+        ColorControl(spec, params, writer, Modifier.fillMaxWidth())
     }
 }
 
@@ -66,7 +71,8 @@ internal fun ColorControl(
     var picking by remember { mutableStateOf(false) }
 
     Row(
-        modifier = modifier.testTag("param-${spec.key}"),
+        // Right-click puts the colour back, as every value in the inspector does (`ParamReset`).
+        modifier = modifier.resetOnRightClick { writer.resetTo(spec) }.testTag("param-${spec.key}"),
         horizontalArrangement = Arrangement.spacedBy(EditorTokens.Inspector.swatchGap),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -112,23 +118,6 @@ internal fun ColorControl(
  */
 @Composable
 internal fun ActionParamRow(spec: ActionParam, writer: ParamWriter) {
-    // **No label column.** An action's label is written on the button that performs
-    // it, so putting it in the row's label column too printed "Rotate left" twice on
-    // the same line — and left the button stranded in a 420 dp card with a column of
-    // white space between it and everything else.
-    BasicText(
-        text = spec.label,
-        modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .border(1.dp, Theme.room.line, RoundedCornerShape(8.dp))
-            .pointerHoverIcon(PointerIcon.Hand)
-            .clickable { writer.edit(spec, true) }
-            .padding(horizontal = 12.dp, vertical = 7.dp)
-            .testTag("param-${spec.key}"),
-        style = TextStyle(
-            color = Theme.room.text,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold
-        )
-    )
+    // A well button (RD-203, `.well-button`): its word is on it, so no label column.
+    WellButton(spec, writer)
 }

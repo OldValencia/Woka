@@ -58,34 +58,27 @@ internal fun ParamRows(
     val scoped = (tool as? CanvasTool)?.rows(params, picture.sourceSize, selectedId(), picture.timelineMs)
         ?: tool.rows(params, picture.sourceSize)
     val shown = scoped.filterNot { session.clipOpen && it.key in tool.manifest.filmOnly }
-    // A spec that rides inside another spec's popover gets **no control of its own**
-    // (ME-155). `rows` still names it, and must: it is still written, still folded and
-    // still saved — only the place it is reached from has moved.
-    val ridden = shown.flatMap { tool.folded(it, shown) }.toSet()
-    // And a spec the tool puts in the card's header gets no row either (ME-174) — the
-    // panel draws it beside the card's title, because it is *about* the other controls
-    // rather than one of them.
+    // A spec the tool puts above or under the rows gets no row of its own (ME-174, RD-202):
+    // it is *about* the other controls rather than one of them.
     val header = tool.header(shown)
     val footer = tool.footer(shown)
-    val visible = shown.filterNot { it in ridden || it in header || it in footer }
-    // Which of those the tool draws as one compact bar — none, for every tool but Markup.
-    val compact = tool.lines(visible)
+    val visible = shown.filterNot { it in header || it in footer }
+    // Air between groups, so a row's name does not sit on the well above it (the author,
+    // 2026-11-25: Look's name was all but touching Palette).
     Column(
-        verticalArrangement = Arrangement.spacedBy(EditorTokens.Inspector.rowGap)
+        verticalArrangement = Arrangement.spacedBy(EditorTokens.Panel.groupGap)
     ) {
         // The tool's own actions about the rows: above them as well buttons, under them as
         // quiet lines (RD-202) — `ParamWell.kt`.
-        header.filterIsInstance<ActionParam>().forEach { WellButton(it, writer) }
-        groupRuns(visible, compact).forEach { run ->
+        header.filterIsInstance<ActionParam>().forEach { WellButton(it, writer, accentGlyph = true) }
+        groupRuns(visible).forEach { run ->
             key(run.first().key) {
                 ParamRun(
                     run = run,
                     params = params,
                     writer = writer,
                     toolId = tool.manifest.id,
-                    thumbnail = thumbnail,
-                    compact = run in compact,
-                    folded = { spec -> tool.folded(spec, shown) }
+                    thumbnail = thumbnail
                 )
             }
         }

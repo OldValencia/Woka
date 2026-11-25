@@ -15,47 +15,13 @@ import com.woka.feature.editor.core.PreviewChoiceParam
  */
 
 /**
- * Splits a tool's specs into runs of the same *shape*: consecutive actions in one
- * run, consecutive preview strips in another, everything else alone.
+ * Splits a tool's specs into runs of the same *shape*: consecutive actions in one run,
+ * consecutive preview rows in another, levels and pads in a well, everything else alone.
  *
- * An action is a button and buttons sit beside each other; a preview strip is a line
- * of squares and two of them read as one line; a slider is a labelled row and rows
- * stack.
- *
- * **The tool is asked first** (ME-155). A [compact] line it declared is emitted whole at
- * the position of its first spec, and the adjacency rules below are not applied inside it
- * — those rules are about shapes that happen to be alike, and a compact line is about
- * controls the tool has said belong to one bar.
+ * Grouping is by adjacency, never by sorting: a tool's declared order is the order its
+ * inspector reads in (§3.4).
  */
-internal fun groupRuns(
-    specs: List<ParamSpec<*>>,
-    compact: List<List<ParamSpec<*>>> = emptyList()
-): List<List<ParamSpec<*>>> {
-    val leads = compact.associateBy { it.first() }
-    val claimed = compact.flatten().toSet()
-    val out = mutableListOf<List<ParamSpec<*>>>()
-    // Specs the tool left alone are handed to the adjacency rules *together*, or a run of
-    // actions would be split into one button per line by the walk itself.
-    val loose = mutableListOf<ParamSpec<*>>()
-    fun flush() {
-        if (loose.isNotEmpty()) out += adjacentRuns(loose.toList())
-        loose.clear()
-    }
-    specs.forEach { spec ->
-        val line = leads[spec]
-        when {
-            line != null -> {
-                flush()
-                out += line
-            }
-            // Already emitted as part of the line its first spec led.
-            spec in claimed -> Unit
-            else -> loose += spec
-        }
-    }
-    flush()
-    return out
-}
+internal fun groupRuns(specs: List<ParamSpec<*>>): List<List<ParamSpec<*>>> = adjacentRuns(specs)
 
 /** Consecutive specs of the same shape, folded into one run each. */
 private fun adjacentRuns(specs: List<ParamSpec<*>>): List<List<ParamSpec<*>>> {
@@ -77,5 +43,5 @@ private fun adjacentRuns(specs: List<ParamSpec<*>>): List<List<ParamSpec<*>>> {
  */
 private fun joins(head: ParamSpec<*>, next: ParamSpec<*>): Boolean =
     (head is ActionParam && next is ActionParam) ||
-        (head is PreviewChoiceParam<*> && (next is PreviewChoiceParam<*> || next is PadParam)) ||
-        (head is FloatParam && next is FloatParam)
+        (head is PreviewChoiceParam<*> && next is PreviewChoiceParam<*>) ||
+        (head is FloatParam && (next is FloatParam || next is PadParam))

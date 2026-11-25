@@ -20,7 +20,7 @@ const parameterHints={
   captionStart:'When the caption first appears in the video.',captionDuration:'How long the caption stays on screen.',
   captionFadeIn:'How quickly the caption appears.',captionFadeOut:'How quickly the caption disappears.',outputScale:'Size of the finished copy relative to the original.'
 };
-function defaultValue(key){return ({volume:100,speed:1,audioSpeed:1,intensity:75,textSize:24,opacity:100,outputScale:100,cropHeight:84,cropWidth:84,captionDuration:6})[key]??0;}
+function defaultValue(key){return ({volume:100,speed:1,audioSpeed:1,intensity:100,palette:100,textSize:24,strokeWidth:6,holdsFor:6,corner:25,opacity:100,outputScale:100,cropHeight:100,cropWidth:100,captionDuration:6})[key]??0;}
 function rememberPanel(){
   const panel=document.querySelector('#panel'),active=document.activeElement;
   const memory={scroll:panel.scrollTop,open:[...panel.querySelectorAll('details')].map(d=>d.open)};
@@ -98,8 +98,8 @@ function requestExit(){
 }
 function flushInput(){if(inputBefore!==null){remember(inputBefore);inputBefore=null;}}
 function documentSignature(document){
-  const {settings,crop,portrait,ratio,rotation,straighten,flipped,captionVisible,clips,audio,frames}=document;
-  return JSON.stringify({settings,crop,portrait,ratio,rotation,straighten,flipped,captionVisible,clips,audio,frames});
+  const {settings,crop,portrait,ratio,rotation,straighten,flipped,flippedV,captionVisible,clips,audio,frames}=document;
+  return JSON.stringify({settings,crop,portrait,ratio,rotation,straighten,flipped,flippedV,captionVisible,clips,audio,frames});
 }
 function syncDirty(){if(savedSnapshot)state.dirty=documentSignature(state)!==documentSignature(JSON.parse(savedSnapshot));}
 function applyComparison(){

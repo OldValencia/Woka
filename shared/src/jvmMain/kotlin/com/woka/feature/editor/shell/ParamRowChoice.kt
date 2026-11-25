@@ -1,9 +1,13 @@
 package com.woka.feature.editor.shell
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
 import com.woka.core.ui.components.SegmentedControl
 import com.woka.feature.editor.core.ChoiceParam
 import com.woka.feature.editor.core.ParamSet
@@ -30,8 +34,16 @@ internal fun <E : Enum<E>> ChoiceParamRow(
     params: ParamSet,
     writer: ParamWriter
 ) {
-    ParamRowFrame(spec.label) {
-        ChoiceControl(spec, params, writer, Modifier.weight(1f))
+    // The name above the control, as the room's groups are headed (`.group-label`, RD-203);
+    // more than four options are tiles, three to a row.
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        GroupLabel(spec.label)
+        when {
+            spec.tiles -> ChoiceTiles(spec, params, writer)
+            spec.options.size > SEGMENTED_LIMIT && spec.options.all { spec.iconOf(it) != null } ->
+                GlyphSegmented(spec, params, writer)
+            else -> ChoiceControl(spec, params, writer, Modifier.fillMaxWidth())
+        }
     }
 }
 
@@ -57,7 +69,8 @@ internal fun <E : Enum<E>> ChoiceControl(
                         ?.let { writer.edit(spec, it) }
                 },
                 colors = RoomControls.segmented,
-                height = RoomControls.segmentedHeight
+                height = RoomControls.segmentedHeight,
+                icons = spec.options.map(spec.iconOf)
             )
         } else {
             ParamChipRow(

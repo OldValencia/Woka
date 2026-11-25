@@ -51,9 +51,12 @@ private fun CanvasHostWith(
     selection: ToolSelection,
     peek: PeekState
 ) {
+    // A turn or a flip plays on the picture rather than jumping to the result (RD-203).
+    val motion = rememberCanvasMotion(session, tools)
     EditorCanvasHost(
         engine = engine,
         document = document,
+        picture = motion.modifier,
         // The room's margin round the picture (RD-201, `.stage` 26 × 34), beside the frame strip.
         modifier = Modifier.fillMaxSize().padding(
             start = canvasInsetFor(frameControls) + EditorTokens.Canvas.sideInset,

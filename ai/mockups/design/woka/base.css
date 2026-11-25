@@ -104,6 +104,7 @@ button:active:not(:disabled){filter:brightness(.93)}
 .auto-button svg{color:var(--e-accent)}
 .add-text{min-height:52px}
 .button-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.button-pair+.button-pair{margin-top:8px}
 .text-action{display:inline-flex;align-items:center;gap:7px;min-height:30px;padding:4px 8px;border-radius:7px;font-size:12px;color:var(--e-muted)}
 .text-action:hover{color:var(--e-text);background:var(--e-hover-strong)}
 .text-action svg{width:15px;height:15px}

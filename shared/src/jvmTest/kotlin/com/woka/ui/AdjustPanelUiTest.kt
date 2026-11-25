@@ -3,6 +3,8 @@ package com.woka.ui
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -75,7 +77,7 @@ class AdjustPanelUiTest {
                 setContent { ParamPanel(tool, harness) }
                 waitForIdle()
 
-                onNodeWithTag("param-well").assertIsDisplayed()
+                onAllNodesWithTag("param-well").onFirst().assertIsDisplayed()
                 onNodeWithText("Light").assertDoesNotExist()
             }
         }

@@ -84,7 +84,7 @@ internal fun EditorInspectorPanel(
             verticalArrangement = Arrangement.spacedBy(EditorTokens.Panel.sectionGap)
         ) {
             tab?.tools?.forEach { tool ->
-                EditorToolSection(session, engine, document, tool, showTitle = tab.tools.size > 1, selectedId)
+                EditorToolSection(session, engine, document, tool, selectedId)
             }
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(room.line))

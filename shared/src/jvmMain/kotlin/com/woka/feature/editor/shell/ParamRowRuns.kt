@@ -9,6 +9,7 @@ import androidx.compose.ui.unit.dp
 import com.woka.feature.editor.core.ActionParam
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.FloatParam
+import com.woka.feature.editor.core.PadParam
 import com.woka.feature.editor.core.ParamSet
 import com.woka.feature.editor.core.ParamSpec
 import com.woka.feature.editor.core.PreviewChoiceParam
@@ -29,30 +30,21 @@ internal fun ParamRun(
     params: ParamSet,
     writer: ParamWriter,
     toolId: String,
-    thumbnail: @Composable (EditDocument, Modifier) -> Unit,
-    /** Whether this run is a compact line the tool declared (ME-155). */
-    compact: Boolean = false,
-    folded: (ParamSpec<*>) -> List<ParamSpec<*>> = { emptyList() }
+    thumbnail: @Composable (EditDocument, Modifier) -> Unit
 ) {
     when {
-        // A bar of collapsed controls, no labels — asked for first, because a compact
-        // line of *one* spec is legitimate (Markup's five shapes are exactly that) and
-        // would otherwise fall through to the rules below and grow a label column.
-        compact -> CompactRow(run, params, writer, folded)
-
-        // One scrolling line for however many preview specs sit together — one for
-        // every tool but Styles, which has an undertone and a look (ME-141).
         run.first() is PreviewChoiceParam<*> ->
-            PreviewChoiceStrip(run, params, writer, toolId, thumbnail)
+            StylePagers(run, params, writer, toolId, thumbnail)
 
         // Levels side by side are one well of scrub rows, split by section where the tool
         // declares sections (RD-202; Adjust's Light, Colour and Detail).
-        run.first() is FloatParam -> ParamStrip(run, params, writer)
+        run.first() is FloatParam || run.first() is PadParam -> ParamStrip(run, params, writer)
 
-        // Consecutive actions become one wrapping group rather than one row each.
-        // Four buttons stacked vertically, each with an empty label column beside it,
-        // is what made the Transform panel a tall strip of white space.
-        run.size > 1 || run.first() is ActionParam ->
+        // Consecutive actions are well buttons two to a row (RD-203) — Transform's rotate
+        // and flip pairs; a lone action is one full-width button.
+        run.first() is ActionParam -> ActionGrid(run.filterIsInstance<ActionParam>(), writer)
+
+        run.size > 1 ->
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)

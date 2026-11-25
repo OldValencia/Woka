@@ -4,6 +4,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.TextStyle
@@ -26,6 +28,8 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.woka.core.ui.theme.Theme
+import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.painterResource
 
 /**
  * What a segmented control is painted with.
@@ -74,7 +78,9 @@ fun SegmentedControl(
     colors: SegmentedControlColors = SegmentedControlDefaults.onSurface,
     /** Taller and larger where the control is the whole point, as in a View panel. */
     height: Dp = 24.dp,
-    textSize: TextUnit = 12.sp
+    textSize: TextUnit = 12.sp,
+    /** A glyph before each option's word, or none — the editor's orientation pair (RD-203). */
+    icons: List<DrawableResource?> = emptyList()
 ) {
     BoxWithConstraints(
         modifier = Modifier
@@ -103,7 +109,7 @@ fun SegmentedControl(
         )
 
         Row(Modifier.fillMaxSize()) {
-            options.forEach { option ->
+            options.forEachIndexed { index, option ->
                 val isSelected = option == selected
                 val textColor by animateColorAsState(
                     targetValue = if (isSelected) colors.selectedText else colors.text,
@@ -120,16 +126,24 @@ fun SegmentedControl(
                         ) { onSelect(option) },
                     contentAlignment = Alignment.Center
                 ) {
-                    BasicText(
-                        text = option,
-                        style = TextStyle(
-                            color = textColor,
-                            fontSize = textSize,
-                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
-                        )
-                    )
+                    SegmentLabel(option, icons.getOrNull(index), textColor, textSize, isSelected)
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SegmentLabel(option: String, icon: DrawableResource?, textColor: Color, textSize: TextUnit, isSelected: Boolean) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        icon?.let { Image(painterResource(it), null, Modifier.size(16.dp), colorFilter = ColorFilter.tint(textColor)) }
+        BasicText(
+            text = option,
+            style = TextStyle(
+                color = textColor,
+                fontSize = textSize,
+                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
+            )
+        )
     }
 }

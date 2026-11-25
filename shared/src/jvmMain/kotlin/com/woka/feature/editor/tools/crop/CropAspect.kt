@@ -1,6 +1,8 @@
 package com.woka.feature.editor.tools.crop
 
 import androidx.compose.ui.unit.IntSize
+import com.woka.core.ui.icons.Icons
+import org.jetbrains.compose.resources.DrawableResource
 
 /**
  * The ratios a crop can be locked to (ME-109).
@@ -19,6 +21,17 @@ enum class CropAspect(val label: String) {
     FourThree("4:3"),
     ThreeTwo("3:2"),
     SixteenNine("16:9");
+
+    /** The tile's silhouette (RD-203): a dashed frame, the picture, or the ratio's own shape. */
+    val icon: DrawableResource
+        get() = when (this) {
+            Free -> Icons.Static.AspectFree
+            Original -> Icons.Static.Image
+            Square -> Icons.Static.AspectSquare
+            FourThree -> Icons.Static.AspectFourThree
+            ThreeTwo -> Icons.Static.AspectThreeTwo
+            SixteenNine -> Icons.Static.AspectSixteenNine
+        }
 
     /**
      * Width over height, or **null** for a ratio that does not constrain anything.

@@ -18,7 +18,8 @@ the tree as it is (`tickets.md` §1). The prototype itself is finished —
 | [RD-101 — Theme colours](tickets/RD-101-theme-colours.md) | **done** 2026-11-25 |
 | [RD-201 — Editor frame](tickets/RD-201-editor-frame.md) | **done** 2026-11-25 |
 | [RD-202 — Scrub rows and wells](tickets/RD-202-scrub-rows-wells.md) | **done** 2026-11-25 |
-| RD-203…RD-802 | [backlog](tickets/backlog.md); next: promote RD-203 |
+| [RD-203 — Styles, Transform, Markup](tickets/RD-203-styles-transform-markup.md) | **done** 2026-11-25 |
+| RD-204…RD-802 | [backlog](tickets/backlog.md); next: promote RD-204 |
 
 ## The spec, scene by scene
 
@@ -122,5 +123,9 @@ pill with HDR met `Original` at 960 px, measured 2026-11-25), so the window's mi
 | 2026-11-25 | Where the prototype's extra colours land | In the ticket that first draws them (RD-201, RD-301), not RD-101 | `tickets.md` §4: in RD-101 nothing would read them |
 | 2026-11-25 | Resize, HDR, Cover until their new homes | Leave the tabs in RD-201, unreachable until RD-401 / RD-301 | The author: 1.0.9 ships only whole, no stopgaps |
 | 2026-11-25 | Crop and Transform | One Transform tab in RD-201: crop frame, Crop's rows, then rotate/flip | The author |
+| 2026-11-25 | Straighten | Its own block, RD-205 — a new engine feature, not part of RD-203's panels | The author |
+| 2026-11-25 | Transform on open | The crop frame at the whole picture, nothing written until a drag | The author: Done right after must not crop |
+| 2026-11-25 | Styles' groups | One row of four tiles each, with ← / → | The author: the strips showed two previews at a time |
+| 2026-11-25 | Styles' content | The app's: Undertone, Look, Palette, Intensity, Vividness, Brightness — in the prototype's form | The author |
 | 2026-11-25 | Ticket size | A backlog block is one ticket, built whole | The author: «не разбивай тикет на меньшие тикеты» |
 | 2026-11-25 | Editor orange in the light prototype | `--accent-editor` back to #FF9F0A as the fill; new `--accent-editor-text` #AD6500 for text and focus | Answer 1; the prototype had #AD6500 on its fills too (edited dots) |

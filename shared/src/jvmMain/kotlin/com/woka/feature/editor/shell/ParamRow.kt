@@ -45,7 +45,7 @@ internal fun ParamRow(
         is ToggleSetParam<*> -> ToggleSetParamRow(spec, params, writer)
 
         // Two numbers from one gesture (ME-141) — which is why it is one spec.
-        is PadParam -> PadParamRow(spec, params, writer)
+        is PadParam -> ScrubWell(listOf(spec), params, writer)
 
         // A strip of the picture through each option's own `stage()` (ME-112). The row
         // draws no bitmap itself: it asks the engine, through `thumbnail`, for a picture
@@ -54,7 +54,7 @@ internal fun ParamRow(
         // A run of one: `ParamRun` sends neighbouring preview specs here together, and
         // this branch is what a caller reaching for a single spec gets (ME-141).
         is PreviewChoiceParam<*> ->
-            PreviewChoiceStrip(listOf(spec), params, writer, toolId, thumbnail)
+            StylePagers(listOf(spec), params, writer, toolId, thumbnail)
 
         // Draws nothing, by design (§3.4). The value belongs to a `CanvasTool`'s
         // overlay, and a spec that cannot be drawn by a generic row says so in its

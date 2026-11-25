@@ -2,18 +2,17 @@
 
 Blocks are promoted into ticket files when they are next, re-cut against the tree as it then is
 (`tickets.md` §1, §4). No file lists here. The feature doc's questions were answered on
-2026-11-25; RD-101…RD-202 are tickets, RD-203 is next. Each block is promoted and built
+2026-11-25; RD-101…RD-203 are tickets, RD-204 is next. Each block is promoted and built
 whole — the author's call, 2026-11-25 (`tickets.md` §4a waived).
 
 ## Editor
 
-### RD-203 — Styles, Transform and Markup panels
-Style tiles with hover preview and the intensity rows; crop shape tiles, orientation, the
-straighten dial, rotate and flip; the markup panel with text on the canvas. Markup's compact
-bars still use ME-155's stepper with a popover (`FloatControl`), left by RD-202 for this.
-**The author, 2026-11-25:** Styles' Undertone and Look must be laid out differently — in the
-294 dp inspector their preview strips show only two previews at a time. Re-lay them out here
-(the prototype draws a three-column grid of style tiles, `#editor/photo` → Styles).
+### RD-205 — Straighten
+Arbitrary-angle rotation, ±15° on the prototype's dial in Transform (`#editor/crop`), with the crop
+that keeps the picture filling the frame. **A new engine feature, not a panel** — out of scope in
+the image editor's plan (`implemented/image-editor/image-editor.md`, "Out"): its own parameter,
+the stage in the raster, GPU and video paths, the recipe, the viewer's and the render's readers.
+Split from RD-203 by the author, 2026-11-25.
 
 ### RD-204 — Frame sets in the editor
 The left frame strip in the editor (as in the viewer) and the All frames / Frame N scope — the

@@ -47,7 +47,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.woka.core.ui.icons.Icons
 import com.woka.core.ui.theme.Theme
-import com.woka.feature.editor.core.FloatParam
 import org.jetbrains.compose.resources.painterResource
 
 /**
@@ -56,7 +55,9 @@ import org.jetbrains.compose.resources.painterResource
  * when the field lets go of focus or Enter is pressed.
  */
 @Composable
-internal fun ScrubField(spec: FloatParam, value: Float, changed: Boolean, writer: ParamWriter) {
+internal fun ScrubField(level: ScrubLevel, changed: Boolean) {
+    val spec = level.spec
+    val value = level.value
     var text by remember { mutableStateOf(plainFloat(value)) }
     var focused by remember { mutableStateOf(false) }
     val keys = LocalCanvasKeys.current
@@ -72,7 +73,7 @@ internal fun ScrubField(spec: FloatParam, value: Float, changed: Boolean, writer
             value = text,
             onValueChange = { raw ->
                 text = raw.filter { it.isDigit() || it == '-' || it == '.' }.take(7)
-                text.toFloatOrNull()?.let { if (it in spec.range) writer.edit(spec, it, settled = false) }
+                text.toFloatOrNull()?.let { if (it in spec.range) level.write(it, settled = false) }
             },
             singleLine = true,
             textStyle = TextStyle(
@@ -91,7 +92,7 @@ internal fun ScrubField(spec: FloatParam, value: Float, changed: Boolean, writer
                 .padding(horizontal = 2.dp, vertical = 3.dp)
                 .testTag("param-${spec.key}-field")
                 .onFocusChanged {
-                    if (focused && !it.isFocused) writer.settle()
+                    if (focused && !it.isFocused) level.settle()
                     focused = it.isFocused
                     keys?.fieldFocused = it.isFocused
                 }

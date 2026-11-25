@@ -1,5 +1,9 @@
 package com.woka.feature.editor.shell
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -26,8 +30,10 @@ internal fun <E : Enum<E>> ToggleSetParamRow(
     params: ParamSet,
     writer: ParamWriter
 ) {
-    ParamRowFrame(spec.label) {
-        ToggleSetControl(spec, params, writer, Modifier.weight(1f).testTag("param-${spec.key}"))
+    // The name above the chips, as the room's groups are headed (RD-203).
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        GroupLabel(spec.label)
+        ToggleSetControl(spec, params, writer, Modifier.fillMaxWidth().testTag("param-${spec.key}"))
     }
 }
 

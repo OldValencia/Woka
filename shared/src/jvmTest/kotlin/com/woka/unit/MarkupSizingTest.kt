@@ -6,7 +6,6 @@ import com.woka.feature.editor.core.ParamSet
 import com.woka.feature.editor.tools.markup.MARKUP_SIZE_RANGE
 import com.woka.feature.editor.tools.markup.MarkupKind
 import com.woka.feature.editor.tools.markup.MarkupTool
-import com.woka.feature.editor.tools.markup.markupLines
 import com.woka.feature.editor.tools.markup.markupRows
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -75,20 +74,6 @@ class MarkupSizingTest {
             assertTrue(textDefault(size) in MARKUP_SIZE_RANGE, "text at $size")
             assertTrue(strokeDefault(size) in MARKUP_SIZE_RANGE, "stroke at $size")
         }
-    }
-
-    /**
-     * The trap this ticket walked into once: a re-defaulted spec is a **copy**, so it is
-     * not `==` the declared one. `markupLines` compared by identity and silently dropped
-     * both size controls off the compact bar.
-     */
-    @Test
-    fun `the compact bar still carries the size row after it is re-defaulted`() {
-        val rows = markupRows(ParamSet().with(MarkupTool.Kind, MarkupKind.Text), LARGE)
-        val style = markupLines(rows).last()
-
-        assertTrue(style.any { it.key == MarkupTool.TextSize.key }, "no size control on the bar")
-        assertEquals(360f, style.first { it.key == MarkupTool.TextSize.key }.default)
     }
 
     /** The key and the range are what a written value is read back through — neither may move. */

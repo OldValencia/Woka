@@ -41,7 +41,13 @@ data class ChoiceParam<E : Enum<E>>(
      * worth it where the words are longer than the thing they name and the row wraps
      * (ME-144), not everywhere.
      */
-    val iconOf: (E) -> DrawableResource? = { null }
+    val iconOf: (E) -> DrawableResource? = { null },
+    /**
+     * Drawn as tiles, glyph over word, three to a row (RD-203) — Crop's shapes. Otherwise a
+     * choice with a glyph for every option is a row of glyphs (Markup's pens), and one
+     * without is a segmented control or chips.
+     */
+    val tiles: Boolean = false
 ) : ParamSpec<E> {
     override fun encode(value: E) = TextValue(value.name)
     override fun decode(value: ParamValue): E? {

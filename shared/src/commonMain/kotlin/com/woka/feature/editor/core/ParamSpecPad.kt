@@ -3,6 +3,7 @@ package com.woka.feature.editor.core
 import androidx.compose.runtime.Immutable
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
+import org.jetbrains.compose.resources.DrawableResource
 
 /**
  * A point on a two-axis pad, in the units the pad's own ranges are expressed in.
@@ -41,7 +42,10 @@ data class PadParam(
     val yLabel: String,
     val xRange: ClosedFloatingPointRange<Float>,
     val yRange: ClosedFloatingPointRange<Float>,
-    override val default: ParamPoint
+    override val default: ParamPoint,
+    /** The axes' glyphs where the pad is drawn as two scrub rows (RD-203). */
+    val xIcon: DrawableResource? = null,
+    val yIcon: DrawableResource? = null
 ) : ParamSpec<ParamPoint> {
 
     override fun encode(value: ParamPoint): ParamValue =

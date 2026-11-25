@@ -130,8 +130,7 @@ fun FolderScreen(
 
     // Last, so it draws over the viewer — which stays mounted and frozen underneath,
     // keeping its exact zoom, pan and frame for when Back returns to it (§4.1).
-    // Not wrapped in a `let`: the editor takes a nullable target and animates itself
-    // out, which it cannot do if the call site removes it from the tree first.
+    // The editor takes a nullable target and is simply absent without one (no slide).
     run {
         NativeMediaEditor(
             target = editorTarget,

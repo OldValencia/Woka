@@ -17,7 +17,7 @@ function syncCaption(){
   }
   caption.hidden=!show;if(!show)return;
   if(!caption.isContentEditable)caption.textContent=s.caption||'Nowhere else to be.';
-  Object.assign(caption.style,{left:`${s.captionX??50}%`,top:`${s.captionY??87}%`,fontSize:`${s.textSize||24}px`,color:s.textColor||'#fff',opacity:alpha,background:s.textBackground?'#0009':'none',fontFamily:({Serif:'serif',Mono:'monospace'})[s.font]||'sans-serif'});
+  Object.assign(caption.style,{left:`${s.captionX??50}%`,top:`${s.captionY??87}%`,fontSize:`${s.textSize||24}px`,color:s.textColor||'#fff',opacity:alpha,background:s.plate&&s.plate!=='none'?s.plate:'none',borderRadius:`${(s.corner??25)/100*0.6}em`,fontWeight:(s.faces||[]).includes('bold')?'700':'',fontStyle:(s.faces||[]).includes('italic')?'italic':'',textDecoration:[(s.faces||[]).includes('underline')?'underline':'',(s.faces||[]).includes('strike')?'line-through':''].join(' ').trim()||'none',fontFamily:({Serif:'serif',Mono:'monospace'})[s.font]||'sans-serif'});
   caption.classList.toggle('selected',!viewerMode&&state.tool==='markup');
 }
 function selectCaption(){
@@ -110,7 +110,7 @@ function initMenus(){
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!menu.hidden){event.stopImmediatePropagation();closeMenu();}},true);
 }
 function initPreviews(){
-  document.addEventListener('pointerover',event=>{const card=event.target.closest('.style-tile');if(!card||stylePreview===card.dataset.style)return;stylePreview=card.dataset.style;easePhoto();updatePicture();});
+  document.addEventListener('pointerover',event=>{const card=event.target.closest('.style-tile');if(!card||stylePreview?.key===card.dataset.style)return;stylePreview={group:card.dataset.group,key:card.dataset.style};easePhoto();updatePicture();});
   document.addEventListener('pointerout',event=>{const card=event.target.closest('.style-tile');if(!card||card.contains(event.relatedTarget))return;stylePreview=null;easePhoto();updatePicture();});
   document.addEventListener('input',event=>{
     if(event.target.dataset?.value!=='straighten')return;

@@ -40,11 +40,14 @@ object CropTool : CanvasTool {
 
     val Aspect = ChoiceParam(
         key = "aspect",
-        label = "Aspect",
+        label = "Shape",
         options = CropAspect.entries.toList(),
         default = CropAspect.Free,
-        // `16:9`, not `SixteenNine`: the chips are read, not compiled.
-        labelOf = CropAspect::label
+        // `16:9`, not `SixteenNine`: the tiles are read, not compiled.
+        labelOf = CropAspect::label,
+        // The frame's own silhouette on each tile (RD-203, `.ratio-shape`).
+        iconOf = CropAspect::icon,
+        tiles = true
     )
 
     /**

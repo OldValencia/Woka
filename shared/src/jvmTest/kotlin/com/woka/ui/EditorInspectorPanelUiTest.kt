@@ -32,7 +32,7 @@ class EditorInspectorPanelUiTest {
     private val tools = listOf(FixtureTool(id = "adjust", domain = ToolDomain.Color), TransformTool, CropTool)
 
     @Test
-    fun `Transform shows the crop frame and both tools' rows under their names`() {
+    fun `Transform shows the crop frame and both tools' rows`() {
         onEditor(tools) { harness ->
             onUi {
                 setContent { EditorUnderShell(harness, TopBarAccessoriesState()) }
@@ -43,7 +43,8 @@ class EditorInspectorPanelUiTest {
 
                 onNodeWithTag(CROP_OVERLAY_TAG).assertIsDisplayed()
                 onAllNodesWithTag("editor-inspector").assertCountEquals(2)
-                onAllNodesWithTag("editor-inspector-title").assertCountEquals(2)
+                onNodeWithTag("param-aspect").assertIsDisplayed()
+                onNodeWithTag("param-rotateLeft").assertIsDisplayed()
             }
         }
     }

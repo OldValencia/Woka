@@ -16,7 +16,6 @@ import com.woka.support.clickPicture
 import com.woka.support.onEditor
 import com.woka.support.onUi
 import com.woka.support.openMarkupTool
-import com.woka.support.openValue
 import com.woka.support.typeIntoCaret
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -124,16 +123,9 @@ class MarkupSliderDragUiTest {
     private fun penValue(harness: EditorHarness, spec: FloatParam) =
         paramsOf(harness.session.document.value, MarkupTool, FIXTURE_SOURCE)[spec]
 
-    /**
-     * Press at the left of the track and pull to the right, past the drag slop.
-     *
-     * **The track is one press away** since ME-155: the panel shows `− │ 64px │ +`
-     * and the slider is inside what the number opens. What is being asserted is unchanged
-     * — a knob that follows the pointer, and a gesture that writes its own spec.
-     */
+    /** Press at the left of the scrub row and pull to the right, past the drag slop (RD-202). */
     private fun ComposeUiTest.dragRow(key: String) {
-        openValue(key)
-        onNodeWithTag("param-$key-slider").performMouseInput {
+        onNodeWithTag("param-$key").performMouseInput {
             moveTo(Offset(4f, centerY))
             press()
             moveTo(Offset(width * 0.4f, centerY))

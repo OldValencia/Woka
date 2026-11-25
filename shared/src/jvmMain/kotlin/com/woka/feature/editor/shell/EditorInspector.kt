@@ -3,14 +3,11 @@ package com.woka.feature.editor.shell
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.editor.core.EditDocument
@@ -28,8 +25,8 @@ import com.woka.feature.editor.core.panelDocument
  * them and knows nothing about which controls appear inside, the split §3.4 depends on: a
  * tool contributes rows, never a panel.
  *
- * The tool's name is drawn only when [showTitle] — a tab holding two tools (Transform's crop
- * and rotate/flip) — since a single-tool tab is already named by its tab.
+ * No tool name above it: the tab names the tool, and inside Transform's tab the groups name
+ * themselves — Shape, Orientation (RD-203).
  */
 @Composable
 internal fun EditorToolSection(
@@ -37,7 +34,6 @@ internal fun EditorToolSection(
     engine: EditorEngine,
     document: EditDocument,
     tool: EditorTool,
-    showTitle: Boolean,
     /** What the canvas has selected — read live, see `ParamRows`. */
     selectedId: () -> String?
 ) {
@@ -54,8 +50,6 @@ internal fun EditorToolSection(
         modifier = Modifier.fillMaxWidth().testTag("editor-inspector"),
         verticalArrangement = Arrangement.spacedBy(EditorTokens.Inspector.rowGap)
     ) {
-        // The tool's actions about its rows are drawn by `ParamRows` now, above and under them (RD-202).
-        if (showTitle) SectionTitle(tool.manifest.title)
         ParamRows(
             tool = tool,
             session = session,
@@ -73,19 +67,4 @@ internal fun EditorToolSection(
             )
         }
     }
-}
-
-/**
- * The tool's name, when the tab holds two tools.
- *
- * **Not `Reset` for the document** — removed 2026-08-19: it cleared every tool's work from a
- * header naming one. What it was reached for is `Revert to original…`, at the inspector's foot.
- */
-@Composable
-private fun SectionTitle(title: String) {
-    BasicText(
-        text = title,
-        modifier = Modifier.padding(bottom = 6.dp).testTag("editor-inspector-title"),
-        style = TextStyle(color = Theme.room.text, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-    )
 }

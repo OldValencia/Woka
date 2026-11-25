@@ -2,7 +2,7 @@ const $=selector=>document.querySelector(selector);
 const clamp=(value,min,max)=>Math.min(max,Math.max(min,value));
 let counter=10,playing=false,lastTick=0,history=[],future=[],clipboard=null,inputBefore=null,toastTimer,relinkId=null;
 const uid=prefix=>`${prefix}-${++counter}`;
-function initialState(){return {mode:'photo',tool:'styles',group:'light',portrait:false,ratio:'Free',crop:{x:8,y:8,w:84,h:84},rotation:0,straighten:0,flipped:false,zoom:1,dirty:false,selection:null,time:8,timelineZoom:1,snap:true,showWave:false,captionVisible:false,settings:{},clips:[{id:'c1',name:'By the sea',duration:12,sourceStart:0,speed:1,settings:{}},{id:'c2',name:'A sunny afternoon',duration:8,sourceStart:15,speed:1,settings:{}},{id:'c3',name:'Evening light',duration:12,sourceStart:28,speed:1,settings:{}}],audio:[]};}
+function initialState(){return {mode:'photo',tool:'styles',group:'light',portrait:false,ratio:'Free',crop:{x:0,y:0,w:100,h:100},rotation:0,straighten:0,flipped:false,zoom:1,dirty:false,selection:null,time:8,timelineZoom:1,snap:true,showWave:false,captionVisible:false,settings:{},clips:[{id:'c1',name:'By the sea',duration:12,sourceStart:0,speed:1,settings:{}},{id:'c2',name:'A sunny afternoon',duration:8,sourceStart:15,speed:1,settings:{}},{id:'c3',name:'Evening light',duration:12,sourceStart:28,speed:1,settings:{}}],audio:[]};}
 let state=initialState();
 function selectedClip(){return state.clips.find(clip=>clip.id===state.selection);}
 function selectedAudio(){return state.audio.find(audio=>audio.id===state.selection);}
@@ -50,10 +50,10 @@ function updatePicture(){
   picture.style.transform=`translate(${pan.x}px,${pan.y}px) scale(${state.zoom})`;
   $('#stage').classList.toggle('pannable',state.zoom>1&&!viewerMode);
   const clip=selectedClip(),s=video?(skimTime===null&&clip?{...state.settings,...clip.settings}:lookAt(skimTime??state.time)):settings();
-  const filters={original:'',warm:'sepia(.25) saturate(.85)',cool:'hue-rotate(15deg) saturate(.7)',mono:'grayscale(1)',soft:'contrast(.8)',film:'sepia(.4) contrast(1.1)'};
-  $('#photo').style.filter=`brightness(${1+(s.exposure||0)/200+(s.brightness||0)/250}) contrast(${1+(s.contrast||0)/150}) saturate(${1+(s.saturation||0)/100}) sepia(${Math.max(0,s.warmth||0)/250}) ${filters[stylePreview??s.style]||''}`;
+  const filterOf=(list,group,fallback)=>(list.find(([key])=>key===(stylePreview?.group===group?stylePreview.key:(s[group]??fallback)))||[])[2]||'';
+  $('#photo').style.filter=`brightness(${1+(s.exposure||0)/200+(s.brightness||0)/250}) contrast(${1+(s.contrast||0)/150}) saturate(${1+(s.saturation||0)/100}) sepia(${Math.max(0,s.warmth||0)/250}) ${filterOf(UNDERTONES,'undertone','neutral')} ${filterOf(LOOKS,'style','original')}`;
   const angle=state.straighten||0,rad=Math.abs(angle)*Math.PI/180,ratio=w/h,cover=Math.cos(rad)+Math.max(ratio,1/ratio)*Math.sin(rad);
-  $('#photo').style.transform=`rotate(${state.rotation+angle}deg) scale(${cover}) scaleX(${state.flipped?-1:1})`;
+  $('#photo').style.transform=`rotate(${state.rotation+angle}deg) scale(${cover}) scaleX(${state.flipped?-1:1}) scaleY(${state.flippedV?-1:1})`;
   $('#crop-box').hidden=!crop;
   const c=state.crop;Object.assign($('#crop-box').style,{left:`${c.x}%`,top:`${c.y}%`,width:`${c.w}%`,height:`${c.h}%`});
   if($('#crop-dimensions'))$('#crop-dimensions').textContent=cropDimensions();
@@ -78,7 +78,7 @@ function setTool(tool){
   state.tool=tool;render();
 }
 function applyRatio(){
-  if(['Free','Original'].includes(state.ratio)){state.crop={x:8,y:8,w:84,h:84};return;}
+  if(['Free','Original'].includes(state.ratio)){state.crop={x:0,y:0,w:100,h:100};return;}
   let [w,h]=state.ratio.split(':').map(Number);if(state.portrait)[w,h]=[h,w];
   const base=state.mode==='video'?16/9:state.portrait?520/715:1000/720;
   const relative=w/h/base;const cw=relative>1?84:84*relative,ch=relative>1?84/relative:84;
@@ -119,15 +119,21 @@ function action(name,node){
     ratio:()=>{easeCrop();commit(()=>{state.ratio=node.dataset.ratio;applyRatio();});},
     orientation:()=>{easeCrop();commit(()=>{state.portrait=node.dataset.portrait==='true';applyRatio();});},
     rotate:()=>{easeCrop();commit(()=>state.rotation+=90);},
+    'rotate-left':()=>{easeCrop();commit(()=>state.rotation-=90);},
+    'flip-v':()=>{easeCrop();commit(()=>state.flippedV=!state.flippedV);},
     flip:()=>{easeCrop();commit(()=>state.flipped=!state.flipped);},
-    'reset-crop':()=>{easeCrop();commit(()=>{state.crop={x:8,y:8,w:84,h:84};state.ratio='Free';state.rotation=0;state.straighten=0;state.flipped=false;});},
-    style:()=>{stylePreview=null;commit(()=>settings().style=node.dataset.style);},
+    'reset-crop':()=>{easeCrop();commit(()=>{state.crop={x:0,y:0,w:100,h:100};state.ratio='Free';state.rotation=0;state.straighten=0;state.flipped=false;state.flippedV=false;});},
+    style:()=>{stylePreview=null;commit(()=>settings()[node.dataset.group]=node.dataset.style);},
+    'style-page':()=>{const row=node.parentElement.querySelector('.style-row');row.scrollBy({left:(row.clientWidth+8)*Number(node.dataset.dir),behavior:reducedMotion()?'auto':'smooth'});},
     'mark-type':()=>commit(()=>settings().markType=node.dataset.type),
     font:()=>commit(()=>settings().font=node.dataset.font),
     caption:()=>{commit(()=>{state.captionVisible=true;if(state.mode==='video'){const s=state.settings,total=duration();state.selection='caption';s.captionStart=Math.min(state.time,Math.max(0,total-1));s.captionDuration=Math.min(4,total-s.captionStart);}});if(state.mode==='video'){if(document.querySelector('#timeline').clientHeight<280)document.documentElement.style.setProperty('--timeline-height','280px');document.querySelector('[data-caption]')?.scrollIntoView({block:'nearest'});}},
     'remove-text':()=>{commit(()=>{state.captionVisible=false;if(state.selection==='caption')state.selection=null;});toast('Text removed.',true);},
     'edit-text':()=>setTimeout(editCaption,0),
     'text-color':()=>commit(()=>settings().textColor=node.dataset.color),
+    swatch:()=>commit(()=>settings()[node.dataset.key]=node.dataset.color),
+    face:()=>commit(()=>{const faces=new Set(settings().faces||[]),face=node.dataset.face;faces.has(face)?faces.delete(face):faces.add(face);settings().faces=[...faces];}),
+    'appear-here':()=>commit(()=>settings().appearsAt=Math.round(state.time*10)/10),
     split:splitClip,
     'move-left':()=>moveClip(-1),'move-right':()=>moveClip(1),
     freeze:()=>{const clip=selectedClip();if(clip)flipLane(()=>commit(()=>{const freeze={id:uid('clip'),name:'Freeze frame',duration:2,sourceStart:clip.sourceStart,speed:1,freeze:true,settings:{...clip.settings}};state.clips.splice(state.clips.indexOf(clip)+1,0,freeze);state.selection=freeze.id;}));},
@@ -176,7 +182,10 @@ function play(){if(currentMedia().gif&&viewerMode){setFramePlaying(!frameClock.p
 function tick(now){if(!playing)return;state.time=Math.min(duration(),state.time+(now-lastTick)/1000*(viewerMode?viewerSpeed:1));lastTick=now;if(state.time>=duration())playing=false;updatePlayhead();if(playing)requestAnimationFrame(tick);}
 document.addEventListener('click',event=>{
   const tool=event.target.closest('[data-tool]');if(tool){setTool(tool.dataset.tool);return;}
-  const node=event.target.closest('[data-action]');if(node)action(node.dataset.action,node);
+  const node=event.target.closest('[data-action]');if(node){action(node.dataset.action,node);return;}
+  // The Text pen places text where the picture is clicked, as the app does (RD-203).
+  const picture=event.target.closest('#picture');
+  if(picture&&!viewerMode&&state.tool==='markup'&&val('markType','text')==='text'&&!state.captionVisible&&!event.target.closest('#caption')){const r=picture.getBoundingClientRect();settings().captionX=Math.round((event.clientX-r.left)/r.width*100);settings().captionY=Math.round((event.clientY-r.top)/r.height*100);action('caption');}
 });
 document.addEventListener('input',event=>{
   const node=event.target,key=node.dataset.value;if(!key)return;if(inputBefore===null)inputBefore=JSON.stringify(state);

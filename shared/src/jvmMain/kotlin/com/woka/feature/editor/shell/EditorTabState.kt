@@ -51,33 +51,3 @@ internal fun rememberEditorTabs(tools: List<EditorTool>, blocked: Map<String, St
     val chosen = remember { mutableStateOf<String?>(null) }
     return remember(tools, blocked) { EditorTabState(tabsOf(tools), blocked, chosen) }
 }
-
-/**
- * The side panel a row opens (`ParamAccessory`), floated left of the inspector over the
- * canvas, top-aligned (RD-201). It used to grow out of the floating card's side; the panel
- * is docked now, so the card slides out from under its left edge instead.
- */
-@Composable
-internal fun BoxScope.EditorAccessoryFloat(accessory: InspectorAccessory) {
-    val content = accessory.content
-    var last by remember { mutableStateOf(content) }
-    if (content != null) last = content
-    AnimatedVisibility(
-        visible = content != null,
-        modifier = Modifier
-            .align(Alignment.TopEnd)
-            .padding(top = EditorTokens.Panel.accessoryInset, end = EditorTokens.Panel.accessoryInset),
-        enter = fadeIn() + slideInHorizontally(spring(dampingRatio = 0.82f, stiffness = 300f)) { it / 2 },
-        exit = fadeOut() + slideOutHorizontally { it / 2 }
-    ) {
-        val shape = RoundedCornerShape(EditorTokens.Panel.accessoryRadius)
-        Box(
-            Modifier
-                .shadow(16.dp, shape)
-                .background(Theme.room.menu, shape)
-                .border(1.dp, Theme.room.line, shape)
-        ) {
-            last?.invoke()
-        }
-    }
-}

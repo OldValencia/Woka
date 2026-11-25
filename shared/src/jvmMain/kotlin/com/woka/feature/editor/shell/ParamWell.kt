@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.editor.core.ActionParam
-import com.woka.feature.editor.core.FloatParam
+import com.woka.feature.editor.core.ParamSpec
 import com.woka.feature.editor.core.ParamSet
 import org.jetbrains.compose.resources.painterResource
 
@@ -45,7 +45,9 @@ import org.jetbrains.compose.resources.painterResource
  * Styles' intensity, a film's speed.
  */
 @Composable
-internal fun ScrubWell(specs: List<FloatParam>, params: ParamSet, writer: ParamWriter) {
+internal fun ScrubWell(specs: List<ParamSpec<*>>, params: ParamSet, writer: ParamWriter) {
+    // A pad is two rows over one stored point — see `ScrubLevel`.
+    val levels = specs.flatMap { writer.levelsOf(it, params) }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -53,9 +55,9 @@ internal fun ScrubWell(specs: List<FloatParam>, params: ParamSet, writer: ParamW
             .background(Theme.room.well)
             .testTag("param-well")
     ) {
-        specs.forEachIndexed { index, spec ->
+        levels.forEachIndexed { index, level ->
             if (index > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(Theme.room.line))
-            key(spec.key) { ScrubRow(spec, params, writer) }
+            key(level.spec.key) { ScrubRow(level) }
         }
     }
 }
@@ -65,11 +67,11 @@ internal fun ScrubWell(specs: List<FloatParam>, params: ParamSet, writer: ParamW
  * Auto-enhance. The glyph takes the room's accent, the word its text.
  */
 @Composable
-internal fun WellButton(spec: ActionParam, writer: ParamWriter) {
+internal fun WellButton(spec: ActionParam, writer: ParamWriter, modifier: Modifier = Modifier, accentGlyph: Boolean = false) {
     val hover = remember { MutableInteractionSource() }
     val hovered by hover.collectIsHoveredAsState()
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .heightIn(min = 40.dp)
             .clip(RoundedCornerShape(10.dp))
@@ -82,9 +84,13 @@ internal fun WellButton(spec: ActionParam, writer: ParamWriter) {
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
     ) {
         spec.icon?.let { glyph ->
-            Image(painterResource(glyph), null, Modifier.size(17.dp), colorFilter = ColorFilter.tint(Theme.room.accent))
+            val tint = if (accentGlyph) Theme.room.accent else Theme.room.muted
+            Image(painterResource(glyph), null, Modifier.size(17.dp), colorFilter = ColorFilter.tint(tint))
         }
-        BasicText(spec.label, style = TextStyle(color = Theme.room.text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
+        BasicText(
+            spec.label,
+            style = TextStyle(color = Theme.room.text, fontSize = 13.sp, fontWeight = if (accentGlyph) FontWeight.SemiBold else FontWeight.Normal)
+        )
     }
 }
 
@@ -113,5 +119,27 @@ internal fun TextAction(spec: ActionParam, writer: ParamWriter) {
             Image(painterResource(glyph), null, Modifier.size(14.dp), colorFilter = ColorFilter.tint(tint))
         }
         BasicText(spec.label, style = TextStyle(color = tint, fontSize = 12.sp))
+    }
+}
+
+/** A group's name above its control (`.group-label`): Shape, Orientation, a choice's own word. */
+@Composable
+internal fun GroupLabel(text: String) {
+    BasicText(
+        text = text,
+        modifier = Modifier.padding(start = 4.dp),
+        style = TextStyle(color = Theme.room.muted, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+    )
+}
+
+/** Actions side by side, two to a row (`.transform-actions`). */
+@Composable
+internal fun ActionGrid(actions: List<ActionParam>, writer: ParamWriter) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        actions.chunked(2).forEach { pair ->
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                pair.forEach { spec -> key(spec.key) { WellButton(spec, writer, Modifier.weight(1f)) } }
+            }
+        }
     }
 }

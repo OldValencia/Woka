@@ -1,7 +1,9 @@
 package com.woka.feature.editor.tools.transform
 
+import androidx.compose.ui.unit.IntSize
 import com.woka.core.ui.icons.Icons
 import com.woka.feature.editor.core.ActionParam
+import com.woka.feature.editor.core.CanvasMotion
 import com.woka.feature.editor.core.EditorTool
 import com.woka.feature.editor.core.ParamSet
 import com.woka.feature.editor.core.ParamSpec
@@ -9,6 +11,7 @@ import com.woka.feature.editor.core.ToolCardinality
 import com.woka.feature.editor.core.ToolDomain
 import com.woka.feature.editor.core.ToolInteraction
 import com.woka.feature.editor.core.ToolManifest
+import com.woka.feature.editor.core.ToolOp
 import com.woka.feature.editor.core.ToolStage
 import com.woka.feature.editor.engine.image.RasterStage
 
@@ -28,17 +31,17 @@ import com.woka.feature.editor.engine.image.RasterStage
  */
 object TransformTool : EditorTool {
 
-    val RotateLeft = ActionParam("rotateLeft", "Rotate left")
-    val RotateRight = ActionParam("rotateRight", "Rotate right")
-    val FlipHorizontal = ActionParam("flipHorizontal", "Flip horizontal")
-    val FlipVertical = ActionParam("flipVertical", "Flip vertical")
+    val RotateLeft = ActionParam("rotateLeft", "Rotate left", icon = Icons.Static.RotateLeft)
+    val RotateRight = ActionParam("rotateRight", "Rotate right", icon = Icons.Static.RotateRight)
+    val FlipHorizontal = ActionParam("flipHorizontal", "Flip horizontal", icon = Icons.Static.FlipHorizontal)
+    val FlipVertical = ActionParam("flipVertical", "Flip vertical", icon = Icons.Static.FlipVertical)
 
     override val manifest = ToolManifest(
         id = "transform",
         title = "Transform",
         summary = "Rotate and flip",
-        // Until a rotate glyph exists; the manifest is the only place to change it.
-        icon = Icons.Static.Editor,
+        // The tab's glyph is the crop frame, as the prototype draws it: the tab holds Crop too.
+        icon = Icons.Static.Crop,
         domain = ToolDomain.Geometry,
         order = 0,
         cardinality = ToolCardinality.Repeating,
@@ -54,4 +57,17 @@ object TransformTool : EditorTool {
      */
     override fun stage(params: ParamSet): ToolStage? =
         matrixFor(params)?.let { RasterStage.Geometry(it) }
+
+    /** A press turns or mirrors the whole picture, and the canvas plays it (RD-203). */
+    override fun canvasMotion(op: ToolOp): CanvasMotion? = when {
+        op.params[RotateLeft] -> CanvasMotion(degrees = -90f)
+        op.params[RotateRight] -> CanvasMotion(degrees = 90f)
+        op.params[FlipHorizontal] -> CanvasMotion(flipX = true)
+        op.params[FlipVertical] -> CanvasMotion(flipY = true)
+        else -> null
+    }
+
+    /** The picture's size as it now stands — crop and turn included (RD-203, `.size-line`). */
+    override fun footnote(params: ParamSet, frame: IntSize): String =
+        "${frame.width} × ${frame.height} px"
 }
