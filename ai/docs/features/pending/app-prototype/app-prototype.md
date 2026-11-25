@@ -5,7 +5,8 @@
 One living HTML prototype of the whole app — library, viewer, editor, dialogs — in
 `ai/mockups/design/woka.html`. It grows out of `editor-next.html`, the editor concept drawn for the
 1.0.9 redesign (`next_steps.md`: the current editor did not justify itself in UX terms), and it
-replaces `FINAL_design_mockup.html` as the visual truth.
+replaced `FINAL_design_mockup.html` as the visual truth on 2026-11-25 (PT-301); the earlier mockups are in
+`ai/mockups/design/legacy/`.
 
 **What it shows.** The **target** design first: the screens 1.0.9 redesigns (viewer, both editors)
 are drawn as they are meant to become, every other screen is ported from the code as it is. Once a
@@ -26,9 +27,10 @@ Plan agreed with the author 2026-11-25, in conversation.
 | [PT-102 — carousel badges and Original in the viewer](tickets/PT-102-badges-original.md) | done 2026-11-25, accepted by the author |
 | [PT-103 — fullscreen and PiP](tickets/PT-103-fullscreen-pip.md) | done 2026-11-25, accepted by the author |
 | [PT-105 — dialogs section](tickets/PT-105-dialogs.md) | done 2026-11-25, accepted by the author |
-| [PT-201 — sidebar, toolbar, grid](tickets/PT-201-library-grid.md) | built 2026-11-25 |
-| [PT-202 — search, Info, Settings, Quick Look, selection](tickets/PT-202-library-panels.md) | built 2026-11-25 |
-| PT-104, PT-301 | [backlog](tickets/backlog.md) |
+| [PT-201 — sidebar, toolbar, grid](tickets/PT-201-library-grid.md) | done 2026-11-25, accepted by the author |
+| [PT-202 — search, Info, Settings, Quick Look, selection](tickets/PT-202-library-panels.md) | done 2026-11-25, accepted by the author |
+| [PT-301 — visual truth switches to woka.html](tickets/PT-301-visual-truth.md) | done 2026-11-25 |
+| PT-104 | [backlog](tickets/backlog.md) — waits on the 1.0.9 per-kind size plan |
 
 ## Starting point (read 2026-11-25)
 
@@ -139,3 +141,4 @@ dialogs — file info, rename, create a copy, keep changes, revert.
 | 2026-11-25 | Reserved place for 1.1.3 modes (slideshow, compare, eyedropper) | Not drawn; the pill's right group is where they go | An empty slot is a guess at a layout that 1.1.3 has not planned |
 | 2026-11-25 | How the prototype is checked | Headless Edge over CDP, `shot.mjs` | The Chrome extension is disabled by the author's organisation |
 | 2026-11-25 | What proves a restyle changed nothing | Computed styles of every element, not PNG bytes | Two runs of the unchanged page differed in 6 of 48 PNGs; their computed styles matched exactly |
+| 2026-11-25 | What happens to the earlier mockups | Moved to `ai/mockups/design/legacy/`, paths repointed; the prototype stays at `ai/mockups/design/` | The author: keep them as history, the living design where it is |

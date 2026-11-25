@@ -4,7 +4,7 @@
 |---|---|
 | **Order** | 5 — first of the audio tickets |
 | **Depends on** | AP-001 (formats, fixtures), AP-004…AP-008 (Now Playing) |
-| **Feature** | [Audio player](../audio-player.md) — §3.1–§3.4; spec `ai/mockups/design/audio-player.html` |
+| **Feature** | [Audio player](../audio-player.md) — §3.1–§3.4; spec `ai/mockups/design/legacy/audio-player.html` |
 
 **Goal.** An audio file in a linked folder shows as a cover tile, opens in the viewer as the mockup
 draws it, plays, seeks, repeats and shuffles over the folder's audio files, and keeps playing in

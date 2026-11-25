@@ -6,8 +6,8 @@ Everything under `core/ui/`, `app/shell/`, and any `feature/*/` file that draws.
 
 **Apple HIG, never Material as a look.** 1.dp borders, 8–12.dp radii, `Theme.colors.*`, `#F2F2F7` and
 its dark twin for surfaces, animation instead of elevation. No `MaterialTheme`, no Material colour
-roles, no shadow used as decoration. `ai/mockups/design/FINAL_design_mockup.html` is the visual truth;
-a feature with its own surface has its own mockup beside it.
+roles, no shadow used as decoration. `ai/mockups/design/woka.html` is the visual truth; a feature
+with its own surface adds its scenes to it (`feature-docs.md` §6).
 
 **No Material imports in new code.** Text is `BasicText` with an explicit `TextStyle`
 (`DropdownItem.kt:68`); an icon is `Image(painterResource(res), colorFilter = ColorFilter.tint(…))`

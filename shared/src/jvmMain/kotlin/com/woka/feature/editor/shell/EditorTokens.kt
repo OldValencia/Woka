@@ -8,7 +8,7 @@ import androidx.compose.ui.unit.sp
 
 /**
  * Every chrome measurement the editor draws with, mirroring
- * `ai/mockups/design/editor.html` — which is the spec, not a proposal. A
+ * `ai/mockups/design/legacy/editor.html` — which is the spec, not a proposal. A
  * disagreement is settled by changing the mockup first.
  *
  * **No colour is declared here.** `Theme.viewer` (`ViewerChrome`) owns both halves

@@ -314,7 +314,7 @@ the bottom edge and the inspector opens *above* it. The strip therefore never mo
 picked — which matters, because the strip is where the selection lives, and a selection that jumps
 under the cursor is the opposite of "anyone can work it out immediately".
 
-Geometry, colour and timing: [`ai/mockups/design/video-editor.html`](../../../../mockups/design/video-editor.html),
+Geometry, colour and timing: [`ai/mockups/design/legacy/video-editor.html`](../../../../mockups/design/legacy/video-editor.html),
 which is the spec and not a proposal — a disagreement is settled by changing it first. It reuses
 `editor.html`'s tokens verbatim.
 

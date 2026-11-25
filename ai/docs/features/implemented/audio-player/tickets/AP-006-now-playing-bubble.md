@@ -4,7 +4,7 @@
 |---|---|
 | **Order** | 3 — after AP-004 |
 | **Depends on** | AP-004 (`NowPlaying`, `NowPlayingSource`, `NowPlayingCover`, `RoundIconButton`) |
-| **Feature** | [Audio player](../audio-player.md) — §3.5; spec `ai/mockups/design/now-playing.html` |
+| **Feature** | [Audio player](../audio-player.md) — §3.5; spec `ai/mockups/design/legacy/now-playing.html` |
 
 **Goal.** With the sidebar hidden, the slot's source shows as a 48 dp bubble in one corner of the
 window: cover, progress ring, at-rest glyph. On hover it opens into a capsule with name,

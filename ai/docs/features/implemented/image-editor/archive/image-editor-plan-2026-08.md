@@ -12,7 +12,7 @@ pixels is built media-agnostic, so the Video Editor (Phase 5b) adds a tool set a
 inherits the session, the history, the tool system, the whole shell UI, the backup model and the
 save job unchanged.
 
-Reference: `ai/mockups/design/FINAL_design_mockup.html` · iOS Photos editor is the UX model.
+Reference: `ai/mockups/design/legacy/FINAL_design_mockup.html` · iOS Photos editor is the UX model.
 
 ---
 

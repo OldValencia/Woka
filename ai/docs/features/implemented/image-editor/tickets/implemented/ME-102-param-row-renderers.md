@@ -41,7 +41,7 @@ is a *ground* takes a dark label: the `Done` pill, a filled primary button, a ch
 darkened variant of the accent, because a light ground with a dark label needs none (red still does —
 white on `#E5484D` is 2.9 : 1, so `--danger-solid` stays). As a *glyph* on the inspector scrim the new
 accent measures **6.15 : 1** against the old purple's 3.59, so selection marks get better, not worse.
-`ai/mockups/design/editor.html` is already repainted to all of this — it is the spec, and a spec
+`ai/mockups/design/legacy/editor.html` is already repainted to all of this — it is the spec, and a spec
 disagreeing with its ticket is worse than none.
 
 `Theme.colors.accentEditor` is **repainted** to that value rather than call sites reaching for

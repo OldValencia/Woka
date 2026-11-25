@@ -13,7 +13,7 @@ a mockup disagrees visibly.
 
 ## Steps
 
-1. `ai/mockups/design/editor.html`: the layout from §4.2 — top bar, canvas, inspector, rail — in both
+1. `ai/mockups/design/legacy/editor.html`: the layout from §4.2 — top bar, canvas, inspector, rail — in both
    themes with a toggle, per `ai/docs/conventions/feature-docs.md` §6. Self-contained, no CDN, opens
    by double-click. Every state that has to be built:
    - a tool selected, unselected, and disabled;
@@ -35,7 +35,7 @@ a mockup disagrees visibly.
 
 ## Files
 
-`ai/mockups/design/editor.html` (new), `jvmMain feature/editor/shell/EditorTokens.kt` (new),
+`ai/mockups/design/legacy/editor.html` (new), `jvmMain feature/editor/shell/EditorTokens.kt` (new),
 `ai/docs/features/pending/image-editor/image-editor.md` (edit)
 
 ## Done when
@@ -46,7 +46,7 @@ a mockup disagrees visibly.
 
 ## Result — 2026-08-18
 
-`ai/mockups/design/editor.html` (new, self-contained), `feature/editor/shell/EditorTokens.kt` (new),
+`ai/mockups/design/legacy/editor.html` (new, self-contained), `feature/editor/shell/EditorTokens.kt` (new),
 `core/ui/theme/ViewerChrome.kt` (extended), `image-editor.md` (§4.2 + decision log + status),
 `tickets/backlog.md` (ME-121).
 

@@ -6,7 +6,7 @@
 | **Resolved** | 2026-08-31 — candidate 1, painted properly, plus a fan on hover |
 | **Area** | `core/ui/components/FolderCard*` — Home, the folder grid, Search |
 | **Depends on** | the borrowed cover (`folder-of-folders-has-no-cover.md`), which is what made this visible |
-| **Mockup** | `ai/mockups/design/folder-card-stack.html` — both themes, four variants, two screens |
+| **Mockup** | `ai/mockups/design/legacy/folder-card-stack.html` — both themes, four variants, two screens |
 
 ## Resolved 2026-08-31 — the answer is the stack edge, drawn as it was specified
 
@@ -77,7 +77,7 @@ from, and the blank-looking tile it produced is what was reported.
 
 ## What was done
 
-1. **`ai/mockups/design/folder-card-stack.html` (new)** — the spec. Both themes on the real tokens,
+1. **`ai/mockups/design/legacy/folder-card-stack.html` (new)** — the spec. Both themes on the real tokens,
    four ways to paint the sheets side by side, and the same four on two screens: a Linked Folder that
    mixes folders with pictures, and Home, where every tile is a folder. Three additions to C were
    offered as independent switches — an inset cover, a fan on hover, a warm `accentFolders` outline —

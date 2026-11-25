@@ -4,7 +4,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * Now Playing's geometry, taken from `ai/mockups/design/now-playing.html` (accepted
+ * Now Playing's geometry, taken from `ai/mockups/design/legacy/now-playing.html` (accepted
  * 2026-11-01). Each value names the CSS rule it comes from, as `SidebarTokens` does.
  */
 internal object NowPlayingTokens {

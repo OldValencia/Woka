@@ -6,7 +6,7 @@
 > decisions the new doc reverses, notably the launch flag and the "no inference" rule.
 
 **Status: designed, nothing built.** The problem statement is `idea--rethink-home.md` beside this
-file. The visual spec is `ai/mockups/design/rethink-home.html` — once a UI ticket is written,
+file. The visual spec is `ai/mockups/design/legacy/rethink-home.html` — once a UI ticket is written,
 disagreements are settled by changing the mockup first.
 
 ## The problem

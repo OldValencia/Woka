@@ -26,7 +26,7 @@ disagree, this file wins.
   mutate a list or object in place, always `.copy()`.
 - **Design: Apple HIG, never Material.** Minimalist, 1.dp borders, 8–12.dp radii, `#F2F2F7` (or its
   dark equivalent) surfaces, clean cards, smooth animations.
-  Ref: `ai/mockups/design/FINAL_design_mockup.html`.
+  Ref: `ai/mockups/design/woka.html` — the prototype of the whole app (`feature-docs.md` §6).
 - **Desktop-only APIs** (folder pickers, native dialogs) go through `jvmMain` `expect`/`actual` with
   AWT `FileDialog` — see `ui/components/dialogs/Dialogs.kt`.
 

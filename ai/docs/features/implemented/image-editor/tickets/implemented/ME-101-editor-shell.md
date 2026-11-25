@@ -142,7 +142,7 @@ appears by accident does not keep the promise.
 
 Fixed in the design, not in the test: `EditorSkippedNotice` is its own composable, stacked **above**
 the inspector and shown whenever `skippedOps` is non-empty, tool open or not. `EditorInspector` lost two
-parameters and got smaller. `ai/mockups/design/editor.html` §4 is redrawn to match — the mockup is the
+parameters and got smaller. `ai/mockups/design/legacy/editor.html` §4 is redrawn to match — the mockup is the
 spec, so it changes first.
 
 ### Two smaller things the tree decided

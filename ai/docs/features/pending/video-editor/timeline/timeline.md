@@ -118,7 +118,7 @@ for `holdMs`. No second concept, and no branch anywhere except where duration is
 ## 4. UI
 
 The two states of the band, and the four gestures, are specified in the umbrella (§4.2, §4.3) and
-drawn in [`ai/mockups/design/video-editor.html`](../../../../../mockups/design/video-editor.html). What
+drawn in [`ai/mockups/design/legacy/video-editor.html`](../../../../../mockups/design/legacy/video-editor.html). What
 belongs here is what the *tool* contributes:
 
 - **Rail entry:** `✂ Trim`, in a new `ToolDomain.Time` group, first in the rail. One entry, not

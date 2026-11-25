@@ -43,7 +43,7 @@ const val FOLDER_STACK_TAG = "folder-stack"
  * left unoutlined: in the light theme that was white on `#F2F2F7`, in the dark theme it
  * repeated the tile, and a folder carrying a borrowed cover ended up indistinguishable
  * from a photograph. Their own tokens and a hairline are what the mockup asked for from
- * the start — `ai/mockups/design/folder-card-stack.html`, variant C.
+ * the start — `ai/mockups/design/legacy/folder-card-stack.html`, variant C.
  *
  * Hovering slides both sheets further out while their insets narrow, so the stack opens
  * like a hand of cards. That is "there is more inside" said as a movement, which is why

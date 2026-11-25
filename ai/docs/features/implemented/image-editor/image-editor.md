@@ -19,8 +19,8 @@ image-editor/
 ```
 
 Conventions: `ai/docs/conventions/feature-docs.md` · `tickets.md` · `code-style/README.md`.
-UX model: the iOS Photos editor. Visual truth: `ai/mockups/design/FINAL_design_mockup.html`, plus
-`ai/mockups/design/editor.html`.
+UX model: the iOS Photos editor. Visual truth: `ai/mockups/design/legacy/FINAL_design_mockup.html`, plus
+`ai/mockups/design/legacy/editor.html`.
 
 ---
 
@@ -414,7 +414,7 @@ schema and — where it needs one — an overlay, and gets that layout without w
 The name beside the icon is not decoration: with names in tooltips, two tools whose glyphs had not
 been drawn yet were two identical squares nobody could tell apart (2026-08-22).
 
-Concrete geometry, colours and timings live in `ai/mockups/design/editor.html` and are mirrored by
+Concrete geometry, colours and timings live in `ai/mockups/design/legacy/editor.html` and are mirrored by
 `feature/editor/shell/EditorTokens.kt`. **The editor follows the app theme**; the one layer that does
 not is chrome sitting on the photograph, which takes `ViewerChrome`'s dark scrims and its light
 `onScrim*` foregrounds in both themes — legibility over a picture cannot depend on a preference. The rail reuses the viewer's controls container; row renderers reuse

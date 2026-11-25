@@ -11,8 +11,8 @@ here so that `ai/` stays the single place project knowledge is written and read.
   `<feature>/<feature>.md` — the same feature file, named after the folder — plus `tickets/` (one
   file per specified ticket and `backlog.md` for everything after).
 - Fully shipped → **move** to `ai/docs/features/implemented/`; images to the sibling `assets/`.
-- A feature introducing a new UI surface gets `ai/mockups/design/<feature>.html` before its UI
-  tickets are written.
+- A feature introducing a new UI surface adds its scenes to `ai/mockups/design/woka.html` before its
+  UI tickets are written (`feature-docs.md` §6).
 
 ## 2. Read first
 

@@ -15,7 +15,7 @@ particular frame on screen, and there is no way to reach one. It is also the slo
 this exists.
 
 **Design:** [`../../video-editor.md`](../../../../pending/video-editor/video-editor.md) §3.4 and §4.1–4.2 · the spec for every
-measurement here is [`video-editor.html`](../../../../../../mockups/design/video-editor.html), state 1.
+measurement here is [`video-editor.html`](../../../../../../mockups/design/legacy/video-editor.html), state 1.
 
 ---
 

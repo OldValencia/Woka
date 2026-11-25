@@ -28,7 +28,8 @@ Read the relevant doc before planning or implementing; never invent behaviour th
   pointing back here.
 - `docs/features/pending/` — approved but unshipped work; **work comes from here**
 - `docs/features/implemented/` — shipped plans (+ sibling `assets/`)
-- `mockups/design/FINAL_design_mockup.html` — visual truth · `mockups/logos/` — branding
+- `mockups/design/woka.html` — visual truth: the whole app, a scene per screen, `#section/scene`
+  links · `mockups/design/legacy/` — earlier mockups · `mockups/logos/` — branding
 
 Small feature → `pending/<name>.md` per `docs/conventions/plans.md`. Feature outliving one sitting →
 a **folder**: `pending/<feature>/<feature>.md` — the same feature file, named after its folder — plus

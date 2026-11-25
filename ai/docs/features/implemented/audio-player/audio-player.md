@@ -203,7 +203,7 @@ Layout: the mockup (§6).
   dragged between them and snapping to the nearest; corner persisted, default bottom-left. Hover
   expands it into a capsule with the name, play/pause and a `×` that stops playback and empties the
   slot. Hiding the sidebar flies the row's content to the corner, showing it flies it back.
-- Geometry, states and timings: `ai/mockups/design/now-playing.html`.
+- Geometry, states and timings: `ai/mockups/design/legacy/now-playing.html`.
 - **Bubble hidden:** slot empty; the viewer is open on the slot's file; fullscreen video; the editor
   is open — and back as soon as the editor closes.
 
@@ -231,14 +231,14 @@ PiP is the thing that is hard to find today — and audio joins the slot when it
 
 | Ticket | Title | Status |
 |---|---|---|
-| mockup | [`now-playing.html`](../../../../mockups/design/now-playing.html) — row, bubble, capsule, drag, flight | **accepted** 2026-11-01 — the spec for AP-004…AP-006 |
+| mockup | [`now-playing.html`](../../../../mockups/design/legacy/now-playing.html) — row, bubble, capsule, drag, flight | **accepted** 2026-11-01 — the spec for AP-004…AP-006 |
 | [AP-001](tickets/AP-001-audio-format-probe.md) | Probe: every candidate format through the player's grabber | **measured** 2026-11-01, every candidate (§1a), the last nine on downloaded samples |
 | [AP-004](tickets/AP-004-now-playing-row.md) | Now Playing: the slot and its sidebar row, PiP video as the source (absorbs AP-005) | **done** 2026-11-01 — `:shared:build` green; checked by the author in the running app |
 | AP-005 | merged into AP-004 | retired |
 | [AP-006](tickets/AP-006-now-playing-bubble.md) | The bubble when the sidebar is hidden | **done** 2026-11-01 — checked by the author in the running app |
 | [AP-008](tickets/AP-008-now-playing-flight.md) | The cover flies between row and corner | **done** 2026-11-01 — checked by the author in the running app |
 | [AP-007](tickets/AP-007-media-keys-through-smtc.md) | Media keys and the Windows media panel through SMTC, owned by Now Playing | **done** 2026-11-01 — checked by the author in the running app and on the packaged `Woka.exe` |
-| mockup | [`audio-player.html`](../../../../mockups/design/audio-player.html) — the viewer and the grid tile for an audio file | **accepted** 2026-11-01 — the spec for AP-003 |
+| mockup | [`audio-player.html`](../../../../mockups/design/legacy/audio-player.html) — the viewer and the grid tile for an audio file | **accepted** 2026-11-01 — the spec for AP-003 |
 | [AP-003](tickets/AP-003-audio-plays-in-the-viewer.md) | An audio file opens in the viewer, plays, and carries on in Now Playing (absorbs AP-002) | **done** 2026-11-01 — checked by the author in the running app |
 | AP-002 | merged into AP-003 | retired |
 | [AP-009](tickets/AP-009-audio-in-the-library.md) | `Music` filter, file associations, the four formats measured on samples | **done** 2026-11-01 — checked by the author in the running app |
@@ -247,10 +247,10 @@ PiP is the thing that is hard to find today — and audio joins the slot when it
 
 New surfaces get a mockup before their UI ticket (`feature-docs.md` §6), and there are two:
 
-- `ai/mockups/design/now-playing.html` — the row, the bubble, the capsule, the four corners, drag
+- `ai/mockups/design/legacy/now-playing.html` — the row, the bubble, the capsule, the four corners, drag
   and snap, the flight between row and corner, visibility per screen; sources audio, audio without
   a cover, PiP video, empty; both themes.
-- `ai/mockups/design/audio-player.html` — the viewer for an audio file. Written when AP-003 is next.
+- `ai/mockups/design/legacy/audio-player.html` — the viewer for an audio file. Written when AP-003 is next.
 
 ## 7. Open
 

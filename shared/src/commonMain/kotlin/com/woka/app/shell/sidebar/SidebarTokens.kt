@@ -5,7 +5,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * The sidebar's geometry, taken from `ai/mockups/design/sidebar-redesign.html`. Each
+ * The sidebar's geometry, taken from `ai/mockups/design/legacy/sidebar-redesign.html`. Each
  * value names the CSS rule it comes from, so a change to the mockup has one place to
  * land.
  */

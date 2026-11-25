@@ -50,7 +50,7 @@ internal const val EDITOR_BAND_TAG = "editor-band"
  *
  * **The container is the rail's own** — `Theme.viewer.popoverScrim`, the rail's radius and
  * its padding — because it is chrome of the same kind sitting at the same edge, one gap
- * above it. The numbers mirror `ai/mockups/design/video-editor.html`, states 1–4.
+ * above it. The numbers mirror `ai/mockups/design/legacy/video-editor.html`, states 1–4.
  *
  * **Everything it shows is in timeline time.** The readout is the play head's place in the
  * *result* over the result's length, and the strip lays out what the document keeps — so

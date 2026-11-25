@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Order** | 1 — the only ticket |
-| **Depends on** | the accepted mockup, `ai/mockups/design/phosphor-icons.html` |
+| **Depends on** | the accepted mockup, `ai/mockups/design/legacy/phosphor-icons.html` |
 | **Feature** | [Phosphor icons](../phosphor-icons.md) — §2 |
 
 **Goal.** No icon the app draws comes from SF Symbols.

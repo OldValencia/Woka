@@ -4,7 +4,7 @@
 |---|---|
 | **Order** | 2 — after AP-001, first of the Now Playing tickets |
 | **Depends on** | nothing (AP-001 is measurement and touches none of this) |
-| **Feature** | [Audio player](../audio-player.md) — §3.3, §3.5; spec `ai/mockups/design/now-playing.html` |
+| **Feature** | [Audio player](../audio-player.md) — §3.3, §3.5; spec `ai/mockups/design/legacy/now-playing.html` |
 
 **Goal.** While a video is in PiP, the sidebar shows a Now Playing row above `Link Folder…` —
 poster, name, `Picture in Picture`, play/pause, `×` on hover — and a click on it brings the PiP

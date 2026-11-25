@@ -118,17 +118,25 @@ stays and a new one is appended.
 
 ## 6. Mockups
 
-`ai/mockups/design/FINAL_design_mockup.html` is the visual truth for the app shell. A feature that
-introduces a **new surface** (not a new button on an existing one) gets its own static mockup next to
-it, `ai/mockups/design/<feature>.html`, before its UI ticket is written:
+`ai/mockups/design/woka.html` (with its `woka/` folder) is the visual truth for the whole app —
+library, viewer, editors, dialogs — one prototype with a scene per screen and state, linked as
+`woka.html#section/scene`. A feature that introduces a **new surface** (not a new button on an
+existing one) adds its scenes to it before its UI ticket is written, rather than a mockup file of its
+own:
 
-- self-contained HTML, no build step, no CDN — opened by double-click;
-- the real tokens (`#F2F2F7`, 1.dp borders, 8–12.dp radii, the accent from `Theme.colors`);
-- both themes in the same file, toggled by a switch, so dark mode is designed rather than derived;
-- every state that has to be built — empty, hover, selected, disabled, error.
+- no build step, no CDN — opened by double-click;
+- every colour a token in `woka/tokens.css`, named after `Theme.colors`; no literal elsewhere;
+- both themes, toggled by the prototype bar, so dark mode is designed rather than derived;
+- every state that has to be built — empty, hover, selected, disabled, error — as a scene or reached
+  from one.
 
-The mockup is a **spec**, not a proposal: once it lands, the UI ticket implements it and disagreements
-are settled by changing the mockup first.
+The prototype is a **spec**, not a proposal: once a scene lands, the UI ticket implements it and
+disagreements are settled by changing the prototype first. A screen that has shipped is drawn as
+the app has it. It is checked with `ai/mockups/tools/shot.mjs` (headless Edge): screenshots per
+scene, and every element's computed style compared before and after a change.
+
+The mockups before it — `FINAL_design_mockup.html` and one file per feature — are in
+`ai/mockups/design/legacy/`, kept as the record the shipped features were built against.
 
 ## 7. Testing artefacts
 

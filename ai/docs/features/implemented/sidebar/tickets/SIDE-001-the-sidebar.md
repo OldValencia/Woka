@@ -21,7 +21,7 @@ Unlinking still fires immediately, as it does from Home's card today; SIDE-007 m
 author can see is the whole sidebar. A tree without Pinned, or a sidebar without the Library item
 removed, would show two places for the same folders.
 
-Visual values are from `ai/mockups/design/sidebar-redesign.html`, except the header height. It is
+Visual values are from `ai/mockups/design/legacy/sidebar-redesign.html`, except the header height. It is
 60.dp here, to line up with today's top bar; SIDE-003 brings both to 52.dp.
 
 ## Steps
