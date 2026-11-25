@@ -43,8 +43,8 @@ interface EditorToolPanel {
     fun lines(rows: List<ParamSpec<*>>): List<List<ParamSpec<*>>> = emptyList()
 
     /**
-     * Specs drawn in the card's **header** — its top right — rather than as rows of
-     * their own (ME-174).
+     * Specs drawn **above** the rows as full-width buttons rather than as rows of their
+     * own (ME-174; RD-202 moved them from the card's top right — Adjust's Auto-enhance).
      *
      * The same shape as [folded] and for the same reason: only the tool knows that one of
      * its controls is *about* the others rather than one of them. Adjust's Auto and Reset
@@ -56,6 +56,12 @@ interface EditorToolPanel {
      * `ActionParam`: Transform's four actions are the tool, and stay rows.
      */
     fun header(rows: List<ParamSpec<*>>): List<ParamSpec<*>> = emptyList()
+
+    /**
+     * Specs drawn **under** the rows as quiet text actions (RD-202): Adjust's Reset
+     * adjustments, done rarely and on purpose. Dropped from the rows like [header].
+     */
+    fun footer(rows: List<ParamSpec<*>>): List<ParamSpec<*>> = emptyList()
 
     /**
      * Specs that ride inside [spec]'s own popover instead of taking a control of their

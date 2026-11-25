@@ -36,7 +36,7 @@ abstract class AdjustParams {
      * Not a slider — a press, rendered as its own button above the chooser (ME-167).
      * What it computes and what it deliberately leaves alone is `AdjustAuto`'s.
      */
-    val Auto = ActionParam("auto", "Auto", icon = Icons.Static.MagicWand)
+    val Auto = ActionParam("auto", "Auto-enhance", icon = Icons.Static.MagicWand)
 
     /**
      * Every slider back to its detent (ME-174).
@@ -45,7 +45,7 @@ abstract class AdjustParams {
      * press *is* the reset, and a neutral set makes `adjustStage` answer null. What
      * would break it is giving this a `resolve`, which is why it does not have one.
      */
-    val ResetAll = ActionParam("resetAll", "Reset all", icon = Icons.Static.ResetAll)
+    val ResetAll = ActionParam("resetAll", "Reset adjustments", icon = Icons.Static.ResetAll)
 
     val Exposure =
         FloatParam(

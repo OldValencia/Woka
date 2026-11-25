@@ -39,28 +39,24 @@ class AdjustSectionUiTest {
                 onNodeWithText("Light").assertIsDisplayed()
                 onNodeWithText("Colour").assertIsDisplayed()
 
-                onNodeWithTag("param-chip-exposure").assertIsDisplayed()
-                onNodeWithTag("param-chip-warmth").assertDoesNotExist()
+                onNodeWithTag("param-exposure").assertIsDisplayed()
+                onNodeWithTag("param-warmth").assertDoesNotExist()
             }
         }
     }
 
-    /**
-     * The rule the section state exists for: without it the control under the strip goes
-     * on setting a parameter from a tab nobody is looking at.
-     */
+    /** A section shows its own levels and none of another's (RD-202). */
     @Test
-    fun `picking a section opens that section's first adjustment`() {
+    fun `picking a section shows that section's levels`() {
         onEditor(listOf(AdjustTool)) { harness ->
             onUi {
                 setContent { ParamPanel(AdjustTool, harness) }
                 onNodeWithText("Colour").performClick()
                 waitForIdle()
 
-                onNodeWithTag("param-chip-warmth").assertIsDisplayed()
-                onNodeWithTag("param-chip-exposure").assertDoesNotExist()
-                onNodeWithTag("param-saturation-slider").assertIsDisplayed()
-                onNodeWithTag("param-exposure-slider").assertDoesNotExist()
+                onNodeWithTag("param-warmth").assertIsDisplayed()
+                onNodeWithTag("param-saturation").assertIsDisplayed()
+                onNodeWithTag("param-exposure").assertDoesNotExist()
             }
         }
     }

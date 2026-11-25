@@ -1,6 +1,9 @@
 package com.woka.feature.editor.shell
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import com.woka.core.ui.components.SegmentedControl
 import com.woka.core.ui.components.SegmentedControlColors
 import com.woka.core.ui.components.SwitchColors
 import com.woka.core.ui.theme.Theme
@@ -18,10 +21,14 @@ internal object RoomControls {
         @Composable get() = SegmentedControlColors(
             track = Theme.room.track,
             indicator = Theme.room.knob,
-            indicatorBorder = Theme.room.line,
+            // A knob lit from above, no hairline (`.indicator`).
+            indicatorBorder = Color.Transparent,
             selectedText = Theme.room.text,
             text = Theme.room.muted
         )
+
+    /** 36 dp: 30 dp segments inside the track's 3 dp (`.inspector .segmented`). */
+    val segmentedHeight = 36.dp
 
     /** On is the room's orange (`.toggle input:checked`), not the app's system green. */
     val switch: SwitchColors
@@ -30,4 +37,16 @@ internal object RoomControls {
             off = Theme.room.switch,
             thumb = Theme.room.switchKnob
         )
+}
+
+/** The room's segmented control: a knob that slides between the options (RD-202). */
+@Composable
+internal fun RoomSegmented(options: List<String>, selected: String, onSelect: (String) -> Unit) {
+    SegmentedControl(
+        options = options,
+        selected = selected,
+        onSelect = onSelect,
+        colors = RoomControls.segmented,
+        height = RoomControls.segmentedHeight
+    )
 }

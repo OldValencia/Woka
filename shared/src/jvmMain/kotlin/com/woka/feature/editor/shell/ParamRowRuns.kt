@@ -1,7 +1,6 @@
 package com.woka.feature.editor.shell
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.runtime.Composable
@@ -46,18 +45,9 @@ internal fun ParamRun(
         run.first() is PreviewChoiceParam<*> ->
             PreviewChoiceStrip(run, params, writer, toolId, thumbnail)
 
-        // Long enough to be a wall: a chooser and one control instead (ME-161).
-        isStrip(run) -> ParamStrip(run, params, writer)
-
-        // Shorter than that, and they stack exactly as they did before ME-161 taught
-        // `joins` to gather them. The run exists so the rule above can count it; two
-        // sliders are two labelled rows and must not fall into the wrapping group below.
-        run.first() is FloatParam ->
-            Column(verticalArrangement = Arrangement.spacedBy(EditorTokens.Inspector.rowGap)) {
-                run.forEach { spec ->
-                    key(spec.key) { ParamRow(spec, params, writer, toolId, thumbnail) }
-                }
-            }
+        // Levels side by side are one well of scrub rows, split by section where the tool
+        // declares sections (RD-202; Adjust's Light, Colour and Detail).
+        run.first() is FloatParam -> ParamStrip(run, params, writer)
 
         // Consecutive actions become one wrapping group rather than one row each.
         // Four buttons stacked vertically, each with an empty label column beside it,

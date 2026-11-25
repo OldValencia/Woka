@@ -17,7 +17,8 @@ the tree as it is (`tickets.md` §1). The prototype itself is finished —
 | Open questions answered | done 2026-11-25 |
 | [RD-101 — Theme colours](tickets/RD-101-theme-colours.md) | **done** 2026-11-25 |
 | [RD-201 — Editor frame](tickets/RD-201-editor-frame.md) | **done** 2026-11-25 |
-| RD-202…RD-802 | [backlog](tickets/backlog.md); next: promote RD-202 |
+| [RD-202 — Scrub rows and wells](tickets/RD-202-scrub-rows-wells.md) | **done** 2026-11-25 |
+| RD-203…RD-802 | [backlog](tickets/backlog.md); next: promote RD-203 |
 
 ## The spec, scene by scene
 

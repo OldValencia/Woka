@@ -64,10 +64,12 @@ object AdjustTool : AdjustParams(), EditorTool {
     )
 
     /**
-     * The two that set the twelve rather than being two of them (ME-174) — drawn at the
-     * card's top right, and dropped from the rows by the shell.
+     * The two that set the twelve rather than being two of them (ME-174): Auto-enhance above
+     * the rows, Reset adjustments under them (RD-202); the shell drops both from the rows.
      */
-    override fun header(rows: List<ParamSpec<*>>): List<ParamSpec<*>> = listOf(Auto, ResetAll)
+    override fun header(rows: List<ParamSpec<*>>): List<ParamSpec<*>> = listOf(Auto)
+
+    override fun footer(rows: List<ParamSpec<*>>): List<ParamSpec<*>> = listOf(ResetAll)
 
     /** What it performs is `AdjustStage`'s, which is where the order is argued. */
     override fun stage(params: ParamSet): ToolStage? = adjustStage(params)

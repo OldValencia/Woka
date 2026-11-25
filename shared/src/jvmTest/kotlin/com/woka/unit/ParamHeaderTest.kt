@@ -18,19 +18,18 @@ class ParamHeaderTest {
 
     private val adjustRows: List<ParamSpec<*>> = AdjustTool.params
 
+    /** Auto-enhance above the rows, Reset adjustments under them (RD-202). */
     @Test
-    fun `adjust puts auto and reset all in its header`() {
-        assertEquals(
-            listOf(AdjustTool.Auto, AdjustTool.ResetAll),
-            AdjustTool.header(adjustRows)
-        )
+    fun `adjust puts auto above its rows and reset all under them`() {
+        assertEquals(listOf(AdjustTool.Auto), AdjustTool.header(adjustRows))
+        assertEquals(listOf(AdjustTool.ResetAll), AdjustTool.footer(adjustRows))
     }
 
     /** Both are still real specs of the tool — the header moves them, it does not mint them. */
     @Test
-    fun `a header spec is one of the tool's own`() {
-        AdjustTool.header(adjustRows).forEach { spec ->
-            assertTrue(spec in adjustRows, "${spec.key} is in the header but not in params")
+    fun `a header or footer spec is one of the tool's own`() {
+        (AdjustTool.header(adjustRows) + AdjustTool.footer(adjustRows)).forEach { spec ->
+            assertTrue(spec in adjustRows, "${spec.key} is placed but not in params")
         }
     }
 
@@ -41,7 +40,7 @@ class ParamHeaderTest {
      */
     @Test
     fun `the header specs are not also rows`() {
-        val header = AdjustTool.header(adjustRows)
+        val header = AdjustTool.header(adjustRows) + AdjustTool.footer(adjustRows)
         val rows = adjustRows.filterNot { it in header }
 
         assertEquals(adjustRows.size - header.size, rows.size)

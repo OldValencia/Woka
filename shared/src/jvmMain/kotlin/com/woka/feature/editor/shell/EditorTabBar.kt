@@ -5,7 +5,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -21,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.PointerIcon
@@ -31,6 +38,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.viewer.shell.ViewerTooltip
 import org.jetbrains.compose.resources.painterResource
@@ -52,25 +60,43 @@ internal fun EditorTabBar(
     unavailable: Map<String, String>,
     onSelect: (String) -> Unit
 ) {
-    Row(
+    BoxWithConstraints(
         modifier = Modifier
             .padding(EditorTokens.Panel.tabsMargin)
             .fillMaxWidth()
             .clip(RoundedCornerShape(EditorTokens.Panel.tabsRadius))
             .background(Theme.room.track)
             .padding(EditorTokens.Panel.tabsPadding)
-            .testTag("editor-tabs"),
-        horizontalArrangement = Arrangement.spacedBy(EditorTokens.Panel.tabsGap)
+            .testTag("editor-tabs")
     ) {
-        tabs.forEach { tab ->
-            val reason = unavailable[tab.canvasTool.manifest.id]
-            if (reason != null) {
-                ViewerTooltip(reason) { TabButton(tab, selected = false, enabled = false, onSelect) }
-            } else {
-                TabButton(tab, selected = tab.id == selectedId, enabled = true, onSelect)
+        // The knob slides to the open tab (RD-202, `.indicator`), as the segments' does.
+        val gap = EditorTokens.Panel.tabsGap
+        val each = (maxWidth - gap * (tabs.size - 1).coerceAtLeast(0)) / tabs.size.coerceAtLeast(1)
+        val index = tabs.indexOfFirst { it.id == selectedId }
+        val offset by animateDpAsState((each + gap) * index.coerceAtLeast(0), spring(dampingRatio = 0.78f, stiffness = 420f))
+        if (index >= 0) TabIndicator(Modifier.offset(x = offset).width(each))
+        Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
+            tabs.forEach { tab ->
+                val reason = unavailable[tab.canvasTool.manifest.id]
+                if (reason != null) {
+                    ViewerTooltip(reason) { TabButton(tab, selected = false, enabled = false, onSelect) }
+                } else {
+                    TabButton(tab, selected = tab.id == selectedId, enabled = true, onSelect)
+                }
             }
         }
     }
+}
+
+@Composable
+private fun TabIndicator(modifier: Modifier) {
+    val shape = RoundedCornerShape(EditorTokens.Panel.tabRadius)
+    Box(
+        modifier
+            .height(EditorTokens.Panel.tabHeight)
+            .shadow(2.dp, shape, ambientColor = Color.Black.copy(alpha = 0.22f), spotColor = Color.Black.copy(alpha = 0.22f))
+            .background(Theme.room.knob, shape)
+    )
 }
 
 @Composable
@@ -88,7 +114,6 @@ private fun RowScope.TabButton(tab: EditorTab, selected: Boolean, enabled: Boole
             .weight(1f)
             .height(EditorTokens.Panel.tabHeight)
             .clip(RoundedCornerShape(EditorTokens.Panel.tabRadius))
-            .background(if (selected) Theme.colors.accentSoft else Color.Transparent)
             .then(
                 if (!enabled) Modifier else Modifier
                     .pointerHoverIcon(PointerIcon.Hand)

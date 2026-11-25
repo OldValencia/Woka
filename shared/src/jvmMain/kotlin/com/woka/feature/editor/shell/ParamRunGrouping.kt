@@ -78,24 +78,4 @@ private fun adjacentRuns(specs: List<ParamSpec<*>>): List<List<ParamSpec<*>>> {
 private fun joins(head: ParamSpec<*>, next: ParamSpec<*>): Boolean =
     (head is ActionParam && next is ActionParam) ||
         (head is PreviewChoiceParam<*> && (next is PreviewChoiceParam<*> || next is PadParam)) ||
-        (head is FloatParam && next is FloatParam && head.range == next.range)
-
-/**
- * Whether a run of like sliders is long enough to become a chooser (ME-161).
- *
- * **Four, and the number is a measurement rather than a taste.** A labelled row is 36 dp
- * and the chooser's own furniture — a strip of chips over a slider, a field and `Reset` —
- * is about three rows' worth, so below four the strip trades a click for nothing. At four
- * it breaks even and from there it stops growing at all, which is the point: fifteen
- * adjustments cost the same 115 dp as six.
- *
- * **Derived from the schema, not declared by the tool**, like every other rule in this
- * file. §3.4's claim is that a tool contributes a schema and gets its layout; a
- * `strips()` hook beside `lines()` would have made Adjust ask for a shape instead. Checked
- * 2026-09-01: Adjust is the only tool this catches — Filter declares two floats, Resize
- * one, and Markup's are claimed by the compact line it declares.
- */
-internal fun isStrip(run: List<ParamSpec<*>>): Boolean =
-    run.size >= STRIP_MIN && run.first() is FloatParam
-
-private const val STRIP_MIN = 4
+        (head is FloatParam && next is FloatParam)

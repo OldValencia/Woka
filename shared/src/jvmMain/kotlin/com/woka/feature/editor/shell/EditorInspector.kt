@@ -2,12 +2,10 @@ package com.woka.feature.editor.shell
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
@@ -56,10 +54,8 @@ internal fun EditorToolSection(
         modifier = Modifier.fillMaxWidth().testTag("editor-inspector"),
         verticalArrangement = Arrangement.spacedBy(EditorTokens.Inspector.rowGap)
     ) {
-        SectionHeader(if (showTitle) tool.manifest.title else null) {
-            // Beside the title, because these are about the tool (ME-174): Adjust's Auto and Reset.
-            InspectorHeaderActions(tool, session, picture, selectedId)
-        }
+        // The tool's actions about its rows are drawn by `ParamRows` now, above and under them (RD-202).
+        if (showTitle) SectionTitle(tool.manifest.title)
         ParamRows(
             tool = tool,
             session = session,
@@ -80,26 +76,16 @@ internal fun EditorToolSection(
 }
 
 /**
- * The tool's name, when the tab needs it, and the actions about the whole tool.
+ * The tool's name, when the tab holds two tools.
  *
  * **Not `Reset` for the document** — removed 2026-08-19: it cleared every tool's work from a
- * header naming one. What it was reached for is `Revert to original…`, now at the
- * inspector's foot.
+ * header naming one. What it was reached for is `Revert to original…`, at the inspector's foot.
  */
 @Composable
-private fun SectionHeader(title: String?, actions: @Composable () -> Unit) {
-    Row(
-        modifier = Modifier.padding(bottom = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        if (title != null) {
-            BasicText(
-                text = title,
-                modifier = Modifier.testTag("editor-inspector-title"),
-                style = TextStyle(color = Theme.room.text, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-            )
-        }
-        actions()
-    }
+private fun SectionTitle(title: String) {
+    BasicText(
+        text = title,
+        modifier = Modifier.padding(bottom = 6.dp).testTag("editor-inspector-title"),
+        style = TextStyle(color = Theme.room.text, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+    )
 }

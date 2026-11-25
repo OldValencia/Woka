@@ -12,26 +12,17 @@ import com.woka.feature.editor.core.ParamSet
 import kotlin.math.roundToInt
 
 /**
- * A level: its name, and the frame that reports, steps, opens and resets it (ME-155).
- *
- * **The slider used to be here and is now one press away** (`ParamValuePopover`). The
- * row it replaced was ~300 dp of track on a card drawn over a photograph, and it could
- * do exactly one of the four things this frame does. What it cost is that a drag now
- * begins with a click; what it bought is a panel of one shape, and a number that can be
- * typed.
+ * A level, alone (RD-202): a scrub row in its own well. The stepper with its popover
+ * (ME-155) is now only the compact form, [FloatControl], which Markup's bars still use.
  */
 @Composable
 internal fun FloatParamRow(spec: FloatParam, params: ParamSet, writer: ParamWriter) {
-    ParamRowFrame(spec.label) {
-        // **No `weight`** — the frame is 114 dp and says so. Weighted, it stretched to the
-        // card's ceiling and took the card with it, which is what made a six-slider Adjust
-        // panel 420 dp wide around 210 dp of controls (2026-08-29).
-        FloatControl(spec, params, writer)
-    }
+    // A well of one (RD-202): the scrub row is the inspector's form for a level.
+    ScrubWell(listOf(spec), params, writer)
 }
 
 /**
- * The frame alone, so a compact line can put it beside a swatch with no label column at
+ * The stepper frame, so a compact line can put it beside a swatch with no label column at
  * all (ME-155).
  */
 @Composable

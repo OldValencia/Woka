@@ -56,7 +56,8 @@ internal fun <E : Enum<E>> ChoiceControl(
                     spec.options.firstOrNull { spec.labelOf(it) == label }
                         ?.let { writer.edit(spec, it) }
                 },
-                colors = RoomControls.segmented
+                colors = RoomControls.segmented,
+                height = RoomControls.segmentedHeight
             )
         } else {
             ParamChipRow(
