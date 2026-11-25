@@ -130,7 +130,7 @@ dialog.dialog-narrow{width:min(360px,90vw)}
 .info-scroll{display:flex;flex-direction:column;gap:12px;max-height:460px;overflow-y:auto;padding-right:4px}
 .info-meta{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--text-secondary);user-select:text}
 .info-meta b{font-size:14px;font-weight:600;color:var(--text-primary);overflow-wrap:anywhere}
-.info-edited{margin-left:6px;padding:1px 6px;border-radius:5px;background:var(--accent-editor-soft);color:var(--accent-editor);font-size:11px;font-weight:600;vertical-align:1px}
+.info-edited{margin-left:6px;padding:1px 6px;border-radius:5px;background:var(--accent-editor-soft);color:var(--accent-editor-text);font-size:11px;font-weight:600;vertical-align:1px}
 .info-section h3{margin:0 0 6px;font-size:13px;font-weight:600;color:var(--text-primary)}
 .info-card{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:10px;background:var(--surface-hover);border:1px solid var(--border)}
 .info-row{display:flex;justify-content:space-between;gap:12px;font-size:12px}

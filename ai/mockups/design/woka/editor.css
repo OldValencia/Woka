@@ -63,7 +63,7 @@ dialog::backdrop{background:var(--black-60)}
 .dialog-heading{display:flex;justify-content:space-between;align-items:center;gap:20px}
 .dialog-heading h2{font-size:21px;font-weight:600;margin:0 0 12px}
 dialog p,dialog li{font-size:14px;line-height:1.7;color:var(--text-secondary)}
-dialog a{color:var(--accent-editor)}
+dialog a{color:var(--accent-editor-text)}
 dialog table{border-collapse:collapse;width:100%;font-size:13px}
 dialog td,dialog th{padding:10px 8px;border-bottom:1px solid var(--border);text-align:left}
 dialog th{color:var(--text-secondary);font-weight:500}
@@ -109,7 +109,7 @@ dialog th{color:var(--text-secondary);font-weight:500}
 .editor.transitioning .work-area{z-index:2}
 .editor.transitioning .inspector{z-index:3}
 .editor.transitioning .timeline{z-index:3}
-#compare[aria-pressed=true]{color:var(--accent-editor);background:var(--accent-editor-soft)}
+#compare[aria-pressed=true]{color:var(--accent-editor-text);background:var(--accent-editor-soft)}
 .help-option{display:block;width:100%;text-align:left;white-space:normal;padding:14px;margin:9px 0;background:var(--surface-raised);border:1px solid var(--border)}
 .help-option strong{display:block;font-weight:600}
 .help-option span{display:block;color:var(--text-secondary);font-size:12px;line-height:1.6;margin-top:5px}

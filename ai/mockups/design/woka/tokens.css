@@ -27,6 +27,7 @@
   --accent-home:#0a84ff;
   --accent-folders:#ff9f0a;
   --accent-editor:#ff9f0a;
+  --accent-editor-text:#ff9f0a;
   --accent-search:#30d158;
   --surface-raised:#1e232d;
   --accent-editor-soft:rgba(255,159,10,.12);
@@ -86,7 +87,8 @@
   --on-danger:#ffffff;
   --accent-home:#0a84ff;
   --accent-folders:#ff9f0a;
-  --accent-editor:#ad6500;
+  --accent-editor:#ff9f0a;
+  --accent-editor-text:#ad6500;
   --accent-search:#30d158;
   --surface-raised:#f2f2f7;
   --accent-editor-soft:#fff1dc;

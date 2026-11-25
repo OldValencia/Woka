@@ -2,15 +2,7 @@
 
 Blocks are promoted into ticket files when they are next, re-cut against the tree as it then is
 (`tickets.md` §1, §4). No file lists here. The feature doc's questions were answered on
-2026-11-25; RD-101 is next.
-
-## Tokens
-
-### RD-101 — Theme colours and the editor's room palette
-`Theme.kt` dark: surfaceHover white 5.5 %, textSecondary #9A9FAA, border white 7 %; a light text tone
-#AD6500 for the editor orange; the prototype's extra colours and the room's `--e-*` palette next to
-`EditorTokens`, both themes (answer 1). Every later block draws with these. Visible: secondary text,
-hovers and hairlines across the app.
+2026-11-25; RD-101 is a ticket, RD-201 is next.
 
 ## Editor
 
@@ -19,6 +11,9 @@ One header (Cancel, undo/redo | pill | Original, help, F6, Create a copy…, Don
 inspector tabs with the scope line and `Revert to original…`; the picture keeps its place when the
 editor opens and the room dims. Tabs per answer 2: Styles, Adjust, Transform (crop, straighten,
 rotate, flip), Markup; video adds Clip and Sound; Resize, HDR and Cover leave the rail.
+Brings the colours it first draws (moved here from RD-101): the room's `--e-*` palette, both
+themes, and Theme's `surfaceRaised`, `accentEditorSoft`, `canvas`, `glass`. `EditorTokens.kt` is at
+149 lines, so the room palette is its own file.
 
 ### RD-202 — Scrub rows, wells and segments
 The inspector's controls in the prototype's form: scrub rows with value field, reset and detent,
@@ -37,7 +32,7 @@ The left frame strip in the editor (as in the viewer) and the All frames / Frame
 ### RD-301 — Timeline
 Transport row, ruler, lanes with thumbnails and waveforms, playhead with scissors, skim badge,
 snapping, drop-to-add audio, clip context menu, resizable height — the prototype's
-`#editor/video` and `#editor/audio`.
+`#editor/video` and `#editor/audio`. Brings Theme's `sound` and `soundBg` (moved here from RD-101).
 
 ### RD-302 — Clip and Sound tabs, the scope line
 The Clip tab (speed, mute, split, delete, more) and Sound (mute, volume, fades, even loudness, add

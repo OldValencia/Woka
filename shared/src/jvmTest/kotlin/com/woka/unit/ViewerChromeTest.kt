@@ -2,7 +2,8 @@ package com.woka.unit
 
 import androidx.compose.ui.graphics.Color
 import com.woka.core.ui.theme.ViewerChrome
-import kotlin.math.pow
+import com.woka.support.contrast
+import com.woka.support.flatten
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -22,31 +23,6 @@ private val MID = Color(0xFF808080)
  */
 class ViewerChromeTest {
 
-    private fun linear(channel: Float): Double {
-        val c = channel.toDouble()
-        return if (c <= 0.03928) c / 12.92 else ((c + 0.055) / 1.055).pow(2.4)
-    }
-
-    private fun luminance(color: Color): Double =
-        0.2126 * linear(color.red) + 0.7152 * linear(color.green) + 0.0722 * linear(color.blue)
-
-    /** [over] composited under [color]'s own alpha — what a scrim does to the picture. */
-    private fun flatten(color: Color, over: Color): Color {
-        val a = color.alpha
-        return Color(
-            red = color.red * a + over.red * (1 - a),
-            green = color.green * a + over.green * (1 - a),
-            blue = color.blue * a + over.blue * (1 - a)
-        )
-    }
-
-    private fun contrast(foreground: Color, scrim: Color): Double {
-        val background = flatten(scrim, MID)
-        val a = luminance(foreground) + 0.05
-        val b = luminance(background) + 0.05
-        return if (a > b) a / b else b / a
-    }
-
     private val scrims =
         listOf(
             "hudScrim" to ViewerChrome.hudScrim,
@@ -57,7 +33,7 @@ class ViewerChromeTest {
     @Test
     fun `primary text clears AA on every scrim this app draws`() {
         scrims.forEach { (name, scrim) ->
-            val ratio = contrast(ViewerChrome.onScrim, scrim)
+            val ratio = contrast(ViewerChrome.onScrim, flatten(scrim, MID))
             assertTrue(ratio >= 4.5, "onScrim over $name measured $ratio")
         }
     }
@@ -65,7 +41,7 @@ class ViewerChromeTest {
     @Test
     fun `secondary text clears large-text AA on every scrim`() {
         scrims.forEach { (name, scrim) ->
-            val ratio = contrast(ViewerChrome.onScrimSecondary, scrim)
+            val ratio = contrast(ViewerChrome.onScrimSecondary, flatten(scrim, MID))
             assertTrue(ratio >= 3.0, "onScrimSecondary over $name measured $ratio")
         }
     }
@@ -77,9 +53,9 @@ class ViewerChromeTest {
     @Test
     fun `the three foregrounds stay in their order`() {
         val scrim = ViewerChrome.hudScrim
-        val primary = contrast(ViewerChrome.onScrim, scrim)
-        val secondary = contrast(ViewerChrome.onScrimSecondary, scrim)
-        val disabled = contrast(ViewerChrome.onScrimDisabled, scrim)
+        val primary = contrast(ViewerChrome.onScrim, flatten(scrim, MID))
+        val secondary = contrast(ViewerChrome.onScrimSecondary, flatten(scrim, MID))
+        val disabled = contrast(ViewerChrome.onScrimDisabled, flatten(scrim, MID))
 
         assertTrue(primary > secondary, "primary $primary did not beat secondary $secondary")
         assertTrue(secondary > disabled, "secondary $secondary did not beat disabled $disabled")

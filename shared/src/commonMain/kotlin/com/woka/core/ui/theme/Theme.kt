@@ -40,6 +40,8 @@ data class Colors(
     val accentHome: Color,
     val accentFolders: Color,
     val accentEditor: Color,
+    /** The editor orange as a foreground on a themed surface; [accentEditor] is the fill. */
+    val accentEditorText: Color,
     val accentSearch: Color
 )
 
@@ -66,6 +68,7 @@ val LightColors = Colors(
     accentHome = Color(0xFF0A84FF),
     accentFolders = Color(0xFFFF9F0A),
     accentEditor = Color(0xFFFF9F0A),
+    accentEditorText = Color(0xFFAD6500),
     accentSearch = Color(0xFF30D158)
 )
 
@@ -73,12 +76,12 @@ val DarkColors = Colors(
     background = Color(0xFF0E1015),
     surface = Color(0xCC161A22), // rgba(22, 26, 34, 0.8)
     surfaceElevated = Color(0xFF161920), // card bg
-    surfaceHover = Color(0x05FFFFFF),
+    surfaceHover = Color(0x0EFFFFFF), // rgba(255, 255, 255, 0.055)
     surfacePressed = Color(0x08FFFFFF),
     textPrimary = Color(0xFFF4F4F6),
-    textSecondary = Color(0xFF515764),
+    textSecondary = Color(0xFF9A9FAA),
     textTertiary = Color(0xFF838893), // dock item text
-    border = Color(0x0AFFFFFF), // rgba(255, 255, 255, 0.04)
+    border = Color(0x12FFFFFF), // rgba(255, 255, 255, 0.07)
     borderGlow = Color(0x14FFFFFF), // rgba(255, 255, 255, 0.08)
     stackEdge = Color(0xFF1A1E27),
     stackEdgeFar = Color(0xFF141821),
@@ -92,6 +95,7 @@ val DarkColors = Colors(
     accentHome = Color(0xFF0A84FF),
     accentFolders = Color(0xFFFF9F0A),
     accentEditor = Color(0xFFFF9F0A),
+    accentEditorText = Color(0xFFFF9F0A),
     accentSearch = Color(0xFF30D158)
 )
 

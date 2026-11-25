@@ -106,7 +106,7 @@ internal fun EditorPeekButton(peek: PeekState) {
                     // Held, it lights the editor's accent — the one moment this control
                     // has any state at all worth showing.
                     colorFilter = ColorFilter.tint(
-                        if (peeking) Theme.colors.accentEditor else Theme.colors.textPrimary
+                        if (peeking) Theme.colors.accentEditorText else Theme.colors.textPrimary
                     )
                 )
             }
