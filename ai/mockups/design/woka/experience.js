@@ -86,7 +86,9 @@ function setViewer(viewing,animate=true){
   if(animate)(viewing?$('#enter-editor'):$('#back-viewer')).focus({preventScroll:true});updatePlayhead();
 }
 function finishEditing(){
-  flushInput();state.dirty=false;savedSnapshot=JSON.stringify(state);render();setViewer(true);
+  flushInput();state.dirty=false;savedSnapshot=JSON.stringify(state);
+  editedIds[documentSignature(state)!==documentSignature(sceneState(currentScene,false))?'add':'delete'](currentScene);
+  render();setViewer(true);
   toast('Edits kept. The original file is untouched.');
 }
 function requestExit(){
@@ -101,17 +103,21 @@ function documentSignature(document){
 }
 function syncDirty(){if(savedSnapshot)state.dirty=documentSignature(state)!==documentSignature(JSON.parse(savedSnapshot));}
 function applyComparison(){
-  $('.original-label').hidden=!compareOriginal;$('#compare').setAttribute('aria-pressed',compareOriginal);
+  $('.original-label').hidden=!compareOriginal;
+  ['#compare','#viewer-original'].forEach(id=>$(id).setAttribute('aria-pressed',compareOriginal));
   if(compareOriginal){$('#photo').style.filter='none';$('#photo').style.transform='none';$('#crop-box').hidden=true;$('#caption').hidden=true;}
   if(viewerMode)$('#crop-box').hidden=true;
 }
 function toggleComparison(on){if(compareOriginal===on)return;compareOriginal=on;easePhoto();updatePicture();applyComparison();}
 function initComparison(){
   let timer,held=false,suppress=false,previous=false;
-  $('#compare').addEventListener('pointerdown',event=>{if(event.button!==0)return;held=false;previous=compareOriginal;timer=setTimeout(()=>{held=true;toggleComparison(true);},200);});
+  // The editor's Original and the viewer's are one control in two places.
+  for(const id of ['#compare','#viewer-original']){
+    $(id).addEventListener('pointerdown',event=>{if(event.button!==0)return;held=false;previous=compareOriginal;timer=setTimeout(()=>{held=true;toggleComparison(true);},200);});
+    $(id).addEventListener('click',()=>{if(suppress){suppress=false;return;}toggleComparison(!compareOriginal);});
+  }
   const release=()=>{clearTimeout(timer);if(held){held=false;suppress=true;toggleComparison(previous);}};
   document.addEventListener('pointerup',release);document.addEventListener('pointercancel',release);window.addEventListener('blur',release);
-  $('#compare').addEventListener('click',()=>{if(suppress){suppress=false;return;}toggleComparison(!compareOriginal);});
 }
 function hideTooltip(){clearTimeout(tooltipTimer);$('#tooltip').hidden=true;if(tooltipTarget)tooltipTarget.removeAttribute('aria-describedby');tooltipTarget=null;}
 function queueTooltip(target,immediate=false){

@@ -72,6 +72,7 @@ function syncViewerPlayback(){
     $('#viewer-volume-button').style.opacity=listenVolume===0?.45:1;
   }
   $('#viewer-play').innerHTML=icon(on?'pause':'play');$('#viewer-play').setAttribute('aria-label',on?'Pause (Space)':'Play (Space)');
+  if(transportKind==='audio')mirrorSound();
 }
 function showFrame(index){
   state.frameIndex=clamp(index,0,frameCount()-1);

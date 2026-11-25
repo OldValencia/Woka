@@ -21,8 +21,10 @@ Plan agreed with the author 2026-11-25, in conversation.
 | Ticket | Status |
 |---|---|
 | [PT-001 — rename, one token file, sections and links](tickets/PT-001-structure.md) | done 2026-11-25, accepted by the author |
-| [PT-002 — one transport, GIF, frame strip on the left](tickets/PT-002-viewer-transport.md) | built 2026-11-25; play-button geometry for the author to confirm |
-| PT-101…PT-301 | [backlog](tickets/backlog.md) |
+| [PT-002 — one transport, GIF, frame strip on the left](tickets/PT-002-viewer-transport.md) | done 2026-11-25, accepted by the author |
+| [PT-101 — audio in the viewer and Now Playing](tickets/PT-101-audio.md) | built 2026-11-25 |
+| [PT-102 — carousel badges and Original in the viewer](tickets/PT-102-badges-original.md) | built 2026-11-25 |
+| PT-103…PT-301 | [backlog](tickets/backlog.md) |
 
 ## Starting point (read 2026-11-25)
 

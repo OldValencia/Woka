@@ -118,7 +118,7 @@ function initPreviews(){
     straightenTimer=setTimeout(()=>picture.classList.remove('straightening'),700);
   });
   document.addEventListener('keydown',event=>{
-    if(event.key!=='\\'||event.repeat||viewerMode||document.activeElement.isContentEditable||['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName))return;
+    if(event.key!=='\\'||event.repeat||(viewerMode&&!editedIds.has(currentScene))||document.activeElement.isContentEditable||['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName))return;
     toggleComparison(true);
     const release=up=>{if(up.key!=='\\')return;document.removeEventListener('keyup',release);toggleComparison(false);};
     document.addEventListener('keyup',release);

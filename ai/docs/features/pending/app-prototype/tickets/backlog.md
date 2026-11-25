@@ -5,17 +5,6 @@ ticket's. No file lists here.
 
 ## Viewer
 
-### PT-101 — Audio
-The audio scene in the viewer: cover stage with title and artist, the transport's `audio` slot set
-from PT-002, no size control in the pill. The Now Playing row at the bottom of the sidebar and the
-corner bubble when the sidebar is hidden. Source: the app (`AudioStage`, Now Playing) and the
-shipped `audio-player.html` / `now-playing.html` mockups where the app matches them.
-
-### PT-102 — Carousel badges, caption, Original in the viewer
-Badges on carousel thumbnails: video duration, `GIF`, frame count, edited dot. The caption under the
-carousel (`name · 3 of 7`). `Original` in the pill for an item with an edit — click or hold, `\` —
-sharing the editor's comparison code; absent on an item without one.
-
 ### PT-103 — Fullscreen and PiP
 Fullscreen: chrome hidden, shown on pointer move, hidden again after the app's delay. PiP: a
 compact window scene with the app's PiP controls minus the zoom buttons; resize keeps the frame's

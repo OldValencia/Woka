@@ -6,8 +6,11 @@ const libraryMedia=[
   {id:'frames',name:'Seaside-burst.heic',view:'350 55 960 720',frames:4},
   {id:'gif',name:'Waves.gif',view:'350 55 960 720',frames:24,fps:12,gif:true},
   {id:'video',name:'A day by the sea.mp4',view:'350 100 1000 562.5',video:true,hdr:true},
-  {id:'audio',name:'Sea breeze edit.mp4',view:'350 100 1000 562.5',video:true}
+  {id:'audio',name:'Sea breeze edit.mp4',view:'350 100 1000 562.5',video:true},
+  {id:'track',name:'Sea breeze.m4a',title:'Sea breeze',artist:'Coastline',view:'760 120 520 520',audioOnly:true}
 ];
+/* Files shown with an edit kept inside them (PT-102). finishEditing keeps it current. */
+const editedIds=new Set(['palm']);
 let libraryHidden=false,carouselShown=true,activeFolder='Vacation',popoverAnchor=null,remainingTime=false,listenVolume=70,viewerSpeed=1,carouselKey='';
 Object.assign(icons,{
   folder:'<path d="M3 6h7l2 2h9v12H3Z"/><path d="M3 6V4h7l2 2h9v2"/>',
@@ -20,9 +23,17 @@ Object.assign(icons,{
 });
 function currentMedia(){return libraryMedia.find(item=>item.id===currentScene)||libraryMedia[0];}
 function shortTime(value){return `${String(Math.floor(value/60)).padStart(2,'0')}:${String(Math.floor(value%60)).padStart(2,'0')}`;}
-function folderItems(folder=activeFolder){return folder==='Videos'||folder==='Movies'?libraryMedia.filter(item=>item.video):folder==='Pictures'||folder==='Screenshots'?libraryMedia.filter(item=>!item.video):libraryMedia;}
+function folderItems(folder=activeFolder){
+  if(folder==='Music')return libraryMedia.filter(item=>item.audioOnly);
+  const shown=libraryMedia.filter(item=>!item.audioOnly);
+  return folder==='Videos'||folder==='Movies'?shown.filter(item=>item.video):folder==='Pictures'||folder==='Screenshots'?shown.filter(item=>!item.video):shown;
+}
+function carouselBadge(item){
+  const chip=item.audioOnly?icon('music'):item.video?`${icon('play')}<span>${shortTime(32)}</span>`:item.gif?'<span>GIF</span>':item.frames>1?`<span>${item.frames}</span>`:'';
+  return (chip?`<span class="media-chip">${chip}</span>`:'')+(editedIds.has(item.id)?'<i class="media-edited" aria-hidden="true"></i>':'');
+}
 function renderLibrary(){
-  $('#library-folders').innerHTML='<div class="library-section">Folders</div>'+['Movies','Pictures','Screenshots','Vacation','Videos'].map(folder=>`<button class="folder-row ${activeFolder===folder?'selected':''}" data-folder="${folder}"><span class="chevron">›</span>${icon('folder')}<span class="folder-name">${folder}</span><span class="count">${folderItems(folder).length}</span></button>`).join('')+'<div class="library-section">Pinned</div><button class="folder-row pinned" data-folder="Vacation">'+icon('pin')+'<span class="folder-name">Vacation<small>Pictures</small></span></button><button class="folder-row pinned" data-folder="Pictures">'+icon('pin')+'<span class="folder-name">Pictures<small>OldValencia</small></span></button>';
+  $('#library-folders').innerHTML='<div class="library-section">Folders</div>'+['Movies','Music','Pictures','Screenshots','Vacation','Videos'].map(folder=>`<button class="folder-row ${activeFolder===folder?'selected':''}" data-folder="${folder}"><span class="chevron">›</span>${icon('folder')}<span class="folder-name">${folder}</span><span class="count">${folderItems(folder).length}</span></button>`).join('')+'<div class="library-section">Pinned</div><button class="folder-row pinned" data-folder="Vacation">'+icon('pin')+'<span class="folder-name">Vacation<small>Pictures</small></span></button><button class="folder-row pinned" data-folder="Pictures">'+icon('pin')+'<span class="folder-name">Pictures<small>OldValencia</small></span></button>';
 }
 function syncWokaChrome(){
   const item=currentMedia();$('#app-shell').classList.toggle('editing',!viewerMode);$('#app-shell').classList.toggle('sidebar-hidden',libraryHidden);
@@ -32,13 +43,20 @@ function syncWokaChrome(){
   $('#viewer-status').textContent=item.name;
   $('#photo').setAttribute('viewBox',state.mode==='video'?frameView(skimTime??state.time):stillFrameView(item,state.frameIndex));
   document.querySelectorAll('.hdr-part').forEach(node=>node.hidden=!item.hdr);
+  // A track has no picture to size and no editor (audio-player §3.4); its stage is the cover.
+  const audio=!!item.audioOnly;
+  document.querySelectorAll('.size-part').forEach(node=>node.hidden=audio);
+  document.querySelectorAll('.edit-part').forEach(node=>node.hidden=audio);
+  $('#picture').hidden=audio;$('#audio-stage').hidden=!audio;
+  if(audio)$('#audio-stage').innerHTML=`<div class="audio-cover">${photoSvg(item.view)}</div><b class="audio-title">${item.title}</b><span class="audio-artist">${item.artist}</span>`;
+  $('#viewer-original').hidden=!editedIds.has(item.id);
   const media=folderItems(),index=media.findIndex(entry=>entry.id===item.id);
   $('#viewer-index').textContent=`${Math.max(0,index)+1} of ${media.length}`;
   $('#previous-media').disabled=index<=0;$('#next-media').disabled=index===media.length-1;
   $('#toggle-carousel').setAttribute('aria-pressed',carouselShown);$('#toggle-carousel').setAttribute('aria-label',carouselShown?'Hide filmstrip':'Show filmstrip');
-  const key=activeFolder+':'+currentScene;
-  if(carouselKey!==key){carouselKey=key;$('#media-carousel').innerHTML=media.map(entry=>`<button class="carousel-item ${entry.id===item.id?'selected':''}" data-media="${entry.id}" aria-label="${entry.name}" aria-current="${entry.id===item.id}">${photoSvg(entry.view)}${entry.video?`<span class="media-badge">${icon('play')}</span>`:''}</button>`).join('');}
-  measurePicture();renderTransport();
+  const key=activeFolder+':'+currentScene+':'+[...editedIds].join();
+  if(carouselKey!==key){carouselKey=key;$('#media-carousel').innerHTML=media.map(entry=>`<button class="carousel-item ${entry.id===item.id?'selected':''}" data-media="${entry.id}" aria-label="${entry.name}" aria-current="${entry.id===item.id}">${photoSvg(entry.view)}${carouselBadge(entry)}</button>`).join('');}
+  measurePicture();renderTransport();renderNowPlaying();
 }
 function measurePicture(){
   const stage=$('#stage');if(!stage)return;const style=getComputedStyle(stage),view=currentMedia().view.split(' ').map(Number),ratio=view[2]/view[3];
@@ -47,7 +65,9 @@ function measurePicture(){
   $('#size-percent').textContent=`${Math.round(fitWidth/(state.mode==='video'?1920:state.portrait?3024:4032)*state.zoom*100)}%`;
 }
 function openMedia(id){
-  if(transitionBusy)return;closeChromePopover();setScene(id);setViewer(true,false);syncWokaChrome();
+  if(transitionBusy)return;closeChromePopover();
+  if(!folderItems().some(item=>item.id===id)){activeFolder=libraryMedia.find(item=>item.id===id)?.audioOnly?'Music':'Vacation';renderLibrary();}
+  setScene(id);setViewer(true,false);takeBackSound();syncWokaChrome();
 }
 function closeChromePopover(){const popover=document.querySelector('#chrome-popover');if(!popover)return;popover.hidden=true;if(popoverAnchor)popoverAnchor.setAttribute('aria-expanded','false');popoverAnchor=null;}
 function chromePopover(anchor,title,content){
@@ -59,7 +79,7 @@ function zoomPopover(){chromePopover($('#size-menu'),'Image size',`<div class="s
 function showFolder(){modal(activeFolder,`<div class="folder-grid">${folderItems().map(item=>`<button data-media="${item.id}">${photoSvg(item.view)}<span>${item.name}</span></button>`).join('')}</div>`);}
 function initWoka(){
   [['hide-library','focus'],['show-library','focus'],['folder-back','chevronLeft'],['media-info','info'],['toggle-carousel','carousel'],['previous-media','chevronLeft'],['next-media','chevronRight']].forEach(([id,name])=>$('#'+id).innerHTML=icon(name));
-  $('#enter-editor').innerHTML=icon('markup')+' Edit';renderLibrary();
+  $('#enter-editor').innerHTML=icon('markup')+' Edit';$('#viewer-original').innerHTML=icon('compare')+'<span>Original</span>';renderLibrary();
   $('#hide-library').onclick=()=>{libraryHidden=true;syncWokaChrome();};$('#show-library').onclick=()=>{libraryHidden=false;syncWokaChrome();};$('#folder-back').onclick=showFolder;
   $('#toggle-carousel').onclick=()=>{carouselShown=!carouselShown;syncWokaChrome();};
   $('#previous-media').onclick=()=>{const items=folderItems(),index=items.findIndex(item=>item.id===currentScene);if(index>0)openMedia(items[index-1].id);};

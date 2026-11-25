@@ -14,17 +14,25 @@ function undo(){if(!history.length)return;future.push(JSON.stringify(state));sta
 function redo(){if(!future.length)return;history.push(JSON.stringify(state));state=JSON.parse(future.pop());render();}
 function toast(message,canUndo=false){$('#toast').innerHTML=`<span>${escapeHtml(message)}</span>${canUndo?button('toast-undo','Undo','quiet'):''}`;$('#toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(hideToast,canUndo?7000:4500);}
 function modal(title,html){$('#dialog-title').textContent=title;$('#dialog-content').innerHTML=html;$('#dialog').showModal();}
+/* A scene's document as it opens. withKeptEdits=false is the file with nothing kept on it, which is
+   what "is this file edited" compares against; Palms.jpg opens with the Warm style already kept, so
+   the prototype has an edited file without a round trip through the editor. */
+function sceneState(scene,withKeptEdits=true){
+  const s=initialState(),media=libraryMedia.find(item=>item.id===scene);
+  s.mode=['video','audio'].includes(scene)||media?.audioOnly?'video':'photo';
+  if(scene==='crop'){s.portrait=true;s.tool='crop';}
+  if(media?.frames>1){s.frames=Array.from({length:media.frames},()=>({settings:{}}));s.frameIndex=0;s.frameScope='all';}
+  if(scene==='video'){s.tool='clip';s.selection='c2';}
+  if(scene==='audio'){s.tool='sound';s.audio=[{id:'a1',name:'Sea breeze.m4a',start:4,duration:26,settings:{volume:55,fadeIn:1.5,fadeOut:3}}];s.selection='a1';}
+  if(withKeptEdits&&scene==='palm')s.settings={style:'warm'};
+  return s;
+}
 function setScene(scene){
   if(transitionBusy)return;
+  handOverSound();
   if(currentScene){flushInput();sceneSessions.set(currentScene,{state:JSON.stringify(state),history:[...history],future:[...future],saved:savedSnapshot});}
   currentScene=scene;compareOriginal=false;hideTooltip();
-  playing=false;state=initialState();history=[];future=[];inputBefore=null;
-  state.mode=['video','audio'].includes(scene)?'video':'photo';
-  if(scene==='crop'){state.portrait=true;state.tool='crop';}
-  const media=libraryMedia.find(item=>item.id===scene);
-  if(media?.frames>1){state.frames=Array.from({length:media.frames},()=>({settings:{}}));state.frameIndex=0;state.frameScope='all';}
-  if(scene==='video'){state.tool='clip';state.selection='c2';}
-  if(scene==='audio'){state.tool='sound';state.audio=[{id:'a1',name:'Sea breeze.m4a',start:4,duration:26,settings:{volume:55,fadeIn:1.5,fadeOut:3}}];state.selection='a1';}
+  playing=false;state=sceneState(scene);history=[];future=[];inputBefore=null;
   const remembered=sceneSessions.get(scene);
   if(remembered){state=JSON.parse(remembered.state);history=remembered.history;future=remembered.future;savedSnapshot=remembered.saved;}else savedSnapshot=JSON.stringify(state);
   viewerMode=false;$('#editor').classList.remove('viewing','focus');$('.header-actions').hidden=false;$('.viewer-actions').hidden=true;
@@ -205,4 +213,4 @@ document.addEventListener('keydown',event=>{
   if(event.key==='Delete'&&!viewerMode){if(selectedAudio())action('delete-audio');else if(selectedClip())action('delete-clip');else if(state.selection==='caption')action('remove-text');}
 });
 window.addEventListener('resize',updatePlayhead);
-initTimeline();initCrop();initWoka();initTransport();setScene('photo');initExperience();initRefine();initInstruments();
+initTimeline();initCrop();initWoka();initTransport();initNowPlaying();setScene('photo');initExperience();initRefine();initInstruments();
