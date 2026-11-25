@@ -21,8 +21,8 @@ function textAction(action,glyph,label,cls=''){return `<button data-action="${ac
 function segmented(key,items){return `<div class="segmented" data-indicator="${key}">${items.map(([action,label,selected,extra=''])=>button(action,label,selected?'selected':'',extra)).join('')}</div>`;}
 function val(key,fallback=0){return settings()[key]??fallback;}
 function toolList(){
-  if(state.mode!=='video')return [['styles','Styles'],['adjust','Adjust'],['crop','Crop'],['markup','Markup']];
-  return [...(selectedClip()?[['clip','Clip']]:[]),['styles','Styles'],['adjust','Adjust'],['crop','Crop'],['markup','Markup'],['sound','Sound']];
+  if(state.mode!=='video')return [['styles','Styles'],['adjust','Adjust'],['crop','Transform'],['markup','Markup']];
+  return [...(selectedClip()?[['clip','Clip']]:[]),['styles','Styles'],['adjust','Adjust'],['crop','Transform'],['markup','Markup'],['sound','Sound']];
 }
 function scopeHtml(){
   const audio=selectedAudio(),clip=selectedClip(),caption=state.selection==='caption';

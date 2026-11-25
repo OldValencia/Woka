@@ -19,7 +19,6 @@ button.selected{background:var(--accent-editor-soft);color:var(--accent-editor)}
 .icon-button.small{width:28px;min-height:28px}
 .quiet{color:var(--text-secondary)}
 .primary{background:var(--accent-editor);color:var(--on-primary);font-weight:600;padding:7px 20px}
-.primary:hover{background:var(--primary-fill-hover)}
 .segmented button{flex:1;min-width:0;font-size:12px}
 input[type=range]{accent-color:var(--accent-editor);height:16px;cursor:pointer}
 input[type=checkbox]{accent-color:var(--accent-editor);width:17px;height:17px}
@@ -34,7 +33,6 @@ summary{cursor:pointer;font-size:13px}
 @media(max-width:620px){
   .primary{padding:7px 12px}
 }
-.primary{background:var(--primary-fill)}
 @media(prefers-reduced-motion:reduce){
   *{transition:none!important}
 }

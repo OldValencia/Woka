@@ -86,8 +86,9 @@ prototype keeps its value; nothing here is decided.
 
 Colours the prototype uses that `Theme.kt` has no field for: `--surface-raised`,
 `--accent-editor-soft`, `--canvas`, `--glass`, `--sound`, `--sound-bg`, the editor room `--e-*`,
-and `--primary-fill` / `--primary-fill-hover` / `--on-primary` (`#ffb34c`, `#ffc574`, `#20170c` —
-the dialogs' primary button, left from the first layer's palette and not the editor's orange).
+and `--primary-fill` / `--primary-fill-hover` / `--on-primary` (`#ffb34c`, `#ffc574`, `#20170c`).
+**Corrected 2026-11-25:** these were never drawn — every visible `.primary` is overridden (editor
+orange in the editor, the app's accent elsewhere); `--primary-fill*` were removed.
 
 ## Result — 2026-11-25
 

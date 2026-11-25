@@ -21,7 +21,7 @@
   --accent:#7b93ff;
   --accent-soft:rgba(123,147,255,.17);
   --on-accent:#ffffff;
-  --danger:#f29a95;
+  --danger:#ff5c5c;
   --danger-soft:rgba(255,92,92,0.141);
   --on-danger:#ffffff;
   --accent-home:#0a84ff;
@@ -81,7 +81,7 @@
   --accent:#4c6fe0;
   --accent-soft:rgba(76,111,224,.12);
   --on-accent:#ffffff;
-  --danger:#a3302b;
+  --danger:#e5484d;
   --danger-soft:rgba(229,72,77,0.102);
   --on-danger:#ffffff;
   --accent-home:#0a84ff;
@@ -164,8 +164,6 @@
   --white-14:rgba(255,255,255,.14);
   --grey-35:rgba(127,127,127,.35);
   --grey-20:#8883;
-  --primary-fill:#ffb34c;
-  --primary-fill-hover:#ffc574;
   --on-primary:#20170c;
   --clip-label-fill:#141519a8;
   --original-label-fill:#151515c9;

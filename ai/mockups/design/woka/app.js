@@ -103,7 +103,7 @@ function outputDialog(kind='copy'){
     return;
   }
   const sizes=video?[['Original','1920 × 1080'],['720p','1280 × 720'],['Small','854 × 480']]:[['Original',state.portrait?'3024 × 4032':'4032 × 3024'],['Large','2048 px'],['Small','1080 px']];
-  modal('Create a finished copy',`<p>A new file with your edits. The original stays as it is.</p><h3>Size</h3><div class="segmented output-size">${sizes.map(([name,detail],index)=>button('out-size',`<b>${name}</b><small>${detail}</small>`,index===0?'selected':'')).join('')}</div>${video?toggle('outSdr','<span data-tip="Use this when the video looks too bright or washed out in other apps.">Standard colours (SDR)</span>',false):''}<div class="dialog-actions">${video?button('extract','Audio only…','quiet'):''}${button('demo-export','Create copy','primary','data-label="Creating copy"')}</div>`);
+  modal('Create a finished copy',`<p>A new file with your edits. The original stays as it is.</p><h3>Size</h3><div class="segmented output-size">${sizes.map(([name,detail],index)=>button('out-size',`<b>${name}</b><small>${detail}</small>`,index===0?'selected':'')).join('')}</div>${currentMedia().hdr?toggle('outSdr','<span data-tip="Use this when the video looks too bright or washed out in other apps.">Standard colours (SDR)</span>',false):''}<div class="dialog-actions">${video?button('extract','Audio only…','quiet'):''}${button('demo-export','Create copy','primary','data-label="Creating copy"')}</div>`);
 }
 
 function action(name,node){

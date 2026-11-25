@@ -308,7 +308,7 @@ button.crumb:hover{color:var(--e-text);background:var(--e-hover-strong)}
 .crumb-sep svg{width:12px;height:12px}
 .inspector .scope .segmented{flex:1;margin:0}
 .tools{display:flex;position:relative;margin:12px 12px 0;padding:4px;gap:2px;background:var(--e-track);border:0;border-radius:12px}
-.tools button{display:flex;align-items:center;justify-content:center;flex-direction:column;min-width:0;overflow:hidden;position:relative;z-index:1;flex:1 1 0;min-height:54px;padding:7px 2px;gap:5px;border-radius:9px;color:var(--e-muted);background:transparent!important;font-size:11px}
+.tools button{display:flex;align-items:center;justify-content:center;flex-direction:column;min-width:0;overflow:hidden;position:relative;z-index:1;flex:1 1 auto;min-height:54px;padding:7px 2px;gap:5px;border-radius:9px;color:var(--e-muted);background:transparent!important;font-size:11px}
 .tools button svg{width:20px;height:20px;transition:color 160ms ease}
 .tools button:hover{color:var(--e-text)}
 .tools button.selected{background:var(--accent-soft);color:var(--e-text);font-weight:600}
