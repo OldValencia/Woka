@@ -5,11 +5,6 @@ ticket's. No file lists here.
 
 ## Viewer
 
-### PT-103 — Fullscreen and PiP
-Fullscreen: chrome hidden, shown on pointer move, hidden again after the app's delay. PiP: a
-compact window scene with the app's PiP controls minus the zoom buttons; resize keeps the frame's
-aspect, Alt frees it (1.0.9 items). The PiP scene shows the window over a blurred desktop stand-in.
-
 ### PT-104 — Size remembered per kind
 The size popover names the kind its mode is remembered for. Drawn when the 1.0.9 per-kind size
 plan has fixed the kinds and the boundary; until then this block waits on that plan.

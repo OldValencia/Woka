@@ -52,6 +52,7 @@ function renderTransport(){
     bar.innerHTML=kind?transportHtml(kind):'';
     if(kind)$('#seek-image').innerHTML=photoSvg(currentMedia().view);
     if(kind==='gif'){frameClock.playing=true;showFrameNumbers=false;}
+    if(kind==='video')syncWindowControls();
   }
   if(kind==='gif'&&frameClock.playing&&viewerMode)startFrameClock();
   syncViewerPlayback();
@@ -73,6 +74,7 @@ function syncViewerPlayback(){
   }
   $('#viewer-play').innerHTML=icon(on?'pause':'play');$('#viewer-play').setAttribute('aria-label',on?'Pause (Space)':'Play (Space)');
   if(transportKind==='audio')mirrorSound();
+  if(!on)$('#app-shell').classList.remove('chrome-idle');
 }
 function showFrame(index){
   state.frameIndex=clamp(index,0,frameCount()-1);
@@ -126,7 +128,7 @@ function transportAction(name,node){
     subtitles:()=>chromePopover(node,'Subtitles',`<div class="segmented">${button('view-subtitles','Off','selected')}${button('view-subtitles','English')}</div>`),
     volume:()=>chromePopover(node,'Listening volume',`<label>Only on this device<input id="chrome-volume" class="media-range" type="range" min="0" max="100" value="${listenVolume}" aria-label="Listening volume"></label><div class="popover-value"><span id="volume-value">${listenVolume}%</span>${button('view-mute',listenVolume?'Mute':'Unmute','secondary')}</div>`),
     settings:()=>chromePopover(node,'Playback',`<label>Speed<select id="chrome-speed" aria-label="Playback speed">${[.5,1,1.5,2].map(speed=>`<option ${speed===viewerSpeed?'selected':''}>${speed}</option>`).join('')}</select></label>`),
-    fullscreen:()=>{$('#app-shell').classList.toggle('focus-view');measurePicture();}
+    fullscreen:()=>setWindowMode(windowMode==='window'?'fullscreen':'window')
   };
   commands[name]?.();
 }

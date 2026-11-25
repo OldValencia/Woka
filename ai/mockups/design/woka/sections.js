@@ -2,13 +2,15 @@
    The bar names a few scenes per section; a link may name any scene the section can show. */
 const SECTIONS=[
   {id:'library',label:'Library',later:'PT-201',scenes:[]},
-  {id:'viewer',label:'Viewer',scenes:[['photo','Photo'],['palm','Edited photo'],['frames','Frame set'],['gif','GIF'],['video','Video'],['track','Track']]},
+  {id:'viewer',label:'Viewer',scenes:[['photo','Photo'],['palm','Edited photo'],['frames','Frame set'],['gif','GIF'],['video','Video'],['fullscreen','Fullscreen'],['pip','PiP'],['track','Track']]},
   {id:'editor',label:'Editor',scenes:[['photo','Photo'],['crop','Portrait crop'],['frames','Frame set'],['gif','GIF'],['video','Video'],['audio','Video + music']]},
   {id:'dialogs',label:'Dialogs',later:'PT-105',scenes:[]}
 ];
 let route={section:'viewer',scene:'photo'};
+/* Fullscreen and PiP are the video in another window, not another file. */
+const WINDOW_SCENES=['fullscreen','pip'];
 function canShow(section,scene){
-  if(section==='viewer')return libraryMedia.some(item=>item.id===scene);
+  if(section==='viewer')return WINDOW_SCENES.includes(scene)||libraryMedia.some(item=>item.id===scene);
   return SECTIONS.find(entry=>entry.id===section)?.scenes.some(([id])=>id===scene)??false;
 }
 function renderPrototypeNav(){
@@ -27,7 +29,9 @@ function go(section,scene){
   const entry=SECTIONS.find(item=>item.id===section&&!item.later);
   if(!entry)return false;
   if(!canShow(section,scene))scene=entry.scenes[0][0];
-  if(section==='viewer')openMedia(scene);else setScene(scene);
+  if(section==='viewer'&&WINDOW_SCENES.includes(scene)){openMedia('video');setWindowMode(scene);}
+  else if(section==='viewer'){openMedia(scene);setWindowMode('window');}
+  else setScene(scene);
   route={section,scene};writeRoute();
   return true;
 }
@@ -42,12 +46,12 @@ function readHash(){
 let followQueued=false;
 function followApp(){
   followQueued=false;
-  const section=viewerMode?'viewer':'editor';
-  if(!canShow(section,currentScene)||(route.section===section&&route.scene===currentScene))return;
-  route={section,scene:currentScene};writeRoute();
+  const section=viewerMode?'viewer':'editor',scene=viewerMode&&windowMode!=='window'?windowMode:currentScene;
+  if(!canShow(section,scene)||(route.section===section&&route.scene===scene))return;
+  route={section,scene};writeRoute();
 }
 function initSections(){
-  for(const name of ['setScene','setViewer']){
+  for(const name of ['setScene','setViewer','setWindowMode']){
     const original=window[name];
     window[name]=function(...args){const result=original.apply(this,args);if(!followQueued){followQueued=true;setTimeout(followApp,0);}return result;};
   }

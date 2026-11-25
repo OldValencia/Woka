@@ -94,3 +94,27 @@
 .media-chip svg{width:8px;height:8px}
 .media-edited{position:absolute;right:4px;top:4px;width:7px;height:7px;border-radius:50%;background:var(--accent-editor);box-shadow:0 0 0 1.5px var(--black-40)}
 #viewer-original[aria-pressed=true]{color:var(--accent)}
+
+/* Fullscreen and PiP: the video alone on black, the pill top-right as size | PiP, no folder around it. */
+.app-shell:not(.focus-view) .window-part{display:none}
+.focus-view :is(#media-info,.viewer-actions,.hdr-part,.media-nav){display:none!important}
+.focus-view .editor.viewing,.focus-view .editor.viewing :is(.workspace,.work-area){background:var(--black)}
+.focus-view #pip-toggle.selected{color:var(--accent-folders)}
+.focus-view .editor.viewing :is(.viewer-pill,.viewer-playback){transition:opacity .2s ease,transform .2s ease}
+.chrome-idle .editor.viewing .viewer-pill{opacity:0;transform:translateY(-8px);pointer-events:none}
+.chrome-idle .editor.viewing .viewer-playback{opacity:0;transform:translateY(12px);pointer-events:none}
+.chrome-idle .stage{cursor:none}
+/* PiP: the same window, 480 px wide and anchored 24 px from the screen's bottom-right corner, over a
+   stand-in for whatever is behind it. */
+.pip-desktop,.pip-resize{display:none}
+.app-shell.pip-view{display:block;position:relative}
+.app-shell.pip-view .pip-desktop{display:block;position:absolute;inset:0;overflow:hidden}
+.pip-desktop svg{display:block;width:100%;height:100%;filter:blur(18px) brightness(.55);transform:scale(1.08)}
+.app-shell.pip-view .library-sidebar{display:none}
+.app-shell.pip-view .editor{position:absolute;right:24px;bottom:24px;width:var(--pip-width,480px);height:var(--pip-height,270px);border-radius:10px;overflow:hidden;border:1px solid var(--white-14);box-shadow:0 24px 60px var(--black-60)}
+.app-shell.pip-view .viewer-bottom{left:10px;right:10px;bottom:10px}
+.app-shell.pip-view .viewer-playback{height:40px;border-radius:12px;gap:6px}
+.app-shell.pip-view .viewer-playback :is(.skip,#viewer-subtitles,#viewer-settings){display:none}
+.app-shell.pip-view .editor.viewing .viewer-pill{top:8px;right:8px}
+.app-shell.pip-view .size-part{display:none!important}
+.app-shell.pip-view .pip-resize{display:block;position:absolute;left:0;top:0;width:16px;height:16px;z-index:6;cursor:nwse-resize}

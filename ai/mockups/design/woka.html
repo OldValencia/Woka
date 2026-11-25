@@ -17,6 +17,7 @@
     <div class="row"><button id="theme" class="icon-button" aria-label="Switch theme"></button></div>
   </div>
   <div class="app-shell" id="app-shell">
+    <div class="pip-desktop" id="pip-desktop" aria-hidden="true"></div>
     <aside class="library-sidebar" id="library-sidebar" aria-label="Library navigation">
       <div class="sidebar-heading"><img src="../../../logo/woka-logo.svg" alt="Woka"><button id="hide-library" class="icon-button" aria-label="Hide sidebar"></button></div>
       <nav id="library-folders" class="library-folders" aria-label="Folders"></nav>
@@ -24,12 +25,13 @@
       <footer class="sidebar-foot"><button id="link-folder" class="quiet">＋ Link folder…</button></footer>
     </aside>
   <main class="editor" id="editor">
+    <div id="pip-resize" class="pip-resize" role="separator" aria-label="Resize; hold Alt to change the proportions"></div>
     <header class="app-header">
       <div class="header-leading"><button id="show-library" class="icon-button" aria-label="Show sidebar"></button><button id="folder-back" class="icon-button" aria-label="Back to folder"></button><button id="back-viewer" class="quiet" data-tip="Return to the viewer. You can keep or discard any new changes.">Cancel</button><span class="edit-history"><button id="undo" class="icon-button" aria-label="Undo (Ctrl+Z)" disabled></button><button id="redo" class="icon-button" aria-label="Redo (Ctrl+Shift+Z)" disabled></button></span></div>
       <div class="viewer-pill" aria-label="Viewing controls">
         <button id="pill-minus" class="icon-button size-part" aria-label="Zoom out">−</button><button id="size-menu" class="size-label size-part" aria-haspopup="dialog" aria-expanded="false">Fit · <span id="size-percent">42%</span><span class="down-chevron">⌄</span></button><button id="pill-plus" class="icon-button size-part" aria-label="Zoom in">+</button>
         <span class="pill-divider hdr-part" hidden></span><button id="hdr-mode" class="size-label hdr-part" aria-haspopup="dialog" aria-expanded="false" data-tip="How the picture's colour is read" hidden>Auto<span class="down-chevron">⌄</span></button>
-        <span class="pill-divider size-part"></span><button id="media-info" class="icon-button" aria-label="File information"></button>
+        <span class="pill-divider size-part"></span><button id="pip-toggle" class="icon-button window-part" aria-pressed="false"></button><button id="media-info" class="icon-button" aria-label="File information"></button>
         <div class="viewer-actions" hidden><button id="viewer-original" class="pill-edit" aria-pressed="false" data-tip="Show the original. Click again to return, or press and hold. Shortcut: hold \" hidden></button><button id="toggle-carousel" class="icon-button" aria-label="Hide filmstrip" aria-pressed="true"></button><span class="pill-divider edit-part"></span><button id="enter-editor" class="pill-edit edit-part" data-tip="Open the editor. The picture stays in view while panels change around it.">Edit</button></div>
       </div>
       <div class="header-trailing"><div class="header-actions"><button id="compare" class="quiet" aria-pressed="false" data-tip="Show the original. Click again to return, or press and hold. Shortcut: hold \"></button><button id="help" class="icon-button" aria-label="Tips for this task">?</button><button id="focus" class="icon-button" aria-label="Hide settings (F6)"></button><span class="divider"></span><button id="output" class="quiet" data-tip="Make a separate file with your edits applied, ready for other apps.">Create a copy…</button><button id="done" class="primary" data-tip="Keep your edits for Woka and return to the viewer. You can edit again later.">Done</button></div><div class="window-buttons" aria-hidden="true"><span>−</span><span>□</span><span>×</span></div></div>
@@ -83,6 +85,7 @@
   <script src="woka/instruments.js"></script>
   <script src="woka/frames.js"></script>
   <script src="woka/nowplaying.js"></script>
+  <script src="woka/fullscreen.js"></script>
   <script src="woka/transport.js"></script>
   <script src="woka/app.js"></script>
   <script src="woka/sections.js"></script>

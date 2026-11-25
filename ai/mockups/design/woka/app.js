@@ -213,4 +213,4 @@ document.addEventListener('keydown',event=>{
   if(event.key==='Delete'&&!viewerMode){if(selectedAudio())action('delete-audio');else if(selectedClip())action('delete-clip');else if(state.selection==='caption')action('remove-text');}
 });
 window.addEventListener('resize',updatePlayhead);
-initTimeline();initCrop();initWoka();initTransport();initNowPlaying();setScene('photo');initExperience();initRefine();initInstruments();
+initTimeline();initCrop();initWoka();initTransport();initNowPlaying();initFullscreen();setScene('photo');initExperience();initRefine();initInstruments();

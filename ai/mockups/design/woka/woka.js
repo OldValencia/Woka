@@ -37,7 +37,7 @@ function renderLibrary(){
 }
 function syncWokaChrome(){
   const item=currentMedia();$('#app-shell').classList.toggle('editing',!viewerMode);$('#app-shell').classList.toggle('sidebar-hidden',libraryHidden);
-  if(!viewerMode)$('#app-shell').classList.remove('focus-view');
+  keepWindowMode();
   $('#viewer-layer').inert=!viewerMode;$('#library-sidebar').inert=!viewerMode||libraryHidden;
   $('#carousel-well').hidden=!carouselShown;
   $('#viewer-status').textContent=item.name;
