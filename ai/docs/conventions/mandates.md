@@ -35,7 +35,7 @@ disagree, this file wins.
 Plan (non-trivial → plan mode, explicit approval; persistent feature → `ai/docs/features/pending/`
 per `ai/docs/conventions/plans.md`) → code only once approved → build **and** the anti-FQN check,
 waiting for both → report what changed and the build outcome → **stop**.
-Ambiguous request → ask. Never guess, never build a second interpretation "just in case".
+Never build a second interpretation "just in case" (guessing: `CLAUDE.md`, Don't guess).
 
 ## Anti-FQN self-check — mandatory
 
