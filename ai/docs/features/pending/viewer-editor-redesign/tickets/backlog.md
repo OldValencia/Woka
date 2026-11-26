@@ -2,21 +2,8 @@
 
 Blocks are promoted into ticket files when they are next, re-cut against the tree as it then is
 (`tickets.md` §1, §4). No file lists here. The feature doc's questions were answered on
-2026-11-25; RD-101…RD-302 are tickets, RD-401 is the next block. Each block is promoted and built
+2026-11-25; RD-101…RD-401 are tickets, RD-501 is the next block. Each block is promoted and built
 whole — the author's call, 2026-11-25 (`tickets.md` §4a waived).
-
-## Dialogs
-
-### RD-401 — Ways out
-`Create a copy` (size, SDR, Audio only…), `Keep your changes?`, `Revert to original?`, the help
-sheet (`?` in the header); Undo and progress toasts. A separate button replaces `Done ▾` (answer 3);
-Create a copy takes Resize's size and HDR's Standard colours for HDR media, the latter hidden by a
-Settings switch. **State after RD-201:** `Done ▾`'s caret is gone, so a film's other exports
-(save as mp4, render…) are unreachable until this button; Resize and HDR have no tab, and
-Settings → Editor still lists them — decide their switches here. Their UI tests
-(`EditorRailHdrUiTest`, `ResizeInspectorUiTest`) were deleted with the tabs; this brings the
-replacements. **State after RD-301:** the prototype's timeline menus offer `Save frame as
-photo…`; the app's do not — a new export, it comes here with the other ways out.
 
 ## Viewer
 
