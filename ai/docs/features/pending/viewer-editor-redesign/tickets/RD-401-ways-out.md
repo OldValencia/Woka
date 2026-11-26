@@ -16,10 +16,11 @@ dialogs in the prototype's words, a help sheet, and toasts — Undo, and progres
 Resize and HDR have no tab (`tabbed = false`) and no other home. The prototype's timeline menus
 offer `Save frame as photo…`; the app's do not.
 
-**Status: written 2026-11-26, not ready to build.** The questions below are the author's. The
-steps are drafted against the tree as read on 2026-11-26 and are re-cut once they are answered.
+**Status: written 2026-11-26; the author answered the questions the same day.** The steps are cut
+to those answers. One point is still open (the size tiles, below). Re-read the files before
+building (`tickets.md` §1).
 
-## Answers so far (the author, 2026-11-26)
+## Decided with the author (2026-11-26)
 
 - **Done asks before it saves**, a simpler version of Photoshop's save options. It shows a
   confirmation and the size to save at, so Resize moves into `Done`'s dialog (Q1).
@@ -35,32 +36,9 @@ steps are drafted against the tree as read on 2026-11-26 and are re-cut once the
   the app's words.
 - **No Settings switch for the SDR option** (Q6): the toggle shows only for HDR media and is off by
   default, so hiding it saves nothing. Answer 2's switch is dropped.
-- **Status:** every question is answered. The steps are re-cut to these answers before building.
-
-## Questions for the author — answer before building
-
-1. **A photo's Resize today is an op, folded and saved by `Done`.** The prototype has no Resize
-   in the editor: size is chosen in `Create a copy` (Original / Large 2048 px / Small 1080 px).
-   - Does `Done` stop resizing the file itself?
-   - What happens to a Resize op that files already carry: do the readers keep folding it?
-2. **HDR → SDR on a photo is an in-place bake today.** `Done` re-encodes the source, irreversibly,
-   after `BakeToSdrDialog`. The prototype's answer 2 moves Standard colours (SDR) to `Create a
-   copy`, which writes a new file. Does the in-place bake go, along with `HdrTool`'s op and its
-   dialog?
-3. **`Audio only…`** is a M4A export, which is ME-245 (1.1.0, not built). Should 1.0.9 leave the
-   button out, or draw it disabled with "1.1.0"?
-4. **Save frame as photo:** the app writes a JPEG beside the video (`FramePhoto.kt`), the
-   prototype says PNG. Which format?
-5. **Revert:** the prototype says "You can undo this action". The app's `RevertDialog` says "it
-   cannot be undone", because `engine.revert` writes the file at once. Does the revert become
-   undoable, or does the prototype's line change?
-6. **Settings switch for the SDR option** (answer 2). Today Settings → Editor draws one row per
-   tool, by rule ("No per-tool code, now or ever"). Is it:
-   - a new non-tool row, `editorOffersSdr`, in the same panel; or
-   - HDR's own tool row, kept with a new meaning?
-   Whatever it is, Resize's row goes once Resize is no longer a tool.
-7. **The help sheet.** The prototype's video help lists step 2, "Add music or a voice recording",
-   which is 1.1.0. Should 1.0.9's sheet drop that step?
+- **Open — the size tiles.** Which sizes `Done` and `Create a copy` offer for a photo: the
+  prototype's Original / Large 2048 px / Small 1080 px, or Resize's long edges (3840 / 2560 /
+  1920 / 1280) and percentages. Asked; step 1 waits on it.
 
 ## The spec, measured (`app.js`, `experience.js`, `refine.js`, `editor.css`, `base.css`)
 
@@ -97,61 +75,95 @@ steps are drafted against the tree as read on 2026-11-26 and are re-cut once the
     - Cancelled: "Cancelled. Nothing was saved."
     - Done: "Saved next to the original." with `Show in folder`, hiding at 6 s.
 
-## Steps (draft — re-cut after the questions)
+- **Save your changes?** (new; drawn in the prototype first): the dialog `Done` opens.
+  - **A photo:** the size tiles over `Save` (primary) and `Cancel`. The size is Resize's op, so it
+    stays in the edit and can be changed again. The tiles open on what the document holds
+    (Original when it holds none).
+  - **A film:** the same dialog with no size. Resize only sizes a render.
+  - A `RenderOnly` file's `Done` is its render (`DoneChoices.instead`), and the dialog does not
+    stand in front of it.
+
+## Steps
 
 **Prototype first**
-1. `woka/`: apply the answers to questions 1–7, then check headless (`shot.mjs`).
+1. `woka/`:
+   - `#dialogs/done`: `Save your changes?` with size tiles for a photo, without them for a film.
+   - `Create a copy`'s SDR toggle stays.
+   - `Audio only…` is drawn disabled, with the tip "Coming in 1.1.0".
+   - Revert's body reads "This cannot be undone."
+   - The help sheet loses its music step, and `Save frame as photo…` writes a PNG.
+
+   Check headless (`shot.mjs`).
 
 **Toasts**
-2. `core/ui/components/Toast.kt` (new): the spec's toast with an optional action and timing.
-   `EditorRenderBanner` and `EditorSaveBanner` in `StatusBanners` are checked first; a
-   progress toast replaces `EditorRenderBanner` if its states match (name, bar, ✕ → Cancel).
-   `UnlinkUndoBanner`'s six seconds and `AccessoryPill` are the existing Undo precedent.
-3. Undo toasts on `deleteSelected` (`StripActions.kt`) and the Markup `Remove`
-   (`TimelineMenuItems.kt`, the canvas Delete). `Undo` calls `session.undo()`.
+2. `core/ui/components/Toast.kt` (new): the spec's toast with an optional action and its timing.
+   - The progress toast takes `EditorRenderBanner`'s place (name, bar, ✕ → `Cancel`), driven by
+     `EditorRenderStatus` as now.
+   - On finish it reads "Saved next to the original." with `Show in folder`.
+   - `UnlinkUndoBanner` is the existing Undo precedent.
+3. Undo toasts on `deleteSelected` (`StripActions.kt`) and on a Markup shape's removal (the menu's
+   `Remove`, the canvas Delete). `Undo` calls `session.undo()`.
 
-**Create a copy**
-4. `EditorTopBarSetup`: `?` and `Create a copy…` (`EditorTopBarControls`); `DoneChoices` keeps
-   `keeps` and `instead` and loses nothing a `RenderOnly` file needs.
-5. `CreateCopyDialog.kt` (new): size tiles, the SDR toggle, actions. It starts `exportAction` with
-   the chosen size and colours, through the engine's `RenderVideo` / `RenderPhoto`, which take a
-   size and SDR instead of reading Resize's and HDR's ops (question 1, 2).
-6. `Save frame as photo…` in the clip and empty-place menus (`TimelineMenuItems`), through
-   `SaveFramePhoto` at the play head (question 4).
+**Done and Create a copy**
+4. `SaveChangesDialog.kt` (new), opened by `Done` (`EditorHostControls.done`):
+   - A photo gets the size tiles, written through Resize's op on `Save` (`ResizeTool` stays a tool
+     with `tabbed = false`; its Settings row stays).
+   - A film gets the confirmation alone.
+5. **HDR leaves `Done`.**
+   - `bakesToSdr` is no longer asked on `Done` (`EditorHostControls:83`, `ImageEditWrites.kt:54`).
+   - `BakeToSdrDialog` is deleted, and `HdrTool` with it: its row leaves Settings → Editor, and a
+     stored `hdr` op is skipped as an unknown tool's is.
+6. `EditorTopBarSetup`: `?` and `Create a copy…` (`EditorTopBarControls`). `CreateCopyDialog.kt`
+   (new) offers:
+   - the size tiles;
+   - Standard colours (SDR) for HDR media;
+   - `Audio only…`, disabled;
+   - `Create copy`, which runs `exportAction` with `RenderPhoto` / `RenderVideo` at the chosen
+     size and colours. `EditorExport` gains the size and an SDR flag; the render reads them
+     instead of the document's Resize op.
+7. `Save frame as photo…` in the clip and empty-place menus (`TimelineMenuItems`), through
+   `SaveFramePhoto` at the play head; `FramePhoto.kt` writes a PNG.
 
 **Dialogs and help**
-7. `DiscardChangesDialog` becomes `Keep your changes?` (three buttons). `RevertDialog` takes the
-   prototype's text and buttons (question 5). Both are drawn in the spec's dialog frame.
-8. `EditorHelpSheet.kt` (new): the per-kind steps, each card opening its tab or `Create a copy`
-   (question 7).
-9. Settings: the switch from question 6, read by `CreateCopyDialog`.
+8. `DiscardChangesDialog` becomes `Keep your changes?`, with three buttons, asked only with edits.
+   `RevertDialog` gets the spec's frame, buttons and "This cannot be undone." Both are drawn in
+   the spec's dialog frame (`EditorDialogFrame.kt`, new, shared by the four dialogs).
+9. `EditorHelpSheet.kt` (new): the per-kind steps without music, each card opening its tab or
+   `Create a copy`.
 
 **Tests**
 10. UI tests:
-    - `CreateCopyUiTest`: the button opens the dialog; SDR shows for HDR only, and is hidden by
-      the Settings switch; Create copy starts the export at the chosen size.
-    - `KeepChangesUiTest`: three buttons, each doing what it says.
+    - `SaveChangesUiTest`: a photo's `Done` asks, `Save` writes the chosen size and saves; a film
+      gets no size.
+    - `CreateCopyUiTest`: SDR shows for HDR media only, `Audio only…` is disabled, and Create copy
+      starts the export with the size and SDR.
+    - `KeepChangesUiTest`: each of the three buttons.
     - `RevertDialogUiTest`.
-    - `ToastUiTest`: Undo undoes; the timing pauses on hover.
-    - `EditorHelpSheetUiTest`: a card opens its tab.
+    - `ToastUiTest`: Undo undoes; the timer pauses on hover.
+    - `EditorHelpSheetUiTest`.
 
-    Replacements for the deleted `EditorRailHdrUiTest` and `ResizeInspectorUiTest` come from
-    the questions' answers.
+    Unit: `HdrBakeTest` is replaced by a copy's SDR, and `ResizeToolTest` stays. `FramePhoto`
+    writes a PNG.
 
 ## Files
 
-Draft: `Toast.kt`, `CreateCopyDialog.kt`, `EditorHelpSheet.kt` (new); `EditorTopBarSetup`,
-`EditorTopBarControls`, `DoneChoices`, `EditorExportAction`, `EditorHostDialogs`,
-`EditorHostControls`, `DiscardChangesDialog`, `RevertDialog`, `BakeToSdrDialog`,
-`StatusBanners`, `EditorRenderBanner`, `StripActions`, `TimelineMenuItems`, `VideoEditorOutputs`,
-`ImageEditorOutputs`, `ResizeTool`, `HdrTool`, the Settings → Editor panel, the tests. Final list
-after the questions.
+New: `Toast.kt`, `SaveChangesDialog.kt`, `CreateCopyDialog.kt`, `EditorDialogFrame.kt`,
+`EditorHelpSheet.kt`, the tests. Edited: `woka/` (step 1), `EditorTopBarSetup`,
+`EditorTopBarControls`, `DoneChoices`, `EditorExportAction`, `EditorExport`, `EditorHostDialogs`,
+`EditorHostControls`, `DiscardChangesDialog`, `RevertDialog`, `ImageEditWrites`, `StatusBanners`,
+`EditorRenderBanner`, `StripActions`, `TimelineMenuItems`, `FramePhoto`, `VideoEditorOutputs`,
+`ImageEditorOutputs`, the render's size reading, the tool registry's Koin list. Deleted:
+`BakeToSdrDialog.kt`, `tools/hdr/`. The author waived the size limit for a block; each touched
+`.kt` stays ≤ 150 lines.
 
 ## Done when
 
-- `Create a copy…` stands beside `Done`, and every export the engines offer is reachable from it
-  or from the timeline menus.
-- Cancel with edits asks `Keep your changes?`; Revert asks in the prototype's words.
-- `?` opens the help sheet; deleting a clip or a text shows an Undo toast; an export shows its
+- `Done` asks `Save your changes?`: a photo with its size, a film without one.
+- `Create a copy…` stands beside `Done` and makes a new file at the chosen size, SDR for HDR media.
+  The source is untouched, and `Audio only…` is drawn disabled.
+- Every export the engines offer is reachable. `Save frame as photo…` writes a PNG.
+- Cancel with edits asks `Keep your changes?`; Revert asks in the prototype's frame and says it
+  cannot be undone.
+- `?` opens the help sheet; deleting a clip or a shape shows an Undo toast; an export shows its
   progress with Cancel.
 - Every touched `.kt` ≤ 150 lines; anti-FQN clean; `./gradlew.bat :shared:build` green.
