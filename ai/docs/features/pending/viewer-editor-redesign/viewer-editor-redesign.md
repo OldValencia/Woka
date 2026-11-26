@@ -19,7 +19,8 @@ the tree as it is (`tickets.md` §1). The prototype itself is finished —
 | [RD-201 — Editor frame](tickets/RD-201-editor-frame.md) | **done** 2026-11-25 |
 | [RD-202 — Scrub rows and wells](tickets/RD-202-scrub-rows-wells.md) | **done** 2026-11-25 |
 | [RD-203 — Styles, Transform, Markup](tickets/RD-203-styles-transform-markup.md) | **done** 2026-11-25 |
-| RD-204…RD-802 | [backlog](tickets/backlog.md); next: promote RD-204 |
+| [RD-204 — Frame sets: the strip and the scope line](tickets/RD-204-frame-sets.md) | **done** 2026-11-26 |
+| RD-205…RD-802 | [backlog](tickets/backlog.md); next: promote RD-205 |
 
 ## The spec, scene by scene
 
@@ -129,3 +130,8 @@ pill with HDR met `Original` at 960 px, measured 2026-11-25), so the window's mi
 | 2026-11-25 | Styles' content | The app's: Undertone, Look, Palette, Intensity, Vividness, Brightness — in the prototype's form | The author |
 | 2026-11-25 | Ticket size | A backlog block is one ticket, built whole | The author: «не разбивай тикет на меньшие тикеты» |
 | 2026-11-25 | Editor orange in the light prototype | `--accent-editor` back to #FF9F0A as the fill; new `--accent-editor-text` #AD6500 for text and focus | Answer 1; the prototype had #AD6500 on its fills too (edited dots) |
+| 2026-11-26 | Click on a frame in the editor | Walks to the frame; scope changes only on the switch | The author: switching scope on click is a hidden action |
+| 2026-11-26 | All frames' consequence line | Only when it would replace other frames' own edits | The author |
+| 2026-11-26 | Frame strip restyle | Viewer and editor together, one component in two colour sets | The author; the strip must not change on entering the editor |
+| 2026-11-26 | Film's scope line | In RD-204 with the frame set's, `Whole video › Clip N` | The author |
+| 2026-11-26 | GIF in the editor | Edited whole, no scope (ME-138); the viewer's transport and the frame strip, in the room's colours — in the app with RD-501 | The author: a per-frame edit on an animation is a flicker; the editor should still let one stop on a frame |

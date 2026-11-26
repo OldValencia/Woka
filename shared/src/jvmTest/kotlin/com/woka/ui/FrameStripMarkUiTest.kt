@@ -3,7 +3,11 @@ package com.woka.ui
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHeightIsEqualTo
+import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.unit.dp
 import com.woka.core.data.FrameKind
 import com.woka.core.data.ImageFrame
 import com.woka.core.data.MediaItem
@@ -14,7 +18,8 @@ import java.io.File
 import kotlin.test.Test
 
 /**
- * The mark that says a frame carries an edit of its own (ME-157).
+ * The mark that says a frame carries an edit of its own (ME-157), and the tile it sits on
+ * (RD-204).
  *
  * Driven against the component directly rather than through the viewer, because what
  * is being asserted is the component's contract — a defaulted parameter that draws
@@ -54,4 +59,13 @@ class FrameStripMarkUiTest {
     @Test
     fun `the default marks nothing at all`() =
         strip(emptySet()) { onAllNodesWithTag(EDITED_DOT_TAG).assertCountEquals(0) }
+
+    /** The open frame is marked by its border, not by growing (`.frame-thumb`, RD-204). */
+    @Test
+    fun `selected and unselected tiles are the same 56 by 42`() =
+        strip(emptySet()) {
+            listOf("Frame 1", "Frame 2").forEach { frame ->
+                onNodeWithContentDescription(frame).assertWidthIsEqualTo(56.dp).assertHeightIsEqualTo(42.dp)
+            }
+        }
 }

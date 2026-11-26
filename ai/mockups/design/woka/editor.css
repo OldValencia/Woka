@@ -307,6 +307,14 @@ button.crumb:hover{color:var(--e-text);background:var(--e-hover-strong)}
 .crumb-sep{display:inline-flex;color:var(--e-faint)}
 .crumb-sep svg{width:12px;height:12px}
 .inspector .scope .segmented{flex:1;margin:0}
+.inspector .scope{flex-wrap:wrap}
+/* A GIF in the editor: the viewer's transport on the room's panel, under the picture; the strip stops above it */
+.editor.gif-media:not(.viewing) .viewer-layer{display:block}
+.editor.gif-media:not(.viewing) :is(.media-nav,.carousel-well,.viewer-caption){display:none}
+.app-shell.editing .editor.gif-media .stage{padding-bottom:94px}
+.app-shell.editing .viewer-playback{background:var(--e-panel);border:1px solid var(--e-line);backdrop-filter:none;box-shadow:none}
+.app-shell.editing .editor.gif-media .frame-column{max-height:calc(100% - 100px)}
+.inspector .scope .scope-note{flex-basis:100%;margin:7px 2px 0;font-size:11px;color:var(--e-muted)}
 .tools{display:flex;position:relative;margin:12px 12px 0;padding:4px;gap:2px;background:var(--e-track);border:0;border-radius:12px}
 .tools button{display:flex;align-items:center;justify-content:center;flex-direction:column;min-width:0;overflow:hidden;position:relative;z-index:1;flex:1 1 auto;min-height:54px;padding:7px 2px;gap:5px;border-radius:9px;color:var(--e-muted);background:transparent!important;font-size:11px}
 .tools button svg{width:20px;height:20px;transition:color 160ms ease}

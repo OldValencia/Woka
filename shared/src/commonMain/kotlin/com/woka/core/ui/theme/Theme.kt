@@ -17,6 +17,9 @@ data class Colors(
     val surfaceElevated: Color,
     val surfaceHover: Color,
     val surfacePressed: Color,
+    val surfaceRaised: Color,
+    /** A translucent card over media in the viewer, e.g. the frame strip's (RD-204). */
+    val glass: Color,
     val textPrimary: Color,
     val textSecondary: Color,
     val textTertiary: Color,
@@ -51,6 +54,8 @@ val LightColors = Colors(
     surfaceElevated = Color(0xFFFFFFFF),
     surfaceHover = Color(0x0A000000),
     surfacePressed = Color(0x14000000),
+    surfaceRaised = Color(0xFFF2F2F7),
+    glass = Color(0xDBFFFFFF), // rgba(255, 255, 255, 0.86)
     textPrimary = Color(0xFF1C1C1E),
     textSecondary = Color(0xFF6E6E76),
     textTertiary = Color(0xFF9A9AA1),
@@ -78,6 +83,8 @@ val DarkColors = Colors(
     surfaceElevated = Color(0xFF161920), // card bg
     surfaceHover = Color(0x0EFFFFFF), // rgba(255, 255, 255, 0.055)
     surfacePressed = Color(0x08FFFFFF),
+    surfaceRaised = Color(0xFF1E232D),
+    glass = Color(0xD6161A22), // rgba(22, 26, 34, 0.84)
     textPrimary = Color(0xFFF4F4F6),
     textSecondary = Color(0xFF9A9FAA),
     textTertiary = Color(0xFF838893), // dock item text

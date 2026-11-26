@@ -7,6 +7,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -29,8 +31,11 @@ import kotlin.test.Test
 
 private const val SCOPE_TAG = "editor-frame-scope"
 
+private const val NOTE_TAG = "editor-scope-note"
+
 /**
- * The switch that says who the edit is for (ME-156), at the level the user meets it.
+ * The switch that says who the edit is for (ME-156), at the level the user meets it — at
+ * the inspector's head since RD-204, its consequence said only when work would be lost.
  *
  * The frames are supplied rather than decoded: what a real file reports is
  * `FrameScopeSaveTest`'s job, and this layer must never open a HEIC. What is asserted
@@ -94,20 +99,32 @@ class EditorFrameScopeUiTest {
             onNodeWithTag(SCOPE_TAG).assertDoesNotExist()
         }
 
+    /** Above the tabs, in the inspector — nothing over the picture's top edge (RD-204). */
     @Test
-    fun `a burst gets the switch, and it says how many frames it covers`() =
-        scoped(burst()) {
-            onNodeWithTag(SCOPE_TAG).assertIsDisplayed()
-            onNodeWithText("Applies to all 5 frames").assertIsDisplayed()
+    fun `a burst gets the switch at the head of the inspector`() =
+        scoped(burst(), frameIndex = 2) {
+            onNode(hasTestTag(SCOPE_TAG) and hasAnyAncestor(hasTestTag("editor-panel"))).assertIsDisplayed()
+            onNodeWithText("All frames").assertIsDisplayed()
+            onNodeWithText("Frame 3").assertIsDisplayed()
         }
 
     @Test
-    fun `choosing this frame names the frame it is about`() =
-        scoped(burst(), frameIndex = 2) {
-            onNodeWithText("Single Frame").performClick()
+    fun `all frames with nothing to replace adds no note`() =
+        scoped(burst()) { onNodeWithTag(NOTE_TAG).assertDoesNotExist() }
+
+    @Test
+    fun `the open frame's own edit is not counted`() =
+        scoped(burst(overridden = setOf(2)), frameIndex = 2) {
+            onNodeWithTag(NOTE_TAG).assertDoesNotExist()
+        }
+
+    @Test
+    fun `choosing the frame takes the warning away`() =
+        scoped(burst(overridden = setOf(1, 4)), frameIndex = 2) {
+            onNodeWithText("Frame 3").performClick()
             waitForIdle()
 
-            onNodeWithText("Applies to frame 3 only").assertIsDisplayed()
+            onNodeWithTag(NOTE_TAG).assertDoesNotExist()
         }
 
     /**
@@ -117,6 +134,7 @@ class EditorFrameScopeUiTest {
     @Test
     fun `all frames states what it is about to replace`() =
         scoped(burst(overridden = setOf(1, 4)), frameIndex = 2) {
+            onNodeWithTag(NOTE_TAG).assertIsDisplayed()
             onNodeWithText("Replaces the separate edits on 2 frames").assertIsDisplayed()
         }
 

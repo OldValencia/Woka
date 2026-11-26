@@ -55,6 +55,8 @@ internal class EditorPanelState {
  */
 @Composable
 internal fun EditorInspectorPanel(
+    /** Who the edit is for, above the tabs (RD-204); null for a single picture. */
+    scope: (@Composable () -> Unit)?,
     tabs: List<EditorTab>,
     tab: EditorTab?,
     unavailable: Map<String, String>,
@@ -74,6 +76,7 @@ internal fun EditorInspectorPanel(
             .background(room.panel)
             .testTag("editor-panel")
     ) {
+        scope?.invoke()
         EditorTabBar(tabs, tab?.id, unavailable, onSelectTab)
         Column(
             modifier = Modifier

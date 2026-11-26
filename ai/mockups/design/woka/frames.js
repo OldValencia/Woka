@@ -2,6 +2,7 @@
    It stands on the left of the canvas, in the same place in the viewer and the editor, so entering
    the editor does not move it; the bottom of the window is the folder's, not the file's. */
 function renderFrameStrip(){
+  // A GIF shows its frames in the editor too, to stop on one; its edit is still whole (ME-138), so no scope.
   const column=$('#frame-column'),count=state.frames?.length||0,show=count>1;
   column.hidden=!show;$('.work-area').classList.toggle('has-frames',show);
   if(!show){column.replaceChildren();return;}

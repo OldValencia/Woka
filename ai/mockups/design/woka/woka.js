@@ -31,7 +31,9 @@ function carouselBadge(item){
 function syncWokaChrome(){
   const item=currentMedia();$('#app-shell').classList.toggle('editing',!viewerMode);$('#app-shell').classList.toggle('sidebar-hidden',libraryHidden);
   keepWindowMode();
-  $('#viewer-layer').inert=!viewerMode;$('#library-sidebar').inert=!viewerMode||libraryHidden;
+  // A GIF keeps the viewer's transport in the editor (`.gif-media`); nothing else of the viewer layer.
+  $('#editor').classList.toggle('gif-media',!!item.gif);
+  $('#viewer-layer').inert=!viewerMode&&!item.gif;$('#library-sidebar').inert=!viewerMode||libraryHidden;
   $('#carousel-well').hidden=!carouselShown;
   $('#viewer-status').textContent=item.name;
   $('#photo').setAttribute('viewBox',state.mode==='video'?frameView(skimTime??state.time):stillFrameView(item,state.frameIndex));

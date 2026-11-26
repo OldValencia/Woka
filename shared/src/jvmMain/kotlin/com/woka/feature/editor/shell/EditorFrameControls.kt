@@ -1,6 +1,7 @@
 package com.woka.feature.editor.shell
 
 import androidx.compose.runtime.Immutable
+import com.woka.feature.editor.core.ClipScope
 import com.woka.feature.editor.core.EditScope
 import com.woka.feature.editor.core.EditorFrames
 
@@ -26,6 +27,6 @@ internal data class EditorFrameControls(
     val onScopeChange: (EditScope) -> Unit,
     /** Walking to another picture without leaving the editor (ME-158). */
     val onSelectFrame: (Int) -> Unit,
-    /** A film's selected clip, numbered from 1, for the caption (ME-221); filled by `EditorScreen`. */
-    val selectedClip: Int? = null
+    /** A film's selected clip, for the scope line (ME-221, RD-204); filled by `EditorScreen`. */
+    val clip: ClipScope? = null
 )

@@ -84,8 +84,11 @@ internal fun EditorScreen(
     // film's clips are counted on the document, which every split moves (ME-215).
     val clipSelection by session.clipSelection.collectAsState()
     val perFrame = frameControls?.let { it.copy(frames = engine.framesIn(document).takeIf { f -> f.clips } ?: it.frames) }
-        ?.takeIf { it.frames.allowsPerFrame }?.copy(selectedClip = engine.clipNumberOf(document, clipSelection))
+        ?.takeIf { it.frames.allowsPerFrame }
     val scope = perFrame?.scope ?: EditScope.AllFrames
+    // The scope line (RD-204): a frame set's switch, or any film's crumbs — cut or not.
+    val scopeLine = (perFrame ?: frameControls?.takeIf { it.frames.clips })
+        ?.copy(clip = engine.clipScopeOf(document, clipSelection))
     val blocked = unavailable + engine.unavailableIn(scope)
 
     val tabs = rememberEditorTabs(tools, blocked)
@@ -123,6 +126,7 @@ internal fun EditorScreen(
             Row(modifier = Modifier.wrapContentWidth(Alignment.Start, unbounded = true)) {
                 Box(Modifier.width(1.dp).fillMaxHeight().background(Theme.room.line))
                 EditorInspectorPanel(
+                    scope = scopeLine?.let { line -> { EditorScopeLine(line) { session.pickClip(null, NO_CLIP) } } },
                     tabs = tabs.tabs,
                     tab = tab,
                     unavailable = blocked,

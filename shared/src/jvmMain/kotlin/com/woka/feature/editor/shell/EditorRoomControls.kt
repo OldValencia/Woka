@@ -6,6 +6,7 @@ import androidx.compose.ui.unit.dp
 import com.woka.core.ui.components.SegmentedControl
 import com.woka.core.ui.components.SegmentedControlColors
 import com.woka.core.ui.components.SwitchColors
+import com.woka.core.ui.components.frames.FrameStripColors
 import com.woka.core.ui.theme.Theme
 
 /**
@@ -36,6 +37,15 @@ internal object RoomControls {
             on = Theme.room.accent,
             off = Theme.room.switch,
             thumb = Theme.room.switchKnob
+        )
+
+    /** The frame strip on the room's panel, the open frame in the room's orange (RD-204). */
+    val frameStrip: FrameStripColors
+        @Composable get() = FrameStripColors(
+            card = Theme.room.panel,
+            line = Theme.room.line,
+            tile = Theme.colors.surfaceRaised,
+            selected = Theme.room.accent
         )
 }
 

@@ -44,3 +44,12 @@ data class EditorFrames(
      */
     val allowsPerFrame: Boolean get() = count > 1 && !playsAsAnimation
 }
+
+/** A film's selected clip as the scope line names it (RD-204): `Clip 2 · 2.4 s`. */
+@Immutable
+data class ClipScope(
+    /** Its place in the cut, from 1. */
+    val number: Int,
+    /** How long it plays, speed and freeze included (`TrimClip.lengthMs`). */
+    val lengthMs: Long
+)

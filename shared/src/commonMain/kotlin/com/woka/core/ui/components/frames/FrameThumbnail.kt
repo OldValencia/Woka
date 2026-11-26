@@ -17,7 +17,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
@@ -31,8 +30,9 @@ import com.woka.core.data.ImageFrame
 import com.woka.core.data.MediaItem
 import com.woka.core.ui.image.rememberReloadKey
 
-private val SELECTED_SIZE = 56.dp
-private val UNSELECTED_SIZE = 48.dp
+private val TILE_WIDTH = 56.dp
+private val TILE_HEIGHT = 42.dp
+private val TILE_SHAPE = RoundedCornerShape(7.dp)
 
 /**
  * One frame of a file, as a tile in the strip beside it.
@@ -51,6 +51,7 @@ internal fun FrameThumbnail(
     frame: ImageFrame,
     isSelected: Boolean,
     isEdited: Boolean,
+    colors: FrameStripColors,
     loadPreview: suspend (MediaItem, Int) -> ImageBitmap?,
     onClick: () -> Unit
 ) {
@@ -71,9 +72,11 @@ internal fun FrameThumbnail(
     val label = if (frame.kind == FrameKind.Motion) "Motion" else "Frame ${frame.index + 1}"
     Box(
         modifier = Modifier
-            .size(if (isSelected) SELECTED_SIZE else UNSELECTED_SIZE)
-            .clip(RoundedCornerShape(8.dp))
-            .border(1.dp, borderOf(isSelected), RoundedCornerShape(8.dp))
+            .size(TILE_WIDTH, TILE_HEIGHT)
+            .clip(TILE_SHAPE)
+            .background(colors.tile)
+            // Drawn over the picture, inside the tile (`.frame-thumb.selected::after`).
+            .then(if (isSelected) Modifier.border(2.dp, colors.selected, TILE_SHAPE) else Modifier)
             .pointerHoverIcon(PointerIcon.Hand)
             .pointerInput(frame.index) { detectTapGestures { onClick() } }
             .semantics { contentDescription = label },
@@ -87,16 +90,8 @@ internal fun FrameThumbnail(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
-        } else {
-            Box(modifier = Modifier.fillMaxSize().background(Color.Gray.copy(alpha = 0.3f)))
-        }
-        if (!isSelected) {
-            Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)))
         }
         if (frame.kind == FrameKind.Motion) MotionBadge()
         if (isEdited) EditedDot(Modifier.align(Alignment.TopEnd))
     }
 }
-
-private fun borderOf(isSelected: Boolean): Color =
-    if (isSelected) Color.White.copy(alpha = 0.9f) else Color.White.copy(alpha = 0.15f)

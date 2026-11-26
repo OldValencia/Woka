@@ -54,7 +54,7 @@ function renderTransport(){
     if(kind==='gif'){frameClock.playing=true;showFrameNumbers=false;}
     if(kind==='video')syncWindowControls();
   }
-  if(kind==='gif'&&frameClock.playing&&viewerMode)startFrameClock();
+  if(kind==='gif'&&frameClock.playing)startFrameClock();
   syncViewerPlayback();
 }
 function syncViewerPlayback(){
@@ -86,7 +86,7 @@ function startFrameClock(){
   frameClock.running=true;frameClock.last=performance.now();frameClock.carry=0;requestAnimationFrame(frameTick);
 }
 function frameTick(now){
-  if(!frameClock.playing||!viewerMode||!currentMedia().gif){frameClock.running=false;return;}
+  if(!frameClock.playing||!currentMedia().gif){frameClock.running=false;return;}
   frameClock.carry+=(now-frameClock.last)/1000*frameRate()*viewerSpeed;frameClock.last=now;
   if(frameClock.carry>=1){
     const steps=Math.floor(frameClock.carry),count=frameCount();frameClock.carry-=steps;
@@ -105,7 +105,6 @@ function setFramePlaying(on){
 function stepFrame(delta){
   if(currentMedia().gif){
     setFramePlaying(false);showFrame((state.frameIndex||0)+delta);
-    if(!viewerMode){state.frameScope='single';render();}
     return true;
   }
   if(state.mode==='video'&&!playing){state.time=clamp(state.time+delta/30,0,duration());updatePlayhead();return true;}
@@ -147,7 +146,7 @@ function initTransport(){
     else $('#seek-time').textContent=shortTime(fraction*duration());
   });
   bar.addEventListener('pointerout',event=>{if(event.target.id==='viewer-seek')$('#seek-preview').hidden=true;});
-  $('#stage').addEventListener('click',()=>{if(viewerMode&&mediaKind())play();});
+  $('#stage').addEventListener('click',()=>{if((viewerMode||currentMedia().gif)&&mediaKind())play();});
   $('#hdr-mode').onclick=hdrPopover;
   document.addEventListener('click',event=>{
     const node=event.target.closest('[data-action="hdr-mode"]');

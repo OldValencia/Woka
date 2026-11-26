@@ -18,7 +18,7 @@ import com.woka.feature.viewer.shell.frames.FrameStripModel
 /**
  * Everything in the player that is about a file holding **more than one picture**: the
  * published frame count, the clock that plays an animation, the play/pause request the
- * clock answers, and the strip down the left edge.
+ * clock answers, and the strip at the top-left.
  *
  * Split out of [MediaViewerPlayer] when the clock arrived and pushed that file past the
  * size mandate — the same cut [MediaViewerPlayerOverlays] made before it, and for the
@@ -62,8 +62,10 @@ internal fun BoxScope.MediaViewerPlayerFrames(
         // an edit can hide: five thumbnails, one of them following a rule of its own,
         // and nothing on screen saying which.
         editedFrames = rememberEditedFrames(activeItem.file.absolutePath),
+        // Top-left, 12 / 16 into the area under the bar — the editor's place too, so entering
+        // it does not move the strip (RD-204). It stops short of the transport and carousel.
         modifier = Modifier
-            .align(Alignment.CenterStart)
-            .padding(start = 12.dp, top = 72.dp, bottom = bottomPadding)
+            .align(Alignment.TopStart)
+            .padding(start = 12.dp, top = 16.dp, bottom = bottomPadding)
     )
 }

@@ -1,18 +1,27 @@
 package com.woka.core.ui.components.frames
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.dp
 import com.woka.core.data.ImageFrame
 import com.woka.core.data.MediaItem
 
-/** What the strip occupies on the left edge, so the Prev arrow can step aside. */
-val FRAME_STRIP_WIDTH = 80.dp
+/** The card's width: a 56 dp tile, 6 dp padding each side, a 1 dp outline (RD-204). */
+val FRAME_STRIP_CARD = 70.dp
+
+/** What the strip occupies from the left edge — 12 dp inset and the card — so the Prev arrow can step aside. */
+val FRAME_STRIP_WIDTH = 12.dp + FRAME_STRIP_CARD
+
+private val CARD_SHAPE = RoundedCornerShape(12.dp)
 
 /**
  * The frames inside one file, as a vertical strip down the left edge.
@@ -25,9 +34,11 @@ val FRAME_STRIP_WIDTH = 80.dp
  * from the same problem.
  *
  * Left rather than right because the right edge is already spoken for: the
- * Next button and all three vertical popovers are anchored there. The
- * treatment still matches the carousel — 8 dp radius, unselected dimmed rather
- * than shrunk away — so the two read as one family.
+ * Next button and all three vertical popovers are anchored there.
+ *
+ * **A card at the top-left since RD-204** (`#viewer/frames`, `#editor/frames`): it hugs
+ * its frames and scrolls once they outgrow the height the caller leaves it, in [colors]
+ * — glass in the viewer, the room's panel in the editor.
  *
  * **In `core/ui/components/` since ME-157**, because the editor mounts it too
  * (ME-158) and `core/` is shared by everyone while a `feature/` is shared by no
@@ -46,12 +57,17 @@ internal fun FrameStrip(
     onSelectFrame: (Int) -> Unit,
     modifier: Modifier = Modifier,
     /** Frames carrying an edit of their own (ME-157) — empty says nothing at all. */
-    editedFrames: Set<Int> = emptySet()
+    editedFrames: Set<Int> = emptySet(),
+    colors: FrameStripColors = FrameStripDefaults.viewer
 ) {
     LazyColumn(
-        modifier = modifier,
-        contentPadding = PaddingValues(vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
+        modifier = modifier
+            .clip(CARD_SHAPE)
+            .background(colors.card)
+            .border(1.dp, colors.line, CARD_SHAPE)
+            // 6 dp inside the 1 dp outline, which `border` draws within the card.
+            .padding(7.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         items(frames.size, key = { frames[it].index }) { position ->
@@ -61,6 +77,7 @@ internal fun FrameStrip(
                 frame = frame,
                 isSelected = frame.index == selectedIndex,
                 isEdited = frame.index in editedFrames,
+                colors = colors,
                 loadPreview = loadPreview,
                 onClick = { onSelectFrame(frame.index) }
             )

@@ -1,5 +1,6 @@
 package com.woka.feature.editor.engine.video
 
+import com.woka.feature.editor.core.ClipScope
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditorFrames
@@ -48,6 +49,9 @@ internal abstract class VideoEditorClips(
      * layer whatever is selected, and Crop, Transform, Resize and Cover clear the selection
      * as they open (`EditorScreen`) — one film has one frame size.
      */
-    override fun clipNumberOf(document: EditDocument, id: String?): Int? =
-        TrimTool.clipsIn(document)?.indexOfFirst { it.id == id }?.takeIf { it >= 0 }?.plus(1)
+    override fun clipScopeOf(document: EditDocument, id: String?): ClipScope? {
+        val clips = TrimTool.clipsIn(document) ?: return null
+        val at = clips.indexOfFirst { it.id == id }.takeIf { it >= 0 } ?: return null
+        return ClipScope(number = at + 1, lengthMs = clips[at].lengthMs)
+    }
 }

@@ -111,7 +111,7 @@ function action(name,node){
   if(name.startsWith('mute-track:')){const audio=state.audio.find(a=>a.id===name.slice(11));commit(()=>audio.settings.mute=!audio.settings.mute);return;}
   const commands={
     'scope-all':()=>{const wasAudio=!!selectedAudio();state.selection=null;if(wasAudio)state.tool='sound';if(['clip','markup'].includes(state.tool))state.tool='styles';render();},
-    'frame':()=>{frameClock.playing=false;state.frameIndex=+node.dataset.frame;if(!viewerMode)state.frameScope='single';render();},
+    'frame':()=>{frameClock.playing=false;state.frameIndex=+node.dataset.frame;render();},
     'frame-scope':()=>{state.frameScope=node.dataset.scope;render();},
     'adjust-group':()=>{state.group=node.dataset.group;renderInspector();},
     auto:()=>{easePhoto();commit(()=>Object.assign(settings(),{exposure:12,contrast:8,shadows:18,highlights:-16}));},
@@ -178,7 +178,7 @@ function initCrop(){
   });
   box.addEventListener('keydown',event=>{if(!event.key.startsWith('Arrow'))return;event.preventDefault();const step=event.shiftKey?5:1;commit(()=>change(state.crop,event.target.dataset.edge,event.key==='ArrowRight'?step:event.key==='ArrowLeft'?-step:0,event.key==='ArrowDown'?step:event.key==='ArrowUp'?-step:0));$('.crop-handle.'+event.target.dataset.edge)?.focus();});
 }
-function play(){if(currentMedia().gif&&viewerMode){setFramePlaying(!frameClock.playing);return;}if(state.mode!=='video')return;playing=!playing;if(playing&&state.time>=duration())state.time=0;lastTick=performance.now();updatePlayhead();if(playing)requestAnimationFrame(tick);}
+function play(){if(currentMedia().gif){setFramePlaying(!frameClock.playing);return;}if(state.mode!=='video')return;playing=!playing;if(playing&&state.time>=duration())state.time=0;lastTick=performance.now();updatePlayhead();if(playing)requestAnimationFrame(tick);}
 function tick(now){if(!playing)return;state.time=Math.min(duration(),state.time+(now-lastTick)/1000*(viewerMode?viewerSpeed:1));lastTick=now;if(state.time>=duration())playing=false;updatePlayhead();if(playing)requestAnimationFrame(tick);}
 document.addEventListener('click',event=>{
   const tool=event.target.closest('[data-tool]');if(tool){setTool(tool.dataset.tool);return;}

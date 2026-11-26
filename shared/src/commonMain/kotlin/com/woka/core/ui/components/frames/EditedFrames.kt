@@ -1,6 +1,7 @@
 package com.woka.core.ui.components.frames
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -13,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.woka.core.ui.image.AppliedStillEdits
@@ -20,10 +22,12 @@ import com.woka.core.ui.image.rememberReloadKey
 import com.woka.core.ui.theme.Theme
 import java.io.File
 
-/** 5 dp: large enough to see beside a 48 dp thumbnail, small enough not to be a badge. */
-private val DOT_SIZE = 5.dp
+/** 7 dp at 4 dp from the corner, with a dark ring so it reads on any picture (`.frame-dot`). */
+private val DOT_SIZE = 7.dp
 
-private val DOT_INSET = 5.dp
+private val DOT_INSET = 4.dp
+
+private val DOT_RING = 1.5.dp
 
 internal const val EDITED_DOT_TAG = "frame-edited"
 
@@ -53,16 +57,18 @@ internal fun rememberEditedFrames(path: String): Set<Int> {
  * editor's doing" needs no legend.
  *
  * **Not a badge with a glyph.** `MotionBadge` beside it is already a glyph, and two
- * badges on a 48 dp square is a wall.
+ * badges on a 56 × 42 tile is a wall.
  */
 @Composable
 internal fun EditedDot(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
-            .padding(DOT_INSET)
-            .size(DOT_SIZE)
+            // The ring is drawn outside the dot, as the prototype's box-shadow is.
+            .padding(DOT_INSET - DOT_RING)
+            .size(DOT_SIZE + DOT_RING * 2)
             .clip(CircleShape)
             .background(Theme.colors.accentEditor)
+            .border(DOT_RING, Color.Black.copy(alpha = 0.4f), CircleShape)
             .testTag(EDITED_DOT_TAG)
     )
 }

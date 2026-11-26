@@ -31,8 +31,11 @@ function scopeHtml(){
     const name=audio?escapeHtml(audio.name):clip?`${clipLabel(clip)} <span class="crumb-meta">${clip.duration.toFixed(1)} s</span>`:'Text';
     return `<nav class="scope" aria-label="Editing">${button('scope-all','Whole video','crumb','data-tip="Back to settings for the whole video (Esc)"')}<span class="crumb-sep">${icon('chevronRight')}</span><span class="crumb current">${name}</span></nav>`;
   }
-  if(!state.frames)return '';
-  return `<nav class="scope">${segmented('frame-scope',[['frame-scope','All frames',state.frameScope==='all','data-scope="all"'],['frame-scope',`Frame ${state.frameIndex+1}`,state.frameScope==='single','data-scope="single"']])}</nav>`;
+  if(!state.frames||currentMedia().gif)return '';
+  // Said only when All frames is about to throw work away (ME-126): the other frames' own edits.
+  const replaced=state.frameScope==='all'?state.frames.filter((frame,index)=>index!==state.frameIndex&&Object.keys(frame.settings).length).length:0;
+  const note=replaced?`<p class="scope-note">Replaces the separate edit${replaced>1?'s':''} on ${replaced} frame${replaced>1?'s':''}</p>`:'';
+  return `<nav class="scope">${segmented('frame-scope',[['frame-scope','All frames',state.frameScope==='all','data-scope="all"'],['frame-scope',`Frame ${state.frameIndex+1}`,state.frameScope==='single','data-scope="single"']])}${note}</nav>`;
 }
 function renderInspector(){
   const previous=rememberPanel(),audio=selectedAudio(),clip=selectedClip();

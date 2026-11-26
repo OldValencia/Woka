@@ -18,7 +18,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
- * The editor's mounting of the shared frame strip (ME-158), down its left edge.
+ * The editor's mounting of the shared frame strip (ME-158), at its top-left.
  *
  * **Vertical, exactly as in the viewer.** The axis carries the meaning and this
  * project made that call once already: the carousel runs horizontally along the bottom
@@ -58,6 +58,7 @@ internal fun EditorFrameStrip(
         loadPreview = { media, frame -> MediaThumbnails.loadPreview(media, frame) },
         onSelectFrame = onSelectFrame,
         modifier = modifier,
-        editedFrames = rememberEditedFrames(file.absolutePath)
+        editedFrames = rememberEditedFrames(file.absolutePath),
+        colors = RoomControls.frameStrip
     )
 }
