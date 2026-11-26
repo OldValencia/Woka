@@ -51,7 +51,7 @@ function updatePicture(){
   pan.x=clamp(pan.x,-(state.zoom-1)*w/2,(state.zoom-1)*w/2);pan.y=clamp(pan.y,-(state.zoom-1)*h/2,(state.zoom-1)*h/2);
   picture.style.transform=`translate(${pan.x}px,${pan.y}px) scale(${state.zoom})`;
   $('#stage').classList.toggle('pannable',state.zoom>1&&!viewerMode);
-  const clip=selectedClip(),s=video?(skimTime===null&&clip?{...state.settings,...clip.settings}:lookAt(skimTime??state.time)):settings();
+  const clip=selectedClip(),s=video?(clip?{...state.settings,...clip.settings}:lookAt(state.time)):settings();
   const filterOf=(list,group,fallback)=>(list.find(([key])=>key===(stylePreview?.group===group?stylePreview.key:(s[group]??fallback)))||[])[2]||'';
   $('#photo').style.filter=`brightness(${1+(s.exposure||0)/200+(s.brightness||0)/250}) contrast(${1+(s.contrast||0)/150}) saturate(${1+(s.saturation||0)/100}) sepia(${Math.max(0,s.warmth||0)/250}) ${filterOf(UNDERTONES,'undertone','neutral')} ${filterOf(LOOKS,'style','original')}`;
   const angle=state.straighten||0,cover=coverOf(angle,w/h);
@@ -139,7 +139,10 @@ function action(name,node){
     'appear-here':()=>commit(()=>settings().appearsAt=Math.round(state.time*10)/10),
     split:splitClip,
     'move-left':()=>moveClip(-1),'move-right':()=>moveClip(1),
-    freeze:()=>{const clip=selectedClip();if(clip)flipLane(()=>commit(()=>{const freeze={id:uid('clip'),name:'Freeze frame',duration:2,sourceStart:clip.sourceStart,speed:1,freeze:true,settings:{...clip.settings}};state.clips.splice(state.clips.indexOf(clip)+1,0,freeze);state.selection=freeze.id;}));},
+    'duplicate-clip':()=>{const clip=selectedClip();if(clip)flipLane(()=>commit(()=>{const copy={...structuredClone(clip),id:uid('clip')};state.clips.splice(state.clips.indexOf(clip)+1,0,copy);state.selection=copy.id;}));},
+    'join-clip':()=>{const clip=selectedClip();if(clip&&joinable(clip))flipLane(()=>commit(()=>{const next=state.clips[state.clips.indexOf(clip)+1];clip.duration+=next.duration;state.clips.splice(state.clips.indexOf(next),1);}));},
+    'reset-cuts':()=>{if(cut())flipLane(()=>commit(()=>{state.clips=[{id:'original',name:'Original video',duration:SOURCE_SECONDS,sourceStart:0,speed:1,settings:{}}];state.selection=null;}));},
+    freeze:()=>{const clip=selectedClip()||clipAt(state.time).clip;if(clip)flipLane(()=>commit(()=>{const freeze={id:uid('clip'),name:'Freeze frame',duration:2,sourceStart:clip.sourceStart,speed:1,freeze:true,settings:{...clip.settings}};state.clips.splice(state.clips.indexOf(clip)+1,0,freeze);state.selection=freeze.id;}));},
     'delete-clip':()=>{if(state.clips.length===1){toast('Keep at least one clip on the timeline.');return;}flipLane(()=>commit(()=>{state.clips=state.clips.filter(c=>c.id!==state.selection);state.selection=null;}));toast('Clip removed. The remaining clips close the gap.',true);},
     'copy-look':()=>{clipboard=structuredClone(settings());toast('Clip settings copied.');},
     'paste-look':()=>{if(!clipboard){toast('Copy the settings from another clip first.');return;}const kind=node.dataset.kind||'both',soundKeys=['volume','mute','fadeIn','fadeOut','even'];commit(()=>{const target=settings();const accepts=key=>kind==='both'||(kind==='sound')===soundKeys.includes(key);Object.keys(target).filter(accepts).forEach(key=>delete target[key]);Object.keys(clipboard).filter(accepts).forEach(key=>target[key]=clipboard[key]);});},

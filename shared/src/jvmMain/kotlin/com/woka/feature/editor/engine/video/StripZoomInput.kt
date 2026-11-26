@@ -8,6 +8,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.isCtrlPressed
 import androidx.compose.ui.input.pointer.onPointerEvent
 import com.woka.feature.editor.tools.trim.TrimClip
 import com.woka.feature.viewer.video.engine.VideoPlayerState
@@ -18,23 +19,28 @@ import kotlin.math.pow
 private const val PAN_PX = 60f
 
 /**
- * What moves the strip's zoom from outside `StripZoom` (ME-218): the wheel over the strip and
- * over the band, and the play head pulling the window along while it plays. Split from it
- * when the overview's scrollbar pushed that file past the size mandate.
+ * What moves the strip's zoom from outside `StripZoom` (ME-218): the wheel over the tracks, and
+ * the play head pulling the window along while it plays. Split from it when the overview's
+ * scrollbar pushed that file past the size mandate.
  */
 
 /**
- * The wheel over the strip: up and down zoom around the pointer, sideways — or with Shift,
- * which Windows turns into sideways — pans. Consumed, so the editor's canvas does not zoom
- * the picture as well.
+ * The wheel over the tracks (RD-301, the prototype's tooltips): **with Ctrl** up and down zoom
+ * around the pointer; sideways — or with Shift, which Windows turns into sideways — pans. A
+ * plain wheel is left unconsumed for the lanes' own vertical scroll, which a tall Markup lane
+ * needs now the timeline has the height the author gives it. [startPx] is the label column the
+ * lanes start after.
  */
 @OptIn(ExperimentalComposeUiApi::class)
-internal fun Modifier.stripZoomWheel(zoom: StripZoom, layout: StripLayout) =
+internal fun Modifier.stripZoomWheel(zoom: StripZoom, layout: StripLayout, startPx: Float) =
     onPointerEvent(PointerEventType.Scroll) { event ->
         val change = event.changes.first()
         val delta = change.scrollDelta
-        if (abs(delta.x) > abs(delta.y)) zoom.pan(delta.x * PAN_PX, layout)
-        else zoom.zoomAround(change.position.x, ZOOM_NOTCH.pow(-delta.y), layout)
+        when {
+            abs(delta.x) > abs(delta.y) -> zoom.pan(delta.x * PAN_PX, layout)
+            event.keyboardModifiers.isCtrlPressed -> zoom.zoomAround(change.position.x - startPx, ZOOM_NOTCH.pow(-delta.y), layout)
+            else -> return@onPointerEvent
+        }
         change.consume()
     }
 
@@ -56,15 +62,6 @@ internal fun FollowPlayHead(
                 if (playing) zoom.follow(currentLayout(zoom.scale, zoom.scrollPx).xOf(ms), currentLayout)
             }
     }
-}
-
-/** The wheel over the band outside the strip — what the strip did not consume. */
-@OptIn(ExperimentalComposeUiApi::class)
-internal fun Modifier.bandZoomWheel(zoom: StripZoom) = onPointerEvent(PointerEventType.Scroll) { event ->
-    val change = event.changes.first()
-    if (change.isConsumed) return@onPointerEvent
-    zoom.wheelAtPlayHead(change.scrollDelta.y)
-    change.consume()
 }
 
 /**

@@ -101,10 +101,4 @@ internal fun appearAtPlayHead(spec: ParamSpec<*>, playHeadMs: Long, document: Ed
     return held.with(MarkupAppearsParam, playHeadMs / 1000f)
 }
 
-/** The window [document] gives shape [selectedId], or null — untimed, or nothing selected. */
-internal fun windowOf(document: EditDocument, selectedId: String?): TimeWindow? {
-    val id = selectedId ?: return null
-    return document.opsOf(MarkupTool.manifest.id).lastOrNull()?.params?.get(MarkupWindowsParam)?.get(id)
-}
-
 private fun Float.ms(): Long = (this * 1000f).toLong()

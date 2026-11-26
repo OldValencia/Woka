@@ -32,6 +32,12 @@ internal class VideoPlayerHolder {
     val walk = ClipWalk { state }
 
     /**
+     * The timeline's gestures while it is on screen (RD-301) — lent by the timeline, so the
+     * editor's keyboard (`timelineKey`) cuts, seeks and deletes on the very clips it draws.
+     */
+    var strip: StripState? = null
+
+    /**
      * Idempotent per file, so a recomposition does not open a second decoder.
      *
      * **It opens paused** (ME-207), on a picture: what a crop rectangle and a markup arrow

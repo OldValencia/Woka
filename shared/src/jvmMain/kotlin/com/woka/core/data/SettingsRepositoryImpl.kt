@@ -36,4 +36,7 @@ class SettingsRepositoryImpl private constructor(
 
     override fun setEditorToolEnabled(id: String, enabled: Boolean) =
         mutator.update { it.withEditorTool(id, enabled) }
+
+    override fun setEditorTimelineHeight(dp: Int) =
+        mutator.update { it.copy(editorTimelineHeight = dp) }
 }

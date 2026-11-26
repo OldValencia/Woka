@@ -105,4 +105,7 @@ interface SettingsRepository : LibrarySettings, PlaybackSettings {
 
     /** Editor tool enablement (§3.4). Writes to `editorDisabledTools`. */
     fun setEditorToolEnabled(id: String, enabled: Boolean)
+
+    /** The video editor's timeline height in dp (RD-301). Writes to `editorTimelineHeight`. */
+    fun setEditorTimelineHeight(dp: Int)
 }

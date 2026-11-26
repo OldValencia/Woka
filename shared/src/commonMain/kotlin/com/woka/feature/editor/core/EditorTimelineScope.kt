@@ -3,8 +3,8 @@ package com.woka.feature.editor.core
 import androidx.compose.runtime.Stable
 
 /**
- * What the engine's band is handed: the verbs that change the document, and whether the
- * strip is being edited or only scrubbed (ME-210, `video-editor.md` §3.4).
+ * What the engine's timeline is handed: the verbs that change the document, and the two that
+ * reach the inspector — a tab to open, a shape to select (ME-210, RD-301).
  *
  * **The band writes through the session exactly as an overlay does**, so undo, preview
  * against commit and history granularity stay the shell's and never become the strip's.
@@ -12,7 +12,7 @@ import androidx.compose.runtime.Stable
  * picture, and a trim handle dragged over the picture is not a design anybody wants.
  *
  * **Media-agnostic, like everything the shell hands over.** Nothing here is a clip or a
- * player; the shell learns only that a tool of [ToolDomain.Time] is open.
+ * player; the shell learns only which tool to open and which shape to select.
  *
  * **Its selection is not the canvas's.** A clip id and a markup shape id are different
  * namespaces, and one shared slot would let clicking a clip deselect an arrow — or worse,
@@ -20,9 +20,6 @@ import androidx.compose.runtime.Stable
  */
 @Stable
 interface EditorTimelineScope {
-
-    /** A [ToolDomain.Time] tool is open: the strip grows its handles and its actions. */
-    val editing: Boolean
 
     /** The clip the strip has selected, or null. Never reaches the document. */
     val selectedId: String?
@@ -63,6 +60,16 @@ interface EditorTimelineScope {
     /** The layer every clip plays under, whichever clip is open (review 1.0.7, F3). */
     val sharedOps: List<ToolOp> get() = emptyList()
 
-    /** When the shape the canvas has selected is on screen, for the strip (ME-263); null for none. */
-    val markedSpan: TimeWindow? get() = null
+    /**
+     * Opens the inspector's tab holding tool [id] — with [from], only while the open tab's tool is
+     * of one of those domains. A click on a clip from Transform or Markup opens Clip; a click on
+     * its wave opens Sound (RD-301, as the prototype's `selectFromTimeline`).
+     */
+    fun openTool(id: String, from: Set<ToolDomain>? = null) {}
+
+    /** Selects the Markup shape [id] on the canvas, as a click on its bar in the Markup lane does (RD-301). */
+    fun selectShape(id: String) {}
+
+    /** The shape the canvas has selected — its bar is drawn selected — or null. */
+    val selectedShape: String? get() = null
 }

@@ -2,6 +2,7 @@ package com.woka.feature.editor.core
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
 
 /**
  * The half of the engine seam that **draws** — split out of [EditorEngine] when
@@ -68,6 +69,13 @@ interface EditorEngineSurface {
      * arrows to whoever had them: defaulted to `false`, and a still is unchanged.
      */
     fun stepPlayHead(direction: Int, bySecond: Boolean): Boolean = false
+
+    /**
+     * A key the timeline owns (RD-301): `S` splits at the play head, `Home`/`End` move it to the
+     * ends, `Delete` removes the selected clip — reached only once the canvas has declined it.
+     * Answers whether it used the key; defaulted to `false`, so a still leaves every key alone.
+     */
+    fun timelineKey(key: Key): Boolean = false
 
     /**
      * Where the play head stands in the result, in milliseconds — what `Cover`'s button

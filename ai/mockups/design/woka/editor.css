@@ -465,3 +465,8 @@ dialog .toggle{padding:8px 0}
 .swatch-row button.none{box-shadow:inset 0 0 0 1px var(--e-line);background:linear-gradient(135deg,transparent 46%,var(--e-danger) 46% 54%,transparent 54%)!important}
 .face-row button span{font-size:13px}.face-row .face-bold{font-weight:700}.face-row .face-italic{font-style:italic}.face-row .face-underline{text-decoration:underline}.face-row .face-strike{text-decoration:line-through}
 .style-well{margin-top:20px}
+/* RD-301: the trimmed source beside the film while an outer end is dragged, and the skim badge's still */
+.timeline .trim-ghost{position:absolute;top:0;height:64px;border-radius:8px;background:repeating-linear-gradient(135deg,var(--e-well) 0 6px,var(--e-well-2) 6px 12px);opacity:.5;pointer-events:none}
+.skim-badge{display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 5px 3px}
+.skim-still{display:block;width:96px;height:54px;border-radius:5px;overflow:hidden}
+.skim-still svg{display:block;width:100%;height:100%}

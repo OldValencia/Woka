@@ -22,7 +22,6 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.woka.core.ui.theme.Theme
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
@@ -36,13 +35,14 @@ fun DropdownItem(
     // than its own background: a submenu opens on it (see `DropdownSubmenu`).
     interactionSource: MutableInteractionSource? = null,
     trailing: (@Composable () -> Unit)? = null,
+    colors: MenuColors = MenuColors.app,
     onClick: () -> Unit
 ) {
     val src = interactionSource ?: remember { MutableInteractionSource() }
     val isHovered by src.collectIsHoveredAsState()
-    val bg by animateColorAsState(if (isHovered && enabled) Theme.colors.surfaceHover else Color.Transparent)
-    val fg = if (!enabled) Theme.colors.textTertiary else textColor ?: Theme.colors.textPrimary
-    
+    val bg by animateColorAsState(if (isHovered && enabled) colors.hover else Color.Transparent)
+    val fg = if (!enabled) colors.disabled else textColor ?: colors.text
+
     Row(
         modifier = Modifier
             .fillMaxWidth()

@@ -9,82 +9,54 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
-import com.woka.core.ui.icons.Icons
-import com.woka.feature.editor.core.EditorTimelineScope
+import com.woka.core.ui.theme.Theme
 import com.woka.feature.editor.tools.trim.TrimClip
-import com.woka.feature.editor.tools.trim.join
-import com.woka.feature.editor.tools.trim.withSpeed
-import com.woka.feature.viewer.video.engine.VideoPlayerState
+import com.woka.feature.editor.tools.trim.split
 import kotlin.math.roundToInt
 
-/** `.play`: a 2 px white line, and `.play::before`'s 10 px knob. */
-internal val PLAY_HEAD = 2.dp
-private val PLAY_KNOB = 10.dp
+const val PLAY_HEAD_TAG = "editor-play-head"
 
 /**
- * The play head, and in the trim state the two actions that ride it: **✂** splits there
- * (ME-212) and **❄** freezes the frame there (ME-217). Both act on the play head and not on
- * the selection — which is why Freeze moved here from the clip bar (the author, 2026-11-04) —
- * and each names itself on hover.
+ * The play head (`.timeline .playhead`, RD-301): a 2 dp line in the room's orange down the ruler
+ * and every lane, a 10 dp dot near its top, and the scissors riding it — **always**, in every
+ * tab, as the prototype draws them. ❄ left the play head for the clip menu's `Hold this frame`.
  *
- * The position is read in an `offset { }` lambda — the layout phase — so the play head
- * moves sixty times a second without recomposing the strip it sits in; the slider this
- * replaced made the same choice with its `value: () -> Float`.
+ * The position is read in `offset { }` lambdas — the layout phase — so the play head moves sixty
+ * times a second without recomposing the tracks it sits over. The scissors' enablement is a
+ * derived state: it changes at a join or on play, not every frame.
  */
 @Composable
-internal fun BoxScope.PlayHead(
-    player: VideoPlayerState,
-    walk: ClipWalk,
-    clips: List<TrimClip>,
-    geometry: StripGeometry,
-    splitting: Boolean,
-    onFreeze: () -> Unit = {},
-    onSplit: () -> Unit
-) {
+internal fun BoxScope.PlayHead(state: StripState, clips: List<TrimClip>, geometry: StripGeometry) {
+    val player = state.player
+    val walk = state.walk
     val x = { geometry.xOf(walk.timelineMs(clips, player.currentPositionMs)) }
     Box(
         Modifier
-            .offset { IntOffset((x() - PLAY_HEAD.toPx() / 2f).roundToInt(), 0) }
-            .width(PLAY_HEAD)
+            .offset { IntOffset((x() - TimelineTokens.playheadWidth.toPx() / 2f).roundToInt(), 0) }
+            .width(TimelineTokens.playheadWidth)
             .fillMaxHeight()
-            .background(Color.White)
+            .background(Theme.room.accent)
+            .testTag(PLAY_HEAD_TAG)
     )
     Box(
         Modifier
-            .offset { IntOffset((x() - PLAY_KNOB.toPx() / 2f).roundToInt(), -PLAY_KNOB.roundToPx() / 2) }
-            .size(PLAY_KNOB)
-            .clip(CircleShape)
-            .background(Color.White)
+            .offset {
+                IntOffset((x() - TimelineTokens.playheadDot.toPx() / 2f).roundToInt(), TimelineTokens.playheadDotTop.roundToPx())
+            }
+            .size(TimelineTokens.playheadDot)
+            .background(Theme.room.accent, CircleShape)
     )
-    if (!splitting) return
-    // On a freeze neither applies — one frame has nothing to cut and is frozen already — so
-    // both stay in place but grey and deaf (the author, 2026-11-04).
-    val onFreezeClip = clips.getOrNull(walk.index)?.isFreeze == true
-    PlayHeadAction(x, geometry.viewPx, slot = 0, Icons.Static.Trim, "Split here", "editor-strip-split", !onFreezeClip, onSplit)
-    PlayHeadAction(x, geometry.viewPx, slot = 1, Icons.Static.Freeze, "Freeze this frame", "editor-strip-freeze", !onFreezeClip, onFreeze)
-}
-
-/**
- * The selected [clip]'s bar over [anchorX]: its structure while `Clips` is open, and its look
- * — `Copy`, `Paste ▾` — whenever there is another clip to take it to (ME-267).
- */
-@Composable
-internal fun SelectedClipBar(state: StripState, clips: List<TrimClip>, clip: TrimClip, edits: EditorTimelineScope, anchorX: Float) {
-    ClipBar(
-        cutting = edits.editing,
-        canDelete = clips.size > 1,
-        anchorX = anchorX,
-        onDelete = { state.deleteSelected(clip.id) },
-        onDuplicate = { state.duplicateSelected(clip.id) },
-        onJoin = { state.joinSelected(clip.id) }.takeIf { clips.join(clip.id) != clips },
-        speed = clip.speed,
-        // A freeze has no speed (ME-217).
-        onSpeed = { speed: Float -> state.apply(clips.withSpeed(clip.id, speed)) }.takeIf { !clip.isFreeze },
-        look = state.lookActions(clip, edits).takeIf { clips.size > 1 }
-    )
+    // Paused, and inside a clip rather than on a join or a still (`splittable` in the prototype).
+    val cuts by remember(clips, player, walk) {
+        derivedStateOf {
+            !walk.isPlaying(player) && clips.split(walk.timelineMs(clips, player.currentPositionMs), "") != clips
+        }
+    }
+    Scissors(x, cuts) { state.splitAtPlayHead() }
 }

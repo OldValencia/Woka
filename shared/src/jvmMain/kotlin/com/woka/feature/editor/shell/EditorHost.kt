@@ -114,7 +114,8 @@ internal fun EditorHost(
             onTogglePlayback = engine::togglePlayback,
             onStep = engine::stepPlayHead,
             canvasKeys = canvasKeys,
-            onTogglePanel = panel::toggle
+            onTogglePanel = panel::toggle,
+            onTimelineKey = engine::timelineKey
         )
 
         CompositionLocalProvider(LocalDoneChoices provides choices, LocalCanvasKeys provides canvasKeys) {

@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.MediaKind
 import com.woka.core.data.StillColorInfo
@@ -131,13 +132,12 @@ internal class VideoEditorEngine(
         VideoEditorCanvas(file, playback, sourceSize, recipe, document.pending != null, modifier)
     }
 
-    /**
-     * The band the shell makes room for (ME-206). It reads the same holder the canvas
-     * fills, so there is one decoder behind the picture, the strip and every thumbnail.
-     */
+    /** The docked timeline (RD-301), on the canvas's holder: one decoder behind picture, lanes and stills. */
     @Composable
     override fun Timeline(document: EditDocument, edits: EditorTimelineScope, modifier: Modifier) =
-        VideoEditorBand(playback, document, edits, modifier, sourceSize)
+        VideoEditorTimeline(playback, document, edits, modifier, sourceSize)
+
+    override fun timelineKey(key: Key): Boolean = playback.timelineKey(key)
 
     @Composable
     override fun Thumbnail(document: EditDocument, modifier: Modifier) {

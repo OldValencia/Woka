@@ -5,9 +5,11 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.runtime.Composable
@@ -117,10 +119,14 @@ internal fun EditorScreen(
             .background(Theme.room.room)
             .testTag("editor-screen")
     ) {
-        Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
-            EditorCanvasLayer(engine, session, tools, activeTool, canvasDocument, perFrame, canvasKeys, selection, peek)
-            if (perFrame != null) EditorFrameBand(perFrame, session.media.file)
-            EditorBottomPanel(session, engine, registry, document, tools, activeTool, skipped) { selection.id }
+        // The canvas over the medium's timeline, docked under it beside the inspector (RD-301).
+        Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                EditorCanvasLayer(engine, session, tools, activeTool, canvasDocument, perFrame, canvasKeys, selection, peek)
+                if (perFrame != null) EditorFrameBand(perFrame, session.media.file)
+                EditorBottomPanel(session, engine, registry, skipped)
+            }
+            engine.Timeline(document, timelineScopeOf(session, tools, clipSelection, tabs, selection), Modifier.fillMaxWidth())
         }
         Box(modifier = Modifier.width(panelWidth).fillMaxHeight().clipToBounds()) {
             Row(modifier = Modifier.wrapContentWidth(Alignment.Start, unbounded = true)) {

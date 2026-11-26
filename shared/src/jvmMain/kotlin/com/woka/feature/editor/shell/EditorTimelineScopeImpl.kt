@@ -6,7 +6,7 @@ import com.woka.feature.editor.core.EditorTimelineScope
 import com.woka.feature.editor.core.EditorTool
 import com.woka.feature.editor.core.NO_CLIP
 import com.woka.feature.editor.core.ToolCardinality
-import com.woka.feature.editor.core.TimeWindow
+import com.woka.feature.editor.core.ToolDomain
 import com.woka.feature.editor.core.ToolOp
 import com.woka.feature.editor.core.cancelPending
 import com.woka.feature.editor.core.commit
@@ -29,14 +29,19 @@ import com.woka.feature.editor.core.sharedOps
  *
  * **The selection is the session's** (ME-221): on a film it is the scope and a step of
  * history, so it cannot live in the shell. [selected] is its value as this composition read it.
+ *
+ * **The tab and the shape are the screen's** (RD-301): [onOpenTool] and [shapes] are
+ * `EditorScreen`'s own state handed in, so the timeline reaches the inspector without
+ * learning that it exists.
  */
 @Stable
 internal class EditorTimelineScopeImpl(
     private val session: EditorSession,
     private val tools: List<EditorTool>,
     private val selected: String?,
-    override val editing: Boolean,
-    override val markedSpan: TimeWindow? = null
+    private val onOpenTool: (String, Set<ToolDomain>?) -> Unit = { _, _ -> },
+    /** The canvas's selection (`EditorScreen`'s), which a Markup bar reads and writes. */
+    private val shapes: ToolSelection? = null
 ) : EditorTimelineScope {
 
     override val selectedId: String? get() = selected
@@ -70,4 +75,12 @@ internal class EditorTimelineScopeImpl(
     override val openClip: Int? get() = session.frame.takeIf { it != NO_CLIP }
 
     override val sharedOps: List<ToolOp> get() = session.sharedOps
+
+    override fun openTool(id: String, from: Set<ToolDomain>?) = onOpenTool(id, from)
+
+    override fun selectShape(id: String) {
+        shapes?.id = id
+    }
+
+    override val selectedShape: String? get() = shapes?.id
 }

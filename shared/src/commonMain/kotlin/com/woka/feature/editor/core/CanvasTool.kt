@@ -119,9 +119,6 @@ interface CanvasTool : EditorTool {
     fun restyled(spec: ParamSpec<*>, params: ParamSet, selectedId: String?, timelineMs: Long?): ParamSet? =
         restyled(spec, params, selectedId)
 
-    /** When the shape [selectedId] is on a film's timeline, for the strip (ME-263); null for none. */
-    fun spanOf(document: EditDocument, selectedId: String?): TimeWindow? = null
-
     @Composable
     fun Overlay(scope: EditorToolScope)
 }

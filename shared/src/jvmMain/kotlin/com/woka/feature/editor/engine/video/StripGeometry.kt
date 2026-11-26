@@ -14,11 +14,10 @@ import com.woka.feature.editor.tools.trim.totalMs
  * width is honest about how long it lasts. A minimum drawn width would make a 40 ms clip
  * findable and the strip dishonest everywhere else (`timeline.md` §5); it is not taken.
  *
- * **With Trim open it also lays out what was trimmed off the ends** (reported by the author
- * 2026-11-02): a strip that re-flowed the kept part to full width on release put the right
- * handle back at 100 % and showed neither what was cut nor how much. The cut-off stretches
- * stay where they were, dimmed, and since kept plus trimmed is the whole source, a trim
- * moves the handle and nothing else.
+ * **While an outer end is dragged it also lays out what was trimmed off the ends** (reported
+ * by the author 2026-11-02; only during that drag since RD-301): a strip that re-flowed the kept
+ * part to full width put the handle back at 100 % and showed neither what was cut nor how
+ * much. The cut-off stretches stand beside the film, dimmed, while the hand is on the edge.
  *
  * **Zoomed, it lays the film across several strip-widths and scrolls** (ME-218): every x
  * it answers is already on screen, so the gestures and the play head need not know.
@@ -133,11 +132,13 @@ internal data class ClipSpan(val left: Float, val width: Float) {
 }
 
 /**
- * How much source the first clip has lost off its start and the last clip off its end —
- * what the strip draws dimmed while Trim is open, and nothing at rest, where the strip shows
- * only the result.
+ * How much source the first clip has lost off its start and the last clip off its end — what
+ * the lane draws dimmed **while [drag] holds one of the film's two outer ends** (RD-301), and
+ * nothing otherwise, where the lane shows only the result.
  */
-internal fun trimmedEnds(clips: List<TrimClip>, durationMs: Long, editing: Boolean): Pair<Long, Long> {
-    if (!editing || clips.isEmpty()) return 0L to 0L
+internal fun trimmedEnds(clips: List<TrimClip>, durationMs: Long, drag: StripDrag?): Pair<Long, Long> {
+    val handle = (drag as? StripDrag.Edge)?.handle ?: return 0L to 0L
+    val outer = (handle.index == 0 && handle.leading) || (handle.index == clips.lastIndex && !handle.leading)
+    if (!outer || clips.isEmpty()) return 0L to 0L
     return clips.first().fromMs to (durationMs - clips.last().toMs).coerceAtLeast(0L)
 }

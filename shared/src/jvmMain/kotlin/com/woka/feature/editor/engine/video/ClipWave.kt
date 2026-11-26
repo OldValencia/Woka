@@ -10,13 +10,12 @@ import com.woka.feature.editor.tools.trim.TrimClip
 
 const val CLIP_WAVE_TAG = "editor-clip-wave"
 
-private val WAVE = Color.White.copy(alpha = 0.72f)
-
 /**
- * [clip]'s sound as a min/max column per pixel, mirrored about the middle (ME-241) — one segment
- * of the sound row. Drawn from the stretch of source under each column, so a trim, a speed and a
- * zoom move it as they move the stills above. A freeze holds silence and draws none; the part not
- * yet measured is simply empty.
+ * [clip]'s sound as a min/max column per pixel, mirrored about the middle (ME-241) — the foot of
+ * its tile on the lane since RD-301. Drawn from the stretch of source under each column, so a
+ * trim, a speed and a zoom move it as they move the stills above. A freeze holds silence and
+ * draws a flat line at half [color] (`.clip-wave:empty::after`); the part not yet measured is
+ * simply empty.
  */
 @Composable
 internal fun ClipWave(
@@ -25,12 +24,16 @@ internal fun ClipWave(
     fullWidthPx: Float,
     shiftPx: Float,
     modifier: Modifier,
+    color: Color,
     /** The edit's gain at a millisecond into this clip — volume, mute, fades — so the wave is the sound as it plays. */
     gainAt: (intoClipMs: Long) -> Float = { 1f }
 ) {
-    if (clip.isFreeze) return
     val filled = peaks.filledMs.longValue
     Canvas(modifier.testTag(CLIP_WAVE_TAG)) {
+        if (clip.isFreeze) {
+            drawLine(color.copy(alpha = 0.5f), Offset(2f, size.height / 2f), Offset(size.width - 2f, size.height / 2f), strokeWidth = 1f)
+            return@Canvas
+        }
         if (fullWidthPx <= 0f || size.width <= 0f) return@Canvas
         val middle = size.height / 2f
         val perPx = clip.sourceLengthMs / fullWidthPx
@@ -41,7 +44,7 @@ internal fun ClipWave(
             if (fromMs < filled) {
                 val into = ((fromMs - clip.fromMs) / clip.speed.toDouble()).toLong()
                 val half = (peaks.peakIn(fromMs, toMs) * gainAt(into)).coerceAtMost(1f) * size.height / 2f
-                if (half > 0.5f) drawLine(WAVE, Offset(x, middle - half), Offset(x, middle + half), strokeWidth = 1f)
+                if (half > 0.5f) drawLine(color, Offset(x, middle - half), Offset(x, middle + half), strokeWidth = 1f)
             }
             x += 1f
         }

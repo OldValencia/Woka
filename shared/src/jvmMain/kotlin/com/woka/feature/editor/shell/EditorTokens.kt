@@ -19,15 +19,11 @@ import androidx.compose.ui.unit.sp
 object EditorTokens {
 
     /**
-     * The video band's frame — the old tool rail's geometry, which the band borrowed. The rail
-     * itself became the inspector's tabs (RD-201); [Panel] holds theirs.
+     * What is left of the video band's frame: the notices' clearance over the canvas's foot. The
+     * band itself became the docked timeline (RD-301), whose measurements are `TimelineTokens`.
      */
     object Band {
-        val itemRadius = 14.dp
-        val containerPadding = 6.dp
-        val containerRadius = 20.dp
-
-        /** Clear of the window's bottom edge. */
+        /** Clear of the canvas's bottom edge. */
         val bottomInset = 28.dp
     }
 

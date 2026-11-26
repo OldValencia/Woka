@@ -70,8 +70,8 @@ internal fun StripState.joinSelected(id: String) {
 }
 
 /**
- * A freeze of the frame under the play head, two seconds long (ME-217) — the ❄ on the play
- * head. The clip it was cut from lends its look to the freeze and to its own new half. **The
+ * A freeze of the frame under the play head, two seconds long (ME-217) — the timeline menu's
+ * `Hold this frame for 2 s` (RD-301; the ❄ on the play head before). The clip it was cut from lends its look to the freeze and to its own new half. **The
  * selection is left alone** (the author, 2026-11-04): what was selected stays selected.
  */
 internal fun StripState.freezeAtPlayHead() {
@@ -86,16 +86,10 @@ internal fun StripState.freezeAtPlayHead() {
     apply(after)
 }
 
-/** A click on [clip]'s tab: selects it, or — already selected — deselects (ME-221). One step. */
-internal fun StripState.pickTab(clip: TrimClip) {
-    if (edits.selectedId == clip.id) edits.pick(null, NO_CLIP) else edits.pick(clip.id, clip.key)
-}
-
 /**
- * Right-click on the strip: the cut is taken back to the whole film, as one history
- * entry — the editor's right-click-resets rule (`video-editor.md` §4.1b) applied to the
- * one control the schema does not render. An empty list is what `TrimTool` reads as "no
- * cut"; nothing is written when there is no cut to remove.
+ * `Undo all cuts`, in the timeline's empty-place menu (RD-301; a right-click on the strip until
+ * then, 2026-11-02): the cut is taken back to the whole film, as one history entry. An empty
+ * list is what `TrimTool` reads as "no cut"; nothing is written when there is no cut to remove.
  */
 internal fun StripState.resetCut() {
     if (clips == wholeSource(durationMs)) return

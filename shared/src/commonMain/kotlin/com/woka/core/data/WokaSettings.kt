@@ -139,5 +139,8 @@ data class WokaSettings(
     // `settings.json` would silently hide the new tool until the user found the
     // switch. The cost is that a removed tool leaves a dead id here, which the
     // registry ignores.
-    val editorDisabledTools: Set<String> = emptySet()
+    val editorDisabledTools: Set<String> = emptySet(),
+    // The video editor's timeline height, in dp (RD-301). Kept because it is set once for a
+    // screen; 220 is the prototype's `--timeline-height` for a film with no music.
+    val editorTimelineHeight: Int = 220
 )

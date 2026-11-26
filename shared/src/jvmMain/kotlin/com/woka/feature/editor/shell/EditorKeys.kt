@@ -52,7 +52,9 @@ internal fun EditorKeyEffect(
      */
     canvasKeys: CanvasKeys? = null,
     /** F6 shows or hides the inspector (RD-201, `#focus` in the prototype). */
-    onTogglePanel: () -> Unit = {}
+    onTogglePanel: () -> Unit = {},
+    /** The timeline's keys — `S`, `Home`, `End`, a clip's `Delete` (RD-301); `false` leaves one unconsumed. */
+    onTimelineKey: (Key) -> Boolean = { false }
 ) {
     val curCancel by rememberUpdatedState(onCancel)
     val curUndo by rememberUpdatedState(onUndo)
@@ -64,6 +66,7 @@ internal fun EditorKeyEffect(
     val curStep by rememberUpdatedState(onStep)
     val curCanvasKeys by rememberUpdatedState(canvasKeys)
     val curTogglePanel by rememberUpdatedState(onTogglePanel)
+    val curTimelineKey by rememberUpdatedState(onTimelineKey)
 
     DisposableEffect(globalShortcuts) {
         val previous = globalShortcuts.onPreviewKey
@@ -91,8 +94,9 @@ internal fun EditorKeyEffect(
                 // Both spellings, and **consumed either way**: the editor owns the
                 // keyboard while it is open, including for a press the open tool had no
                 // shape selected to use it on.
+                // The canvas's shape first; with none to take it, the timeline's clip (RD-301).
                 event.key == Key.Delete || event.key == Key.Backspace ->
-                    consume { curCanvasKeys?.onDelete?.invoke() }
+                    consume { if (curCanvasKeys?.onDelete?.invoke() != true) curTimelineKey(Key.Delete) }
                 // **Consumed here, which is the whole point** (ME-207, found by hand):
                 // this handler is previewed at the window root, before focus, and a rail
                 // button keeps focus after it is clicked — so an unconsumed space
@@ -101,6 +105,7 @@ internal fun EditorKeyEffect(
                 event.key == Key.DirectionLeft -> curStep(-1, !event.isAltPressed)
                 event.key == Key.DirectionRight -> curStep(1, !event.isAltPressed)
                 event.key == Key.F6 -> consume { curTogglePanel() }
+                !event.isCtrlPressed && event.key in TIMELINE_KEYS -> curTimelineKey(event.key)
                 else -> false
             }
         }
@@ -110,6 +115,9 @@ internal fun EditorKeyEffect(
         }
     }
 }
+
+/** Split at the play head, and the play head to either end (RD-301, the prototype's `S`, `Home`, `End`). */
+private val TIMELINE_KEYS = setOf(Key.S, Key.MoveHome, Key.MoveEnd)
 
 private inline fun consume(action: () -> Unit): Boolean {
     action()

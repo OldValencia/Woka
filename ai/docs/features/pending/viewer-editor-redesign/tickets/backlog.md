@@ -2,20 +2,16 @@
 
 Blocks are promoted into ticket files when they are next, re-cut against the tree as it then is
 (`tickets.md` §1, §4). No file lists here. The feature doc's questions were answered on
-2026-11-25; RD-101…RD-205 are tickets, RD-301 is next. Each block is promoted and built
+2026-11-25; RD-101…RD-301 are tickets, RD-302 is the next block. Each block is promoted and built
 whole — the author's call, 2026-11-25 (`tickets.md` §4a waived).
 
 ## Video editor
 
-### RD-301 — Timeline
-Transport row, ruler, lanes with thumbnails and waveforms, playhead with scissors, skim badge,
-snapping, drop-to-add audio, clip context menu, resizable height — the prototype's
-`#editor/video` and `#editor/audio`. Brings Theme's `sound` and `soundBg` (moved here from RD-101).
-
 ### RD-302 — Clip and Sound tabs, the scope line
-The Clip tab (speed, mute, split, delete, more) and Sound (mute, volume, fades, even loudness, add
-music); the scope line moving between Whole video, a clip, a sound and the text. Cover, which left
-the tabs in RD-201, returns in the clip's menu (RD-301 or here).
+The Clip tab (speed, mute, split, delete, more) and Sound (mute, volume, fades, even loudness);
+the scope line moving between Whole video, a clip and a Markup shape. **State after RD-301:**
+speed has no control (the clip bar's chip went with the bar), so the Clip tab brings it back.
+Cover returned in RD-301's clip menu. Music (`add music`, its sound crumb) is ME-244, 1.1.0.
 
 ## Dialogs
 
@@ -27,7 +23,8 @@ Settings switch. **State after RD-201:** `Done ▾`'s caret is gone, so a film's
 (save as mp4, render…) are unreachable until this button; Resize and HDR have no tab, and
 Settings → Editor still lists them — decide their switches here. Their UI tests
 (`EditorRailHdrUiTest`, `ResizeInspectorUiTest`) were deleted with the tabs; this brings the
-replacements.
+replacements. **State after RD-301:** the prototype's timeline menus offer `Save frame as
+photo…`; the app's do not — a new export, it comes here with the other ways out.
 
 ## Viewer
 

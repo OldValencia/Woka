@@ -36,7 +36,7 @@ function syncWokaChrome(){
   $('#viewer-layer').inert=!viewerMode&&!item.gif;$('#library-sidebar').inert=!viewerMode||libraryHidden;
   $('#carousel-well').hidden=!carouselShown;
   $('#viewer-status').textContent=item.name;
-  $('#photo').setAttribute('viewBox',state.mode==='video'?frameView(skimTime??state.time):stillFrameView(item,state.frameIndex));
+  $('#photo').setAttribute('viewBox',state.mode==='video'?frameView(state.time):stillFrameView(item,state.frameIndex));
   document.querySelectorAll('.hdr-part').forEach(node=>node.hidden=!item.hdr);
   // A track has no picture to size and no editor (audio-player §3.4); its stage is the cover.
   const audio=!!item.audioOnly;

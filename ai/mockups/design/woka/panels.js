@@ -103,7 +103,7 @@ function markupPanel(){
 }
 function soundPanel(){
   const clip=selectedClip();
-  return `${well(toggle('mute','Mute',val('mute',false),'mute'),scrub('volume','Volume',val('volume',100),0,200,1,'%'))}${section('Fades',well(scrub('fadeIn','Fade in',val('fadeIn'),0,10,.1,'s'),scrub('fadeOut','Fade out',val('fadeOut'),0,10,.1,'s')))}${clip?'':well(toggle('even','Even loudness',val('even',false)))+wellButton('add-audio','music','Add music…')}`;
+  return `${well(toggle('mute','Mute',val('mute',false),'mute'),scrub('volume','Volume',val('volume',100),0,200,1,'%'))}${section('Fades',well(scrub('fadeIn','Fade in',val('fadeIn'),0,10,.1,'s'),scrub('fadeOut','Fade out',val('fadeOut'),0,10,.1,'s')))}${clip?'':well(toggle('even','Even loudness',val('even',false)))+(musicOn()?wellButton('add-audio','music','Add music…'):'')}`;
 }
 function clipPanel(){
   const clip=selectedClip();

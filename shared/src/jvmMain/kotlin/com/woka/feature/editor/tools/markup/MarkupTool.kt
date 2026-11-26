@@ -139,8 +139,6 @@ object MarkupTool : CanvasTool {
     override fun atPlayHead(spec: ParamSpec<*>, params: ParamSet, playHeadMs: Long, document: EditDocument) =
         appearAtPlayHead(spec, playHeadMs, document)
 
-    override fun spanOf(document: EditDocument, selectedId: String?) = windowOf(document, selectedId)
-
     @Composable
     override fun Overlay(scope: EditorToolScope) = MarkupOverlay(scope)
 }

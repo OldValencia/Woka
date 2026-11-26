@@ -12,10 +12,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
-import com.woka.core.ui.theme.Theme
 
 /** The width every context menu in the app is drawn at. */
 val CONTEXT_MENU_WIDTH = 180.dp
@@ -31,6 +31,8 @@ val CONTEXT_MENU_WIDTH = 180.dp
 fun ContextMenuPopup(
     offset: IntOffset,
     onDismiss: () -> Unit,
+    colors: MenuColors = MenuColors.app,
+    width: Dp = CONTEXT_MENU_WIDTH,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Popup(
@@ -38,21 +40,23 @@ fun ContextMenuPopup(
         offset = offset,
         onDismissRequest = onDismiss
     ) {
-        MenuSurface(content = content)
+        MenuSurface(colors = colors, width = width, content = content)
     }
 }
 
 @Composable
 fun MenuSurface(
     modifier: Modifier = Modifier,
+    colors: MenuColors = MenuColors.app,
+    width: Dp = CONTEXT_MENU_WIDTH,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Column(
         modifier = modifier
-            .width(CONTEXT_MENU_WIDTH)
+            .width(width)
             .shadow(12.dp, RoundedCornerShape(10.dp), spotColor = Color.Black.copy(alpha = 0.2f))
-            .background(Theme.colors.surfaceElevated, RoundedCornerShape(10.dp))
-            .border(1.dp, Theme.colors.border, RoundedCornerShape(10.dp))
+            .background(colors.surface, RoundedCornerShape(10.dp))
+            .border(1.dp, colors.border, RoundedCornerShape(10.dp))
             .padding(6.dp),
         content = content
     )

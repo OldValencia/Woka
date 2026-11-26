@@ -9,60 +9,51 @@ import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import com.woka.feature.editor.core.NO_CLIP
+import com.woka.feature.editor.tools.trim.TrimClip
 import com.woka.feature.editor.tools.trim.move
 import com.woka.feature.viewer.video.engine.pauseForSeek
 import com.woka.feature.viewer.video.engine.resumeAfterSeek
 import kotlin.math.abs
 
 /**
- * The strip's pointer, in two vocabularies (`video-editor.md` §4.2, §4.3a).
+ * The clip lane's pointer (`video-editor.md` §4.2, §4.3a; RD-301): *the body moves and the edge
+ * trims*, **whichever tab is open** — the Clip tab no longer gates the handles (the author,
+ * 2026-11-26).
  *
- * - **At rest** it is the viewer's scrubber: press and drag seeks, through the
- *   `pauseForSeek` → seek → `resumeAfterSeek` sequence `MediaViewerTimeSlider` uses.
- * - **With Trim open**, *the body moves and the edge trims*: a click selects a clip and
- *   puts the play head under the pointer, a drag past the touch slop carries the clip to
- *   a new slot, and a press on a handle trims that edge — the timeline's two outer ends,
- *   and **both edges of the selected clip** (reported 2026-11-02: after a split neither
- *   half had an end of its own to adjust).
- * - **A right-click resets the cut**, in either state (the author, 2026-11-02) — through
- *   the app's own `resetOnRightClick` on the strip, not here: `awaitFirstDown` waits for
- *   the primary button only, measured the same day, so a right press never reaches this.
+ * - A press on a handle — the film's two outer ends, both edges of the selected clip — trims.
+ * - A click on a body **selects it and does not seek** ([onPicked]); the ruler moves the play
+ *   head. The clip tabs (2026-11-04) existed only because a click on the body did both; with
+ *   the body selecting alone they went.
+ * - A drag past the touch slop carries the clip to a new slot.
  *
- * Every write goes through `StripState`, which is the session's preview and commit — so a
- * drag is one history entry however many slots it crossed, and none if it came back.
+ * A right press never reaches this — `awaitFirstDown` waits for the primary button (measured
+ * 2026-11-02) — and opens the menu instead (`TimelineMenu`).
+ *
+ * Every write goes through `StripState`, which is the session's preview and commit — so a drag
+ * is one history entry however many slots it crossed, and none if it came back.
  */
 internal fun Modifier.stripGestures(
     state: StripState,
-    zoom: StripZoom,
-    editing: Boolean,
-    widthPx: Float,
-    gapPx: Float,
-    handlePx: Float
-) = pointerInput(state, editing, widthPx) {
-        awaitEachGesture {
-            val down = awaitFirstDown()
-            if (state.clips.isEmpty()) return@awaitEachGesture
-            val (lead, tail) = trimmedEnds(state.clips, state.durationMs, editing)
-            val geometry = StripGeometry(state.clips, widthPx, gapPx, lead, tail, zoom.scale, zoom.scrollPx)
-            val head = geometry.xOf(state.walk.timelineMs(state.clips, state.player.currentPositionMs))
-            // ✂ and ❄ take their own clicks; the strip must not move the play head under them.
-            if (editing && state.drag == null && onPlayHeadAction(down.position, head, widthPx)) return@awaitEachGesture
-            down.consume()
-            if (!editing) return@awaitEachGesture scrub(state, geometry, down)
-            val handle = handlesOf(state).minByOrNull { abs(down.position.x - it.x(geometry)) }
-            val toHandle = handle?.let { abs(down.position.x - it.x(geometry)) } ?: Float.MAX_VALUE
-            // The play head is grabbed in Trim too (2026-11-04), but an edge in reach wins: a trim
-            // leaves the head on its edge, and the next press there scrubbed (measured 2026-11-05).
-            val toHead = abs(down.position.x - head)
-            when {
-                handle != null && toHandle <= handlePx -> dragEdge(state, geometry, down, handle)
-                toHead <= handlePx -> scrub(state, geometry, down)
-                else -> pickOrCarry(state, geometry, down)
-            }
-        }
+    geometry: () -> StripGeometry,
+    handlePx: Float,
+    /** Where the clip's wave strip starts, from the lane's top: a click below it is on the sound. */
+    waveTopPx: Float,
+    onPicked: (clip: TrimClip, onWave: Boolean) -> Unit
+) = pointerInput(state) {
+    awaitEachGesture {
+        val down = awaitFirstDown()
+        if (state.clips.isEmpty()) return@awaitEachGesture
+        val layout = geometry()
+        down.consume()
+        val handle = handlesOf(state).minByOrNull { abs(down.position.x - it.x(layout)) }
+        val toHandle = handle?.let { abs(down.position.x - it.x(layout)) } ?: Float.MAX_VALUE
+        if (handle != null && toHandle <= handlePx) dragEdge(state, layout, down, handle)
+        else pickOrCarry(state, layout, down) { clip -> onPicked(clip, down.position.y >= waveTopPx) }
     }
+}
 
-private suspend fun AwaitPointerEventScope.scrub(state: StripState, geometry: StripGeometry, down: PointerInputChange) {
+/** Press and drag seeks, through the `pauseForSeek` → seek → `resumeAfterSeek` sequence the viewer's slider uses. */
+internal suspend fun AwaitPointerEventScope.scrub(state: StripState, geometry: StripGeometry, down: PointerInputChange) {
     val player = state.player
     player.pauseForSeek()
     state.walk.seekTo(player, state.clips, geometry.timelineAt(down.position.x))
@@ -74,20 +65,21 @@ private suspend fun AwaitPointerEventScope.scrub(state: StripState, geometry: St
 }
 
 /**
- * Seeks on a click; selects and carries on a drag. The slot is read off the layout the drag began
- * on (`StripGeometry.dropIndex`), and the live list shows the clip already in it — the
- * mockup's "the others have already slid".
+ * Selects on a click; carries on a drag. The slot is read off the layout the drag began on
+ * (`StripGeometry.dropIndex`), and the live list shows the clip already in it — the mockup's
+ * "the others have already slid".
  */
-private suspend fun AwaitPointerEventScope.pickOrCarry(state: StripState, geometry: StripGeometry, down: PointerInputChange) {
+private suspend fun AwaitPointerEventScope.pickOrCarry(
+    state: StripState,
+    geometry: StripGeometry,
+    down: PointerInputChange,
+    onClick: (TrimClip) -> Unit
+) {
     val from = state.clips
     val index = geometry.indexAt(down.position.x) ?: return
     val id = from[index].id
     val moved = awaitHorizontalTouchSlopOrCancellation(down.id) { change, _ -> change.consume() }
-    // A click on the body seeks and only seeks — the clip's tab selects (2026-11-04).
-    if (moved == null || from.size < 2) {
-        state.walk.seekTo(state.player, from, geometry.timelineAt(down.position.x))
-        return
-    }
+    if (moved == null || from.size < 2) return onClick(from[index])
     // Selected inside the reorder's own step (ME-221) — and put back if the drop makes none, or
     // the selection moved with no step to undo it by (1.0.6 review).
     val before = state.edits.selectedId

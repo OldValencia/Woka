@@ -1,22 +1,6 @@
 package com.woka.feature.editor.engine.video
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Popup
-import com.woka.core.ui.components.DropdownItem
-import com.woka.core.ui.components.MenuSurface
-import com.woka.core.ui.theme.Theme
 import com.woka.feature.editor.core.EditorTimelineScope
 import com.woka.feature.editor.core.ToolOp
 import com.woka.feature.editor.tools.sound.SoundTool
@@ -35,7 +19,7 @@ internal enum class PasteKind(val label: String) {
     }
 }
 
-/** The clip bar's `Copy` and `Paste ▾` (ME-267): what they do, and which pastes have anything. */
+/** The clip menu's `Copy look` and its pastes (ME-267, RD-301): what they do, and which have anything. */
 @Immutable
 internal class ClipLookActions(
     val onCopy: () -> Unit,
@@ -56,30 +40,3 @@ internal fun StripState.lookActions(clip: TrimClip, edits: EditorTimelineScope):
         onPaste = { kind -> copied?.let { edits.pasteLayer(clip.key, it, kind::takes) } }
     )
 }
-
-/** `Paste ▾` and its menu, opening under the button over the strip. */
-@Composable
-internal fun PasteAction(look: ClipLookActions) {
-    var open by remember { mutableStateOf(false) }
-    val drop = with(LocalDensity.current) { PASTE_MENU_DROP.roundToPx() }
-    Box {
-        BarAction("Paste ▾", Theme.viewer.onScrim, enabled = look.pastable.isNotEmpty(), tag = "editor-clip-paste") {
-            open = true
-        }
-        if (open) {
-            Popup(alignment = Alignment.TopStart, offset = IntOffset(0, drop), onDismissRequest = { open = false }) {
-                MenuSurface(Modifier.testTag("editor-clip-paste-menu")) {
-                    PasteKind.entries.forEach { kind ->
-                        DropdownItem(kind.label, enabled = kind in look.pastable) {
-                            open = false
-                            look.onPaste(kind)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-/** The bar's own button height and a little air: the menu opens under `Paste ▾`. */
-private val PASTE_MENU_DROP = 30.dp

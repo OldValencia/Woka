@@ -3,6 +3,7 @@ package com.woka.feature.editor.shell
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.woka.core.ui.components.MenuColors
 import com.woka.core.ui.components.SegmentedControl
 import com.woka.core.ui.components.SegmentedControlColors
 import com.woka.core.ui.components.SwitchColors
@@ -46,6 +47,16 @@ internal object RoomControls {
             line = Theme.room.line,
             tile = Theme.colors.surfaceRaised,
             selected = Theme.room.accent
+        )
+
+    /** A menu on the room's own card (RD-301, `base.css` `.context-menu`): the timeline's. */
+    val menu: MenuColors
+        @Composable get() = MenuColors(
+            surface = Theme.room.menu,
+            border = Theme.room.line,
+            text = Theme.room.text,
+            disabled = Theme.room.faint,
+            hover = Theme.room.hoverStrong
         )
 }
 

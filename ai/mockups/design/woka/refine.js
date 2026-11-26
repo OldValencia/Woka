@@ -1,7 +1,7 @@
 /* Direct manipulation and feedback: canvas text, zoom and pan, menus, style preview, background jobs. */
 let pan={x:0,y:0},stylePreview=null,captionBefore=null,straightenTimer=null,jobAnimation=null;
 function frameView(time){const k=time/(duration()||1),w=1000-k*100,h=w*.5625;return `${850-w/2} ${381.25-h/2} ${w} ${h}`;}
-function syncFrame(){if(state.mode!=='video')return;document.querySelector('#photo').setAttribute('viewBox',frameView(skimTime??state.time));syncCaption();}
+function syncFrame(){if(state.mode!=='video')return;document.querySelector('#photo').setAttribute('viewBox',frameView(state.time));syncCaption();}
 function captionSettings(){return state.mode==='video'?state.settings:settings();}
 function showDirty(){
   const done=document.querySelector('#done');done.classList.toggle('dirty',!!state.dirty);
@@ -11,7 +11,7 @@ function syncCaption(){
   const caption=document.querySelector('#caption'),s=captionSettings();
   let show=state.captionVisible&&!compareOriginal,alpha=(s.opacity??100)/100;
   if(show&&state.mode==='video'){
-    const time=skimTime??state.time,{start,length,fade}=captionTiming();
+    const time=state.time,{start,length,fade}=captionTiming();
     if(time<start||time>start+length)show=false;
     else if(fade&&(playing||state.tool!=='markup'))alpha*=Math.min(1,(time-start)/.4,(start+length-time)/.4);
   }
@@ -44,15 +44,18 @@ function openMenu(x,y,items){
   menu.querySelector('button:not(:disabled)')?.focus({preventScroll:true});
 }
 function closeMenu(){document.querySelector('#context-menu').hidden=true;}
+/* RD-301: Join puts back a split — the next clip continues this one's source at the same speed. */
+function joinable(clip){const next=state.clips[state.clips.indexOf(clip)+1];return !!next&&!clip.freeze&&!next.freeze&&(next.speed||1)===(clip.speed||1)&&Math.abs((next.sourceStart||0)-((clip.sourceStart||0)+clip.duration*(clip.speed||1)))<.05;}
+function cut(){return !(state.clips.length===1&&state.clips[0].id==='original');}
 function clipMenu(){
   const clip=selectedClip();
-  return [{label:'Split at playhead',action:'split',key:'S',disabled:!splittable()},'-',{label:'Copy look',action:'copy-look'},{label:'Paste look',action:'paste-look',kind:'look',disabled:!clipboard},{label:'Paste sound settings',action:'paste-look',kind:'sound',disabled:!clipboard},'-',{label:'Move earlier',action:'move-left',disabled:state.clips[0]===clip},{label:'Move later',action:'move-right',disabled:state.clips[state.clips.length-1]===clip},{label:'Hold this frame for 2 s',action:'freeze',disabled:clip.freeze},{label:'Detach sound',action:'detach',disabled:clip.detached||clip.freeze},'-',{label:'Save frame as photo…',action:'frame-photo'},{label:'Use frame as cover',action:'cover'},'-',{label:'Delete clip',action:'delete-clip',key:'Del',danger:true}];
+  return [{label:'Split at playhead',action:'split',key:'S',disabled:!splittable()},'-',{label:'Copy look',action:'copy-look'},{label:'Paste look',action:'paste-look',kind:'look',disabled:!clipboard},{label:'Paste sound settings',action:'paste-look',kind:'sound',disabled:!clipboard},'-',{label:'Move earlier',action:'move-left',disabled:state.clips[0]===clip},{label:'Move later',action:'move-right',disabled:state.clips[state.clips.length-1]===clip},{label:'Duplicate',action:'duplicate-clip'},{label:'Join',action:'join-clip',disabled:!joinable(clip)},{label:'Hold this frame for 2 s',action:'freeze',disabled:clip.freeze},...(musicOn()?[{label:'Detach sound',action:'detach',disabled:clip.detached||clip.freeze}]:[]),'-',{label:'Save frame as photo…',action:'frame-photo'},{label:'Use frame as cover',action:'cover'},'-',{label:'Delete clip',action:'delete-clip',key:'Del',danger:true}];
 }
 function menuFor(node){
   if(node?.dataset.clip)return clipMenu();
   if(node?.dataset.audio){const audio=selectedAudio();return [{label:audio.settings.mute?'Unmute':'Mute',action:'mute-selected'},'-',{label:'Remove audio',action:'delete-audio',key:'Del',danger:true}];}
   if(node&&node.dataset.caption!==undefined)return [{label:'Edit text',action:'edit-text'},'-',{label:'Remove text',action:'remove-text',key:'Del',danger:true}];
-  return [{label:'Split at playhead',action:'split',key:'S',disabled:!splittable()},{label:'Add music…',action:'add-audio'},'-',{label:'Save frame as photo…',action:'frame-photo'},{label:'Use frame as cover',action:'cover'}];
+  return [{label:'Split at playhead',action:'split',key:'S',disabled:!splittable()},{label:'Hold this frame for 2 s',action:'freeze'},...(musicOn()?[{label:'Add music…',action:'add-audio'}]:[]),'-',{label:'Save frame as photo…',action:'frame-photo'},{label:'Use frame as cover',action:'cover'},'-',{label:'Undo all cuts',action:'reset-cuts',disabled:!cut()}];
 }
 function startJob(label){
   clearTimeout(toastTimer);jobAnimation?.cancel();

@@ -1,33 +1,34 @@
 package com.woka.ui
 
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.unit.IntSize
-import com.woka.feature.editor.engine.video.VideoEditorBand
-import com.woka.feature.editor.engine.video.VideoPlayerHolder
+import androidx.compose.ui.test.performMouseInput
+import androidx.compose.ui.test.rightClick
+import com.woka.feature.editor.core.ParamSet
+import com.woka.feature.editor.core.ToolOp
+import com.woka.feature.editor.engine.video.CLIP_STRIP_TAG
+import com.woka.feature.editor.engine.video.PLAY_HEAD_SPLIT_TAG
+import com.woka.feature.editor.tools.sound.SoundTool
+import com.woka.feature.editor.tools.trim.TrimTool
 import com.woka.feature.viewer.video.engine.seek
-import com.woka.support.FixtureTimeline
 import com.woka.support.MainDispatcherRule
-import com.woka.support.awaitTrue
-import com.woka.support.episodeTwoFile
-import com.woka.support.onUi
+import com.woka.support.onTimeline
 import com.woka.support.startKoinOnce
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Rule
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import kotlin.test.assertNull
+import kotlin.test.assertEquals
 
 /**
- * Clips are picked in every tool once there are two (2026-11-05, ME-267): outside `Clips` a
- * clip's tab selects it and its bar offers `Copy` and `Paste ▾` alone; one clip shows no tab.
+ * A clip's look by its menu (ME-267; the floating bar's `Copy` and `Paste ▾` until RD-301):
+ * `Copy look` takes one clip's own work, `Paste look` and `Paste sound settings` put the kind
+ * they name on another, and neither paste is offered before there is something of its kind.
  */
 @OptIn(ExperimentalCoroutinesApi::class, ExperimentalTestApi::class)
 class ClipLookUiTest {
@@ -38,46 +39,29 @@ class ClipLookUiTest {
     @BeforeTest
     fun koin() = startKoinOnce()
 
-    private fun onStrip(block: (VideoPlayerHolder, FixtureTimeline) -> Unit) {
-        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-        val holder = VideoPlayerHolder()
-        try {
-            holder.open(scope, episodeTwoFile(), volume = 0f)
-            awaitTrue("a duration to be read", timeoutMs = 20_000L) { (holder.state?.durationMs ?: 0L) > 0L }
-            block(holder, FixtureTimeline(editing = true))
-        } finally {
-            holder.close()
-            scope.cancel()
-        }
-    }
-
     @Test
-    fun `outside Clips a cut film's clip offers its look and nothing else`() = onStrip { holder, edits ->
-        onUi {
-            setContent { VideoEditorBand(holder, edits.document, edits, Modifier, IntSize.Zero) }
-            waitForIdle()
-            edits.editing = false
-            waitForIdle()
-            onNodeWithTag("editor-clip-tab-source").assertDoesNotExist()
+    fun `a look copied from one clip pastes onto the other, kind by kind`() = onTimeline { holder, edits ->
+        holder.state!!.seek(1_000L)
+        waitForIdle()
+        onNodeWithTag(PLAY_HEAD_SPLIT_TAG).performClick()
+        waitForIdle()
+        val (first, second) = TrimTool.clipsIn(edits.document)!!
+        val look = ToolOp("adjust", ParamSet())
+        edits.own = mapOf(first.key to listOf(look))
 
-            edits.editing = true
-            holder.state!!.seek(1_000L)
-            waitForIdle()
-            onNodeWithTag("editor-strip-split").performClick()
-            edits.editing = false
-            waitForIdle()
+        onNodeWithTag(CLIP_STRIP_TAG).performMouseInput { rightClick(centerLeft.copy(x = width * 0.1f, y = height * 0.3f)) }
+        waitForIdle()
+        onNodeWithText("Paste look").assertIsNotEnabled()
+        onNodeWithText("Copy look").performClick()
+        waitForIdle()
 
-            onNodeWithTag("editor-clip-tab-source").performClick()
-            waitForIdle()
-            onNodeWithTag("editor-clip-copy").assertExists()
-            onNodeWithTag("editor-clip-paste").assertExists()
-            onNodeWithTag("editor-clip-delete").assertDoesNotExist()
-            onNodeWithTag("editor-strip-split").assertDoesNotExist()
-
-            // ME-221: a second click on the selected tab lets the clip go.
-            onNodeWithTag("editor-clip-tab-source").performClick()
-            waitForIdle()
-            assertNull(edits.selectedId, "a second click kept the selection")
-        }
+        onNodeWithTag(CLIP_STRIP_TAG).performMouseInput { rightClick(centerLeft.copy(x = width * 0.8f, y = height * 0.3f)) }
+        waitForIdle()
+        // Only a look was copied: there is no sound to paste.
+        onNodeWithText("Paste sound settings").assertIsNotEnabled()
+        onNodeWithText("Paste look").assertIsEnabled().performClick()
+        waitForIdle()
+        assertEquals(second.key to listOf(look), edits.pasted)
+        assertEquals(false, edits.pasted!!.second.any { it.toolId == SoundTool.manifest.id })
     }
 }
