@@ -77,7 +77,13 @@ data class FloatParam(
      * line of Kotlin — which is what stops fifteen icons being a prerequisite for any of
      * them.
      */
-    val icon: DrawableResource? = null
+    val icon: DrawableResource? = null,
+    /**
+     * Drawn as a dial — a scale moving under a fixed needle — instead of a scrub row
+     * (RD-205, the prototype's `.dial`). Straighten's angle: a horizon is levelled by small
+     * sideways nudges watched on the picture, not by a value read off a track.
+     */
+    val dial: Boolean = false
 ) : ParamSpec<Float> {
     // Clamped on the way in and on the way out: a document written when the range
     // was wider must not hand a slider a value off its own track. A type mismatch

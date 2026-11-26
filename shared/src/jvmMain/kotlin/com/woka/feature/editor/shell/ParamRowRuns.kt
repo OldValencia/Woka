@@ -36,6 +36,10 @@ internal fun ParamRun(
         run.first() is PreviewChoiceParam<*> ->
             StylePagers(run, params, writer, toolId, thumbnail)
 
+        // Straighten's angle is a dial, not a scrub row (RD-205); its writes are a level's.
+        (run.first() as? FloatParam)?.dial == true ->
+            writer.levelsOf(run.first(), params).forEach { ParamDial(it) }
+
         // Levels side by side are one well of scrub rows, split by section where the tool
         // declares sections (RD-202; Adjust's Light, Colour and Detail).
         run.first() is FloatParam || run.first() is PadParam -> ParamStrip(run, params, writer)

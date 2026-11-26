@@ -38,6 +38,9 @@ object CropTool : CanvasTool {
 
     val Rect = ObjectParam("rect", CropRect.serializer(), CropRect.Unset)
 
+    /** The frame [Rect] was drawn in, so a straighten can scale it (RD-205, `CropFrame`). */
+    val Frame = ObjectParam("frame", CropFrame.serializer(), CropFrame.Unset)
+
     val Aspect = ChoiceParam(
         key = "aspect",
         label = "Shape",
@@ -86,7 +89,7 @@ object CropTool : CanvasTool {
         interaction = ToolInteraction.Canvas
     )
 
-    override val params: List<ParamSpec<*>> = listOf(Rect, Aspect, Portrait)
+    override val params: List<ParamSpec<*>> = listOf(Rect, Frame, Aspect, Portrait)
 
     /**
      * **Null until a rect has actually been chosen**, so an untouched crop composes
@@ -100,13 +103,19 @@ object CropTool : CanvasTool {
      * the overlay writes a real one only once the user has moved something.
      */
     override fun stage(params: ParamSet): ToolStage? {
-        val rect = params[Rect]
-        if (rect.width <= 0 || rect.height <= 0) return null
+        val stored = params[Rect]
+        if (stored.width <= 0 || stored.height <= 0) return null
+        val chosen = params[Frame]
 
-        return RasterStage.Geometry(
-            matrix = Matrix().apply { translate(-rect.left.toFloat(), -rect.top.toFloat()) },
-            outputSize = IntSize(rect.width, rect.height)
-        )
+        // Framed (RD-205): the frame a straighten leaves changes with its angle, and the
+        // rect is scaled to it by the function the overlay draws with (`landedIn`).
+        return RasterStage.Framed { frame ->
+            val rect = stored.landedIn(chosen, frame)
+            RasterStage.Geometry(
+                matrix = Matrix().apply { translate(-rect.left.toFloat(), -rect.top.toFloat()) },
+                outputSize = IntSize(rect.width, rect.height)
+            )
+        }
     }
 
     /** The rectangle *is* the preview; folding it in as well makes it measure itself. */

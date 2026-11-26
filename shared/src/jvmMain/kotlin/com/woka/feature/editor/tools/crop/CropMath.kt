@@ -3,6 +3,7 @@ package com.woka.feature.editor.tools.crop
 import androidx.compose.ui.unit.IntSize
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 /**
  * The smallest side a crop may be dragged to, in source pixels.
@@ -79,3 +80,19 @@ fun CropRect.resizedBy(
 /** [MIN_CROP_PX], unless the picture itself is smaller than that. */
 internal fun minSideIn(frame: IntSize): Int =
     max(1, min(MIN_CROP_PX, min(frame.width, frame.height)))
+
+/**
+ * This rect, chosen in [from], in the frame [to] (RD-205): each edge scaled along its axis and
+ * rounded, then clamped. Edges rather than the size, so a rect touching the frame's far edge
+ * still touches it. [from] equal to [to] is the rect as it is.
+ */
+fun CropRect.scaledTo(from: IntSize, to: IntSize): CropRect {
+    if (from == to || from.width <= 0 || from.height <= 0) return this
+    val across = to.width.toFloat() / from.width
+    val down = to.height.toFloat() / from.height
+    val l = (left * across).roundToInt()
+    val t = (top * down).roundToInt()
+    val r = (right * across).roundToInt()
+    val b = (bottom * down).roundToInt()
+    return CropRect(l, t, r - l, b - t).clampedTo(to)
+}

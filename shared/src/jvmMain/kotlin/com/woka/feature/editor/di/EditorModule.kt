@@ -18,6 +18,7 @@ import com.woka.feature.editor.tools.hdr.HdrTool
 import com.woka.feature.editor.tools.markup.MarkupTool
 import com.woka.feature.editor.tools.resize.ResizeTool
 import com.woka.feature.editor.tools.sound.SoundTool
+import com.woka.feature.editor.tools.straighten.StraightenTool
 import com.woka.feature.editor.tools.transform.TransformTool
 import com.woka.feature.editor.tools.trim.TrimTool
 import org.koin.core.qualifier.named
@@ -51,6 +52,7 @@ val editorModule = module {
     // arrived (2026-08-22).
     single<EditorTool>(named(TransformTool.manifest.id)) { TransformTool }
     single<EditorTool>(named(CropTool.manifest.id)) { CropTool }
+    single<EditorTool>(named(StraightenTool.manifest.id)) { StraightenTool }
     single<EditorTool>(named(AdjustTool.manifest.id)) { AdjustTool }
     single<EditorTool>(named(FilterTool.manifest.id)) { FilterTool }
     single<EditorTool>(named(MarkupTool.manifest.id)) { MarkupTool }

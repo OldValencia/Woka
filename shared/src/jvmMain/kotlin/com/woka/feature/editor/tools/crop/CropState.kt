@@ -31,9 +31,21 @@ fun EditDocument.cropOp(): ToolOp? =
  * the tool and closing it again leave the document untouched.
  */
 fun EditDocument.cropRectIn(frame: IntSize): CropRect {
-    val stored = cropOp()?.params?.get(CropTool.Rect) ?: CropRect.Unset
+    val params = cropOp()?.params ?: return CropRect.of(frame)
+    val stored = params[CropTool.Rect]
     if (stored.width <= 0 || stored.height <= 0) return CropRect.of(frame)
-    return stored.clampedTo(frame)
+    return stored.landedIn(params[CropTool.Frame], frame).clampedTo(frame)
+}
+
+/**
+ * The rect, chosen in [chosen], where it falls in [frame] (RD-205) — **the one function the
+ * overlay and the fold both ask**, so the rectangle drawn and the rectangle cut are the same
+ * integers. A crop with no recorded frame (saved before RD-205) is the rect as stored,
+ * unclamped, which is exactly what `CropTool.stage` folded before.
+ */
+internal fun CropRect.landedIn(chosen: CropFrame, frame: IntSize): CropRect {
+    val from = chosen.toIntSizeOrNull() ?: return this
+    return scaledTo(from, frame).clampedTo(frame)
 }
 
 /** The aspect the stored crop is locked to, or [CropAspect.Free]. */
@@ -67,9 +79,10 @@ fun EditDocument.cropRatioIn(frame: IntSize): Float? {
 
 /**
  * The operation that records [rect], carrying every other parameter the document
- * already held — a drag must not silently reset the chosen ratio.
+ * already held — a drag must not silently reset the chosen ratio. [frame] is the frame the
+ * rect is drawn in, recorded beside it so a later straighten can scale it (RD-205).
  */
-fun EditDocument.cropOpWith(rect: CropRect): ToolOp {
+fun EditDocument.cropOpWith(rect: CropRect, frame: IntSize): ToolOp {
     // From the tool's defaults when there is nothing yet, never from an empty set: a
     // partial `ParamSet` is one the inspector completes on the next composition, and
     // that write is an undo step nobody asked for.
@@ -78,7 +91,7 @@ fun EditDocument.cropOpWith(rect: CropRect): ToolOp {
         toolId = CropTool.manifest.id,
         // Only the rect: the ratio and the orientation are the inspector's to write,
         // and a drag that carried them along would undo a chip the user had just set.
-        params = params.with(CropTool.Rect, rect)
+        params = params.with(CropTool.Rect, rect).with(CropTool.Frame, CropFrame.of(frame))
     )
 }
 

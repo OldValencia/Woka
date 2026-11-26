@@ -28,6 +28,7 @@ import org.jetbrains.compose.resources.DrawableResource
  * | [shortcut] | the keyboard table and the `?` popover |
  * | [multipliesShared] | where an open clip's panel starts (`panelDocument`) |
  * | [tabbed], [joins] | whether the tool has an inspector tab, and whose it shares (RD-201) |
+ * | [foldsFirst] | applied before the rest of its domain, whatever order ops were made in |
  */
 @Immutable
 data class ToolManifest(
@@ -53,5 +54,8 @@ data class ToolManifest(
     // (Resize and HDR wait for `Create a copy`, Cover for the clip menu; RD-201).
     val tabbed: Boolean = true,
     // The id of the tool whose tab this one shares: Crop draws inside Transform's (RD-201).
-    val joins: String? = null
+    val joins: String? = null,
+    // Applied before the rest of its domain whatever order the user made things in: a
+    // straighten levels the original, so a later flip mirrors a level picture (RD-205).
+    val foldsFirst: Boolean = false
 )

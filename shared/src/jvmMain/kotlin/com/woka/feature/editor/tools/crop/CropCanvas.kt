@@ -18,6 +18,8 @@ private val DISCARDED = Color.Black.copy(alpha = 0.55f)
 private val RULE = Color.White.copy(alpha = 0.45f)
 
 private const val BORDER_PX = 1f
+private const val THIRDS = 3
+private const val FINE_DIVISIONS = 8
 private const val HANDLE_ARM_PX = 22f
 private const val HANDLE_THICKNESS_PX = 3f
 
@@ -34,11 +36,17 @@ private const val HANDLE_THICKNESS_PX = 3f
  * one.
  */
 @Composable
-internal fun CropCanvas(rect: CropRect, sourceToCanvas: Matrix, modifier: Modifier = Modifier) {
+internal fun CropCanvas(
+    rect: CropRect,
+    sourceToCanvas: Matrix,
+    modifier: Modifier = Modifier,
+    /** Eighths instead of thirds, while the picture is being levelled (RD-205). */
+    fine: Boolean = false
+) {
     Canvas(modifier = modifier.fillMaxSize()) {
         val area = rect.canvasRect(sourceToCanvas)
         drawScrim(area)
-        drawThirds(area)
+        drawGrid(area, if (fine) FINE_DIVISIONS else THIRDS)
         drawRect(color = Color.White, topLeft = area.topLeft, size = area.size, style = Stroke(BORDER_PX))
         drawHandles(area)
     }
@@ -52,10 +60,15 @@ private fun DrawScope.drawScrim(area: Rect) {
     drawRect(DISCARDED, Offset(area.right, area.top), Size((size.width - area.right).coerceAtLeast(0f), area.height))
 }
 
-private fun DrawScope.drawThirds(area: Rect) {
-    for (step in 1..2) {
-        val x = area.left + area.width * step / 3f
-        val y = area.top + area.height * step / 3f
+/**
+ * Thirds for composing; eighths while straightening, the prototype's `.straightening` grid
+ * (12.5 %) — a horizon is levelled against a line near it, and two lines a third apart are
+ * seldom near it.
+ */
+private fun DrawScope.drawGrid(area: Rect, divisions: Int) {
+    for (step in 1 until divisions) {
+        val x = area.left + area.width * step / divisions
+        val y = area.top + area.height * step / divisions
         drawLine(RULE, Offset(x, area.top), Offset(x, area.bottom), BORDER_PX)
         drawLine(RULE, Offset(area.left, y), Offset(area.right, y), BORDER_PX)
     }

@@ -20,7 +20,8 @@ the tree as it is (`tickets.md` §1). The prototype itself is finished —
 | [RD-202 — Scrub rows and wells](tickets/RD-202-scrub-rows-wells.md) | **done** 2026-11-25 |
 | [RD-203 — Styles, Transform, Markup](tickets/RD-203-styles-transform-markup.md) | **done** 2026-11-25 |
 | [RD-204 — Frame sets: the strip and the scope line](tickets/RD-204-frame-sets.md) | **done** 2026-11-26 |
-| RD-205…RD-802 | [backlog](tickets/backlog.md); next: promote RD-205 |
+| [RD-205 — Straighten](tickets/RD-205-straighten.md) | **done** 2026-11-26 |
+| RD-301…RD-802 | [backlog](tickets/backlog.md); next: promote RD-301 |
 
 ## The spec, scene by scene
 
@@ -135,3 +136,6 @@ pill with HDR met `Original` at 960 px, measured 2026-11-25), so the window's mi
 | 2026-11-26 | Frame strip restyle | Viewer and editor together, one component in two colour sets | The author; the strip must not change on entering the editor |
 | 2026-11-26 | Film's scope line | In RD-204 with the frame set's, `Whole video › Clip N` | The author |
 | 2026-11-26 | GIF in the editor | Edited whole, no scope (ME-138); the viewer's transport and the frame strip, in the room's colours — in the app with RD-501 | The author: a per-frame edit on an animation is a flicker; the editor should still let one stop on a frame |
+| 2026-11-26 | Straighten's output size | Real pixels only: the largest picture of the same shape the turned one fills, nothing scaled up | The author |
+| 2026-11-26 | Straighten and a later flip | The angle belongs to the original and folds before every turn and flip; the dial keeps its value | The author: no control rewrites another's value |
+| 2026-11-26 | Straighten's range | ±45°, the prototype's dial | The backlog's ±15° misread the prototype |

@@ -50,7 +50,9 @@ class CropToolTest {
 
     @Test
     fun `a chosen rect names its own frame and moves its corner to the origin`() {
-        val stage = assertIs<RasterStage.Geometry>(CropTool.stage(cropOp(CropRect(120, 60, 400, 300)).params))
+        // Framed since RD-205: the rect is resolved against the frame it lands on.
+        val framed = assertIs<RasterStage.Framed>(CropTool.stage(cropOp(CropRect(120, 60, 400, 300)).params))
+        val stage = framed.at(IntSize(640, 480))
 
         assertEquals(IntSize(400, 300), stage.outputSize)
         assertEquals(Offset.Zero, stage.matrix.map(Offset(120f, 60f)))

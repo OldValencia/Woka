@@ -38,6 +38,15 @@ sealed interface RasterStage : ToolStage {
     data class Geometry(val matrix: Matrix, val outputSize: IntSize? = null) : RasterStage
 
     /**
+     * A [Geometry] that needs the frame it lands on (RD-205), resolved by the fold [at] its
+     * running size. A straighten turns about the frame's centre and keeps the largest picture
+     * of its shape; a crop chosen in one frame is scaled to the one it now meets. Neither can
+     * be stated from parameters alone, and a size passed into `stage()` would be the source's,
+     * not the frame after the stages before it.
+     */
+    data class Framed(val at: (IntSize) -> Geometry) : RasterStage
+
+    /**
      * Adjustments and filter presets.
      *
      * Carries a `ColorMatrix`, **not** a `ColorFilter`, so the fold can multiply

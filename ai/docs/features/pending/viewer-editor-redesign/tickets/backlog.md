@@ -2,17 +2,8 @@
 
 Blocks are promoted into ticket files when they are next, re-cut against the tree as it then is
 (`tickets.md` §1, §4). No file lists here. The feature doc's questions were answered on
-2026-11-25; RD-101…RD-204 are tickets, RD-205 is next. Each block is promoted and built
+2026-11-25; RD-101…RD-205 are tickets, RD-301 is next. Each block is promoted and built
 whole — the author's call, 2026-11-25 (`tickets.md` §4a waived).
-
-## Editor
-
-### RD-205 — Straighten
-Arbitrary-angle rotation, ±15° on the prototype's dial in Transform (`#editor/crop`), with the crop
-that keeps the picture filling the frame. **A new engine feature, not a panel** — out of scope in
-the image editor's plan (`implemented/image-editor/image-editor.md`, "Out"): its own parameter,
-the stage in the raster, GPU and video paths, the recipe, the viewer's and the render's readers.
-Split from RD-203 by the author, 2026-11-25.
 
 ## Video editor
 

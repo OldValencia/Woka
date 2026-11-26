@@ -4,7 +4,6 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
@@ -13,9 +12,9 @@ import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.input.pointer.isCtrlPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.platform.testTag
 import com.woka.feature.editor.core.EditorToolScope
+import com.woka.feature.editor.tools.straighten.StraightenTool
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -61,6 +60,8 @@ internal fun CropOverlay(scope: EditorToolScope) {
     CropCanvas(
         rect = rect,
         sourceToCanvas = scope.sourceToCanvas,
+        // The finer grid while the dial moves, to level against (RD-205, `.straightening`).
+        fine = scope.document.pending?.toolId == StraightenTool.manifest.id,
         modifier = Modifier
             .fillMaxSize()
             .testTag(CROP_OVERLAY_TAG)
@@ -104,7 +105,7 @@ internal fun CropOverlay(scope: EditorToolScope) {
                             val ratio = now.document.cropRatioIn(frame)
                             val next = now.document.cropRectIn(frame)
                                 .resizedBy(handle, dx, dy, frame, ratio)
-                            now.preview(now.document.cropOpWith(next))
+                            now.preview(now.document.cropOpWith(next, frame))
                             moved = true
                         }
                         change.consume()
@@ -113,26 +114,6 @@ internal fun CropOverlay(scope: EditorToolScope) {
                 }
             }
     )
-}
-
-/**
- * Choosing a ratio reshapes the rectangle **there and then**.
- *
- * Without this the chip lit up and nothing moved: the aspect was stored and only
- * consulted the next time a handle was dragged, which is indistinguishable from a
- * control that does not work. `Free` reshapes nothing — it is the absence of a lock,
- * not a shape of its own.
- */
-@Composable
-private fun CropAspectEffect(scope: EditorToolScope, frame: IntSize, ratio: Float?) {
-    LaunchedEffect(ratio, frame) {
-        if (ratio == null) return@LaunchedEffect
-        val rect = scope.document.cropRectIn(frame)
-        val fitted = rect.fittedTo(ratio, frame)
-        if (fitted == rect) return@LaunchedEffect
-        scope.preview(scope.document.cropOpWith(fitted))
-        scope.commit()
-    }
 }
 
 /**

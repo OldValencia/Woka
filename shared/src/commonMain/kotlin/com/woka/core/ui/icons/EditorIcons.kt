@@ -50,6 +50,8 @@ abstract class EditorIcons {
     val RotateRight = Res.drawable.rotate_right
     val FlipHorizontal = Res.drawable.flip_horizontal
     val FlipVertical = Res.drawable.flip_vertical
+    // A spirit level for Straighten (RD-205): Settings → Editor, and its own tab with Transform off.
+    val Straighten = Res.drawable.level
     val AspectFree = Res.drawable.aspect_free
     val AspectSquare = Res.drawable.aspect_square
     val AspectFourThree = Res.drawable.aspect_4_3

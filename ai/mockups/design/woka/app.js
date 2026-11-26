@@ -40,7 +40,9 @@ function setScene(scene){
   document.documentElement.style.setProperty('--timeline-height',scene==='audio'?'320px':'220px');
   pan={x:0,y:0};render();
 }
-function cropDimensions(){const w=state.portrait?3024:4032,h=state.portrait?4032:3024;return `${Math.round(w*state.crop.w/100)} × ${Math.round(h*state.crop.h/100)} px`;}
+function cropDimensions(){const base=state.portrait?[3024,4032]:[4032,3024],k=coverOf(state.straighten||0,base[0]/base[1]),w=Math.floor(base[0]/k),h=Math.floor(base[1]/k);return `${Math.round(w*state.crop.w/100)} × ${Math.round(h*state.crop.h/100)} px`;}
+/* RD-205: the share of the frame a straightened picture still fills — the file keeps real pixels only. */
+function coverOf(angle,ratio){const rad=Math.abs(angle)*Math.PI/180;return Math.cos(rad)+Math.max(ratio,1/ratio)*Math.sin(rad);}
 function updatePicture(){
   const picture=$('#picture'),video=state.mode==='video',crop=state.tool==='crop';
   picture.classList.toggle('portrait',state.portrait&&!video);
@@ -52,8 +54,9 @@ function updatePicture(){
   const clip=selectedClip(),s=video?(skimTime===null&&clip?{...state.settings,...clip.settings}:lookAt(skimTime??state.time)):settings();
   const filterOf=(list,group,fallback)=>(list.find(([key])=>key===(stylePreview?.group===group?stylePreview.key:(s[group]??fallback)))||[])[2]||'';
   $('#photo').style.filter=`brightness(${1+(s.exposure||0)/200+(s.brightness||0)/250}) contrast(${1+(s.contrast||0)/150}) saturate(${1+(s.saturation||0)/100}) sepia(${Math.max(0,s.warmth||0)/250}) ${filterOf(UNDERTONES,'undertone','neutral')} ${filterOf(LOOKS,'style','original')}`;
-  const angle=state.straighten||0,rad=Math.abs(angle)*Math.PI/180,ratio=w/h,cover=Math.cos(rad)+Math.max(ratio,1/ratio)*Math.sin(rad);
-  $('#photo').style.transform=`rotate(${state.rotation+angle}deg) scale(${cover}) scaleX(${state.flipped?-1:1}) scaleY(${state.flippedV?-1:1})`;
+  const angle=state.straighten||0,cover=coverOf(angle,w/h);
+  /* The angle levels the original, then the flips and turns (RD-205): a flip mirrors a level picture. */
+  $('#photo').style.transform=`rotate(${state.rotation}deg) scaleX(${state.flipped?-1:1}) scaleY(${state.flippedV?-1:1}) rotate(${angle}deg) scale(${cover})`;
   $('#crop-box').hidden=!crop;
   const c=state.crop;Object.assign($('#crop-box').style,{left:`${c.x}%`,top:`${c.y}%`,width:`${c.w}%`,height:`${c.h}%`});
   if($('#crop-dimensions'))$('#crop-dimensions').textContent=cropDimensions();
