@@ -1,6 +1,5 @@
 package com.woka.feature.editor.tools.trim
 
-import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.MediaKind
 import com.woka.core.ui.icons.Icons
 import com.woka.feature.editor.core.EditDocument
@@ -14,7 +13,6 @@ import com.woka.feature.editor.core.ToolInteraction
 import com.woka.feature.editor.core.ToolManifest
 import com.woka.feature.editor.core.ToolOp
 import com.woka.feature.editor.core.ToolStage
-import com.woka.feature.viewer.video.formatTime
 import kotlinx.serialization.builtins.ListSerializer
 
 /**
@@ -25,7 +23,9 @@ import kotlinx.serialization.builtins.ListSerializer
  * **One tool, not three** (decision 2026-09-03): split, delete and reorder are gestures on
  * one object, the strip, and three rail entries for one object is the overload the feature
  * is defined against. So the tool owns one [ObjectParam] and the strip writes it — the
- * shell renders nothing for that spec, which is what the type exists to say.
+ * shell renders nothing for that spec, which is what the type exists to say. Its tab, which
+ * exists only while a clip is selected, is drawn by the engine (RD-302, `ClipPanel`): speed,
+ * split and delete need the strip's play head and clips, which no schema row has.
  *
  * **`Single`**, for markup's reason: a new list replaces the old one, so undo is one entry
  * per gesture and a committed cut can still be edited. **Video only**, the second override
@@ -48,25 +48,14 @@ object TrimTool : EditorTool {
         order = 0,
         supports = setOf(MediaKind.Video),
         cardinality = ToolCardinality.Single,
-        interaction = ToolInteraction.Instant
+        interaction = ToolInteraction.Instant,
+        clipOnly = true
     )
 
     override val params: List<ParamSpec<*>> = listOf(Clips)
 
     override fun stage(params: ParamSet): ToolStage? =
         params[Clips].takeIf { it.isNotEmpty() }?.let { ClipStage(it) }
-
-    /**
-     * The only line the inspector has for this tool: how long the result is and how many
-     * pieces it is in, plus the two gestures nobody would guess. The actions themselves
-     * live on the strip, where the play head and the selection are (§4.2).
-     */
-    override fun footnote(params: ParamSet, frame: IntSize): String {
-        val clips = params[Clips]
-        if (clips.isEmpty()) return "Split at the play head · drag a clip to move it"
-        val count = if (clips.size == 1) "one clip" else "${clips.size} clips"
-        return "${formatTime(clips.totalMs())} · $count · right-click the strip to reset"
-    }
 
     /** The op the strip commits for [clips]. */
     fun opFor(clips: List<TrimClip>): ToolOp =

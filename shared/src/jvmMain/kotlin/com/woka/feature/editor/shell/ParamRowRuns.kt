@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.unit.dp
 import com.woka.feature.editor.core.ActionParam
+import com.woka.feature.editor.core.BoolParam
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.FloatParam
 import com.woka.feature.editor.core.PadParam
@@ -41,8 +42,9 @@ internal fun ParamRun(
             writer.levelsOf(run.first(), params).forEach { ParamDial(it) }
 
         // Levels side by side are one well of scrub rows, split by section where the tool
-        // declares sections (RD-202; Adjust's Light, Colour and Detail).
-        run.first() is FloatParam || run.first() is PadParam -> ParamStrip(run, params, writer)
+        // declares sections (RD-202; Adjust's Light, Colour and Detail). A toggle heads or
+        // joins such a run as a row of its well (RD-302, Sound's Mute).
+        run.first() is FloatParam || run.first() is PadParam || run.first() is BoolParam -> ParamStrip(run, params, writer)
 
         // Consecutive actions are well buttons two to a row (RD-203) — Transform's rotate
         // and flip pairs; a lone action is one full-width button.

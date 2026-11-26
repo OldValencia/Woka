@@ -1,6 +1,7 @@
 package com.woka.unit
 
 import com.woka.feature.editor.core.ToolDomain
+import com.woka.feature.editor.shell.clearsClipSelection
 import com.woka.feature.editor.shell.tabFor
 import com.woka.feature.editor.shell.tabsOf
 import com.woka.feature.editor.tools.adjust.AdjustTool
@@ -11,7 +12,9 @@ import com.woka.feature.editor.tools.transform.TransformTool
 import com.woka.feature.editor.tools.trim.TrimTool
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /**
  * Which tab a click on the timeline opens (RD-301, as the prototype's `selectFromTimeline`): a
@@ -39,5 +42,14 @@ class TimelineTabSwitchTest {
     fun `a wave click opens Sound from any tab, and a joining tool opens its owner's tab`() {
         assertEquals("sound", tabFor(tabs, tab("adjust"), SoundTool.manifest.id, null)?.id)
         assertEquals("transform", tabFor(tabs, tab("trim"), CropTool.manifest.id, null)?.id)
+    }
+
+    @Test
+    fun `Markup clears a clip as Transform does, the look and sound tools keep it`() {
+        assertTrue(clearsClipSelection(MarkupTool.manifest.domain), "Markup is the whole film's (RD-302)")
+        assertTrue(clearsClipSelection(TransformTool.manifest.domain))
+        assertFalse(clearsClipSelection(AdjustTool.manifest.domain))
+        assertFalse(clearsClipSelection(SoundTool.manifest.domain))
+        assertFalse(clearsClipSelection(TrimTool.manifest.domain))
     }
 }

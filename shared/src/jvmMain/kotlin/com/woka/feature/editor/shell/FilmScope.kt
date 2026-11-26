@@ -13,8 +13,11 @@ import com.woka.feature.editor.core.NO_CLIP
 import com.woka.feature.editor.core.ToolDomain
 import com.woka.feature.editor.core.useLinearHistory
 
-/** The tools whose work is the whole film's (ME-221): a cut, a frame's geometry, its size. */
-private val WHOLE_FILM = setOf(ToolDomain.Time, ToolDomain.Geometry, ToolDomain.Output)
+/**
+ * The tools whose work is the whole film's (ME-221): a cut, a frame's geometry, its size — and
+ * Markup since RD-302 (the author, 2026-11-26): its shapes are timed on the film, as its lane is.
+ */
+private val WHOLE_FILM = setOf(ToolDomain.Time, ToolDomain.Geometry, ToolDomain.Annotate, ToolDomain.Output)
 
 /**
  * The scope `Done` writes into, held for the sitting by `EditorHost`.
@@ -40,6 +43,6 @@ internal fun rememberEditScope(
     return scope
 }
 
-/** Whether opening [domain] clears a film's clip selection: Crop, Transform, Resize, Cover. */
+/** Whether opening [domain] clears a film's clip selection: Crop, Transform, Markup, Resize, Cover. */
 internal fun clearsClipSelection(domain: ToolDomain?): Boolean =
-    domain == ToolDomain.Geometry || domain == ToolDomain.Output
+    domain == ToolDomain.Geometry || domain == ToolDomain.Annotate || domain == ToolDomain.Output

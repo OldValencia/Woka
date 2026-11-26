@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Matrix
-import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.MediaKind
 import com.woka.core.data.StillColorInfo
@@ -12,7 +11,6 @@ import com.woka.core.data.applyTo
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditorEngine
-import com.woka.feature.editor.core.EditorTimelineScope
 import com.woka.feature.editor.core.LocalClipLooks
 import com.woka.feature.editor.core.EditorToolRegistry
 import com.woka.feature.editor.engine.image.RasterRecipe
@@ -62,9 +60,6 @@ internal class VideoEditorEngine(
      * harmless, and exactly what measuring the bitmap would break.
      */
     override val sourceSize: IntSize by lazy { codedFrameSize(file) }
-
-    /** Owned here so `Surface` and `Thumbnail` share one decoder — see the holder. */
-    private val playback = VideoPlayerHolder()
 
     /** The picture as the canvas draws it — Resize left to the render (`previewFold`). */
     internal fun recipe(document: EditDocument): RasterRecipe =
@@ -131,13 +126,6 @@ internal class VideoEditorEngine(
         // covers a slider and a canvas tool alike (ME-207).
         VideoEditorCanvas(file, playback, sourceSize, recipe, document.pending != null, modifier)
     }
-
-    /** The docked timeline (RD-301), on the canvas's holder: one decoder behind picture, lanes and stills. */
-    @Composable
-    override fun Timeline(document: EditDocument, edits: EditorTimelineScope, modifier: Modifier) =
-        VideoEditorTimeline(playback, document, edits, modifier, sourceSize)
-
-    override fun timelineKey(key: Key): Boolean = playback.timelineKey(key)
 
     @Composable
     override fun Thumbnail(document: EditDocument, modifier: Modifier) {

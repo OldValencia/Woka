@@ -139,6 +139,10 @@ object MarkupTool : CanvasTool {
     override fun atPlayHead(spec: ParamSpec<*>, params: ParamSet, playHeadMs: Long, document: EditDocument) =
         appearAtPlayHead(spec, playHeadMs, document)
 
+    /** The selected shape's crumb, `Whole video › Arrow` (RD-302) — as its Markup bar reads. */
+    override fun selectionLabel(params: ParamSet, selectedId: String?) =
+        params[Shapes].firstOrNull { it.id == selectedId }?.label
+
     @Composable
     override fun Overlay(scope: EditorToolScope) = MarkupOverlay(scope)
 }

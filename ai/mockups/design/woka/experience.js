@@ -40,13 +40,16 @@ function restorePanel(previous){
   if(previous.key&&previous.key!==key&&!reducedMotion()&&!transitionBusy)panel.animate([{opacity:.45,transform:'translateY(5px)'},{opacity:1,transform:'none'}],{duration:160,easing:'ease-out'});
   refreshControlStates();
 }
+/* The clip speed's stops (RD-302, the app's `snapClipSpeed`): a detent within 0.06 octaves, else steps of 0.05. */
+const SPEED_DETENTS=[.25,.5,.75,1,1.25,1.5,2,3,4];
+function snapSpeed(speed){const v=clamp(speed,.25,4),hit=SPEED_DETENTS.find(d=>Math.abs(Math.log2(d)-Math.log2(v))<.06);return hit??clamp(Math.round(v*20)/20,.25,4);}
 function refreshControlStates(){
   document.querySelectorAll('.control[data-control]').forEach(control=>{
     const input=control.querySelector('input[data-value]');if(!input)return;
     const def=defaultValue(input.dataset.value);
     control.classList.toggle('changed',Number(input.value)!==def);
     const slider=control.querySelector('input[type=range]');if(!slider)return;
-    const min=+slider.min,max=+slider.max,at=value=>(clamp(value,min,max)-min)/(max-min)*100,a=at(+slider.value),b=at(min<0&&def>min&&def<max?def:min);
+    const min=+slider.min,max=+slider.max,at=value=>(clamp(value,min,max)-min)/(max-min)*100,home=slider.dataset.scale==='log'?Math.log2(def):def,a=at(+slider.value),b=at(min<0&&home>min&&home<max?home:min);
     [slider,control].forEach(node=>{node.style.setProperty('--from',`${Math.min(a,b)}%`);node.style.setProperty('--to',`${Math.max(a,b)}%`);node.style.setProperty('--val',`${a}%`);});
   });
 }

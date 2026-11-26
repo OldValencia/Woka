@@ -37,7 +37,6 @@ import com.woka.core.ui.components.resetOnRightClick
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.editor.core.FloatParam
 import org.jetbrains.compose.resources.painterResource
-import kotlin.math.abs
 
 /**
  * A level as one scrub row (RD-202, `.control.scrub`): glyph, name, number, reset — and the
@@ -57,14 +56,13 @@ internal fun ScrubRow(level: ScrubLevel) {
     val spec = level.spec
     val value = level.value
     val changed = value != spec.detent
-    val span = spec.range.endInclusive - spec.range.start
     var width by remember { mutableStateOf(1) }
     var dragging by remember { mutableStateOf(false) }
     val hover = remember { MutableInteractionSource() }
     val hovered by hover.collectIsHoveredAsState()
     val room = Theme.room
 
-    fun valueAt(x: Float): Float = snapToDetent(spec, spec.range.start + (x / width).coerceIn(0f, 1f) * span)
+    fun valueAt(x: Float): Float = snapToDetent(spec, valueAtFraction(spec, x / width))
 
     Box(
         modifier = Modifier
@@ -123,15 +121,6 @@ internal fun ScrubRow(level: ScrubLevel) {
             modifier = Modifier.align(Alignment.BottomStart)
         )
     }
-}
-
-/** How close, as a share of the range, a value must come to its default to stick there. */
-private const val SNAP_SHARE = 0.015f
-
-/** The default the prototype's detent holds: a value passing near it lands exactly on it. */
-internal fun snapToDetent(spec: FloatParam, value: Float): Float {
-    val span = spec.range.endInclusive - spec.range.start
-    return if (abs(value - spec.detent) <= span * SNAP_SHARE) spec.detent else value
 }
 
 internal val SCRUB_HEIGHT = 42.dp

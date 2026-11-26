@@ -119,6 +119,9 @@ interface CanvasTool : EditorTool {
     fun restyled(spec: ParamSpec<*>, params: ParamSet, selectedId: String?, timelineMs: Long?): ParamSet? =
         restyled(spec, params, selectedId)
 
+    /** What the selection [selectedId] is called in a film's scope line (RD-302); null for none. */
+    fun selectionLabel(params: ParamSet, selectedId: String?): String? = null
+
     @Composable
     fun Overlay(scope: EditorToolScope)
 }

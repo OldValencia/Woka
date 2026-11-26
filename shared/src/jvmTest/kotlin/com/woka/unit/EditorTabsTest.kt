@@ -1,5 +1,8 @@
 package com.woka.unit
 
+import androidx.compose.runtime.mutableStateOf
+import com.woka.feature.editor.shell.EditorTabState
+import com.woka.feature.editor.shell.tabFor
 import com.woka.feature.editor.shell.tabsOf
 import com.woka.feature.editor.tools.adjust.AdjustTool
 import com.woka.feature.editor.tools.cover.CoverTool
@@ -15,6 +18,7 @@ import com.woka.feature.editor.tools.trim.TrimTool
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertSame
+import kotlin.test.assertTrue
 
 /** The inspector's tabs as the prototype names them (RD-201), from the real tools. */
 class EditorTabsTest {
@@ -52,5 +56,21 @@ class EditorTabsTest {
     fun `Straighten keeps a tab of its own when Transform is switched off`() {
         val tabs = tabsOf(photo - TransformTool)
         assertEquals(listOf(StraightenTool), tabs.single { it.id == StraightenTool.manifest.id }.tools)
+    }
+
+    @Test
+    fun `a hidden Clip is not shown, the first shown tab opens, and a clip click still finds it`() {
+        val film = photo + listOf(TrimTool, SoundTool, CoverTool)
+        val chosen = mutableStateOf<String?>(TrimTool.manifest.id)
+        val state = EditorTabState(tabsOf(film), emptyMap(), chosen, hidden = setOf(TrimTool.manifest.id))
+        assertTrue(state.shown.none { it.id == TrimTool.manifest.id }, "Clip is drawn with no clip selected")
+        assertEquals("Styles", state.tab?.title)
+        assertEquals(TrimTool.manifest.id, tabFor(state.tabs, state.tab, TrimTool.manifest.id, null)?.id)
+    }
+
+    @Test
+    fun `only Clip comes and goes with the selection`() {
+        val film = photo + listOf(TrimTool, SoundTool, CoverTool)
+        assertEquals(listOf(TrimTool.manifest.id), film.filter { it.manifest.clipOnly }.map { it.manifest.id })
     }
 }

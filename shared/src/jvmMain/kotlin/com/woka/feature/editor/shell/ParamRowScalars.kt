@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import com.woka.core.ui.components.SliderSwitch
 import com.woka.feature.editor.core.BoolParam
 import com.woka.feature.editor.core.FloatParam
 import com.woka.feature.editor.core.IntParam
@@ -56,16 +55,8 @@ internal fun IntParamRow(spec: IntParam, params: ParamSet, writer: ParamWriter) 
     }
 }
 
+/** A toggle, alone: a well of one, as a level is (RD-302). */
 @Composable
 internal fun BoolParamRow(spec: BoolParam, params: ParamSet, writer: ParamWriter) {
-    ParamRowFrame(spec.label) {
-        Box(modifier = Modifier.weight(1f)) {
-            SliderSwitch(
-                checked = params[spec],
-                onCheckedChange = { writer.edit(spec, it) },
-                colors = RoomControls.switch,
-                modifier = Modifier.testTag("param-${spec.key}")
-            )
-        }
-    }
+    ScrubWell(listOf(spec), params, writer)
 }

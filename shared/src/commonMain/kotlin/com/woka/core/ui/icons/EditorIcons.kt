@@ -61,4 +61,13 @@ abstract class EditorIcons {
     // Crop's orientation, as a pair — a tall frame and a wide one (ME-144).
     val Portrait = Res.drawable.rectangle_portrait
     val Landscape = Res.drawable.rectangle
+
+    // The Clip and Sound panels' rows and buttons (RD-302), the prototype's Phosphor glyphs.
+    val Speed = Res.drawable.gauge
+    val Volume = Res.drawable.speaker_high
+    val Mute = Res.drawable.speaker_slash
+    val FadeIn = Res.drawable.fade_in
+    val FadeOut = Res.drawable.fade_out
+    val Delete = Res.drawable.trash
+    val More = Res.drawable.dots_three
 }

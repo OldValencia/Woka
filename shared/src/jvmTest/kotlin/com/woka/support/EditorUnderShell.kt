@@ -9,6 +9,7 @@ import com.woka.app.shell.LocalCanvasOverride
 import com.woka.app.shell.LocalTopBarAccessories
 import com.woka.app.shell.TopBarAccessoriesState
 import com.woka.feature.editor.core.EditorEngine
+import com.woka.feature.editor.shell.CanvasKeys
 import com.woka.feature.editor.shell.EditorFrameControls
 import com.woka.feature.editor.shell.EditorScreen
 
@@ -34,7 +35,9 @@ internal fun EditorUnderShell(
     /** Overridden by a test that needs the engine to answer for a particular file. */
     engine: EditorEngine = FixtureEngine(),
     /** Null is a file holding one picture, which is what most tests are (ME-156). */
-    frameControls: EditorFrameControls? = null
+    frameControls: EditorFrameControls? = null,
+    /** The editor's key slots, for a test that presses what `EditorKeys` would hand on (RD-302). */
+    canvasKeys: CanvasKeys? = null
 ) {
     // The pill the editor brings when no viewer lent one reads the HDR setting through Koin;
     // without this a test passed or failed by which test happened to start Koin first.
@@ -59,7 +62,8 @@ internal fun EditorUnderShell(
                 onDone = onDone,
                 canRevert = canRevert,
                 onRevert = onRevert,
-                frameControls = frameControls
+                frameControls = frameControls,
+                canvasKeys = canvasKeys
             )
         }
     }

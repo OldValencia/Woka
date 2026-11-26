@@ -1,8 +1,10 @@
 package com.woka.support
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -30,6 +32,8 @@ internal fun onTimeline(
     /** Read in composition, so a test can change it mid-gesture. */
     width: () -> Dp = { 620.dp },
     document: EditDocument = EditDocument(),
+    /** Drawn beside the timeline on the same holder — the Clip panel (RD-302). */
+    panel: (@Composable (VideoPlayerHolder, FixtureTimeline) -> Unit)? = null,
     block: ComposeUiTest.(VideoPlayerHolder, FixtureTimeline) -> Unit
 ) {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -40,8 +44,11 @@ internal fun onTimeline(
         val edits = FixtureTimeline().also { it.load(document) }
         onUi {
             setContent {
-                Box(Modifier.padding(top = 140.dp).width(width())) {
-                    VideoEditorTimeline(holder, edits.document, edits, Modifier)
+                Row {
+                    Box(Modifier.padding(top = 140.dp).width(width())) {
+                        VideoEditorTimeline(holder, edits.document, edits, Modifier)
+                    }
+                    panel?.let { Box(Modifier.width(280.dp)) { it(holder, edits) } }
                 }
             }
             waitForIdle()

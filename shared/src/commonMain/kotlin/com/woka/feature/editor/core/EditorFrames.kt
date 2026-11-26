@@ -51,5 +51,7 @@ data class ClipScope(
     /** Its place in the cut, from 1. */
     val number: Int,
     /** How long it plays, speed and freeze included (`TrimClip.lengthMs`). */
-    val lengthMs: Long
+    val lengthMs: Long,
+    /** A freeze-frame (ME-217): named `Still frame`, as the prototype's `clipLabel` (RD-302). */
+    val still: Boolean = false
 )

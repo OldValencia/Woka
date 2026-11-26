@@ -27,10 +27,11 @@ import com.woka.feature.editor.core.ToolStage
  */
 object SoundTool : EditorTool {
 
-    val Mute = BoolParam("mute", "Mute")
-    val Volume = FloatParam("volume", "Volume", 0f..200f, default = 100f, unit = "%")
-    val FadeIn = FloatParam("fadeIn", "Fade in", 0f..10f, default = 0f, unit = "s", step = 0.1f)
-    val FadeOut = FloatParam("fadeOut", "Fade out", 0f..10f, default = 0f, unit = "s", step = 0.1f)
+    val Mute = BoolParam("mute", "Mute", icon = Icons.Static.Mute)
+    val Volume = FloatParam("volume", "Volume", 0f..200f, default = 100f, unit = "%", icon = Icons.Static.Volume)
+    // Headed `Fades` over a well of their own (RD-302, the prototype's `section('Fades', …)`).
+    val FadeIn = FloatParam("fadeIn", "Fade in", 0f..10f, default = 0f, unit = "s", step = 0.1f, section = FADES, icon = Icons.Static.FadeIn)
+    val FadeOut = FloatParam("fadeOut", "Fade out", 0f..10f, default = 0f, unit = "s", step = 0.1f, section = FADES, icon = Icons.Static.FadeOut)
 
     override val manifest = ToolManifest(
         id = "sound",
@@ -76,6 +77,8 @@ object SoundTool : EditorTool {
         return mix.takeUnless { it == SoundMix() }
     }
 }
+
+private const val FADES = "Fades"
 
 /** What the sound tool folds to: the mix, for the readers that play or render sound. */
 data class SoundStage(val mix: SoundMix) : ToolStage

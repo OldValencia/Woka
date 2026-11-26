@@ -46,7 +46,7 @@ internal fun EditorScopeLine(controls: EditorFrameControls, onWholeVideo: () -> 
         verticalArrangement = Arrangement.Center
     ) {
         if (controls.frames.clips) {
-            FilmScopeCrumbs(controls.clip, onWholeVideo)
+            FilmScopeCrumbs(controls.clip, controls.shape, onWholeVideo)
             return@Column
         }
         val single = "Frame ${controls.frameIndex + 1}"

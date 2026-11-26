@@ -22,7 +22,8 @@ the tree as it is (`tickets.md` §1). The prototype itself is finished —
 | [RD-204 — Frame sets: the strip and the scope line](tickets/RD-204-frame-sets.md) | **done** 2026-11-26 |
 | [RD-205 — Straighten](tickets/RD-205-straighten.md) | **done** 2026-11-26 |
 | [RD-301 — Timeline](tickets/RD-301-timeline.md) | **done** 2026-11-26 |
-| RD-302…RD-802 | [backlog](tickets/backlog.md); next: promote RD-302 |
+| [RD-302 — Clip and Sound tabs, the scope line](tickets/RD-302-clip-sound-tabs.md) | **done** 2026-11-26 |
+| RD-401…RD-802 | [backlog](tickets/backlog.md); next: promote RD-401 |
 
 ## The spec, scene by scene
 
@@ -149,3 +150,5 @@ pill with HDR met `Original` at 960 px, measured 2026-11-25), so the window's mi
 | 2026-11-26 | The clip bar | A context menu: the prototype's plus Duplicate and Join; ❄ into the menu; speed to RD-302 | The author |
 | 2026-11-26 | Resetting the cut | `Undo all cuts` in the empty-place menu; right-click opens the menu | The author |
 | 2026-11-26 | Wave and height | Wave always in each clip (speaker toggle removed); height in `settings.json` | Left to judgement by the author |
+| 2026-11-26 | Clip speed row | 0.25–4×, log track, 1× at the centre, the old detents | The author; the prototype's 0.25–3× linear row corrected |
+| 2026-11-26 | Markup and a clip | Markup is the whole film's: opening it clears the clip, a shape is a crumb; a clip's stored markup left to the readers | The author: as the prototype; the Markup lane is in film time |

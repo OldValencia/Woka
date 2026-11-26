@@ -42,6 +42,8 @@ internal const val SCOPE_WHOLE_TAG = "editor-scope-whole"
 
 internal const val SCOPE_CLIP_TAG = "editor-scope-clip"
 
+internal const val SCOPE_SHAPE_TAG = "editor-scope-shape"
+
 private const val WHOLE_VIDEO = "Whole video"
 
 private val CRUMB_SHAPE = RoundedCornerShape(7.dp)
@@ -49,12 +51,13 @@ private val CRUMB_SHAPE = RoundedCornerShape(7.dp)
 /**
  * A film's scope line (RD-204, `.scope .crumb`): `Whole video` alone, or `Whole video ›
  * Clip 2  2.4 s` with a clip selected, where `Whole video` takes the selection back (ME-221).
+ * A still frame reads `Still frame`, and a selected Markup shape its own name (RD-302).
  */
 @Composable
-internal fun FilmScopeCrumbs(clip: ClipScope?, onWholeVideo: () -> Unit) {
+internal fun FilmScopeCrumbs(clip: ClipScope?, shape: String?, onWholeVideo: () -> Unit) {
     val room = Theme.room
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-        if (clip == null) {
+        if (clip == null && shape == null) {
             CurrentCrumb(WHOLE_VIDEO, Modifier)
             return@Row
         }
@@ -65,7 +68,12 @@ internal fun FilmScopeCrumbs(clip: ClipScope?, onWholeVideo: () -> Unit) {
             modifier = Modifier.size(12.dp),
             colorFilter = ColorFilter.tint(room.faint)
         )
-        CurrentCrumb("Clip ${clip.number}", Modifier.testTag(SCOPE_CLIP_TAG), meta = secondsOf(clip.lengthMs))
+        if (clip != null) {
+            val name = if (clip.still) "Still frame" else "Clip ${clip.number}"
+            CurrentCrumb(name, Modifier.testTag(SCOPE_CLIP_TAG), meta = secondsOf(clip.lengthMs))
+        } else if (shape != null) {
+            CurrentCrumb(shape, Modifier.testTag(SCOPE_SHAPE_TAG))
+        }
     }
 }
 

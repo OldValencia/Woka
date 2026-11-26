@@ -83,7 +83,12 @@ data class FloatParam(
      * (RD-205, the prototype's `.dial`). Straighten's angle: a horizon is levelled by small
      * sideways nudges watched on the picture, not by a value read off a track.
      */
-    val dial: Boolean = false
+    val dial: Boolean = false,
+    /**
+     * The track is read on a log₂ scale (RD-302): a ratio, where ½× and 2× are as far from 1×.
+     * A clip's speed. Requires a range above zero.
+     */
+    val octaves: Boolean = false
 ) : ParamSpec<Float> {
     // Clamped on the way in and on the way out: a document written when the range
     // was wider must not hand a slider a value off its own track. A type mismatch
@@ -104,11 +109,12 @@ data class IntParam(
     override fun decode(value: ParamValue): Int? = (value as? IntValue)?.value?.coerceIn(range)
 }
 
-/** A label and an `SliderSwitch`. */
+/** A label and an `SliderSwitch` — a toggle row in a well (RD-302), with [icon] before the label. */
 data class BoolParam(
     override val key: String,
     val label: String,
-    override val default: Boolean = false
+    override val default: Boolean = false,
+    val icon: DrawableResource? = null
 ) : ParamSpec<Boolean> {
     override fun encode(value: Boolean) = BoolValue(value)
     override fun decode(value: ParamValue): Boolean? = (value as? BoolValue)?.value

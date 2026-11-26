@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,16 +30,23 @@ import com.woka.feature.editor.core.EditorTool
  * Which tab is open (RD-201). **One always is** — the prototype's inspector never stands
  * empty — so with nothing chosen yet, or the chosen tab gone (switched off in Settings,
  * not applicable to this scope), the first available one is shown.
+ *
+ * [hidden] tabs are left out of [shown] — Clip while no clip is selected (RD-302) — but stay in
+ * [tabs], so a clip click from Transform finds Clip in the same event that selects the clip.
  */
 internal class EditorTabState(
     val tabs: List<EditorTab>,
     private val blocked: Map<String, String>,
-    private val chosen: MutableState<String?>
+    private val chosen: MutableState<String?>,
+    private val hidden: Set<String> = emptySet()
 ) {
     private fun available(tab: EditorTab) = tab.canvasTool.manifest.id !in blocked
 
+    /** The tabs the bar draws. */
+    val shown: List<EditorTab> = tabs.filter { it.id !in hidden }
+
     val tab: EditorTab?
-        get() = tabs.firstOrNull { it.id == chosen.value && available(it) } ?: tabs.firstOrNull(::available)
+        get() = shown.firstOrNull { it.id == chosen.value && available(it) } ?: shown.firstOrNull(::available)
 
     fun choose(id: String) {
         chosen.value = id
@@ -46,8 +54,13 @@ internal class EditorTabState(
 }
 
 @Composable
-internal fun rememberEditorTabs(tools: List<EditorTool>, blocked: Map<String, String>): EditorTabState {
+internal fun rememberEditorTabs(tools: List<EditorTool>, blocked: Map<String, String>, hidden: Set<String> = emptySet()): EditorTabState {
     // The choice outlives a rebuilt list — a tool switched off elsewhere leaves this tab open.
     val chosen = remember { mutableStateOf<String?>(null) }
-    return remember(tools, blocked) { EditorTabState(tabsOf(tools), blocked, chosen) }
+    // A hidden tab is forgotten, not only skipped: the next clip selection must not jump back
+    // to Clip (the prototype's `scope-all` sends Clip to Styles).
+    LaunchedEffect(hidden) {
+        if (chosen.value in hidden) chosen.value = null
+    }
+    return remember(tools, blocked, hidden) { EditorTabState(tabsOf(tools), blocked, chosen, hidden) }
 }

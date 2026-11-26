@@ -1,6 +1,7 @@
 package com.woka.feature.editor.shell
 
 import com.woka.feature.editor.core.ActionParam
+import com.woka.feature.editor.core.BoolParam
 import com.woka.feature.editor.core.FloatParam
 import com.woka.feature.editor.core.PadParam
 import com.woka.feature.editor.core.ParamSpec
@@ -44,4 +45,25 @@ private fun adjacentRuns(specs: List<ParamSpec<*>>): List<List<ParamSpec<*>>> {
 private fun joins(head: ParamSpec<*>, next: ParamSpec<*>): Boolean =
     (head is ActionParam && next is ActionParam) ||
         (head is PreviewChoiceParam<*> && next is PreviewChoiceParam<*>) ||
-        (head is FloatParam && (next is FloatParam || next is PadParam))
+        (inWell(head) && (inWell(next) || next is PadParam))
+
+/** A level or a toggle: both are rows of a well (RD-302, Sound's `Mute` beside `Volume`). */
+private fun inWell(spec: ParamSpec<*>): Boolean = spec is FloatParam || spec is BoolParam
+
+/** Which group [spec] heads its rows under — a level's `section`; null for everything else. */
+internal fun sectionOf(spec: ParamSpec<*>): String? = (spec as? FloatParam)?.section
+
+/**
+ * A well run cut where its rows change group (RD-302): Sound's `[Mute, Volume] · Fades [Fade in,
+ * Fade out] · [Even loudness]`, one well each, a named block headed by its name. Only for a run
+ * with at most one named section — more than one is a choice between them, which the segmented
+ * control above one well makes (Adjust's Light, Colour, Detail; ME-164).
+ */
+internal fun wellBlocks(run: List<ParamSpec<*>>): List<Pair<String?, List<ParamSpec<*>>>> {
+    val blocks = mutableListOf<Pair<String?, MutableList<ParamSpec<*>>>>()
+    run.forEach { spec ->
+        val last = blocks.lastOrNull()
+        if (last != null && last.first == sectionOf(spec)) last.second += spec else blocks += sectionOf(spec) to mutableListOf(spec)
+    }
+    return blocks
+}

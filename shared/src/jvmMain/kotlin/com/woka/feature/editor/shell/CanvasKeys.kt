@@ -46,6 +46,13 @@ internal class CanvasKeys {
     var fieldFocused: Boolean by mutableStateOf(false)
 
     /**
+     * Esc's first answer on a film (RD-302): drops the selected shape, else the clip, and says
+     * whether it did — only then does Esc close the editor. Written by `EditorScreen`, which
+     * owns both selections' tab; a plain field, read at the key press.
+     */
+    var onBack: (() -> Boolean)? = null
+
+    /**
      * Whether [key] is the focused field's rather than the editor's: every key while typing,
      * only the caret's while a value field has focus — Space, `Ctrl+Z` and `Esc` stay the
      * editor's, since that focus can linger after a click on the picture.

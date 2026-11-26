@@ -18,6 +18,7 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -65,6 +66,8 @@ internal fun EditorInspectorPanel(
     engine: EditorEngine,
     document: EditDocument,
     selectedId: () -> String?,
+    /** A film's selected clip, for a panel the engine draws itself (RD-302, Clip). */
+    selectedClip: String?,
     canRevert: Boolean,
     onRevert: () -> Unit
 ) {
@@ -86,8 +89,15 @@ internal fun EditorInspectorPanel(
                 .padding(EditorTokens.Panel.bodyPadding),
             verticalArrangement = Arrangement.spacedBy(EditorTokens.Panel.sectionGap)
         ) {
-            tab?.tools?.forEach { tool ->
-                EditorToolSection(session, engine, document, tool, selectedId)
+            // Rebuilt per selected clip: the panel then speaks for another subject (ME-221), and
+            // a clip with no edit of its own opens on a document equal to the film's — nothing
+            // the sections take changes, so they were skipped and kept the film's rows and
+            // values (Even loudness under a clip; found by `SoundPanelUiTest`, RD-302).
+            key(selectedClip) {
+                tab?.tools?.forEach { tool ->
+                    if (engine.drawsPanel(tool.manifest.id)) engine.ToolPanel(tool.manifest.id, document, selectedClip)
+                    else EditorToolSection(session, engine, document, tool, selectedId)
+                }
             }
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(room.line))

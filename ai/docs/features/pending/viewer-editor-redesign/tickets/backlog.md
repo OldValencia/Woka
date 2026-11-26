@@ -2,16 +2,8 @@
 
 Blocks are promoted into ticket files when they are next, re-cut against the tree as it then is
 (`tickets.md` §1, §4). No file lists here. The feature doc's questions were answered on
-2026-11-25; RD-101…RD-301 are tickets, RD-302 is the next block. Each block is promoted and built
+2026-11-25; RD-101…RD-302 are tickets, RD-401 is the next block. Each block is promoted and built
 whole — the author's call, 2026-11-25 (`tickets.md` §4a waived).
-
-## Video editor
-
-### RD-302 — Clip and Sound tabs, the scope line
-The Clip tab (speed, mute, split, delete, more) and Sound (mute, volume, fades, even loudness);
-the scope line moving between Whole video, a clip and a Markup shape. **State after RD-301:**
-speed has no control (the clip bar's chip went with the bar), so the Clip tab brings it back.
-Cover returned in RD-301's clip menu. Music (`add music`, its sound crumb) is ME-244, 1.1.0.
 
 ## Dialogs
 

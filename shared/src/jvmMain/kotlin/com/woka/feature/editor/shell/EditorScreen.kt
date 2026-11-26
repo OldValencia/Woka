@@ -1,8 +1,5 @@
 package com.woka.feature.editor.shell
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,20 +7,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.unit.dp
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.editor.core.EditScope
 import com.woka.feature.editor.core.EditorEngine
@@ -88,13 +78,16 @@ internal fun EditorScreen(
     val perFrame = frameControls?.let { it.copy(frames = engine.framesIn(document).takeIf { f -> f.clips } ?: it.frames) }
         ?.takeIf { it.frames.allowsPerFrame }
     val scope = perFrame?.scope ?: EditScope.AllFrames
-    // The scope line (RD-204): a frame set's switch, or any film's crumbs — cut or not.
-    val scopeLine = (perFrame ?: frameControls?.takeIf { it.frames.clips })
-        ?.copy(clip = engine.clipScopeOf(document, clipSelection))
     val blocked = unavailable + engine.unavailableIn(scope)
 
-    val tabs = rememberEditorTabs(tools, blocked)
+    // Clip's tab only while a clip is selected (RD-302).
+    val clipOnly = if (clipSelection == null) tools.filter { it.manifest.clipOnly }.map { it.manifest.id }.toSet() else emptySet()
+    val tabs = rememberEditorTabs(tools, blocked, clipOnly)
     val tab = tabs.tab
+    val film = rememberFilmSelection(session, tabs, selection, engine.frames.clips, canvasKeys)
+    // The scope line (RD-204): a frame set's switch, or any film's crumbs — cut or not.
+    val scopeLine = (perFrame ?: frameControls?.takeIf { it.frames.clips })
+        ?.copy(clip = engine.clipScopeOf(document, clipSelection), shape = film.shapeLabel(engine, document))
     // The canvas answers to the open tab's tool while the inspector is out; hidden (F6), the
     // picture is only looked at.
     val activeTool = tab?.canvasTool?.takeIf { panel.shown }
@@ -104,14 +97,6 @@ internal fun EditorScreen(
     }
     val canvasDocument = canvasDocumentFor(activeTool, document, peek.active)
     val skipped = skippedOps(document, registry, engine.kind)
-
-    // Out from nothing on entry, so the panel arrives beside the picture rather than appearing.
-    var entered by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { entered = true }
-    val panelWidth by animateDpAsState(
-        if (entered && panel.shown) EditorTokens.Panel.width + 1.dp else 0.dp,
-        tween(250, easing = FastOutSlowInEasing)
-    )
 
     Row(
         modifier = Modifier
@@ -128,23 +113,18 @@ internal fun EditorScreen(
             }
             engine.Timeline(document, timelineScopeOf(session, tools, clipSelection, tabs, selection), Modifier.fillMaxWidth())
         }
-        Box(modifier = Modifier.width(panelWidth).fillMaxHeight().clipToBounds()) {
-            Row(modifier = Modifier.wrapContentWidth(Alignment.Start, unbounded = true)) {
-                Box(Modifier.width(1.dp).fillMaxHeight().background(Theme.room.line))
-                EditorInspectorPanel(
-                    scope = scopeLine?.let { line -> { EditorScopeLine(line) { session.pickClip(null, NO_CLIP) } } },
-                    tabs = tabs.tabs,
-                    tab = tab,
-                    unavailable = blocked,
-                    onSelectTab = tabs::choose,
-                    session = session,
-                    engine = engine,
-                    document = document,
-                    selectedId = { selection.id },
-                    canRevert = canRevert,
-                    onRevert = onRevert
-                )
-            }
-        }
+        EditorInspectorDock(
+            panel = panel,
+            scope = scopeLine?.let { line -> { EditorScopeLine(line, film::wholeVideo) } },
+            tabs = tabs,
+            unavailable = blocked,
+            session = session,
+            engine = engine,
+            document = document,
+            selection = selection,
+            selectedClip = clipSelection,
+            canRevert = canRevert,
+            onRevert = onRevert
+        )
     }
 }

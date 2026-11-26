@@ -13,6 +13,11 @@ function scrub(key,label,value=0,min=-100,max=100,step=1,unit='',glyph=key){
   const def=defaultValue(key),detent=def>min&&def<max?`<i class="detent" style="--at:${(def-min)/(max-min)*100}%"></i>`:'';
   return `<div class="control scrub" data-control="${key}"><span class="scrub-fill"></span>${detent}<span class="scrub-thumb"></span><span class="scrub-icon">${icon(glyph)}</span><span class="scrub-label">${label}</span>${button('reset-param',icon('reset'),'control-reset',`data-param="${key}" aria-label="Reset ${label}" data-tip="Reset to ${def}${unit}"`)}<input class="number" type="number" data-value="${key}" value="${value}" min="${min}" max="${max}" step="${step}" aria-label="${label}, exact value"><span class="unit">${unit}</span><input class="scrub-input" type="range" data-value="${key}" min="${min}" max="${max}" step="${step}" value="${value}" aria-label="${label}" data-tip="${escapeHtml(parameterHints[key]||label)}"></div>`;
 }
+/* RD-302: a ratio read in octaves — the range input runs log₂(min)…log₂(max), 1× at the centre; the number field shows the speed. */
+function logScrub(key,label,value,min,max,unit,glyph=key){
+  const lo=Math.log2(min),hi=Math.log2(max),def=defaultValue(key),at=(Math.log2(def)-lo)/(hi-lo)*100;
+  return `<div class="control scrub" data-control="${key}"><span class="scrub-fill"></span><i class="detent" style="--at:${at}%"></i><span class="scrub-thumb"></span><span class="scrub-icon">${icon(glyph)}</span><span class="scrub-label">${label}</span>${button('reset-param',icon('reset'),'control-reset',`data-param="${key}" aria-label="Reset ${label}" data-tip="Reset to ${def}${unit}"`)}<input class="number" type="number" data-value="${key}" value="${value}" min="${min}" max="${max}" step="0.05" aria-label="${label}, exact value"><span class="unit">${unit}</span><input class="scrub-input" type="range" data-value="${key}" data-scale="log" min="${lo}" max="${hi}" step="0.01" value="${Math.log2(value)}" aria-label="${label}" data-tip="${escapeHtml(parameterHints[key]||label)}"></div>`;
+}
 function toggle(key,label,checked=false,glyph=null){return `<label class="toggle">${glyph?`<span class="scrub-icon">${icon(glyph)}</span>`:''}<span class="toggle-label">${label}</span><input data-value="${key}" type="checkbox" ${checked?'checked':''}></label>`;}
 function well(...rows){return `<div class="well">${rows.join('')}</div>`;}
 function section(label,content){return `<section class="group"><h2 class="group-label">${label}</h2>${content}</section>`;}
@@ -109,7 +114,7 @@ function clipPanel(){
   const clip=selectedClip();
   const pair=`<div class="button-pair">${wellButton('split','clips','Split','','data-tip="Split at the playhead (S)"')}${wellButton('delete-clip','trash','Delete','danger','data-tip="Delete this clip (Del)"')}</div>`;
   if(clip.freeze)return `${pair}${textAction('clip-menu','more','More actions')}`;
-  return `${well(scrub('speed','Speed',clip.speed||1,.25,3,.25,'×'),clip.detached?'':toggle('mute','Mute sound',val('mute',false),'mute'))}${pair}${textAction('clip-menu','more','More actions')}`;
+  return `${well(logScrub('speed','Speed',clip.speed||1,.25,4,'×'),clip.detached?'':toggle('mute','Mute sound',val('mute',false),'mute'))}${pair}${textAction('clip-menu','more','More actions')}`;
 }
 function audioPanel(audio){
   return `${audio.missing?`<div class="info-box danger"><b>File not found</b><br>${escapeHtml(audio.name)}${button('relink','Locate file…','secondary wide')}</div>`:''}${well(toggle('mute','Mute',val('mute',false),'mute'),scrub('volume','Volume',val('volume',70),0,200,1,'%'))}${section('Fades',well(scrub('fadeIn','Fade in',val('fadeIn',1),0,Math.min(10,audio.duration),.1,'s'),scrub('fadeOut','Fade out',val('fadeOut',2),0,Math.min(10,audio.duration),.1,'s')))}${well(toggle('repeat','Loop to end of video',val('repeat',false)))}${textAction('delete-audio','trash','Remove audio','danger')}`;

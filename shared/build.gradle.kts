@@ -144,6 +144,25 @@ tasks.withType<Test>().configureEach {
     jvmArgs("--enable-native-access=ALL-UNNAMED")
 }
 
+// Probes measure the machine and assert nothing (`code-style/test.md`), so they are not part of
+// the build's verdict: they were 307 of its ~410 s (measured 2026-11-26). `probeTest` runs them
+// when a measurement is wanted; `agentTest` below has no filter and still records them.
+val probes = "com.woka.probe.*"
+tasks.named<Test>("jvmTest") {
+    filter { excludeTestsMatching(probes) }
+}
+tasks.register<Test>("probeTest") {
+    description = "Runs the probes under jvmTest/probe — measurements, never part of build."
+    group = "verification"
+    val jvmTest = tasks.named<Test>("jvmTest").get()
+    testClassesDirs = jvmTest.testClassesDirs
+    classpath = jvmTest.classpath
+    useJUnit()
+    filter { includeTestsMatching(probes) }
+    // A measurement is asked for to be taken now, never answered from the cache.
+    outputs.upToDateWhen { false }
+}
+
 // The whole suite under GraalVM's tracing agent (ST-006): what the tests touch becomes part of
 // the native image's metadata (`:desktopApp:nativeImageAgentTests` merges and filters it).
 // Registered only where a GraalVM is configured, and never part of `build`. JavaCPP loads from

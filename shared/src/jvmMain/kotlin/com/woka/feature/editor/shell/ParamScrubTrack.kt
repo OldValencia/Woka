@@ -20,8 +20,7 @@ import kotlin.math.abs
 @Composable
 internal fun ScrubTrack(spec: FloatParam, value: Float, changed: Boolean, active: Boolean, dragging: Boolean, modifier: Modifier) {
     val room = Theme.room
-    val span = spec.range.endInclusive - spec.range.start
-    fun at(v: Float) = if (span == 0f) 0f else ((v - spec.range.start) / span).coerceIn(0f, 1f)
+    fun at(v: Float) = trackFraction(spec, v)
     val snapped = dragging && !changed
     Canvas(modifier.fillMaxWidth().height(12.dp)) {
         val bottom = size.height

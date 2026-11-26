@@ -5,8 +5,8 @@ import androidx.compose.ui.unit.Dp
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.TimeWindow
 import com.woka.feature.editor.core.ToolOp
-import com.woka.feature.editor.tools.markup.MarkupShape
 import com.woka.feature.editor.tools.markup.MarkupTool
+import com.woka.feature.editor.tools.markup.label
 import com.woka.feature.editor.tools.markup.MarkupWindowsParam
 
 /**
@@ -16,8 +16,8 @@ import com.woka.feature.editor.tools.markup.MarkupWindowsParam
  * moves are asserted without a window (`MarkupLaneRowsTest`).
  *
  * **It reads and writes the op the canvas edits** — the document's last `markup` op, the one in
- * flight first — so a bar moved with a clip open moves that clip's shape, as a drag on the
- * canvas would.
+ * flight first. Markup is the whole film's since RD-302, so a bar's move lands in the shared
+ * layer whatever clip is selected, as a drag on the canvas does.
  */
 @Immutable
 internal data class MarkupBar(val id: String, val label: String, val window: TimeWindow, val row: Int)
@@ -38,7 +38,7 @@ internal fun markupBarsIn(document: EditDocument, totalMs: Long): List<MarkupBar
     val shapes = params[MarkupTool.Shapes]
     val spans = shapes.map { windows[it.id] ?: TimeWindow(0L, totalMs) }
     val rows = laneRows(spans)
-    return shapes.mapIndexed { index, shape -> MarkupBar(shape.id, labelOf(shape), spans[index], rows[index]) }
+    return shapes.mapIndexed { index, shape -> MarkupBar(shape.id, shape.label, spans[index], rows[index]) }
 }
 
 /** Each window in the first row whose last window has ended by its start, earliest start first. */
@@ -102,12 +102,3 @@ internal fun withoutShape(op: ToolOp, id: String): ToolOp = ToolOp(
         .with(MarkupTool.Shapes, op.params[MarkupTool.Shapes].filterNot { it.id == id })
         .with(MarkupWindowsParam, op.params[MarkupWindowsParam] - id)
 )
-
-/** A text shape by its words; the rest by kind. */
-private fun labelOf(shape: MarkupShape): String = when (shape) {
-    is MarkupShape.Text -> shape.text.ifBlank { "Text" }
-    is MarkupShape.Arrow -> "Arrow"
-    is MarkupShape.Rectangle -> "Rectangle"
-    is MarkupShape.Ellipse -> "Ellipse"
-    is MarkupShape.Freehand -> "Drawing"
-}

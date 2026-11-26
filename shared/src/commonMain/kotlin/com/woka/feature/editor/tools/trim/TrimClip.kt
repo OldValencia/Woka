@@ -57,10 +57,7 @@ data class TrimClip(
     val lengthMs: Long get() = if (isFreeze) holdMs else (sourceLengthMs / speed.toDouble()).toLong()
 }
 
-/** The quick speeds the clip bar offers as one click each, slowest first (ME-216). */
-val CLIP_SPEEDS = listOf(0.25f, 0.5f, 1f, 1.5f, 2f, 4f)
-
-/** The speeds the slider sticks to on its way past (2026-11-04: 1.25×, 1.5× wanted). */
+/** The speeds the Speed row sticks to on its way past (2026-11-04: 1.25×, 1.5× wanted; RD-302). */
 val CLIP_SPEED_DETENTS = listOf(0.25f, 0.5f, 0.75f, 1f, 1.25f, 1.5f, 2f, 3f, 4f)
 
 const val CLIP_SPEED_MIN = 0.25f

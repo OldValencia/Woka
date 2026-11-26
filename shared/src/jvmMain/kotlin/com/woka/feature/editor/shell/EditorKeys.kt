@@ -82,7 +82,8 @@ internal fun EditorKeyEffect(
             // out from under the field. The field handles both itself.
             if (curCanvasKeys?.yields(event.key) == true) return@handler false
             when {
-                event.key == Key.Escape -> consume { curCancel() }
+                // A film's selection first, as the prototype's Esc (RD-302); with none, the editor.
+                event.key == Key.Escape -> consume { if (curCanvasKeys?.onBack?.invoke() != true) curCancel() }
                 event.isCtrlPressed && event.key == Key.S -> consume { curDone() }
                 // Both spellings of redo, because both are muscle memory and neither
                 // is wrong. Checked before undo: `Ctrl+Shift+Z` also matches the undo

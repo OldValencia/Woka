@@ -10,7 +10,7 @@ and `probe/`.
 | `unit/` | nothing — no disk, no window, no Koin | math, folds, state machines, mappers, schemas |
 | `integration/` | real files under a temp storage root | repositories, save jobs, caches, settings round-trips |
 | `ui/` | Compose automation through `support/UiHarness` | what renders, what a click does, enablement |
-| `probe/` | the machine's real decoders | answering a capability question — asserts nothing |
+| `probe/` | the machine's real decoders | answering a capability question — asserts nothing; `probeTest`, not `build` |
 
 Put a test in the highest tier that can still fail for the right reason. A fold tested through the UI
 is a slow test that will be deleted the first time it flakes.
@@ -58,6 +58,11 @@ Every test that writes goes through `TempStorageRoot`. The Gradle test task also
 override is restored — do not rely on one without the other.
 
 ## Probes
+
+**Not part of the build.** `jvmTest` excludes `com.woka.probe.*`; run them with
+`./gradlew.bat :shared:probeTest` (all) or `:shared:probeTest --tests "com.woka.probe.<Name>"` (one).
+They were 307 of `:shared:build`'s ~410 s (2026-11-26) while gating nothing. `agentTest` still runs
+them, so the native image's metadata keeps what only a probe touches.
 
 A probe prints a table and asserts nothing about the machine: its output is evidence, not a gate. Its
 output is recorded **with a date in the ticket or plan that asked for it**, the decision it settles

@@ -29,6 +29,7 @@ import org.jetbrains.compose.resources.DrawableResource
  * | [multipliesShared] | where an open clip's panel starts (`panelDocument`) |
  * | [tabbed], [joins] | whether the tool has an inspector tab, and whose it shares (RD-201) |
  * | [foldsFirst] | applied before the rest of its domain, whatever order ops were made in |
+ * | [clipOnly] | whether the tab exists only while one clip of a film is selected (RD-302) |
  */
 @Immutable
 data class ToolManifest(
@@ -57,5 +58,8 @@ data class ToolManifest(
     val joins: String? = null,
     // Applied before the rest of its domain whatever order the user made things in: a
     // straighten levels the original, so a later flip mirrors a level picture (RD-205).
-    val foldsFirst: Boolean = false
+    val foldsFirst: Boolean = false,
+    // The tab is there only while a clip is selected, first, and goes with the selection — Clip
+    // (RD-302, the prototype's `toolList`). Settings → Editor still lists the tool.
+    val clipOnly: Boolean = false
 )

@@ -54,6 +54,17 @@ interface EditorEngineSurface {
     fun Timeline(document: EditDocument, edits: EditorTimelineScope, modifier: Modifier) = Unit
 
     /**
+     * Whether the engine draws tool [toolId]'s panel itself, in place of the schema's rows
+     * (RD-302): a film's Clip, whose speed, split and delete act on the timeline's clips and
+     * play head. False for everything else, which every still answers.
+     */
+    fun drawsPanel(toolId: String): Boolean = false
+
+    /** That panel, for the clip [selectedClip] — the shell's selection, never its player. */
+    @Composable
+    fun ToolPanel(toolId: String, document: EditDocument, selectedClip: String?) = Unit
+
+    /**
      * "Start or stop whatever is moving on the canvas", raised by a click on it.
      *
      * Media-agnostic on purpose: an animated still runs a frame clock and the video

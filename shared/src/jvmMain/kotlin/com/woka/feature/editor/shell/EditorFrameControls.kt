@@ -28,5 +28,7 @@ internal data class EditorFrameControls(
     /** Walking to another picture without leaving the editor (ME-158). */
     val onSelectFrame: (Int) -> Unit,
     /** A film's selected clip, for the scope line (ME-221, RD-204); filled by `EditorScreen`. */
-    val clip: ClipScope? = null
+    val clip: ClipScope? = null,
+    /** A film's selected Markup shape, by name (RD-302); filled by `EditorScreen`. */
+    val shape: String? = null
 )
