@@ -23,7 +23,7 @@ the tree as it is (`tickets.md` §1). The prototype itself is finished —
 | [RD-205 — Straighten](tickets/RD-205-straighten.md) | **done** 2026-11-26 |
 | [RD-301 — Timeline](tickets/RD-301-timeline.md) | **done** 2026-11-26 |
 | [RD-302 — Clip and Sound tabs, the scope line](tickets/RD-302-clip-sound-tabs.md) | **done** 2026-11-26 |
-| [RD-401 — Ways out](tickets/RD-401-ways-out.md) | written 2026-11-26; steps cut to the answers, one open (photo size tiles) |
+| [RD-401 — Ways out](tickets/RD-401-ways-out.md) | The prototype has photo percentage presets and manual dimensions for photo and video copies. Video presets must adapt to the source size. App implementation pending. |
 | RD-501…RD-802 | [backlog](tickets/backlog.md) |
 
 ## The spec, scene by scene

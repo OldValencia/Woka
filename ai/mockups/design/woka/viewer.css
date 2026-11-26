@@ -127,15 +127,17 @@ body:has(.app-shell:not(.editing)) dialog .primary:hover{background:var(--accent
 body:has(.app-shell:not(.editing)) dialog .secondary{background:var(--surface-hover)}
 dialog.dialog-narrow{width:min(360px,90vw)}
 /* File information: the meta block, then one card per stream (FileInfoStreamCards). */
-.info-scroll{display:flex;flex-direction:column;gap:12px;max-height:460px;overflow-y:auto;padding-right:4px}
-.info-meta{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--text-secondary);user-select:text}
-.info-meta b{font-size:14px;font-weight:600;color:var(--text-primary);overflow-wrap:anywhere}
+body:has(.app-shell:not(.editing)) .dialog-compact{--dialog-group-bg:var(--surface-hover);--dialog-group-line:var(--border);--dialog-muted:var(--text-secondary)}
+.info-meta{display:flex;flex-direction:column;gap:3px;margin-bottom:10px;font-size:13px;color:var(--dialog-muted);user-select:text;overflow-wrap:anywhere}
+.info-meta b{font-size:14px;font-weight:600;color:var(--text-primary)}
 .info-edited{margin-left:6px;padding:1px 6px;border-radius:5px;background:var(--accent-editor-soft);color:var(--accent-editor-text);font-size:11px;font-weight:600;vertical-align:1px}
-.info-section h3{margin:0 0 6px;font-size:13px;font-weight:600;color:var(--text-primary)}
-.info-card{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:10px;background:var(--surface-hover);border:1px solid var(--border)}
-.info-row{display:flex;justify-content:space-between;gap:12px;font-size:12px}
-.info-row span{color:var(--text-secondary)}
-.info-row b{font-weight:500;text-align:right}
+.info-sections{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(164px,100%),1fr));gap:8px}
+.info-section:first-child{grid-column:1/-1}
+.info-section h3{margin:0 0 6px;font-size:13px;font-weight:600}
+.info-section dl{display:grid;gap:4px;margin:0}
+.info-row{display:flex;justify-content:space-between;gap:8px;font-size:13px;user-select:text}
+.info-row dt{color:var(--dialog-muted)}
+.info-row dd{margin:0;text-align:right;font-weight:500;overflow-wrap:anywhere}
 #rename-input{width:100%}
 .rename-error{margin:8px 0 0;font-size:12px;color:var(--danger)}
 body:has(.app-shell:not(.editing)) #rename-input{background:var(--surface-hover);color:var(--text-primary);box-shadow:inset 0 0 0 1px var(--border)}

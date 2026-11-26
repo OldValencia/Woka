@@ -40,7 +40,11 @@ function setScene(scene){
   document.documentElement.style.setProperty('--timeline-height',scene==='audio'?'320px':'220px');
   pan={x:0,y:0};render();
 }
-function cropDimensions(){const base=state.portrait?[3024,4032]:[4032,3024],k=coverOf(state.straighten||0,base[0]/base[1]),w=Math.floor(base[0]/k),h=Math.floor(base[1]/k);return `${Math.round(w*state.crop.w/100)} × ${Math.round(h*state.crop.h/100)} px`;}
+function cropPixelSize(base=state.portrait?[3024,4032]:[4032,3024]){
+  const cover=coverOf(state.straighten||0,base[0]/base[1]);
+  return base.map((side,index)=>Math.round(Math.floor(side/cover)*(index===0?state.crop.w:state.crop.h)/100));
+}
+function cropDimensions(){return `${cropPixelSize().join(' × ')} px`;}
 /* RD-205: the share of the frame a straightened picture still fills — the file keeps real pixels only. */
 function coverOf(angle,ratio){const rad=Math.abs(angle)*Math.PI/180;return Math.cos(rad)+Math.max(ratio,1/ratio)*Math.sin(rad);}
 function updatePicture(){
@@ -99,14 +103,14 @@ function setValue(key,value){
   normalizeTimeline();state.dirty=true;updatePicture();if(state.mode==='video')renderTimeline();showDirty();refreshControlStates();
 }
 function outputDialog(kind='copy'){
-  const video=state.mode==='video';
   if(kind!=='copy'){
     const frame=kind==='frame';
     modal(frame?'Save frame as photo':'Save audio',`<div class="output-option"><div><strong>${frame?'Current frame · PNG':'Audio · M4A'}</strong><p>${frame?formatTime(state.time):'With your cuts, volume and fades.'}</p></div>${button('demo-export','Save','primary',`data-label="${frame?'Saving frame':'Saving audio'}"`)}</div>`);
     return;
   }
-  const sizes=video?[['Original','1920 × 1080'],['720p','1280 × 720'],['Small','854 × 480']]:[['Original',state.portrait?'3024 × 4032':'4032 × 3024'],['Large','2048 px'],['Small','1080 px']];
-  modal('Create a finished copy',`<p>A new file with your edits. The original stays as it is.</p><h3>Size</h3><div class="segmented output-size">${sizes.map(([name,detail],index)=>button('out-size',`<b>${name}</b><small>${detail}</small>`,index===0?'selected':'')).join('')}</div>${currentMedia().hdr?toggle('outSdr','<span data-tip="Use this when the video looks too bright or washed out in other apps.">Standard colours (SDR)</span>',false):''}<div class="dialog-actions">${video?button('extract','Audio only…','quiet'):''}${button('demo-export','Create copy','primary','data-label="Creating copy"')}</div>`);
+  const intro='<p>A new file with your edits. The original stays as it is.</p>';
+  const sdr=currentMedia().hdr?toggle('outSdr','<span data-tip="Use this when the video looks too bright or washed out in other apps.">Standard colours (SDR)</span>',false):'';
+  sizedOutputDialog({copy:true,intro,options:sdr});
 }
 
 function action(name,node){
@@ -160,7 +164,6 @@ function action(name,node){
     'demo-export':()=>{$('#dialog').close();startJob(node.dataset.label||'Creating copy');},
     'job-cancel':()=>{jobAnimation?.cancel();jobAnimation=null;toast('Cancelled. Nothing was saved.');},
     'toast-dismiss':hideToast,
-    'out-size':()=>node.parentElement.querySelectorAll('button').forEach(item=>item.classList.toggle('selected',item===node)),
     'clip-menu':()=>{const rect=node.getBoundingClientRect();openMenu(rect.left,rect.bottom+4,clipMenu());},
     'close-modal':()=>$('#dialog').close(),
     'confirm-reset':()=>{$('#dialog').close();commit(()=>{const mode=state.mode;state=initialState();state.mode=mode;state.tool='styles';state.audio=[];if(mode==='video')state.clips=[{id:'original',name:'Original video',duration:40,sourceStart:0,speed:1,settings:{}}];});}

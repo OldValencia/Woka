@@ -101,8 +101,8 @@ function requestExit(){
 }
 function flushInput(){if(inputBefore!==null){remember(inputBefore);inputBefore=null;}}
 function documentSignature(document){
-  const {settings,crop,portrait,ratio,rotation,straighten,flipped,flippedV,captionVisible,clips,audio,frames}=document;
-  return JSON.stringify({settings,crop,portrait,ratio,rotation,straighten,flipped,flippedV,captionVisible,clips,audio,frames});
+  const {settings,crop,portrait,ratio,rotation,straighten,flipped,flippedV,captionVisible,clips,audio,frames,photoSize}=document;
+  return JSON.stringify({settings,crop,portrait,ratio,rotation,straighten,flipped,flippedV,captionVisible,clips,audio,frames,photoSize});
 }
 function syncDirty(){if(savedSnapshot)state.dirty=documentSignature(state)!==documentSignature(JSON.parse(savedSnapshot));}
 function applyComparison(){
@@ -148,7 +148,7 @@ function helpDialog(){
 }
 function initExperience(){
   savedSnapshot=JSON.stringify(state);
-  $('#back-viewer').onclick=requestExit;$('#enter-editor').onclick=()=>setViewer(false);$('#done').onclick=finishEditing;$('#help').onclick=helpDialog;
+  $('#back-viewer').onclick=requestExit;$('#enter-editor').onclick=()=>setViewer(false);$('#done').onclick=saveChangesDialog;$('#help').onclick=helpDialog;
   document.addEventListener('click',event=>{
     const node=event.target.closest('[data-action]');if(!node)return;const action=node.dataset.action;
     if(action==='reset-param')commit(()=>setValue(node.dataset.param,defaultValue(node.dataset.param)));

@@ -1,7 +1,7 @@
 /* The viewer's own dialogs (PT-105): file information as the app draws it — the name, path, size and
    date, then a card per stream (FileInfoDialog, FileInfoStreamCards) — and rename (RenameDialog).
    A dialog over the viewer takes the viewer's palette, one over the editor the dark room's. The
-   Dialogs section links to these and to the editor's three: Create a copy, Keep changes?, Revert. */
+   Dialogs section links to these and to the editor's dialogs. */
 function fileFacts(item){
   const meta={path:`D:\\${item.audioOnly?'Music':'Vacation'}\\${item.name}`,created:'2026-08-14 18:32'};
   if(item.audioOnly)return {...meta,size:'7.4 MB',sections:[
@@ -9,7 +9,7 @@ function fileFacts(item){
     ['General',[['Duration',shortTime(32)]]],
     ['Audio',[['Codec','AAC'],['Channels','Stereo'],['Sample rate','44.1 kHz'],['Bitrate','256 kb/s']]]]};
   if(item.video)return {...meta,size:'412 MB',sections:[
-    ['General',[['Resolution','1920 × 1080'],['Duration',shortTime(32)]]],
+    ['General',[['Resolution',item.dimensions.join(' × ')],['Duration',shortTime(32)]]],
     ['Video',[['Codec','HEVC'],['Frame rate','59.94 fps'],['Bitrate','48.2 Mb/s'],['Colour',item.hdr?'HDR · PQ':'SDR · BT.709']]],
     ['Audio',[['Codec','AAC'],['Channels','Stereo'],['Sample rate','48 kHz'],['Bitrate','256 kb/s']]]]};
   const [,, w,h]=item.view.split(' ').map(Number),portrait=h>w;
@@ -25,8 +25,8 @@ function infoText(item,facts){
 function infoDialog(){
   const item=currentMedia(),facts=fileFacts(item);
   const edited=editedIds.has(item.id)?'<span class="info-edited">Edited</span>':'';
-  const cards=facts.sections.map(([title,rows])=>`<section class="info-section"><h3>${title}</h3><div class="info-card">${rows.map(([key,value])=>`<div class="info-row"><span>${key}</span><b>${escapeHtml(value)}</b></div>`).join('')}</div></section>`).join('');
-  modal('File information',`<div class="info-scroll"><div class="info-meta"><b>${escapeHtml(item.name)}${edited}</b><span>Path: ${escapeHtml(facts.path)}</span><span>Size: ${facts.size}</span><span>Created: ${facts.created}</span></div>${cards}</div><div class="dialog-actions">${button('info-copy','Copy','secondary')}${button('close-modal','Close','primary')}</div>`,'dialog-narrow');
+  const cards=facts.sections.map(([title,rows])=>`<section class="dialog-group info-section"><h3>${title}</h3><dl>${rows.map(([key,value])=>`<div class="info-row"><dt>${key}</dt><dd>${escapeHtml(value)}</dd></div>`).join('')}</dl></section>`).join('');
+  modal('File information',`<div class="info-meta"><b>${escapeHtml(item.name)}${edited}</b><span>${escapeHtml(facts.path)}</span><span>${facts.size} · Created ${facts.created}</span></div><div class="info-sections">${cards}</div><div class="dialog-actions">${button('info-copy','Copy details','secondary')}${button('close-modal','Close','primary')}</div>`,'dialog-compact');
 }
 function renameDialog(){
   const item=currentMedia(),dot=item.name.lastIndexOf('.');
@@ -40,11 +40,102 @@ function confirmRename(){
   $('#dialog').close();if(name===item.name)return;
   item.name=name;carouselKey='';syncWokaChrome();toast(`Renamed to ${name}.`);
 }
+function saveChangesDialog(){
+  if(state.mode==='photo'){sizedOutputDialog({copy:false});return;}
+  modal('Save your changes?',`<p>Keep these edits so you can come back to them in Woka.</p><div class="dialog-actions">${button('close-modal','Cancel','quiet')}${button('finish-editor','Save','primary')}</div>`,'dialog-compact');
+}
+function videoSizePresets(frame){
+  const presets=[['100','Original',frame]],portrait=frame[1]>frame[0];
+  for(const height of [2160,1440,1080,720,480]){
+    const bounds=[2*Math.round(height*16/18),height];
+    if(portrait)bounds.reverse();
+    const scale=Math.min(...bounds.map((limit,index)=>limit/frame[index]));
+    if(scale>=1)continue;
+    const size=frame.map((side,index)=>Math.min(2*Math.round(side*scale/2),2*Math.floor(side/2),bounds[index]));
+    if(size.some(side=>side<2)||presets.some(([, , previous])=>size.every((side,index)=>side===previous[index])))continue;
+    presets.push([String(height),size.every((side,index)=>side===bounds[index])?`${height}p`:size.join(' × '),size]);
+    if(presets.length===3)break;
+  }
+  return presets;
+}
+function sizedOutputDialog({copy,intro='',options=''}){
+  const video=state.mode==='video',frame=cropPixelSize(video?currentMedia().dimensions:undefined);
+  if(state.rotation%180)frame.reverse();
+  const saved=copy?undefined:state.photoSize;
+  let selected=saved?.preset??'100';
+  const presets=video?videoSizePresets(frame)
+    :[['100','Original'],['75','75%'],['50','50%'],['25','25%']];
+  const presetSize=value=>presets.find(([key])=>key===value)?.[2]
+    ??frame.map(side=>Math.max(1,Math.round(side*Number(value)/100)));
+  const start=selected==='custom'?[saved.width,saved.height]:presetSize(selected);
+  const fields=['Width','Height'].map((label,index)=>`<label>${label} (px)<input class="text-input" type="number" min="1" step="1" required value="${start[index]}" aria-errormessage="output-size-error"></label>`).join('');
+  const sizes=[...presets,['custom','Custom']].map(([value,label])=>`<button type="button" value="${value}" aria-pressed="${value===selected}">${label}</button>`).join('');
+  const extra=video?button('extract','Audio only…','quiet dialog-leading-action','type="button"'):'';
+  modal(copy?'Create a finished copy':'Save your changes?',`${intro}<form id="output-size-form" novalidate>
+    <fieldset class="dialog-group output-size-group"><legend>Size</legend>
+      <div class="segmented output-size" role="group" aria-label="Size preset">${sizes}</div>
+      <div class="output-size-fields">${fields}</div>
+      <label class="output-size-lock"><input type="checkbox" ${saved?.keepProportions===false?'':'checked'}>Keep proportions</label>
+      <p id="output-size-error" role="alert" hidden>Enter positive whole pixel dimensions.</p></fieldset>${options}
+    <div class="dialog-actions">${extra}${button('close-modal','Cancel','quiet','type="button"')}<button type="submit" class="primary">${copy?'Create copy':'Save'}</button></div></form>`,'dialog-compact');
+  const form=$('#output-size-form');
+  const inputs=[...form.querySelectorAll('.output-size-fields input')],lock=form.querySelector('.output-size-lock input');
+  const choices=[...form.querySelectorAll('.output-size button')];
+  const error=form.querySelector('#output-size-error'),submit=form.querySelector('button[type=submit]');
+  const valid=value=>Number.isSafeInteger(value)&&value>0;
+  let lastEdited=0;
+  function update(){
+    const size=inputs.map(input=>input.valueAsNumber);
+    const invalid=!size.every(valid);
+    choices.forEach(choice=>{
+      const active=choice.value===selected;
+      choice.classList.toggle('selected',active);
+      choice.setAttribute('aria-pressed',active);
+    });
+    inputs.forEach(input=>input.setAttribute('aria-invalid',!valid(input.valueAsNumber)));
+    error.hidden=!invalid;submit.disabled=invalid;
+    return invalid?null:size;
+  }
+  function matchProportions(){
+    const value=inputs[lastEdited].valueAsNumber,other=1-lastEdited;
+    if(!lock.checked||!valid(value))return;
+    const linked=Math.max(1,Math.round(value*frame[other]/frame[lastEdited]));
+    inputs[other].value=valid(linked)?linked:'';
+  }
+  choices.forEach(choice=>choice.onclick=()=>{
+    selected=choice.value;
+    if(selected==='custom'){
+      inputs[0].focus();inputs[0].select();
+    }else{
+      const size=presetSize(selected);
+      inputs.forEach((input,index)=>input.value=size[index]);
+      lastEdited=0;
+    }
+    update();
+  });
+  inputs.forEach((input,index)=>input.oninput=()=>{selected='custom';lastEdited=index;matchProportions();update();});
+  lock.onchange=()=>{if(selected==='custom')matchProportions();update();};
+  form.onsubmit=event=>{
+    event.preventDefault();
+    const size=update();if(!size)return;
+    $('#dialog').close();
+    if(copy){startJob('Creating copy');return;}
+    let photoSize;
+    if(selected==='custom')photoSize={preset:selected,width:size[0],height:size[1],keepProportions:lock.checked};
+    else if(selected!=='100')photoSize={preset:selected};
+    if(JSON.stringify(photoSize)!==JSON.stringify(saved))commit(()=>{
+      if(photoSize)state.photoSize=photoSize;else delete state.photoSize;
+    });
+    finishEditing();
+  };
+  update();
+}
 /* What each Dialogs scene opens, and over what. */
 const DIALOG_SCENES={
   info:()=>{openMedia('video');setWindowMode('window');infoDialog();},
   rename:()=>{openMedia('photo');setWindowMode('window');renameDialog();},
   copy:()=>{setScene('photo');outputDialog();},
+  done:()=>{setScene('photo');saveChangesDialog();},
   keep:()=>{setScene('photo');commit(()=>Object.assign(settings(),{exposure:12}));requestExit();},
   revert:()=>{setScene('photo');$('#reset').click();}
 };

@@ -16,16 +16,15 @@ dialogs in the prototype's words, a help sheet, and toasts — Undo, and progres
 Resize and HDR have no tab (`tabbed = false`) and no other home. The prototype's timeline menus
 offer `Save frame as photo…`; the app's do not.
 
-**Status: written 2026-11-26; the author answered the questions the same day.** The steps are cut
-to those answers. One point is still open (the size tiles, below). Re-read the files before
-building (`tickets.md` §1).
+**Status: ready to implement.** The author answered the initial questions on 2026-11-26. The
+prototype includes the photo percentage presets and manual dimensions for photo and video copies.
+Finish the remaining prototype changes first. Re-read the files before building (`tickets.md` §1).
 
 ## Decided with the author (2026-11-26)
 
 - **Done asks before it saves**, a simpler version of Photoshop's save options. It shows a
   confirmation and the size to save at, so Resize moves into `Done`'s dialog (Q1).
-- **SDR moves to `Create a copy`**, because it cannot be undone (Q2). Whether `Done`'s dialog also
-  shows HDR is still open.
+- **SDR moves to `Create a copy`**, because it cannot be undone (Q2).
 - **`Audio only…` is drawn disabled** until ME-245 (Q3).
 - **The help sheet has no music step** until 1.1.0 (Q7).
 - **`Done`'s dialog shows the size only**; HDR → SDR is offered only in `Create a copy`.
@@ -36,24 +35,61 @@ building (`tickets.md` §1).
   the app's words.
 - **No Settings switch for the SDR option** (Q6): the toggle shows only for HDR media and is off by
   default, so hiding it saves nothing. Answer 2's switch is dropped.
-- **Open — the size tiles.** Which sizes `Done` and `Create a copy` offer for a photo: the
-  prototype's Original / Large 2048 px / Small 1080 px, or Resize's long edges (3840 / 2560 /
-  1920 / 1280) and percentages. Asked; step 1 waits on it.
+
+## Photo size
+
+Both photo dialogs offer `Original`, `75%`, `50%`, `25%`, and `Custom`. The percentages reuse
+the existing Resize presets and apply to both dimensions of the frame after crop and other
+geometric edits, before any Resize op. `Original` uses that frame at 100%. Keep the editable
+`Width` and `Height` fields visible, with their pixel values filled by the selected preset.
+
+Editing either field selects `Custom`. Selecting `Custom` directly keeps the displayed values
+and focuses `Width`. Keep `Keep proportions` visible and checked by default. With it checked,
+editing either field recalculates the other from the pre-Resize frame's aspect ratio and rounds
+to whole pixels. With it unchecked, the fields are independent. Checking it again keeps the
+last edited dimension and recalculates the other. Require positive whole pixel dimensions within
+the renderer's limits and show a validation error before saving or exporting an invalid size.
+
+`Done` opens at the saved size, or `Original` when no Resize is applied. Saving `Original`
+clears the Resize effect. A percentage saves a proportional Resize op. `Custom` saves the
+explicit dimensions, including a pair that changes the aspect ratio, and restores the values
+and checkbox when reopened. A legacy proportional Resize outside the named presets opens as
+`Custom` with the existing dimensions and the checkbox checked. Saving without touching those
+controls preserves the legacy percentage. `Create a copy` starts at `Original` and applies its
+size only to the export.
+
+## Video size
+
+In `Create a copy`, `Original` means the actual full-size video frame after geometry, before
+export resizing. Always show its width × height. Build up to two smaller presets from the
+standard 2160p, 1440p, 1080p, 720p and 480p size tiers. Fit the frame within each tier's bounds,
+swapping the bounds for portrait, and preserve its aspect ratio. After rounding to valid
+encoder dimensions, keep only sizes that are strictly smaller than `Original` (neither axis
+grows and at least one shrinks). Deduplicate by final width × height and offer the two largest
+remaining sizes. Show the selected preset's dimensions in the editable fields and use a label such as
+`720p` only when the displayed size matches the tier's standard dimensions.
+
+For a standard 1080p source this gives 720p and 480p. For a standard 720p source, `Original`
+is 1280 × 720 and the only smaller preset is 480p. A source already at or below the smallest
+tier offers `Original` and `Custom`.
+
+`Custom` uses the same pixel fields and `Keep proportions` checkbox as photos, based on the
+video frame after geometry. Validate custom dimensions against the video renderer's limits.
+The chosen size applies to the export. A video's `Done` opens the save confirmation.
 
 ## The spec, measured (`app.js`, `experience.js`, `refine.js`, `editor.css`, `base.css`)
 
 - **Header:** `?` (help) before the panel toggle. After the divider comes `Create a copy…`, a
   quiet button: 32 dp, radius 16, transparent, a 1 dp `line` ring, 13 sp, tip "Make a separate
   file with your edits applied, ready for other apps.". `Done` follows.
-- **Dialog:** `min(720 dp, 90 %)` wide, 85 % of the height at most, padding 24 × 28, radius 18,
-  `panel` with a 1 dp `line` border; it opens with 180 ms `dialog-in`. Title 21 sp / 600, body
-  14 sp / 1.7, `h3` 13 sp. Actions sit right-aligned, gap 8, 22 dp above. Primary: padding 8 × 20,
-  radius 18, the editor's orange with dark text (answer 6). Option cards and help options: radius
-  12, `well`.
+- **Compact dialog:** `Save your changes?` and `Create a finished copy` share the `File information`
+  frame, up to 460 dp wide and 85% high, with 20 dp horizontal padding, a 14 dp radius and an
+  18 sp title. Keep primary and cancel actions at the lower right. Use the editor palette over
+  the editor and the viewer palette over the viewer.
+- **Other dialogs:** use the existing frame and 180 ms `dialog-in`. Editor primary actions use
+  the editor's orange with dark text (answer 6). Option and help cards use `well`.
 - **Create a finished copy:** "A new file with your edits. The original stays as it is."
-  - **Size** is a segmented control of three tiles (min 48 dp, a bold name over a small
-    detail): video Original / 720p / Small (854 × 480); photo Original / Large 2048 px / Small
-    1080 px.
+  - **Size:** a compact row of presets above the editable dimensions and proportions checkbox.
   - **Standard colours (SDR)** is a toggle, off by default, shown for HDR media only. Tip: "Use
     this when the video looks too bright or washed out in other apps."
   - Actions: `Audio only…` (quiet, video; question 3) and `Create copy` (primary).
@@ -76,9 +112,8 @@ building (`tickets.md` §1).
     - Done: "Saved next to the original." with `Show in folder`, hiding at 6 s.
 
 - **Save your changes?** (new; drawn in the prototype first): the dialog `Done` opens.
-  - **A photo:** the size tiles over `Save` (primary) and `Cancel`. The size is Resize's op, so it
-    stays in the edit and can be changed again. The tiles open on what the document holds
-    (Original when it holds none).
+  - **A photo:** the size choices above `Save` (primary) and `Cancel`, with the initial selection
+    and Resize behavior defined under Photo size.
   - **A film:** the same dialog with no size. Resize only sizes a render.
   - A `RenderOnly` file's `Done` is its render (`DoneChoices.instead`), and the dialog does not
     stand in front of it.
@@ -87,7 +122,15 @@ building (`tickets.md` §1).
 
 **Prototype first**
 1. `woka/`:
-   - `#dialogs/done`: `Save your changes?` with size tiles for a photo, without them for a film.
+   - Done in the prototype. Both photo dialogs (`#dialogs/done` and `#dialogs/copy`)
+     show `Original`, `75%`, `50%`, `25%` and `Custom` with interactive pixel fields and a working
+     `Keep proportions` checkbox. Video `Create a copy` adds the same interactive `Custom`
+     controls. A film's `Done` gets a plain confirmation.
+   - The video copy mockup derives its presets from the scene's video dimensions, including
+     1080p and 720p sources.
+   - `File information`, `Save your changes?` and `Create a finished copy` share a compact frame,
+     heading, section styling and action spacing. Use this layout as the reference when porting
+     the dialogs, with the viewer and editor palettes on their respective surfaces.
    - `Create a copy`'s SDR toggle stays.
    - `Audio only…` is drawn disabled, with the tip "Coming in 1.1.0".
    - Revert's body reads "This cannot be undone."
@@ -106,8 +149,10 @@ building (`tickets.md` §1).
 
 **Done and Create a copy**
 4. `SaveChangesDialog.kt` (new), opened by `Done` (`EditorHostControls.done`):
-   - A photo gets the size tiles, written through Resize's op on `Save` (`ResizeTool` stays a tool
-     with `tabbed = false`; its Settings row stays).
+   - A photo gets the shared size controls. Extend the Resize op to support explicit output
+     dimensions with independent horizontal and vertical scaling after geometry. Existing
+     percentage ops keep their behavior. `ResizeTool` stays a tool with `tabbed = false` and keeps
+     its Settings row.
    - A film gets the confirmation alone.
 5. **HDR leaves `Done`.**
    - `bakesToSdr` is no longer asked on `Done` (`EditorHostControls:83`, `ImageEditWrites.kt:54`).
@@ -115,7 +160,7 @@ building (`tickets.md` §1).
      stored `hdr` op is skipped as an unknown tool's is.
 6. `EditorTopBarSetup`: `?` and `Create a copy…` (`EditorTopBarControls`). `CreateCopyDialog.kt`
    (new) offers:
-   - the size tiles;
+   - the photo or video size choices, sharing the custom dimensions and proportions controls;
    - Standard colours (SDR) for HDR media;
    - `Audio only…`, disabled;
    - `Create copy`, which runs `exportAction` with `RenderPhoto` / `RenderVideo` at the chosen
@@ -133,10 +178,18 @@ building (`tickets.md` §1).
 
 **Tests**
 10. UI tests:
-    - `SaveChangesUiTest`: a photo's `Done` asks, `Save` writes the chosen size and saves; a film
-      gets no size.
+    - `SaveChangesUiTest`: a photo's `Done` asks, `Save` writes the chosen size, and reopening
+      shows the saved size. Cover the percentage presets, `Original`, an existing percentage,
+      and a custom size with linked and independent fields. Check that fields are visible on
+      opening, selecting a preset fills them, and typing in either one selects `Custom`.
+      A film gets no size.
     - `CreateCopyUiTest`: SDR shows for HDR media only, `Audio only…` is disabled, and Create copy
-      starts the export with the size and SDR.
+      starts the export with the selected size and SDR without changing the saved Resize. Cover
+      percentage sizing for portrait and landscape photos, a custom size that changes the aspect
+      ratio, and invalid dimensions. Cover custom video dimensions with the checkbox on and off.
+      For video presets, cover a 720p source (no duplicate 720p option), a 1080p source, a larger
+      source, a source at or below 480p, and a portrait or non-16:9 frame. Check displayed and
+      exported dimensions agree.
     - `KeepChangesUiTest`: each of the three buttons.
     - `RevertDialogUiTest`.
     - `ToastUiTest`: Undo undoes; the timer pauses on hover.
@@ -159,8 +212,12 @@ New: `Toast.kt`, `SaveChangesDialog.kt`, `CreateCopyDialog.kt`, `EditorDialogFra
 ## Done when
 
 - `Done` asks `Save your changes?`: a photo with its size, a film without one.
+- The save dialog follows Woka's dialog style in both themes.
 - `Create a copy…` stands beside `Done` and makes a new file at the chosen size, SDR for HDR media.
   The source is untouched, and `Audio only…` is drawn disabled.
+- The prototype and app offer matching size controls. Both photo dialogs have percentage
+  presets and custom dimensions. Video `Create a copy` has source-dependent presets with no
+  duplicates and offers custom dimensions.
 - Every export the engines offer is reachable. `Save frame as photo…` writes a PNG.
 - Cancel with edits asks `Keep your changes?`; Revert asks in the prototype's frame and says it
   cannot be undone.

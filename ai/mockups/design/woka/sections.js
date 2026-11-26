@@ -4,7 +4,7 @@ const SECTIONS=[
   {id:'library',label:'Library',scenes:[['pictures','Photo folder'],['movies','Video folder'],['series','Series'],['empty','Empty folder'],['select','Selecting'],['search','Search'],['info','Info'],['quicklook','Quick Look'],['settings','Settings'],['welcome','First run']]},
   {id:'viewer',label:'Viewer',scenes:[['photo','Photo'],['palm','Edited photo'],['frames','Frame set'],['gif','GIF'],['video','Video'],['fullscreen','Fullscreen'],['pip','PiP'],['track','Track']]},
   {id:'editor',label:'Editor',scenes:[['photo','Photo'],['crop','Portrait crop'],['frames','Frame set'],['gif','GIF'],['video','Video'],['audio','Video + music · 1.1.0']]},
-  {id:'dialogs',label:'Dialogs',scenes:[['info','File information'],['rename','Rename'],['copy','Create a copy'],['keep','Keep changes'],['revert','Revert']]}
+  {id:'dialogs',label:'Dialogs',scenes:[['info','File information'],['rename','Rename'],['copy','Create a copy'],['done','Save changes'],['keep','Keep changes'],['revert','Revert']]}
 ];
 let route={section:'viewer',scene:'photo'};
 /* Fullscreen and PiP are the video in another window, not another file. */

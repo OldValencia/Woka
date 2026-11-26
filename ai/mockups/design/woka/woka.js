@@ -5,8 +5,8 @@ const libraryMedia=[
   {id:'shade',name:'Under the palms.jpg',view:'500 200 800 600'},
   {id:'frames',name:'Seaside-burst.heic',view:'350 55 960 720',frames:4},
   {id:'gif',name:'Waves.gif',view:'350 55 960 720',frames:24,fps:12,gif:true},
-  {id:'video',name:'A day by the sea.mp4',view:'350 100 1000 562.5',video:true,hdr:true},
-  {id:'audio',name:'Sea breeze edit.mp4',view:'350 100 1000 562.5',video:true},
+  {id:'video',name:'A day by the sea.mp4',view:'350 100 1000 562.5',video:true,dimensions:[1920,1080],hdr:true},
+  {id:'audio',name:'Sea breeze edit.mp4',view:'350 100 1000 562.5',video:true,dimensions:[1920,1080]},
   {id:'track',name:'Sea breeze.m4a',title:'Sea breeze',artist:'Coastline',view:'760 120 520 520',audioOnly:true}
 ];
 /* Files shown with an edit kept inside them (PT-102). finishEditing keeps it current. */
