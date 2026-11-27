@@ -16,9 +16,8 @@ dialogs in the prototype's words, a help sheet, and toasts — Undo, and progres
 Resize and HDR have no tab (`tabbed = false`) and no other home. The prototype's timeline menus
 offer `Save frame as photo…`; the app's do not.
 
-**Status: ready to implement.** The author answered the initial questions on 2026-11-26. The
-prototype includes the photo percentage presets and manual dimensions for photo and video copies.
-Finish the remaining prototype changes first. Re-read the files before building (`tickets.md` §1).
+**Status: implemented 2026-11-27**, awaiting the author's check by hand. The prototype was
+finished first (step 1); the 2026-11-27 answers below replaced the SDR switch.
 
 ## Decided with the author (2026-11-26)
 
@@ -35,6 +34,26 @@ Finish the remaining prototype changes first. Re-read the files before building 
   the app's words.
 - **No Settings switch for the SDR option** (Q6): the toggle shows only for HDR media and is off by
   default, so hiding it saves nothing. Answer 2's switch is dropped.
+
+## Decided with the author (2026-11-27)
+
+- **No SDR switch.** A copy is what the screen shows: the pill's colour mode (`Auto`/`HDR`/`SDR`)
+  already rules a render, and every encode is 8-bit SDR with the tone map baked in; only a
+  cuts-only film copies its packets and stays HDR. `Create a copy` instead shows a note when the
+  mode retones the picture (`SDR` on an HDR file, `HDR` on an SDR one): "Colour is set to SDR on
+  screen. The copy follows it, so its tone mapping changes too." This replaces Q2's and the
+  spec's `Standard colours (SDR)`.
+- **Custom may enlarge.** A photo takes 1–16384 px a side. A video takes even sizes from 2, the
+  long side up to 4096 and the short up to 2304 (H.264). Out of range shows the error under the
+  fields and disables the primary button. `Original` is always allowed.
+- **The help sheet's last line** reads "The line above the tabs shows whether you're changing one
+  clip or the whole video." — the app has no "Editing" label.
+- **`Save frame as photo…` opens the prototype's dialog** (`Current frame · PNG`, the time, `Save`),
+  then the progress toast.
+- **`Save` and `Keep changes` both show** "Edits kept. The original file is untouched." in the new
+  toast; the `Saved <name>` pill for `Done` goes.
+- **`Create a copy` and `Save frame` leave the editor open**, as the prototype does; only a
+  `RenderOnly` file's `Done` closes before it renders.
 
 ## Photo size
 
@@ -90,8 +109,7 @@ The chosen size applies to the export. A video's `Done` opens the save confirmat
   the editor's orange with dark text (answer 6). Option and help cards use `well`.
 - **Create a finished copy:** "A new file with your edits. The original stays as it is."
   - **Size:** a compact row of presets above the editable dimensions and proportions checkbox.
-  - **Standard colours (SDR)** is a toggle, off by default, shown for HDR media only. Tip: "Use
-    this when the video looks too bright or washed out in other apps."
+  - ~~**Standard colours (SDR)**~~ — dropped 2026-11-27; the retone note instead.
   - Actions: `Audio only…` (quiet, video; question 3) and `Create copy` (primary).
 - **Keep your changes?** is asked only when there are edits: "You can come back and edit again at
   any time." Buttons: Keep editing (secondary), Discard changes (quiet), Keep changes (primary).
@@ -131,7 +149,7 @@ The chosen size applies to the export. A video's `Done` opens the save confirmat
    - `File information`, `Save your changes?` and `Create a finished copy` share a compact frame,
      heading, section styling and action spacing. Use this layout as the reference when porting
      the dialogs, with the viewer and editor palettes on their respective surfaces.
-   - `Create a copy`'s SDR toggle stays.
+   - ~~`Create a copy`'s SDR toggle stays.~~ Replaced 2026-11-27 by the retone note.
    - `Audio only…` is drawn disabled, with the tip "Coming in 1.1.0".
    - Revert's body reads "This cannot be undone."
    - The help sheet loses its music step, and `Save frame as photo…` writes a PNG.
@@ -161,11 +179,11 @@ The chosen size applies to the export. A video's `Done` opens the save confirmat
 6. `EditorTopBarSetup`: `?` and `Create a copy…` (`EditorTopBarControls`). `CreateCopyDialog.kt`
    (new) offers:
    - the photo or video size choices, sharing the custom dimensions and proportions controls;
-   - Standard colours (SDR) for HDR media;
+   - the retone note when the colour mode changes the picture;
    - `Audio only…`, disabled;
    - `Create copy`, which runs `exportAction` with `RenderPhoto` / `RenderVideo` at the chosen
-     size and colours. `EditorExport` gains the size and an SDR flag; the render reads them
-     instead of the document's Resize op.
+     size. `EditorExport` gains the size; the render reads it instead of the document's Resize
+     op.
 7. `Save frame as photo…` in the clip and empty-place menus (`TimelineMenuItems`), through
    `SaveFramePhoto` at the play head; `FramePhoto.kt` writes a PNG.
 
@@ -183,8 +201,9 @@ The chosen size applies to the export. A video's `Done` opens the save confirmat
       and a custom size with linked and independent fields. Check that fields are visible on
       opening, selecting a preset fills them, and typing in either one selects `Custom`.
       A film gets no size.
-    - `CreateCopyUiTest`: SDR shows for HDR media only, `Audio only…` is disabled, and Create copy
-      starts the export with the selected size and SDR without changing the saved Resize. Cover
+    - `CreateCopyUiTest`: the retone note shows only when the mode changes the picture,
+      `Audio only…` is disabled, and Create copy starts the export with the selected size
+      without changing the saved Resize. Cover
       percentage sizing for portrait and landscape photos, a custom size that changes the aspect
       ratio, and invalid dimensions. Cover custom video dimensions with the checkbox on and off.
       For video presets, cover a 720p source (no duplicate 720p option), a 1080p source, a larger
@@ -195,7 +214,7 @@ The chosen size applies to the export. A video's `Done` opens the save confirmat
     - `ToastUiTest`: Undo undoes; the timer pauses on hover.
     - `EditorHelpSheetUiTest`.
 
-    Unit: `HdrBakeTest` is replaced by a copy's SDR, and `ResizeToolTest` stays. `FramePhoto`
+    Unit: `HdrBakeTest` goes with `HdrTool`, and `ResizeToolTest` stays. `FramePhoto`
     writes a PNG.
 
 ## Files
@@ -209,11 +228,28 @@ New: `Toast.kt`, `SaveChangesDialog.kt`, `CreateCopyDialog.kt`, `EditorDialogFra
 `BakeToSdrDialog.kt`, `tools/hdr/`. The author waived the size limit for a block; each touched
 `.kt` stays ≤ 150 lines.
 
+## As built (2026-11-27)
+
+- `DiscardChangesDialog.kt` became `KeepChangesDialog.kt`. The dialogs share
+  `EditorDialogFrame`, `EditorDialogButton` and `EditorDialogTokens`. The size group is
+  `OutputSizeState`, `OutputSizeControls` and `OutputSizeParts`. Its arithmetic is
+  `tools/resize/OutputSizes.kt`, and the Resize op's pixels are `tools/resize/ResizeOutput.kt`.
+- Resize keeps its percentage and gains `width`, `height` and `keepProportions`. Explicit
+  pixels fold through `RasterStage.Framed`. `EditorExport` gains `size`, `progress` and `frame`.
+  The copy's size replaces any Resize in the render.
+- The Undo toast is `EditorUndoToast`, and `undo()` joins both scopes. The progress and save
+  toasts are `EditorRenderBanner` and `EditorSaveBanner` on `core/ui/components/Toast.kt`.
+  `StatusBanners` sits 22 dp from the bottom, as `.toast`.
+- `CanvasKeys.dialogOpen` makes the editor's keys yield while a dialog is up. `Save frame as
+  photo…` uses `FramePhotoDialog`. The help sheet's steps open their tab, the film's first clip,
+  or `Create a copy`.
+
 ## Done when
 
 - `Done` asks `Save your changes?`: a photo with its size, a film without one.
 - The save dialog follows Woka's dialog style in both themes.
-- `Create a copy…` stands beside `Done` and makes a new file at the chosen size, SDR for HDR media.
+- `Create a copy…` stands beside `Done` and makes a new file at the chosen size, coloured as the
+  screen shows it.
   The source is untouched, and `Audio only…` is drawn disabled.
 - The prototype and app offer matching size controls. Both photo dialogs have percentage
   presets and custom dimensions. Video `Create a copy` has source-dependent presets with no

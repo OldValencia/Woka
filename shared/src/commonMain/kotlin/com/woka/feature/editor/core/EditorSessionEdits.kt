@@ -41,6 +41,17 @@ fun EditorSession.commit(cardinality: ToolCardinality) {
     record(committed)
 }
 
+/**
+ * Takes [toolId]'s work out of the document as one undo step, or does nothing when it holds
+ * none — `Original` in `Save your changes?` clearing a Resize (RD-401).
+ */
+fun EditorSession.drop(toolId: String) {
+    val dropped = _document.value.without(toolId)
+    if (dropped == _document.value) return
+    _document.value = dropped
+    record(dropped)
+}
+
 /** Abandons the operation in flight — an aborted drag, not an undo. */
 fun EditorSession.cancelPending() {
     _document.value = _document.value.clearPending()

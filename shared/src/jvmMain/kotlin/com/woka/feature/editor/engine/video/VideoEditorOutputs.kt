@@ -15,6 +15,8 @@ import com.woka.feature.editor.engine.video.render.SaveFramePhoto
 import com.woka.feature.editor.engine.video.render.saveFramePhoto
 import com.woka.feature.editor.engine.video.render.renderOnlyNote
 import com.woka.feature.editor.engine.video.render.renderVideo
+import com.woka.feature.editor.tools.resize.ResizeTool
+import com.woka.feature.editor.tools.resize.sizedFor
 import com.woka.feature.editor.tools.trim.TrimTool
 import com.woka.feature.editor.tools.trim.totalMs
 import kotlinx.coroutines.Dispatchers
@@ -60,7 +62,7 @@ internal abstract class VideoEditorOutputs(
     override suspend fun revert(scope: EditScope, frameIndex: Int): EditSaveResult =
         withContext(Dispatchers.IO) { writes.revert(scope, frameIndex) }
 
-    /** `Render video…` beside `Done`, and this frame as a photo (ME-291, ME-294) — new files, the source untouched. */
+    /** `Create a copy…` and `Save frame as photo…` (ME-291, ME-294, RD-401) — new files, the source untouched. */
     override val exports = listOf(RenderVideo, SaveFramePhoto)
 
     override fun toolNote(toolId: String): String? = renderOnlyNote(toolId)
@@ -71,7 +73,10 @@ internal abstract class VideoEditorOutputs(
             if (export.id == SaveFramePhoto.id) {
                 saveFramePhoto(file, layers.base, looksFor(layers), registry, sourceSize, export.atMs ?: 0L)
             } else {
-                renderVideo(file, layers.base, looksFor(layers), registry, sourceSize, { job.isActive }, progress)
+                // The copy's own size replaces any Resize, the film's or a clip's (RD-401).
+                val looks = looksFor(layers)
+                val unsized = { key: Int -> looks(key).filterNot { it.toolId == ResizeTool.manifest.id } }
+                renderVideo(file, layers.base.sizedFor(export.size), unsized, registry, sourceSize, { job.isActive }, progress)
             }
         }
 

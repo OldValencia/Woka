@@ -12,3 +12,7 @@ val MarkupShape.label: String
         is MarkupShape.Ellipse -> "Ellipse"
         is MarkupShape.Freehand -> "Drawing"
     }
+
+/** The Undo toast's sentence once this shape is gone (RD-401): "Text removed.", "Arrow removed." */
+val MarkupShape.removedNotice: String
+    get() = (if (this is MarkupShape.Text) "Text" else label) + " removed."

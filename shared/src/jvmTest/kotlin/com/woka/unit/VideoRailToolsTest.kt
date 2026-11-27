@@ -30,22 +30,21 @@ class VideoRailToolsTest {
 
     private fun registry(): EditorToolRegistry = GlobalContext.get().get()
 
+    /** HDR left the editor with RD-401: a copy takes the screen's colour mode instead. */
     @Test
-    fun `HDR is declared, and offered to stills alone`() {
-        val hdr = registry().all().single { it.manifest.id == "hdr" }
-
-        assertEquals(setOf(MediaKind.Image), hdr.manifest.supports)
+    fun `HDR is no longer declared`() {
+        assertTrue(registry().all().none { it.manifest.id == "hdr" })
     }
 
     @Test
-    fun `a video rail excludes HDR and keeps the reused tools`() {
+    fun `a video rail keeps the reused tools, and the cut stays off a photograph's`() {
         val registry = registry()
 
         val onVideo = registry.tools(MediaKind.Video).value.map { it.manifest.id }
         val onStills = registry.tools(MediaKind.Image).value.map { it.manifest.id }
 
-        assertTrue("hdr" !in onVideo, "the HDR tool is still in a video's rail: $onVideo")
-        assertTrue("hdr" in onStills, "the HDR tool left a photograph's rail too")
+        assertEquals(setOf(MediaKind.Video), registry.all().single { it.manifest.id == "trim" }.manifest.supports)
+        assertTrue("trim" !in onStills, "the cut is in a photograph's rail: $onStills")
         // The five the author asked to reuse, plus Transform, which came along free.
         listOf("crop", "transform", "adjust", "filter", "markup", "resize").forEach { id ->
             assertTrue(id in onVideo, "$id stopped being offered on video: $onVideo")

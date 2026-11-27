@@ -109,8 +109,11 @@ function outputDialog(kind='copy'){
     return;
   }
   const intro='<p>A new file with your edits. The original stays as it is.</p>';
-  const sdr=currentMedia().hdr?toggle('outSdr','<span data-tip="Use this when the video looks too bright or washed out in other apps.">Standard colours (SDR)</span>',false):'';
-  sizedOutputDialog({copy:true,intro,options:sdr});
+  // The copy is what the screen shows (2026-11-27): no SDR switch, a note when the colour mode retones it.
+  const mode=$('#hdr-mode').firstChild.textContent,item=currentMedia();
+  const retoned=(item.hdr&&mode==='SDR')||(!item.hdr&&mode==='HDR');
+  const note=retoned?`<p class="output-note">Colour is set to ${mode} on screen. The copy follows it, so its tone mapping changes too.</p>`:'';
+  sizedOutputDialog({copy:true,intro,options:note});
 }
 
 function action(name,node){
@@ -160,7 +163,7 @@ function action(name,node){
     relink:()=>{relinkId=state.selection;$('#audio-file').click();},
     cover:()=>{commit(()=>state.settings.coverTime=state.time);toast(`Frame ${formatTime(state.time)} is now the cover in this preview.`);},
     'frame-photo':()=>outputDialog('frame'),
-    extract:()=>{$('#dialog').close();outputDialog('audio');},
+    extract:()=>{},
     'demo-export':()=>{$('#dialog').close();startJob(node.dataset.label||'Creating copy');},
     'job-cancel':()=>{jobAnimation?.cancel();jobAnimation=null;toast('Cancelled. Nothing was saved.');},
     'toast-dismiss':hideToast,
@@ -215,7 +218,7 @@ $('#undo').onclick=undo;$('#redo').onclick=redo;$('#play').onclick=play;$('#spli
 $('#theme').onclick=()=>{document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark';};
 $('#focus').onclick=()=>{$('#editor').classList.toggle('focus');updatePlayhead();};
 $('#output').onclick=()=>outputDialog();
-$('#reset').onclick=()=>modal('Revert to original?',`<p>All edits to ${state.mode==='video'?'the video, including cuts and added audio':'the photo'} will be reset. You can undo this action.</p>${button('confirm-reset','Revert to original','primary wide')}${button('close-modal','Cancel','quiet wide')}`);
+$('#reset').onclick=()=>modal('Revert to original?',`<p>All edits to ${state.mode==='video'?'the video, including cuts,':'the photo'} will be reset. This cannot be undone.</p>${button('confirm-reset','Revert to original','primary wide')}${button('close-modal','Cancel','quiet wide')}`);
 $('#close-dialog').onclick=()=>$('#dialog').close();
 $('#audio-file').onchange=event=>{
   const file=event.target.files[0];if(!file)return;

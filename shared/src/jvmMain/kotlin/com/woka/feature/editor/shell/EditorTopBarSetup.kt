@@ -24,7 +24,7 @@ import com.woka.feature.viewer.shell.CanvasZoomPill
 /**
  * The editor takes over the **shell's** top bar rather than drawing a second one (RD-201,
  * `#editor/photo`): Cancel, undo and redo on the left; the viewer's pill in the middle;
- * Original, the inspector's toggle and Done on the right. No Back chevron and no Revert —
+ * Original, `?`, the inspector's toggle, `Create a copy…` and Done on the right (RD-401). No Back chevron and no Revert —
  * Cancel is the way out, and Revert sits at the inspector's foot.
  *
  * The centre is **not** claimed. The viewer's pill is already there and the editor only
@@ -46,7 +46,9 @@ internal fun EditorTopBarSetup(
     onLeave: () -> Unit,
     onUndo: () -> Unit,
     onRedo: () -> Unit,
-    onDone: () -> Unit
+    onDone: () -> Unit,
+    /** `?`: the help sheet, which the screen owns (RD-401). */
+    onHelp: () -> Unit = {}
 ) {
     val accessories = LocalTopBarAccessories.current
     val override = LocalCanvasOverride.current
@@ -61,6 +63,7 @@ internal fun EditorTopBarSetup(
     val curUndo by rememberUpdatedState(onUndo)
     val curRedo by rememberUpdatedState(onRedo)
     val curDone by rememberUpdatedState(onDone)
+    val curHelp by rememberUpdatedState(onHelp)
     val curChoices by rememberUpdatedState(LocalDoneChoices.current)
 
     // The edited mark lives in the Information panel (§4.4): **the document, not
@@ -88,8 +91,10 @@ internal fun EditorTopBarSetup(
         accessories.rightAccessory = {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(EditorTokens.TopBar.controlGap)) {
                 EditorPeekButton(curPeek)
+                TopBarGlyphButton("?", "Tips for this task", "editor-help-button", onClick = { curHelp() })
                 TopBarIconButton(Icons.Static.PanelToggle, "Show or hide the panel (F6)", "editor-panel-toggle", onClick = { curPanel.toggle() })
                 HeaderDivider()
+                CreateCopyButton { curChoices.onCopy() }
                 DoneButton({ curDone() }, curChoices)
             }
         }

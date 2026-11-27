@@ -11,9 +11,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import com.woka.core.data.MediaKind
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.editor.core.EditScope
 import com.woka.feature.editor.core.EditorEngine
@@ -57,6 +60,7 @@ internal fun EditorScreen(
     val peek = remember { PeekState() }
     // Hoisted out of the overlay's scope (ME-114): the inspector restyles what the canvas selected.
     val selection = remember(session) { ToolSelection() }
+    var helpOpen by remember { mutableStateOf(false) }
 
     // The editor takes over the shell's bar rather than drawing a second one — see EditorTopBarSetup.
     EditorTopBarSetup(
@@ -69,7 +73,8 @@ internal fun EditorScreen(
         onLeave = onCancel,
         onUndo = session::undo,
         onRedo = session::redo,
-        onDone = onDone
+        onDone = onDone,
+        onHelp = { helpOpen = true }
     )
 
     // One `if`, and a photograph pays exactly this much for the frame band existing. A
@@ -97,6 +102,17 @@ internal fun EditorScreen(
     }
     val canvasDocument = canvasDocumentFor(activeTool, document, peek.active)
     val skipped = skippedOps(document, registry, engine.kind)
+    val onCopy = LocalDoneChoices.current.onCopy
+    if (helpOpen) {
+        EditorHelpSheet(
+            video = engine.kind == MediaKind.Video,
+            onStep = { step ->
+                helpOpen = false
+                tabs.follow(step, session, onCopy)
+            },
+            onDismiss = { helpOpen = false }
+        )
+    }
 
     Row(
         modifier = Modifier

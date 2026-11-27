@@ -3,7 +3,6 @@ package com.woka.feature.editor.engine.image
 import androidx.compose.ui.unit.IntSize
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
-import com.woka.feature.editor.tools.hdr.bakesToSdr
 import com.woka.feature.editor.core.EditLayers
 import com.woka.feature.editor.core.EditPayload
 import com.woka.feature.editor.core.EditSaveResult
@@ -48,10 +47,6 @@ internal fun writeFor(
     reEncode: (EditDocument) -> EditSaveResult
 ): EditSaveResult {
     val open = EditDocument(layers.base.ops + (layers.frames[frameIndex]?.ops ?: emptyList()))
-    // **Ahead of the capability switch, deliberately** (ME-118). `To SDR` rewrites the
-    // photograph, so it leaves bucket A whatever the format's carrier can do — a recipe
-    // spliced beside baked pixels would replay the edit on top of itself.
-    if (capability != EditCapability.Unavailable && bakesToSdr(open)) return reEncode(open)
     return writeByCapability(capability, file, layers, open, stamp, reEncode)
 }
 

@@ -29,23 +29,27 @@ import org.jetbrains.skia.Image
 import org.jetbrains.skia.Surface
 import java.io.File
 
-/** `Done ▾`'s second way out (ME-294): the frame under the play head, as a photograph. */
+/**
+ * The timeline menus' `Save frame as photo…` (ME-294, RD-401): the frame under the play head,
+ * as a photograph. **A PNG** (the author, 2026-11-26): a video frame is lossy already, and a
+ * JPEG would compress it a second time.
+ */
 internal val SaveFramePhoto = EditorExport(
     id = "frame-photo",
     title = "Save frame as photo",
-    summary = "This frame as a JPEG beside the video."
+    summary = "This frame as a PNG beside the video.",
+    progress = "Saving frame",
+    frame = true
 )
 
-private const val JPEG_QUALITY = 100
-
 /**
- * The frame at timeline [atMs], drawn as the canvas draws it, written beside [source] as a JPEG.
+ * The frame at timeline [atMs], drawn as the canvas draws it, written beside [source] as a PNG.
  *
  * **The canvas's picture, at the film's coded size**: the clip under the play head through its
  * own look, the shared layer's crop and colour, markup as it stands at that moment, the HDR mode
  * the canvas is in — and no Resize, which sizes a render and nothing else (`previewFold`). The
  * frame is decoded to the exact one asked for, not the keyframe before it, and turned upright
- * the way a phone's film plays. Never an overwrite: `name 1m05s.jpg`, then `name 1m05s 2.jpg`.
+ * the way a phone's film plays. Never an overwrite: `name 1m05s.png`, then `name 1m05s 2.png`.
  */
 internal fun saveFramePhoto(
     source: File,
@@ -67,7 +71,7 @@ internal fun saveFramePhoto(
         .copy(source = hdrStageFor(colour), atMs = atMs)
     val drawn = renderAtNativeScale(frame, sourceSize, recipe)
     val upright = drawn.turnedClockwise(turns)
-    val bytes = upright.encodeToData(EncodedImageFormat.JPEG, JPEG_QUALITY)?.bytes
+    val bytes = upright.encodeToData(EncodedImageFormat.PNG)?.bytes
     if (upright !== drawn) upright.close()
     drawn.close()
     bytes ?: return EditSaveResult.Failed("The frame could not be encoded.")
@@ -117,13 +121,13 @@ private fun Image.turnedClockwise(turns: Int): Image {
     }
 }
 
-/** `clip 1m05s.jpg` beside the film, numbered past any that exist. */
+/** `clip 1m05s.png` beside the film, numbered past any that exist. */
 private fun photoBeside(source: File, atMs: Long): File {
     val seconds = atMs / 1000L
     val stamp = "${seconds / 60}m${(seconds % 60).toString().padStart(2, '0')}s"
     val dir = source.absoluteFile.parentFile
     fun named(counter: Int) =
-        File(dir, if (counter == 1) "${source.nameWithoutExtension} $stamp.jpg" else "${source.nameWithoutExtension} $stamp $counter.jpg")
+        File(dir, if (counter == 1) "${source.nameWithoutExtension} $stamp.png" else "${source.nameWithoutExtension} $stamp $counter.png")
     var counter = 1
     while (named(counter).exists()) counter++
     return named(counter)

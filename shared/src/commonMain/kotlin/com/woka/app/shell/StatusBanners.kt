@@ -14,6 +14,7 @@ import com.woka.core.ui.components.FrameExportBanner
 import com.woka.feature.editor.EditorNoticeBanner
 import com.woka.feature.editor.EditorRenderBanner
 import com.woka.feature.editor.EditorSaveBanner
+import com.woka.feature.editor.EditorUndoBanner
 
 /**
  * Every status pill in the app, in one place at the bottom of the window (ME-130).
@@ -31,7 +32,7 @@ import com.woka.feature.editor.EditorSaveBanner
 fun StatusBanners() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
         Column(
-            modifier = Modifier.padding(bottom = 24.dp),
+            modifier = Modifier.padding(bottom = 22.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -39,6 +40,7 @@ fun StatusBanners() {
             EditorSaveBanner()
             EditorRenderBanner()
             EditorNoticeBanner()
+            EditorUndoBanner()
             UnlinkUndoBanner()
         }
     }

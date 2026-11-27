@@ -11,6 +11,9 @@ import kotlinx.coroutines.SupervisorJob
 /** What a running save's message starts with, and therefore what does *not* settle. */
 internal const val SAVING_PREFIX = "Saving"
 
+/** What `Save` and `Keep changes` answer with (RD-401, `experience.js` `finishEditing`). */
+const val KEPT = "Edits kept. The original file is untouched."
+
 /**
  * What the save is doing, after the editor that started it is gone (ME-130).
  *
@@ -80,8 +83,9 @@ object EditorSaveStatus {
         message = "$SAVING_PREFIX $name…"
     }
 
-    fun saved(name: String) {
-        message = "Saved $name"
+    /** `Done`'s answer in the prototype's words (RD-401): the edit is a recipe, the pixels stand. */
+    fun kept() {
+        message = KEPT
     }
 
     /**

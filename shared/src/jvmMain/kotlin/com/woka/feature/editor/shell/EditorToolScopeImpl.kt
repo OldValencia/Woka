@@ -74,6 +74,8 @@ internal class EditorToolScopeImpl(
 
     override fun cancel() = session.cancelPending()
 
+    override fun undo() = session.undo()
+
     override fun captureKeys(captured: Boolean) {
         canvasKeys?.typing = captured
     }

@@ -1,6 +1,7 @@
 package com.woka.feature.editor.tools.markup
 
 import androidx.compose.ui.unit.IntSize
+import com.woka.feature.editor.EditorUndoToast
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditorToolScope
 import com.woka.feature.editor.core.ParamSet
@@ -85,11 +86,12 @@ fun EditDocument.markupOpWith(shapes: List<MarkupShape>, sourceSize: IntSize): T
 fun EditorToolScope.deleteSelectedShape(): Boolean {
     val id = selectedId ?: return false
     val shapes = document.markupShapes()
-    if (shapes.none { it.id == id }) return false
+    val gone = shapes.firstOrNull { it.id == id } ?: return false
 
     preview(document.markupOpWith(shapes.filterNot { it.id == id }, sourceSize))
     commit()
     select(null)
+    EditorUndoToast.offer(gone.removedNotice, ::undo)
     return true
 }
 

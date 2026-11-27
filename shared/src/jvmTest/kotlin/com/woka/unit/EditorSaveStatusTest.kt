@@ -30,10 +30,11 @@ class EditorSaveStatusTest {
         assertEquals("Saving photo.jpg…", EditorSaveStatus.message)
     }
 
+    /** `Done`'s answer is the prototype's sentence (RD-401): the edit is kept, the pixels stand. */
     @Test
-    fun `a finished save names it too`() {
-        EditorSaveStatus.saved("photo.jpg")
-        assertEquals("Saved photo.jpg", EditorSaveStatus.message)
+    fun `a finished save says the edits are kept`() {
+        EditorSaveStatus.kept()
+        assertEquals("Edits kept. The original file is untouched.", EditorSaveStatus.message)
     }
 
     /**
@@ -59,7 +60,7 @@ class EditorSaveStatusTest {
 
     @Test
     fun `clearing after a save leaves nothing to draw`() {
-        EditorSaveStatus.saved("photo.jpg")
+        EditorSaveStatus.kept()
         EditorSaveStatus.clear()
         assertNull(EditorSaveStatus.message)
     }

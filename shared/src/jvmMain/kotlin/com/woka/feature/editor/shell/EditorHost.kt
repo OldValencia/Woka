@@ -90,19 +90,18 @@ internal fun EditorHost(
         session = session,
         file = file,
         editScope = editScope,
-        frameIndex = frameIndex,
         // **What the file carries, not what this frame draws** (2026-09-02): read off
         // the open frame, a base-less file whose frame 3 held a crop looked unedited.
         carriesStoredEdit = !engine.storedBase().isEmpty || engine.frames.overridden.isNotEmpty(),
         onFrameIndex = { frameIndex = it },
         onClose = onClose,
-        onSaved = onSaved
+        onSaved = onSaved,
+        keys = canvasKeys
     ) { actions ->
-        // The engine's exports, read by the bar through `LocalDoneChoices`: on a film that
-        // cannot keep the edit the render takes `Done`'s place (ME-289).
-        val exports = exportAction(engine, session, file, editScope, onClose, onSaved)
-        val choices = doneChoicesOf(engine, exports)
-        val done = choices.instead ?: actions.done
+        // The ways out, read by the bar and the timeline through `LocalDoneChoices`: on a film
+        // that cannot keep the edit the render takes `Done`'s place (ME-289).
+        val choices = actions.choices
+        val done = actions.done
         EditorKeyEffect(
             globalShortcuts = LocalGlobalShortcuts.current,
             canUndo = session.canUndo.collectAsState().value,

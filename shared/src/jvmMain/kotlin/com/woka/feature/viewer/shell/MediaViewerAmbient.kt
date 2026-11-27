@@ -66,23 +66,34 @@ internal fun MediaViewerAmbientEffects(
  * must still be paused on `Cancel`, so what is remembered is whether *this* effect was
  * the one that stopped it.
  *
+ * **And it holds the whole time, not only at the door** (found by hand, 2026-11-27): a click
+ * that reached the viewer through the editor played the film underneath. Keyed on
+ * `isPlaying` too, so any start while the editor is up — a stray click, a media key — is
+ * stopped at once. Only the pause made as the editor opened is undone on the way out;
+ * [opened] tells that one from the rest.
+ *
  * `isPlaying` directly and not `togglePlayPause()`: that one seeks to 0 when the play
  * head is near the end and clears `reachedEnd`, and neither belongs in a pause nobody
  * asked for.
  */
 @Composable
-private fun EditorPauseEffect(videoState: VideoPlayerState?) {
+internal fun EditorPauseEffect(videoState: VideoPlayerState?) {
     var pausedByEditor by remember(videoState) { mutableStateOf(false) }
-    LaunchedEffect(EditorPresence.isOpen, videoState) {
+    var opened by remember(videoState) { mutableStateOf(false) }
+    LaunchedEffect(EditorPresence.isOpen, videoState, videoState?.isPlaying) {
         val player = videoState ?: return@LaunchedEffect
         when {
-            EditorPresence.isOpen && player.isPlaying -> {
-                player.isPlaying = false
-                pausedByEditor = true
+            EditorPresence.isOpen -> {
+                if (player.isPlaying) {
+                    player.isPlaying = false
+                    if (!opened) pausedByEditor = true
+                }
+                opened = true
             }
-            !EditorPresence.isOpen && pausedByEditor -> {
-                player.isPlaying = true
+            else -> {
+                if (pausedByEditor) player.isPlaying = true
                 pausedByEditor = false
+                opened = false
             }
         }
     }

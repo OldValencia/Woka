@@ -1,47 +1,29 @@
 package com.woka.feature.editor.shell
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Stable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import com.woka.feature.editor.tools.hdr.bakesToSdr
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import com.woka.feature.editor.EditorUndoToast
 import com.woka.feature.editor.core.EditScope
 import com.woka.feature.editor.core.EditorEngine
 import com.woka.feature.editor.core.EditorSession
 import com.woka.feature.editor.core.ownOpsOfOpenFrame
 import java.io.File
 
-/** What the editor's controls invoke, and whether Revert has anything to take back. */
-@Stable
-internal class EditorHostActions(
-    val leave: () -> Unit,
-    val done: () -> Unit,
-    val askRevert: () -> Unit,
-    val selectFrame: (Int) -> Unit,
-    val canRevert: Boolean
-)
-
 /**
- * The three things the editor does to a file — leave, write, revert — and the four
- * questions asked before them.
+ * The things the editor does to a file — leave, write, revert, export — and the questions
+ * asked before them (RD-401). Split out of `EditorHost` (ME-160): nothing here reads the
+ * tools, the canvas or the registry. **A slot rather than a return value**, because this
+ * emits the dialogs too.
  *
- * Split out of `EditorHost` when ME-160's one call line carried that file past 150.
- * The seam is the same one `EditorPresenceEffect` and `EditorHostDialogs` were cut
- * along: nothing here reads the tools, the canvas or the registry, and everything the
- * host kept is about *building* the editor rather than acting on it.
- *
- * **A slot rather than a return value**, because this emits: the dialogs and the four
- * booleans behind them are one concern, and handing the booleans back to the host so
- * it could draw them would put the whole of what moved back where it came from.
- *
- * Keys are the ones the host used, restated in terms of what it passes: [session] is
- * rebuilt per path *and* frame (ME-158), so `remember(session)` is the old
- * `remember(target.path, frameIndex)`; [file] is rebuilt per path alone, which is what
- * `pendingFrame` was keyed on.
+ * [session] is rebuilt per path *and* frame (ME-158), so `remember(session)` is the old
+ * `remember(target.path, frameIndex)`.
  */
 @Composable
 internal fun EditorHostControls(
@@ -49,39 +31,51 @@ internal fun EditorHostControls(
     session: EditorSession,
     file: File,
     editScope: EditScope,
-    /** Which frame the switch's Single Frame means, for Revert (ME-176). */
-    frameIndex: Int,
     /** What the file carried when it opened — `!stored.isEmpty`, read once (ME-107). */
     carriesStoredEdit: Boolean,
     onFrameIndex: (Int) -> Unit,
     onClose: () -> Unit,
     onSaved: (String) -> Unit,
+    /** Handed to the dialogs, which stand the editor's keys aside while they are up. */
+    keys: CanvasKeys?,
     content: @Composable (EditorHostActions) -> Unit
 ) {
     // Whether the *file* still carries something to remove — seeded once, and moved by
     // the only thing in this session that can change it (ME-107).
     var carriesEdit by remember(session) { mutableStateOf(carriesStoredEdit) }
-    var askingToRevert by remember { mutableStateOf(false) }
-    var askingToDiscard by remember { mutableStateOf(false) }
-    var askingToBake by remember { mutableStateOf(false) }
+    var question by remember { mutableStateOf<EditorQuestion?>(null) }
+    var frameAtMs by remember { mutableLongStateOf(0L) }
 
     val isDirty by session.isDirty.collectAsState()
     // Recomputed with the document, because that is what it is derived from.
     val document by session.document.collectAsState()
     val ownOps = remember(document) { session.ownOpsOfOpenFrame() }
     val scope = rememberCoroutineScope()
+    // The Undo toast speaks for this session alone; it goes when the editor does.
+    DisposableEffect(session) { onDispose { EditorUndoToast.dismiss() } }
 
-    val leave = { if (isDirty) askingToDiscard = true else onClose() }
+    val leave = { if (isDirty) question = EditorQuestion.Keep else onClose() }
 
-    // `Done` writes into the file that was opened and closes. **There is nothing to
-    // choose** (§4.5) beyond which frames it is for. The order it closes in, and the
-    // scope the write outlives this composable in, are `saveAction`'s (ME-130).
+    // The write into the file that was opened, and the close. The order it closes in, and
+    // the scope the write outlives this composable in, are `saveAction`'s (ME-130).
     val write = saveAction(engine, session, file.name, editScope, onClose, onSaved)
-    // **The one question `Done` asks** (ME-118). Everything else it writes is a recipe
-    // the file can give back; `To SDR` rewrites the pixels, so it is asked about before
-    // it happens rather than regretted after.
-    val done = { if (bakesToSdr(document)) askingToBake = true else write() }
-    EditorExitEffect(isDirty = isDirty, onSave = done)
+    // The window's close button saves as it was left — its own question, not `Done`'s.
+    EditorExitEffect(isDirty = isDirty, onSave = write)
+
+    val run = exportAction(engine, session, editScope, onClose, onSaved)
+    val copyExport = engine.exports.firstOrNull { !it.frame }
+    val frameExport = engine.exports.firstOrNull { it.frame }
+    val choices = doneChoicesOf(
+        engine = engine,
+        onExport = { run(it, true) },
+        onCopy = { if (copyExport != null) question = EditorQuestion.Copy },
+        onSaveFrame = frameExport?.let {
+            {
+                frameAtMs = engine.playHeadMs() ?: 0L
+                question = EditorQuestion.Frame
+            }
+        }
+    )
 
     val revert = revertAction(
         engine = engine,
@@ -94,49 +88,61 @@ internal fun EditorHostControls(
         // Only an all-frames revert empties the file. A single-frame one takes a layer
         // off and leaves the base, so the file still carries something to remove.
         if (reverted && editScope == EditScope.AllFrames) carriesEdit = false
-        askingToRevert = false
+        question = null
     }
 
     content(
         EditorHostActions(
             leave = leave,
-            done = done,
-            askRevert = { askingToRevert = true },
-            // **No question any more** (ME-169). ME-158 asked because the host rebuilt
-            // the session on a frame change and the work went with it; the session now
-            // keeps a document and a history per frame, so walking away from one costs
-            // nothing and coming back finds it as it was left.
+            // `Done` asks first (RD-401); a `RenderOnly` file's render takes its place.
+            done = choices.instead ?: { question = EditorQuestion.Save },
+            askRevert = { question = EditorQuestion.Revert },
+            // **No question any more** (ME-169): the session keeps a document and a history
+            // per frame, so walking away from one costs nothing.
             selectFrame = onFrameIndex,
             // Live while there is anything to take back: what the file carries, or what
-            // this sitting has done and not saved. Both end at the same picture.
-            //
-            // **In Single Frame it asks a narrower question** (ME-176): this frame's own
-            // layer, which only exists where the file carries a key for it. A control
-            // that offered to remove nothing would be a control that does nothing.
+            // this sitting has done and not saved. In Single Frame, this frame's own layer
+            // and nothing else (ME-176, 2026-09-02).
             canRevert = when (editScope) {
                 EditScope.AllFrames -> carriesEdit || isDirty
-                // **This frame's own layer, and nothing else** (2026-09-02). Asking the
-                // file alone greyed the button over unsaved work; asking `isDirty` lit it
-                // over work that belongs to the *shared* layer, and pressing it then did
-                // nothing visible — a Single Frame revert removes a frame's own half.
                 EditScope.SingleFrame ->
                     session.frame in engine.frames.overridden || ownOps.isNotEmpty()
-            }
+            },
+            choices = choices
         )
     )
 
     EditorHostDialogs(
-        askingToRevert = askingToRevert,
+        question = question,
+        engine = engine,
+        session = session,
         revertScope = editScope,
-        onRevert = revert,
-        askingToDiscard = askingToDiscard,
-        onDiscard = { askingToDiscard = false; onClose() },
-        askingToBake = askingToBake,
-        onBake = { askingToBake = false; write() },
-        onKeepEditing = {
-            askingToRevert = false
-            askingToDiscard = false
-            askingToBake = false
-        }
+        frameAtMs = frameAtMs,
+        keys = keys,
+        answers = EditorAnswers(
+            revert = revert,
+            keep = {
+                question = null
+                write()
+            },
+            discard = {
+                question = null
+                onClose()
+            },
+            save = { choice ->
+                question = null
+                choice?.let(session::saveSize)
+                write()
+            },
+            copy = { size ->
+                question = null
+                copyExport?.let { run(it.copy(size = size), false) }
+            },
+            frame = {
+                question = null
+                frameExport?.let { run(it.copy(atMs = frameAtMs), false) }
+            },
+            dismiss = { question = null }
+        )
     )
 }

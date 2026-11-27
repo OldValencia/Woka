@@ -8,7 +8,6 @@ import com.woka.feature.editor.tools.adjust.AdjustTool
 import com.woka.feature.editor.tools.cover.CoverTool
 import com.woka.feature.editor.tools.crop.CropTool
 import com.woka.feature.editor.tools.filter.FilterTool
-import com.woka.feature.editor.tools.hdr.HdrTool
 import com.woka.feature.editor.tools.markup.MarkupTool
 import com.woka.feature.editor.tools.resize.ResizeTool
 import com.woka.feature.editor.tools.sound.SoundTool
@@ -23,7 +22,7 @@ import kotlin.test.assertTrue
 /** The inspector's tabs as the prototype names them (RD-201), from the real tools. */
 class EditorTabsTest {
 
-    private val photo = listOf(TransformTool, CropTool, StraightenTool, AdjustTool, FilterTool, MarkupTool, ResizeTool, HdrTool)
+    private val photo = listOf(TransformTool, CropTool, StraightenTool, AdjustTool, FilterTool, MarkupTool, ResizeTool)
 
     @Test
     fun `a photo gets Styles, Adjust, Transform and Markup in that order`() {

@@ -1,5 +1,6 @@
 package com.woka.feature.editor.engine.video
 
+import com.woka.feature.editor.EditorUndoToast
 import com.woka.feature.editor.core.NO_CLIP
 import com.woka.feature.editor.tools.trim.TrimClip
 import com.woka.feature.editor.tools.trim.TrimTool
@@ -39,12 +40,16 @@ internal fun StripState.splitAtPlayHead() {
     apply(after)
 }
 
-/** Removes the selected clip and closes the hole; the selection goes with it, in the same step. */
+/**
+ * Removes the selected clip and closes the hole; the selection goes with it, in the same step.
+ * The Undo toast offers that step back (RD-401).
+ */
 internal fun StripState.deleteSelected(id: String) {
     val after = clips.delete(id)
     if (after == clips) return
     edits.pick(null, NO_CLIP, step = false)
     apply(after)
+    EditorUndoToast.offer("Clip removed. The remaining clips close the gap.", edits::undo)
 }
 
 /** Puts a copy beside the selected clip and selects the copy, which is what was made. */

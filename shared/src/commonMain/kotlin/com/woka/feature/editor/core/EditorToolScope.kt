@@ -81,4 +81,7 @@ interface EditorToolScope {
      * tool by the shell on dispose.
      */
     fun captureKeys(captured: Boolean)
+
+    /** One step back in the session's history — the Undo toast's (RD-401). */
+    fun undo() {}
 }

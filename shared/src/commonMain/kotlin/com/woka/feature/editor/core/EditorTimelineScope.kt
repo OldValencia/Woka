@@ -72,4 +72,7 @@ interface EditorTimelineScope {
 
     /** The shape the canvas has selected — its bar is drawn selected — or null. */
     val selectedShape: String? get() = null
+
+    /** One step back in the session's history — the Undo toast's (RD-401). */
+    fun undo() {}
 }

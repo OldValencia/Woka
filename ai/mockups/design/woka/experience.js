@@ -138,9 +138,8 @@ function helpDialog(){
   const video=state.mode==='video';
   modal(video?'A short edit, step by step':'A quick photo edit',video?`
     <button class="help-option" data-action="help-clip"><strong>1. Keep the moments you want</strong><span>Point at the timeline to preview a moment. Click the scissors on the playhead or press S to split. Select a part you don't need and press Delete. Drag clips to change their order.</span></button>
-    <button class="help-option" data-action="help-audio"><strong>2. Add music or a voice recording</strong><span>Drop an audio file onto the timeline, or choose Audio. Drag it to move, drag its edges to trim.</span></button>
-    <button class="help-option" data-action="help-output"><strong>3. Keep the edit or make a finished copy</strong><span>Done keeps your edit in Woka. Create a copy makes a file other apps can open.</span></button>
-    <p>Right-click a clip for more actions. “Editing” above the tools shows whether you're changing one clip, one sound, or the whole video.</p>`:`
+    <button class="help-option" data-action="help-output"><strong>2. Keep the edit or make a finished copy</strong><span>Done keeps your edit in Woka. Create a copy makes a file other apps can open.</span></button>
+    <p>Right-click a clip for more actions. The line above the tabs shows whether you're changing one clip or the whole video.</p>`:`
     <button class="help-option" data-action="help-styles"><strong>1. Try a style</strong><span>Point at a style to preview it on your photo, click to keep it.</span></button>
     <button class="help-option" data-action="help-adjust"><strong>2. Fine-tune light and colour</strong><span>Try Auto first. Sliders stick at zero, and a changed value can be reset with one click.</span></button>
     <button class="help-option" data-action="help-crop"><strong>3. Frame the picture</strong><span>Choose a shape, drag the edges, level the horizon with Straighten.</span></button>

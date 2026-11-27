@@ -10,6 +10,25 @@ internal const val MIN_RESIZE_PERCENT = 5f
 /** Full size. A resize at this composes no stage at all. */
 internal const val FULL_PERCENT = 100f
 
+/** A photo's largest side in `Custom` (the author, 2026-11-27): enlarging is allowed up to here. */
+const val MAX_PHOTO_SIDE = 16384
+
+/** Fractions of the current frame, which need no frame to resolve. */
+enum class ResizePreset(val percent: Float, val label: String) {
+    Full(100f, "100%"),
+    ThreeQuarters(75f, "75%"),
+    Half(50f, "50%"),
+    Quarter(25f, "25%")
+}
+
+/** Long-edge targets in pixels. These *do* need the frame — see [ResizeTool.resolve]. */
+enum class ResizeLongEdge(val pixels: Int, val label: String) {
+    Uhd(3840, "3840"),
+    W2560(2560, "2560"),
+    W1920(1920, "1920"),
+    W1280(1280, "1280")
+}
+
 /**
  * The arithmetic behind the resize tool (ME-110), with no Compose and no document.
  *

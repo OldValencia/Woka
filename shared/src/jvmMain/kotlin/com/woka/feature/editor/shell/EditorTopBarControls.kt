@@ -23,6 +23,8 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.viewer.shell.ViewerTooltip
 import org.jetbrains.compose.resources.DrawableResource
@@ -69,6 +71,16 @@ internal fun TopBarIconButton(
                 modifier = Modifier.size(EditorTokens.TopBar.glyphSize),
                 colorFilter = ColorFilter.tint(tint)
             )
+        }
+    }
+}
+
+/** `?` (`#help`, RD-401): the 32.dp square with a 14 sp semibold glyph instead of an icon. */
+@Composable
+internal fun TopBarGlyphButton(glyph: String, description: String, tag: String, onClick: () -> Unit) {
+    ViewerTooltip(description) {
+        TopBarFrame(tag, true, onClick, Modifier.size(EditorTokens.TopBar.controlHeight)) { tint ->
+            BasicText(glyph, style = TextStyle(color = tint, fontSize = 14.sp, fontWeight = FontWeight.SemiBold))
         }
     }
 }

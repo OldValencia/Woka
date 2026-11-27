@@ -14,7 +14,6 @@ import com.woka.feature.editor.tools.adjust.AdjustTool
 import com.woka.feature.editor.tools.cover.CoverTool
 import com.woka.feature.editor.tools.crop.CropTool
 import com.woka.feature.editor.tools.filter.FilterTool
-import com.woka.feature.editor.tools.hdr.HdrTool
 import com.woka.feature.editor.tools.markup.MarkupTool
 import com.woka.feature.editor.tools.resize.ResizeTool
 import com.woka.feature.editor.tools.sound.SoundTool
@@ -57,7 +56,6 @@ val editorModule = module {
     single<EditorTool>(named(FilterTool.manifest.id)) { FilterTool }
     single<EditorTool>(named(MarkupTool.manifest.id)) { MarkupTool }
     single<EditorTool>(named(ResizeTool.manifest.id)) { ResizeTool }
-    single<EditorTool>(named(HdrTool.manifest.id)) { HdrTool }
     single<EditorTool>(named(TrimTool.manifest.id)) { TrimTool }
     single<EditorTool>(named(SoundTool.manifest.id)) { SoundTool }
     single<EditorTool>(named(CoverTool.manifest.id)) { CoverTool }

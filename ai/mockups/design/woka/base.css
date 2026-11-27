@@ -7,7 +7,8 @@
 body{margin:0;background:var(--background);color:var(--text-primary)}
 button,input,select{font:inherit}
 button:hover{background:var(--surface-hover)}
-button:disabled{opacity:.35;cursor:default}
+button:disabled,button[aria-disabled=true]{opacity:.35;cursor:default}
+button[aria-disabled=true]:hover,button[aria-disabled=true]:active{background:none;filter:none}
 button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent-editor-text);outline-offset:3px}
 button svg{width:18px;height:18px;vertical-align:middle;flex-shrink:0;stroke-width:1.6}
 button.selected{background:var(--accent-editor-soft);color:var(--accent-editor-text)}

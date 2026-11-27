@@ -3,9 +3,11 @@ package com.woka.feature.editor.tools.resize
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.ui.icons.Icons
+import com.woka.feature.editor.core.BoolParam
 import com.woka.feature.editor.core.ChoiceParam
 import com.woka.feature.editor.core.EditorTool
 import com.woka.feature.editor.core.FloatParam
+import com.woka.feature.editor.core.IntParam
 import com.woka.feature.editor.core.ParamSet
 import com.woka.feature.editor.core.ParamSpec
 import com.woka.feature.editor.core.SourceStats
@@ -16,32 +18,15 @@ import com.woka.feature.editor.core.ToolManifest
 import com.woka.feature.editor.core.ToolStage
 import com.woka.feature.editor.engine.image.RasterStage
 
-/** Fractions of the current frame, which need no frame to resolve. */
-enum class ResizePreset(val percent: Float, val label: String) {
-    Full(100f, "100%"),
-    ThreeQuarters(75f, "75%"),
-    Half(50f, "50%"),
-    Quarter(25f, "25%")
-}
-
-/** Long-edge targets in pixels. These *do* need the frame — see [ResizeTool.resolve]. */
-enum class ResizeLongEdge(val pixels: Int, val label: String) {
-    Uhd(3840, "3840"),
-    W2560(2560, "2560"),
-    W1920(1920, "1920"),
-    W1280(1280, "1280")
-}
-
 /**
  * Resize — the last thing that happens to a picture, and the first tool that is **pure
  * data** (ME-110). No overlay, no canvas gesture: a manifest, three parameters and a
  * scaling matrix.
  *
- * **A percentage, not a pair of pixel dimensions.** `stage()` receives parameters and
- * never a frame (§3.4), so an absolute target cannot become a matrix — the scale would
- * be `target / frame`, and the frame is a running value only the fold holds. Storing a
- * proportion also means a crop changing the frame underneath does not silently change
- * what "2000 px wide" meant.
+ * **A percentage, or since RD-401 a pair of pixel dimensions.** The percentage needs no
+ * frame and survives a crop; `Custom` in `Save your changes?` names exact pixels, either axis
+ * free, which only the fold can turn into a matrix — `RasterStage.Framed` asks it for the
+ * frame ([explicitResize]). [Width] and [Height] at zero mean "no pixels named".
  *
  * Held in **percent** rather than a 0..1 factor so the inspector's existing readout
  * prints `50%` without the shell learning a special case; `stage()` divides by a hundred
@@ -94,7 +79,14 @@ object ResizeTool : EditorTool {
         interaction = ToolInteraction.Continuous
     )
 
-    override val params: List<ParamSpec<*>> = listOf(Scale, Preset, LongEdge)
+    /** `Custom`'s pixels (RD-401); zero while a percentage rules. */
+    val Width = IntParam(key = "width", label = "Width", range = 0..MAX_PHOTO_SIDE, default = 0)
+    val Height = IntParam(key = "height", label = "Height", range = 0..MAX_PHOTO_SIDE, default = 0)
+
+    /** `Keep proportions`, remembered so the dialog reopens as it was left. Draws nothing. */
+    val Proportional = BoolParam(key = "keepProportions", label = "Keep proportions", default = true)
+
+    override val params: List<ParamSpec<*>> = listOf(Scale, Preset, LongEdge, Width, Height, Proportional)
 
     /**
      * A picture at full size is not resized, so it composes nothing at all — the same
@@ -105,6 +97,7 @@ object ResizeTool : EditorTool {
      * resize *after* a crop apply to the cropped frame rather than the original.
      */
     override fun stage(params: ParamSet): ToolStage? {
+        explicitResize(params[Width], params[Height])?.let { return it }
         val percent = params[Scale]
         if (percent >= FULL_PERCENT) return null
         val factor = percent / 100f

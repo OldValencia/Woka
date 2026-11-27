@@ -64,7 +64,7 @@ internal fun saveAction(
             when (val result = engine.save(layers)) {
                 is EditSaveResult.Saved -> {
                     if (leavingForVideo) EditorSaveStatus.savedLeaving(name)
-                    else EditorSaveStatus.saved(name)
+                    else EditorSaveStatus.kept()
                     onSaved(result.path)
                 }
                 is EditSaveResult.Failed -> EditorSaveStatus.failed(result.reason)

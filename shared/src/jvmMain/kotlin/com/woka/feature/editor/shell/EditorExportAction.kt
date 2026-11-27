@@ -13,15 +13,16 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 /**
- * An entry of `Done ▾` other than `Done`: close, then render (ME-291).
+ * An export — `Create a copy`, `Save frame as photo`, a `RenderOnly` file's `Done` — run in
+ * the background with the progress toast (ME-291, RD-401).
  *
- * `saveAction`'s order for `saveAction`'s reasons — the layers are read before [onClose],
- * because closing cancels the session, and the work runs in an object's scope because it
- * outlives the editor. Two differences, both from `render.md` §3.1 and §3.5:
+ * `saveAction`'s order for `saveAction`'s reasons — the layers are read first, and the work
+ * runs in an object's scope because it may outlive the editor. **Whether the editor closes is
+ * the caller's** (`closing`): a `RenderOnly` file's `Done` closes as `Done` does; a copy or a
+ * frame leaves the editor open, as the prototype does, and the toast reports over it.
  *
  * - **The source is not written.** A render is a new file beside it and the edit lives in
- *   that file; iOS Photos' *Save as New Clip* leaves the original as shot, and so does
- *   this. Whoever wants the recipe in the source as well presses `Done`.
+ *   that file; whoever wants the recipe in the source as well presses `Done`.
  * - **A second render while one runs is refused, and the editor stays open**, so the work
  *   is not thrown away by a click that could not be honoured.
  *
@@ -31,18 +32,17 @@ import java.io.File
 internal fun exportAction(
     engine: EditorEngine,
     session: EditorSession,
-    file: File,
     scope: EditScope,
     onClose: () -> Unit,
     onSaved: (String) -> Unit
-): (EditorExport) -> Unit = { export ->
+): (EditorExport, Boolean) -> Unit = { export, closing ->
     if (EditorRenderStatus.running) {
         EditorRenderStatus.failed("A render is already running. Wait for it, or cancel it first.")
     } else {
         val layers = session.layers(scope)
-        // Read before the close takes the player with it (ME-294).
-        val chosen = export.copy(atMs = engine.playHeadMs())
-        onClose()
+        // Read before a close takes the player with it (ME-294); a frame's dialog stamped its own.
+        val chosen = if (export.atMs != null) export else export.copy(atMs = engine.playHeadMs())
+        if (closing) onClose()
         val job = EditorRenderStatus.scope.launch(start = CoroutineStart.LAZY) {
             try {
                 val result = engine.export(chosen, layers) { fraction ->
@@ -50,7 +50,7 @@ internal fun exportAction(
                 }
                 when (result) {
                     is EditSaveResult.Saved -> {
-                        EditorRenderStatus.rendered(File(result.path).name)
+                        EditorRenderStatus.rendered(File(result.path).absolutePath)
                         onSaved(result.path)
                     }
                     is EditSaveResult.Failed -> EditorRenderStatus.failed(result.reason)
@@ -62,7 +62,7 @@ internal fun exportAction(
                 EditorRenderStatus.failed("The render failed: ${failure.message}. The original is untouched.")
             }
         }
-        EditorRenderStatus.started(file.name, job)
+        EditorRenderStatus.started(chosen.progress, job)
         job.start()
     }
 }

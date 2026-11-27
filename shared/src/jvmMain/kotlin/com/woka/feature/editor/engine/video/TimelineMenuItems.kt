@@ -1,11 +1,15 @@
 package com.woka.feature.editor.engine.video
 
 import androidx.compose.runtime.Composable
+import com.woka.feature.editor.EditorUndoToast
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditorTimelineScope
 import com.woka.feature.editor.core.ParamSet
 import com.woka.feature.editor.core.ToolOp
+import com.woka.feature.editor.shell.LocalDoneChoices
 import com.woka.feature.editor.tools.cover.CoverTool
+import com.woka.feature.editor.tools.markup.MarkupTool
+import com.woka.feature.editor.tools.markup.removedNotice
 import com.woka.feature.editor.tools.trim.TrimClip
 import com.woka.feature.editor.tools.trim.TrimTool
 import com.woka.feature.editor.tools.trim.join
@@ -42,6 +46,7 @@ internal fun ClipItems(
     items.Item("Join", enabled = clips.join(id) != clips) { state.joinSelected(id) }
     items.Item("Hold this frame for 2 s", enabled = !clip.isFreeze) { state.freezeAtPlayHead() }
     items.Separator()
+    SaveFrameItem(items)
     items.Item("Use frame as cover") { useFrameAsCover(state, clips, edits, document) }
     items.Separator()
     items.Item("Delete clip", enabled = clips.size > 1, key = "Del", danger = true) { state.deleteSelected(id) }
@@ -51,8 +56,10 @@ internal fun ClipItems(
 internal fun ShapeItems(items: MenuItems, id: String, edits: EditorTimelineScope, document: EditDocument) {
     items.Item("Remove", key = "Del", danger = true) {
         val op = markupOpIn(document) ?: return@Item
+        val gone = op.params[MarkupTool.Shapes].firstOrNull { it.id == id }
         edits.preview(withoutShape(op, id))
         edits.commit()
+        gone?.let { EditorUndoToast.offer(it.removedNotice, edits::undo) }
     }
 }
 
@@ -67,9 +74,18 @@ internal fun EmptyItems(
     val onFreeze = clips.getOrNull(state.walk.index)?.isFreeze == true
     items.Item("Split at playhead", enabled = splits(state, clips), key = "S") { state.splitAtPlayHead() }
     items.Item("Hold this frame for 2 s", enabled = !onFreeze) { state.freezeAtPlayHead() }
+    items.Separator()
+    SaveFrameItem(items)
     items.Item("Use frame as cover") { useFrameAsCover(state, clips, edits, document) }
     items.Separator()
     items.Item("Undo all cuts", enabled = TrimTool.clipsIn(document) != null) { state.resetCut() }
+}
+
+/** `Save frame as photo…` (RD-401): the frame under the play head, through its dialog. */
+@Composable
+private fun SaveFrameItem(items: MenuItems) {
+    val save = LocalDoneChoices.current.onSaveFrame ?: return
+    items.Item("Save frame as photo…") { save() }
 }
 
 /** Whether a split at the play head would cut anything — not on a join, not in a still. */

@@ -42,11 +42,13 @@ class FramePhotoTest {
 
         val plain = take(500L)
         val tinted = take(1_500L)
-        assertEquals("clip 0m00s.jpg", plain.name)
-        assertEquals("clip 0m01s.jpg", tinted.name)
+        assertEquals("clip 0m00s.png", plain.name)
+        // A PNG in fact, not only in name (RD-401): the signature's first four bytes.
+        assertEquals(listOf(0x89, 0x50, 0x4E, 0x47), plain.readBytes().take(4).map { it.toInt() and 0xFF })
+        assertEquals("clip 0m01s.png", tinted.name)
         assertEquals(source.parentFile.absoluteFile, tinted.parentFile.absoluteFile)
         assertTrue(redOverGreen(tinted) > redOverGreen(plain) * 1.2, "the second clip's own look is missing")
-        assertEquals("clip 0m01s 2.jpg", take(1_500L).name, "a second photo of the same moment overwrote the first")
+        assertEquals("clip 0m01s 2.png", take(1_500L).name, "a second photo of the same moment overwrote the first")
     }
 
     /** Mean red over mean green of [file]'s pixels, checking it is the coded size on the way. */

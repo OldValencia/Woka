@@ -83,4 +83,6 @@ internal class EditorTimelineScopeImpl(
     }
 
     override val selectedShape: String? get() = shapes?.id
+
+    override fun undo() = session.undo()
 }

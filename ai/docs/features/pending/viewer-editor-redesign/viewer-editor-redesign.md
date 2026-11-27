@@ -23,7 +23,7 @@ the tree as it is (`tickets.md` §1). The prototype itself is finished —
 | [RD-205 — Straighten](tickets/RD-205-straighten.md) | **done** 2026-11-26 |
 | [RD-301 — Timeline](tickets/RD-301-timeline.md) | **done** 2026-11-26 |
 | [RD-302 — Clip and Sound tabs, the scope line](tickets/RD-302-clip-sound-tabs.md) | **done** 2026-11-26 |
-| [RD-401 — Ways out](tickets/RD-401-ways-out.md) | The prototype has photo percentage presets and manual dimensions for photo and video copies. Video presets must adapt to the source size. App implementation pending. |
+| [RD-401 — Ways out](tickets/RD-401-ways-out.md) | implemented 2026-11-27, awaiting the author's check by hand |
 | RD-501…RD-802 | [backlog](tickets/backlog.md) |
 
 ## The spec, scene by scene
@@ -153,4 +153,7 @@ pill with HDR met `Original` at 960 px, measured 2026-11-25), so the window's mi
 | 2026-11-26 | Wave and height | Wave always in each clip (speaker toggle removed); height in `settings.json` | Left to judgement by the author |
 | 2026-11-26 | Clip speed row | 0.25–4×, log track, 1× at the centre, the old detents | The author; the prototype's 0.25–3× linear row corrected |
 | 2026-11-26 | Ways out (RD-401) | `Done` confirms with the size (photo), a film's only confirms; SDR only in `Create a copy`; frame as PNG; Revert irreversible; no SDR switch in Settings; `Audio only…` disabled until ME-245 | The author |
+| 2026-11-27 | SDR in `Create a copy` | No switch: a copy follows the pill's colour mode, with a note when that retones the picture | The author: every encode is SDR with the screen's tone map; a separate switch moved nothing for a photo and only a cuts-only film for a video |
+| 2026-11-27 | `Custom` limits | Photo 1–16384 px a side; video even, within 4096 × 2304; enlarging allowed | The author |
+| 2026-11-27 | `Create a copy` and the editor | The editor stays open; the progress toast reports over it | As the prototype; only a `RenderOnly` file's `Done` closes first |
 | 2026-11-26 | Markup and a clip | Markup is the whole film's: opening it clears the clip, a shape is a crumb; a clip's stored markup left to the readers | The author: as the prototype; the Markup lane is in film time |

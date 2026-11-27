@@ -70,23 +70,25 @@ function sizedOutputDialog({copy,intro='',options=''}){
   const start=selected==='custom'?[saved.width,saved.height]:presetSize(selected);
   const fields=['Width','Height'].map((label,index)=>`<label>${label} (px)<input class="text-input" type="number" min="1" step="1" required value="${start[index]}" aria-errormessage="output-size-error"></label>`).join('');
   const sizes=[...presets,['custom','Custom']].map(([value,label])=>`<button type="button" value="${value}" aria-pressed="${value===selected}">${label}</button>`).join('');
-  const extra=video?button('extract','Audio only…','quiet dialog-leading-action','type="button"'):'';
+  const extra=video?button('extract','Audio only…','quiet dialog-leading-action','type="button" aria-disabled="true" data-tip="Coming in 1.1.0"'):'';
   modal(copy?'Create a finished copy':'Save your changes?',`${intro}<form id="output-size-form" novalidate>
     <fieldset class="dialog-group output-size-group"><legend>Size</legend>
       <div class="segmented output-size" role="group" aria-label="Size preset">${sizes}</div>
       <div class="output-size-fields">${fields}</div>
       <label class="output-size-lock"><input type="checkbox" ${saved?.keepProportions===false?'':'checked'}>Keep proportions</label>
-      <p id="output-size-error" role="alert" hidden>Enter positive whole pixel dimensions.</p></fieldset>${options}
+      <p id="output-size-error" role="alert" hidden>${video?'Use even sizes from 2 up to 4096 × 2304.':'Use whole pixels from 1 to 16384.'}</p></fieldset>${options}
     <div class="dialog-actions">${extra}${button('close-modal','Cancel','quiet','type="button"')}<button type="submit" class="primary">${copy?'Create copy':'Save'}</button></div></form>`,'dialog-compact');
   const form=$('#output-size-form');
   const inputs=[...form.querySelectorAll('.output-size-fields input')],lock=form.querySelector('.output-size-lock input');
   const choices=[...form.querySelectorAll('.output-size button')];
   const error=form.querySelector('#output-size-error'),submit=form.querySelector('button[type=submit]');
-  const valid=value=>Number.isSafeInteger(value)&&value>0;
+  // The renderer's limits (2026-11-27): a photo up to 16384 px a side; a video even, within 4096 × 2304.
+  const valid=value=>Number.isSafeInteger(value)&&value>=(video?2:1)&&value<=(video?4096:16384)&&(!video||value%2===0);
+  const fits=size=>!video||Math.min(...size)<=2304;
   let lastEdited=0;
   function update(){
     const size=inputs.map(input=>input.valueAsNumber);
-    const invalid=!size.every(valid);
+    const invalid=!size.every(valid)||!fits(size);
     choices.forEach(choice=>{
       const active=choice.value===selected;
       choice.classList.toggle('selected',active);
@@ -98,9 +100,9 @@ function sizedOutputDialog({copy,intro='',options=''}){
   }
   function matchProportions(){
     const value=inputs[lastEdited].valueAsNumber,other=1-lastEdited;
-    if(!lock.checked||!valid(value))return;
-    const linked=Math.max(1,Math.round(value*frame[other]/frame[lastEdited]));
-    inputs[other].value=valid(linked)?linked:'';
+    if(!lock.checked||!Number.isSafeInteger(value)||value<1)return;
+    const exact=value*frame[other]/frame[lastEdited];
+    inputs[other].value=video?Math.max(2,2*Math.round(exact/2)):Math.max(1,Math.round(exact));
   }
   choices.forEach(choice=>choice.onclick=()=>{
     selected=choice.value;

@@ -39,38 +39,52 @@ object EditorRenderStatus {
     var fraction by mutableStateOf<Float?>(null)
         private set
 
+    /**
+     * Where the last finished job wrote its file, for the toast's `Show in folder` (RD-401);
+     * null while running and after anything else.
+     */
+    var savedTo by mutableStateOf<String?>(null)
+        private set
+
     private var job: Job? = null
 
     val running: Boolean get() = job?.isActive == true
 
-    fun started(name: String, work: Job) {
+    /** [label] is the job in the prototype's words — "Creating copy", "Saving frame" — without the ellipsis. */
+    fun started(label: String, work: Job) {
         job = work
+        savedTo = null
         fraction = 0f
-        message = "Rendering $name"
+        message = "$label…"
     }
 
     fun progress(value: Float) {
         if (running) fraction = value.coerceIn(0f, 1f)
     }
 
-    fun rendered(name: String) {
+    /** Every render lands beside its source (`renderTargetBeside`), which is what this says. */
+    fun rendered(path: String) {
         fraction = null
-        message = "Rendered $name"
+        savedTo = path
+        message = "Saved next to the original."
     }
 
     fun failed(reason: String) {
         fraction = null
+        savedTo = null
         message = reason
     }
 
-    /** The ✕ on the banner: stops the work, and the renderer deletes what it wrote. */
+    /** The toast's `Cancel`: stops the work, and the renderer deletes what it wrote. */
     fun cancel() {
         job?.cancel()
         fraction = null
-        message = "Render cancelled. Nothing was written."
+        savedTo = null
+        message = "Cancelled. Nothing was saved."
     }
 
     fun clear() {
         message = null
+        savedTo = null
     }
 }

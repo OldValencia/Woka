@@ -268,7 +268,7 @@ dialog.dialog-compact{--dialog-group-bg:var(--e-well);--dialog-group-line:var(--
 .output-size-lock{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:13px}
 .output-size-lock input{margin:0}
 .dialog-compact #output-size-error{margin:6px 0 0;color:var(--danger)}
-.dialog-compact #output-size-form>.toggle{margin-top:6px;font-size:13px}
+.dialog-compact .output-note{margin:10px 0 0;font-size:12px;color:var(--dialog-muted)}
 dialog h3{font-size:13px;margin:18px 0 4px}
 @media(max-width:820px){
   .header-actions #compare span{display:none}

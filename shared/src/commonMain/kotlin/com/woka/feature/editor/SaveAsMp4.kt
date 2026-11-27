@@ -34,13 +34,13 @@ fun saveAsMp4(path: String, onSaved: (String) -> Unit) {
         }
         when (result) {
             is EditSaveResult.Saved -> {
-                EditorRenderStatus.rendered(File(result.path).name)
+                EditorRenderStatus.rendered(result.path)
                 onSaved(result.path)
             }
             is EditSaveResult.Failed -> EditorRenderStatus.failed(result.reason)
             EditSaveResult.NothingToDo -> EditorRenderStatus.clear()
         }
     }
-    EditorRenderStatus.started(File(path).name, job)
+    EditorRenderStatus.started("Rendering ${File(path).name}", job)
     job.start()
 }

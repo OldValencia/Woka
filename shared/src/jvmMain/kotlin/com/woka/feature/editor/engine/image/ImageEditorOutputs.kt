@@ -10,6 +10,7 @@ import com.woka.feature.editor.core.EditorExport
 import com.woka.feature.editor.save.SourceStamp
 import com.woka.feature.editor.save.evictCachesFor
 import com.woka.feature.editor.save.renderStill
+import com.woka.feature.editor.tools.resize.sizedFor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ensureActive
@@ -36,7 +37,8 @@ internal abstract class ImageEditorOutputs(
             try {
                 require(export.id == RenderPhoto.id)
                 check(stamp.matches(file)) { "${file.name} changed since it was opened" }
-                val document = EditDocument(layers.base.ops + layers.frames[frameIndex]?.ops.orEmpty())
+                // The copy's own size, not what `Done` saved (RD-401).
+                val document = EditDocument(layers.base.ops + layers.frames[frameIndex]?.ops.orEmpty()).sizedFor(export.size)
                 progress(0f)
                 coroutineContext.ensureActive()
                 val target = renderStill(file, frameIndex, sourceSize, recipe(document)) {

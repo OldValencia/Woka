@@ -53,11 +53,17 @@ internal class CanvasKeys {
     var onBack: (() -> Boolean)? = null
 
     /**
+     * Whether one of the editor's dialogs is up (RD-401). Every key is then the dialog's:
+     * `Ctrl+S`, Delete or Space must not act on the editor beneath it.
+     */
+    var dialogOpen: Boolean by mutableStateOf(false)
+
+    /**
      * Whether [key] is the focused field's rather than the editor's: every key while typing,
      * only the caret's while a value field has focus — Space, `Ctrl+Z` and `Esc` stay the
      * editor's, since that focus can linger after a click on the picture.
      */
-    fun yields(key: Key): Boolean = typing || (fieldFocused && key in CARET_KEYS)
+    fun yields(key: Key): Boolean = typing || dialogOpen || (fieldFocused && key in CARET_KEYS)
 }
 
 private val CARET_KEYS = setOf(

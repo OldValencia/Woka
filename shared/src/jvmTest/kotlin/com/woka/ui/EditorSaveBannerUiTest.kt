@@ -12,7 +12,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.woka.app.shell.TopBarAccessoriesState
-import com.woka.core.ui.components.STATUS_SETTLE_MS
+import com.woka.core.ui.components.TOAST_PLAIN_MS
+import com.woka.feature.editor.KEPT
 import com.woka.feature.editor.EditorSaveBanner
 import com.woka.feature.editor.EditorSaveStatus
 import com.woka.feature.editor.core.EditSaveResult
@@ -101,12 +102,12 @@ class EditorSaveBannerUiTest {
 
                 gate.complete(Unit)
                 waitForIdle()
-                onNodeWithText("Saved $NAME").assertIsDisplayed()
+                onNodeWithText(KEPT).assertIsDisplayed()
                 assertEquals(PATH, saved, "the saved path never reached the folder")
 
-                mainClock.advanceTimeBy(STATUS_SETTLE_MS + 600)
+                mainClock.advanceTimeBy(TOAST_PLAIN_MS + 600)
                 waitForIdle()
-                onNodeWithText("Saved $NAME").assertDoesNotExist()
+                onNodeWithText(KEPT).assertDoesNotExist()
             }
         }
     }

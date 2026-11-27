@@ -119,7 +119,7 @@ interface EditorEngine : EditorEngineSurface, EditorEnginePicture {
      */
     fun toolNote(toolId: String): String? = null
 
-    /** What `Done ▾` offers beside `Done` (ME-291). Empty — a plain `Done` — for a still. */
+    /** What the editor exports besides `Done` — `Create a copy`, a film's frame (ME-291, RD-401). */
     val exports: List<EditorExport> get() = emptyList()
 
     /**
