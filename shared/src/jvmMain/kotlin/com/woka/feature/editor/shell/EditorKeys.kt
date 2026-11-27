@@ -13,6 +13,7 @@ import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
 import com.woka.app.shell.GlobalShortcutState
+import com.woka.core.system.layoutFreeKey
 
 /**
  * The editor's keyboard, and the handler it has to give back.
@@ -106,7 +107,8 @@ internal fun EditorKeyEffect(
                 event.key == Key.DirectionLeft -> curStep(-1, !event.isAltPressed)
                 event.key == Key.DirectionRight -> curStep(1, !event.isAltPressed)
                 event.key == Key.F6 -> consume { curTogglePanel() }
-                !event.isCtrlPressed && event.key in TIMELINE_KEYS -> curTimelineKey(event.key)
+                // `,` / `.` by the key, whatever the layout types on it (RD-501).
+                !event.isCtrlPressed && event.layoutFreeKey() in TIMELINE_KEYS -> curTimelineKey(event.layoutFreeKey())
                 else -> false
             }
         }
@@ -117,8 +119,11 @@ internal fun EditorKeyEffect(
     }
 }
 
-/** Split at the play head, and the play head to either end (RD-301, the prototype's `S`, `Home`, `End`). */
-private val TIMELINE_KEYS = setOf(Key.S, Key.MoveHome, Key.MoveEnd)
+/**
+ * Split at the play head, and the play head to either end (RD-301, the prototype's `S`, `Home`,
+ * `End`); one frame back or on (RD-501, `,` `.`) — a film's while paused, an animation's always.
+ */
+private val TIMELINE_KEYS = setOf(Key.S, Key.MoveHome, Key.MoveEnd, Key.Comma, Key.Period)
 
 private inline fun consume(action: () -> Unit): Boolean {
     action()

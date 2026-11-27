@@ -121,7 +121,7 @@ fun FolderScreen(
                 viewerMediaId = null
                 scrollToMediaId = lastMediaId
             },
-            onEdit = { id, frame -> editorTarget = EditorTarget(id, frame) },
+            onEdit = { target -> editorTarget = target },
             // The editor mounts over it and leaves it composed; without this its
             // animation would keep decoding under an opaque panel.
             isFrozen = editorTarget != null

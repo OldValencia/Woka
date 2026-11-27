@@ -3,6 +3,7 @@ package com.woka.feature.editor.core
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
+import com.woka.core.ui.components.frames.FrameTransport
 
 /**
  * The half of the engine seam that **draws** — split out of [EditorEngine] when
@@ -87,6 +88,13 @@ interface EditorEngineSurface {
      * Answers whether it used the key; defaulted to `false`, so a still leaves every key alone.
      */
     fun timelineKey(key: Key): Boolean = false
+
+    /**
+     * An animation's transport (RD-501): the clock its bar, its strip and `,` / `.` move —
+     * a GIF or an animated WebP, whose edit stays whole (ME-138). Null for every other file,
+     * which draws neither.
+     */
+    val frameTransport: FrameTransport? get() = null
 
     /**
      * Where the play head stands in the result, in milliseconds — what `Cover`'s button

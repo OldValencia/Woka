@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,9 +32,12 @@ import com.woka.core.ui.theme.Theme
 import com.woka.feature.editor.tools.trim.TrimClip
 import com.woka.feature.editor.tools.trim.totalMs
 import com.woka.feature.viewer.shell.ViewerTooltip
+import com.woka.feature.viewer.video.PlayKnob
+import com.woka.feature.viewer.video.roomPlayKnob
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import kotlin.math.roundToInt
+import com.woka.feature.viewer.video.engine.frameRate
 
 /**
  * The timeline's first row (`.timeline .transport`): play and the time on the left; Split and
@@ -60,7 +62,10 @@ internal fun TimelineTransport(state: StripState?, clips: List<TrimClip>, zoom: 
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(TimelineTokens.timeGap)) {
-            PlayButton(playing = player?.let { state.walk.isPlaying(it) } == true) { player?.let { state.walk.toggle(it) } }
+            val playing = player?.let { state.walk.isPlaying(it) } == true
+            ViewerTooltip(if (playing) "Pause   ·   Space" else "Play   ·   Space") {
+                PlayKnob(playing, roomPlayKnob(), "editor-timeline-play") { player?.let { state.walk.toggle(it) } }
+            }
             Readout(
                 position = { player?.let { state.walk.timelineMs(clips, it.currentPositionMs) } ?: 0L },
                 duration = clips.totalMs(),
@@ -78,32 +83,6 @@ internal fun TimelineTransport(state: StripState?, clips: List<TrimClip>, zoom: 
                 TransportButton(zoomLabel(zoom.zoom), "Show the whole video", null, "editor-strip-zoom") { zoom.fit() }
             }
             TransportButton("+", "Show more detail   ·   Ctrl + wheel", null, "editor-timeline-zoom-in") { zoom.wheelAtPlayHead(-1f) }
-        }
-    }
-}
-
-/** `.transport-play`: one 32 dp round knob, the room's raised well. */
-@Composable
-private fun PlayButton(playing: Boolean, onToggle: () -> Unit) {
-    val hover = remember { MutableInteractionSource() }
-    val hovered by hover.collectIsHoveredAsState()
-    ViewerTooltip(if (playing) "Pause   ·   Space" else "Play   ·   Space") {
-        Box(
-            Modifier
-                .size(TimelineTokens.playSize)
-                .clip(CircleShape)
-                .background(if (hovered) Theme.room.knob else Theme.room.well2)
-                .pointerHoverIcon(PointerIcon.Hand)
-                .clickable(interactionSource = hover, indication = null, onClick = onToggle)
-                .testTag("editor-timeline-play"),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                painter = painterResource(if (playing) Icons.Static.Pause else Icons.Static.PlayFill),
-                contentDescription = if (playing) "Pause" else "Play",
-                modifier = Modifier.size(TimelineTokens.playGlyph),
-                colorFilter = ColorFilter.tint(Theme.room.text)
-            )
         }
     }
 }

@@ -2,23 +2,16 @@
 
 Blocks are promoted into ticket files when they are next, re-cut against the tree as it then is
 (`tickets.md` §1, §4). No file lists here. The feature doc's questions were answered on
-2026-11-25; RD-101…RD-401 are tickets, RD-501 is the next block. Each block is promoted and built
+2026-11-25; RD-101…RD-501 are tickets, RD-502 is the next block. Each block is promoted and built
 whole — the author's call, 2026-11-25 (`tickets.md` §4a waived).
 
 ## Viewer
 
-### RD-501 — One transport and the GIF
-Brings the Theme colours the viewer first draws (from RD-101): `surfaceRaised`, `accentEditorSoft`,
-`canvas`, `glass`, wherever this or RD-502 draws them first.
-The shared transport with per-kind slots, the round play button, the fixed time label; GIF
-controls and frame step; `,` / `.` for video while paused.
-**A GIF in the editor too** (the author, 2026-11-26; prototype `#editor/gif`): the same transport
-under the picture on the room's panel (`.gif-media`), and the frame strip in the room's colours —
-**no scope line**, the edit stays whole (ME-138); a click on a frame or a step pauses there and
-changes nothing else. Today the app's editor has neither: the GIF plays, a tap or Space pauses.
-
 ### RD-502 — Carousel badges and Original
 Badges on the carousel; `Original` in the pill for an edited file with click, hold and `\`.
+Theme colours still outside `Theme.kt` after RD-501: `accentEditorSoft` (the prototype's
+`.info-edited`, `#compare` pressed, `button.selected`) and `canvas` (overridden wherever it is set,
+never drawn) — added only if this draws one.
 
 ## Fullscreen and PiP
 

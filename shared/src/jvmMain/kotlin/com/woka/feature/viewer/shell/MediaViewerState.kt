@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.ScalePreset
 import com.woka.core.data.StillColorInfo
+import com.woka.core.ui.components.frames.FrameTransport
 
 @Stable
 class MediaViewerState(initialId: String) {
@@ -28,6 +29,13 @@ class MediaViewerState(initialId: String) {
     // PageUp/PageDown can stop at the ends without the key handler having to
     // know how a frame set is read.
     var frameCount by mutableStateOf(1)
+    // An animation's transport (RD-501). Loop opens On and speed at 1× for every file, reset
+    // with `isFramePlaying`; the label's frame-number mode lasts while animations follow one
+    // another. `frameTransport` is published with `frameCount`, for `,` and `.`.
+    var isFrameLooping by mutableStateOf(true)
+    var frameSpeed by mutableStateOf(1f)
+    var showFrameNumbers by mutableStateOf(false)
+    var frameTransport by mutableStateOf<FrameTransport?>(null)
     // Semantic size state (drives the indicator, clicks, Ctrl+Scroll).
     var sizeMode by mutableStateOf<SizeMode>(SizeMode.Preset(ScalePreset.Fit))
     // Derived graphics-layer scale published by MediaViewerContent, consumed by the

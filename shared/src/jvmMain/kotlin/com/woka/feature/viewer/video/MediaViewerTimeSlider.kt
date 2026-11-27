@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.woka.core.ui.icons.Icons
 import com.woka.feature.viewer.shell.slider.MediaSlider
 import com.woka.feature.viewer.shell.slider.SliderPreview
@@ -53,11 +52,11 @@ fun MediaViewerTimeSlider(
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
+        horizontalArrangement = Arrangement.spacedBy(TransportTokens.gap, Alignment.CenterHorizontally)
     ) {
         // Deliberately the player's own position, not the drag target: while
         // scrubbing the label holds and the tooltip shows where the release lands.
-        TimeLabel(withHours = withHours, position = shown)
+        TimeLabel(withHours = withHours, position = shown, modifier = Modifier.widthIn(min = TransportTokens.timeMinWidth))
 
         if (shownMs >= 6000L) {
             SkipButton(

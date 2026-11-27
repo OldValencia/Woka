@@ -11,6 +11,7 @@ import com.woka.core.ui.components.WokaSpinner
 import com.woka.core.ui.theme.Theme
 import com.woka.core.ui.components.frames.FRAME_STRIP_WIDTH
 import com.woka.feature.viewer.shell.frames.FrameStripModel
+import com.woka.feature.viewer.shell.frames.rememberViewerFrameTransport
 
 @Composable
 fun MediaViewerPlayer(
@@ -53,6 +54,7 @@ fun MediaViewerPlayer(
         // An animation's frames are not new pictures arriving, so the crossfade is keyed
         // on the file rather than on the poster it happens to be showing right now.
         val contentKey = if (strip.isAnimated) state.currentId else media?.poster ?: state.currentId
+        val frameTransport = rememberViewerFrameTransport(state, strip)
 
         if (media != null) {
             MediaViewerContent(
@@ -100,7 +102,8 @@ fun MediaViewerPlayer(
                 onVolumeChange = onVolumeChange,
                 soundBoost = soundBoost,
                 onToggleFullscreen = onToggleFullscreen,
-                navStartInset = navStartInset
+                navStartInset = navStartInset,
+                frameTransport = frameTransport
             )
         } else {
             // Was Material's indicator, which without a MaterialTheme resolved to
@@ -121,7 +124,8 @@ fun MediaViewerPlayer(
             thumbnails = thumbnails,
             showStrip = showStrip,
             bottomPadding = bottomOverlayPadding,
-            isFrozen = isFrozen
+            isFrozen = isFrozen,
+            transport = frameTransport
         )
 
         MediaViewerPlayerOverlays(
@@ -135,7 +139,8 @@ fun MediaViewerPlayer(
             onVolumeChange = onVolumeChange,
             soundBoost = soundBoost,
             onSoundBoostChange = onSoundBoostChange,
-            framePlaying = if (strip.isAnimated) state.isFramePlaying else null
+            framePlaying = if (strip.isAnimated) state.isFramePlaying else null,
+            frameTransport = frameTransport
         )
     }
 }

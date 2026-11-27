@@ -28,11 +28,10 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalTestApi::class)
 class FramePlaybackUiTest {
 
-    private fun animation(count: Int = 3, repeat: Int? = -1) = FrameStripModel(
+    private fun animation(count: Int = 3) = FrameStripModel(
         frames = (0 until count).map {
             ImageFrame(it, if (it == 0) FrameKind.Primary else FrameKind.Sequence, durationMs = 20)
-        },
-        repeatCount = repeat
+        }
     )
 
     /** A burst: frames, no durations. It must behave exactly as it always has. */
@@ -69,37 +68,6 @@ class FramePlaybackUiTest {
             setContent { FramePlaybackEffect(state, animation()) }
             mainClock.advanceTimeBy(500)
             assertEquals(0, state.frameIndex)
-        }
-    }
-
-    /** `repeatCount = 0` is skia's "play once", and it stops on the last frame. */
-    @Test
-    fun `a file that does not loop stops at its end`() {
-        val state = state()
-        onUi {
-            setContent { FramePlaybackEffect(state, animation(repeat = 0)) }
-            waitUntil("playback stops") { !state.isFramePlaying }
-            assertEquals(2, state.frameIndex, "it stopped somewhere other than the last frame")
-        }
-    }
-
-    /**
-     * And pressing play *there* has to show it again. The clock counts its remaining
-     * passes from where it resumes, so without a rewind the first step wraps, spends
-     * the last pass and stops on the frame it started from — a play button that
-     * visibly does nothing.
-     */
-    @Test
-    fun `a finished animation plays again when asked`() {
-        val state = state()
-        onUi {
-            setContent { FramePlaybackEffect(state, animation(repeat = 0)) }
-            waitUntil("playback stops") { !state.isFramePlaying }
-
-            state.isFramePlaying = true
-            waitUntil("it starts over") { state.frameIndex == 0 }
-            waitUntil("and runs to the end again") { !state.isFramePlaying }
-            assertEquals(2, state.frameIndex)
         }
     }
 

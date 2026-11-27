@@ -26,12 +26,21 @@ const SLOTS={
   subtitles:()=>`<button id="viewer-subtitles" class="icon-button" data-transport="subtitles" aria-label="Subtitles" aria-haspopup="dialog" aria-expanded="false">${icon('subtitles')}</button>`,
   volume:()=>`<button id="viewer-volume-button" class="icon-button" data-transport="volume" aria-label="Listening volume" aria-haspopup="dialog" aria-expanded="false">${icon('sound')}</button>`,
   settings:()=>`<button id="viewer-settings" class="icon-button" data-transport="settings" aria-label="Playback settings" aria-haspopup="dialog" aria-expanded="false">${icon('settings')}</button>`,
-  speed:()=>`<button id="viewer-settings" class="icon-button" data-transport="settings" aria-label="Playback speed" aria-haspopup="dialog" aria-expanded="false">${icon('speed')}</button>`,
+  speed:()=>`<button id="viewer-settings" class="icon-button" data-transport="speed" aria-label="Playback speed" aria-haspopup="dialog" aria-expanded="false">${icon('speed')}</button>`,
   fullscreen:()=>`<button id="viewer-fullscreen" class="icon-button" data-transport="fullscreen" aria-label="Focus view">${icon('expand')}</button>`,
   loop:()=>`<button id="viewer-loop" class="icon-button" data-transport="loop" aria-label="Repeat" aria-pressed="true">${icon('repeat')}</button>`
 };
 const SEEK=`<div class="seek-wrap"><input id="viewer-seek" class="media-range" type="range" data-transport="seek" aria-label="Playback position"><div id="seek-preview" class="seek-preview" hidden><div id="seek-image"></div><span id="seek-time"></span></div></div>`;
-let transportKind=null,showFrameNumbers=false;
+// A GIF's speed is its own and only for looking: 1× for every animation shown and on entering or
+// leaving the editor (RD-501). Loop opens On for every animation, never remembered.
+let transportKind=null,transportMedia=null,showFrameNumbers=false,gifSpeed=1;
+// The app's FrameSpeedScale: 0.25–5×, two log halves with 1× at the centre, pulled onto detents.
+const GIF_SPEED_DETENTS=[.5,.75,1,1.25,1.5,2,3,4,5];
+function gifSpeedFraction(speed){const s=clamp(speed,.25,5);return s<=1?.5*(Math.log2(s)+2)/2:.5+.5*Math.log2(s)/Math.log2(5);}
+function gifSpeedAt(fraction){
+  const f=clamp(fraction,0,1),raw=f<=.5?.25*4**(f*2):5**(f*2-1);
+  return GIF_SPEED_DETENTS.find(d=>Math.abs(Math.log2(d)-Math.log2(raw))<.06)??clamp(Math.round(raw*20)/20,.25,5);
+}
 const frameClock={playing:true,loop:true,running:false,last:0,carry:0};
 function transportHtml(kind){const slots=TRANSPORT[kind];return slots.left.map(slot=>SLOTS[slot]()).join('')+SEEK+slots.right.map(slot=>SLOTS[slot]()).join('');}
 function mediaKind(){const item=currentMedia();return item.gif?'gif':item.audioOnly?'audio':item.video?'video':null;}
@@ -51,9 +60,12 @@ function renderTransport(){
     transportKind=kind;
     bar.innerHTML=kind?transportHtml(kind):'';
     if(kind)$('#seek-image').innerHTML=photoSvg(currentMedia().view);
-    if(kind==='gif'){frameClock.playing=true;showFrameNumbers=false;}
+    if(kind==='gif')showFrameNumbers=false;
     if(kind==='video')syncWindowControls();
   }
+  const id=currentMedia().id;
+  if(kind==='gif'&&id!==transportMedia){frameClock.playing=true;frameClock.loop=true;gifSpeed=1;}
+  transportMedia=id;
   if(kind==='gif'&&frameClock.playing)startFrameClock();
   syncViewerPlayback();
 }
@@ -87,7 +99,7 @@ function startFrameClock(){
 }
 function frameTick(now){
   if(!frameClock.playing||!currentMedia().gif){frameClock.running=false;return;}
-  frameClock.carry+=(now-frameClock.last)/1000*frameRate()*viewerSpeed;frameClock.last=now;
+  frameClock.carry+=(now-frameClock.last)/1000*frameRate()*gifSpeed;frameClock.last=now;
   if(frameClock.carry>=1){
     const steps=Math.floor(frameClock.carry),count=frameCount();frameClock.carry-=steps;
     let next=(state.frameIndex||0)+steps;
@@ -127,6 +139,7 @@ function transportAction(name,node){
     subtitles:()=>chromePopover(node,'Subtitles',`<div class="segmented">${button('view-subtitles','Off','selected')}${button('view-subtitles','English')}</div>`),
     volume:()=>chromePopover(node,'Listening volume',`<label>Only on this device<input id="chrome-volume" class="media-range" type="range" min="0" max="100" value="${listenVolume}" aria-label="Listening volume"></label><div class="popover-value"><span id="volume-value">${listenVolume}%</span>${button('view-mute',listenVolume?'Mute':'Unmute','secondary')}</div>`),
     settings:()=>chromePopover(node,'Playback',`<label>Speed<select id="chrome-speed" aria-label="Playback speed">${[.5,1,1.5,2].map(speed=>`<option ${speed===viewerSpeed?'selected':''}>${speed}</option>`).join('')}</select></label>`),
+    speed:()=>chromePopover(node,'Playback',`<label>Speed<input id="chrome-gif-speed" class="media-range" type="range" min="0" max="1" step="0.001" value="${gifSpeedFraction(gifSpeed)}" aria-label="Playback speed"></label><div class="popover-value"><span id="gif-speed-value">${gifSpeed}×</span></div>`),
     fullscreen:()=>setWindowMode(windowMode==='window'?'fullscreen':'window')
   };
   commands[name]?.();
@@ -153,6 +166,11 @@ function initTransport(){
     if(node){$('#hdr-mode').firstChild.textContent=node.dataset.mode;closeChromePopover();}
     const subtitles=event.target.closest('[data-action="view-subtitles"]');
     if(subtitles)subtitles.parentElement.querySelectorAll('button').forEach(item=>item.classList.toggle('selected',item===subtitles));
+  });
+  document.addEventListener('input',event=>{
+    if(event.target.id!=='chrome-gif-speed')return;
+    gifSpeed=gifSpeedAt(+event.target.value);
+    $('#gif-speed-value').textContent=`${gifSpeed}×`;
   });
   document.addEventListener('keydown',event=>{
     if(event.key!==','&&event.key!=='.')return;

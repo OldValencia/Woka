@@ -9,6 +9,7 @@ import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
 import com.woka.core.data.MediaItem
+import com.woka.core.system.layoutFreeKey
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.engine.skipBy
 
@@ -62,6 +63,17 @@ internal fun handleFrameKey(event: KeyEvent, onStepFrame: (Int) -> Unit): Boolea
         Key.PageUp -> onStepFrame(-1)
     }
     return true
+}
+
+/**
+ * `,` / `.` — one frame back or on (RD-501): an animation always, a film while paused. Bare
+ * keys only, and only the press: [onFrameKey] answers whether anything moved, so a playing
+ * film leaves the key to whoever else wants it.
+ */
+internal fun handleOneFrameKey(event: KeyEvent, onFrameKey: (Int) -> Boolean): Boolean {
+    if (event.type != KeyEventType.KeyDown) return false
+    if (event.isCtrlPressed || event.isMetaPressed || event.isAltPressed) return false
+    return onFrameKey(if (event.layoutFreeKey() == Key.Period) 1 else -1)
 }
 
 /**

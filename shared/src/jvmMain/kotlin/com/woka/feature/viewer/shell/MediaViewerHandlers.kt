@@ -5,6 +5,8 @@ import com.woka.core.data.SettingsRepository
 import com.woka.core.data.WokaSettings
 import com.woka.core.data.isReadOnlyMedia
 import com.woka.feature.editor.EditorNoticeStatus
+import com.woka.feature.editor.EditorTarget
+import com.woka.feature.editor.FrameClockStart
 import com.woka.feature.viewer.shell.frames.FrameStripModel
 import java.io.File
 
@@ -21,13 +23,15 @@ internal fun viewerEditAction(
     activeItem: MediaItem?,
     state: MediaViewerState,
     strip: FrameStripModel,
-    onEdit: (String, Int) -> Unit
+    onEdit: (EditorTarget) -> Unit
 ): (() -> Unit)? = if (activeItem is MediaItem.Audio) null else editActionOf(isVideo) {
     val file = activeItem?.file ?: File(state.currentId)
     if (file.isReadOnlyMedia) {
         EditorNoticeStatus.show()
     } else {
-        onEdit(state.currentId, strip.editableFrameOf(state.frameIndex))
+        // An animation's clock goes with it, all but its speed (RD-501).
+        val clock = FrameClockStart(state.isFramePlaying, state.isFrameLooping, state.showFrameNumbers)
+        onEdit(EditorTarget(state.currentId, strip.editableFrameOf(state.frameIndex), clock))
     }
 }
 

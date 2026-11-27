@@ -124,7 +124,7 @@ internal fun EditorScreen(
         Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 EditorCanvasLayer(engine, session, tools, activeTool, canvasDocument, perFrame, canvasKeys, selection, peek)
-                if (perFrame != null) EditorFrameBand(perFrame, session.media.file)
+                EditorFrameBand(perFrame, engine.frameTransport, session.media.file)
                 EditorBottomPanel(session, engine, registry, skipped)
             }
             engine.Timeline(document, timelineScopeOf(session, tools, clipSelection, tabs, selection), Modifier.fillMaxWidth())

@@ -1,5 +1,7 @@
 package com.woka.feature.editor.core
 
+import com.woka.feature.editor.FrameClockStart
+
 /**
  * The single answer to "can this file be edited, and by what".
  *
@@ -24,7 +26,7 @@ interface EditorEngineFactory {
      * [frameIndex] to the first picture is worth more than SAM conversion for a
      * type whose only implementation is a class.
      */
-    fun create(path: String, frameIndex: Int = 0): EditorEngine?
+    fun create(path: String, frameIndex: Int = 0, clock: FrameClockStart = FrameClockStart()): EditorEngine?
 
     /**
      * What editing this file would cost it (§5.1).

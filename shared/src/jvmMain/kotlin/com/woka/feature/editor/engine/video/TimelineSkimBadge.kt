@@ -29,6 +29,7 @@ import com.woka.feature.editor.tools.trim.totalMs
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.usesHours
 import kotlin.math.roundToInt
+import com.woka.feature.viewer.video.engine.frameRate
 
 const val TIMELINE_SKIM_BADGE_TAG = "editor-timeline-skim-badge"
 

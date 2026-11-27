@@ -55,7 +55,7 @@ function refreshControlStates(){
 }
 function setViewer(viewing,animate=true){
   if(transitionBusy||viewing===viewerMode)return;
-  closeChromePopover();
+  closeChromePopover();gifSpeed=1;
   hideTooltip();playing=false;const picture=$('#picture');
   picture.getAnimations().forEach(animation=>animation.cancel());
   state.zoom=1;pan={x:0,y:0};updatePicture();const before=picture.getBoundingClientRect();

@@ -2,11 +2,10 @@ package com.woka.feature.viewer.shell
 
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import com.woka.app.AppDependencies
 import com.woka.core.data.MediaItem
-import com.woka.app.shell.LocalGlobalShortcuts
+import com.woka.feature.editor.EditorTarget
 import com.woka.feature.viewer.shell.frames.rememberFrameExportEntry
 import com.woka.feature.viewer.shell.frames.rememberFrameStrip
 import com.woka.feature.viewer.video.engine.probe.toColour
@@ -17,7 +16,7 @@ fun MediaViewerScreen(
     initialMediaId: String,
     mediaItems: List<MediaItem>,
     onClose: (String) -> Unit,
-    onEdit: (String, Int) -> Unit,
+    onEdit: (EditorTarget) -> Unit,
     thumbnails: ViewerThumbnails,
     isFrozen: Boolean = false
 ) {
@@ -69,33 +68,10 @@ fun MediaViewerScreen(
     val onSizeModeChange = sizeModeSetter(state, settings, settingsRepo)
     val toggleFullscreen = { enterFullscreen(state, videoState, activeItem, onClose) }
 
-    MediaViewerShortcutEffect(
-        state = state,
-        mediaItems = mediaItems,
-        videoState = videoState,
-        mediaVolume = mediaVolume,
-        globalShortcuts = LocalGlobalShortcuts.current,
-        onClose = onClose,
-        onVolumeChange = { mediaVolume = it },
-        onCopy = { copyAction() },
-        onInfo = { infoAction() },
-        onSizeModeChange = onSizeModeChange,
-        onToggleFullscreen = toggleFullscreen,
-        soundBoost = settings.soundBoost
-    )
-
-    val playerModifier = Modifier.mediaViewerPlayerModifier(
-        state = state,
-        videoState = videoState,
-        mediaItems = mediaItems,
-        mediaVolume = mediaVolume,
-        isFullscreen = isFullscreen,
-        focusRequester = focusRequester,
-        onClose = onClose,
-        copyAction = copyAction,
-        infoAction = infoAction,
-        onSizeModeChange = onSizeModeChange,
-        onVolumeChange = { vol -> mediaVolume = vol; state.volumeEvent.raise() },
+    val playerModifier = viewerKeyedModifier(
+        state, mediaItems, videoState, mediaVolume, isFullscreen, focusRequester,
+        onClose, copyAction, infoAction, onSizeModeChange,
+        setVolume = { mediaVolume = it },
         onToggleFullscreen = toggleFullscreen,
         soundBoost = settings.soundBoost
     )

@@ -56,7 +56,7 @@ internal fun EditorHost(
     var frameIndex by remember(target.path) { mutableStateOf(target.frameIndex) }
 
     val engine: EditorEngine? = remember(target.path, frameIndex) {
-        dependencies.factory.create(target.path, frameIndex)
+        dependencies.factory.create(target.path, frameIndex, target.clock)
     }
 
     if (engine == null) {

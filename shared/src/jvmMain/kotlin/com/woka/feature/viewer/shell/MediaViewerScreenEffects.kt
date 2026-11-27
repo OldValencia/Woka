@@ -51,8 +51,10 @@ internal fun MediaViewerActiveItemEffects(
         // Before the decode below is keyed on it, and with no suspension in
         // between, so the load never asks for frame 4 of a file that has one.
         state.frameIndex = 0
-        // An animation opens playing; a photograph never asks (animated-stills).
+        // An animation opens playing, looping, at 1×; a photograph never asks (RD-501).
         state.isFramePlaying = true
+        state.isFrameLooping = true
+        state.frameSpeed = 1f
         // Returning from fullscreen (PiP) is the same file: carry the size state
         // back instead of resetting it to the global preset.
         val fromPip = PipManager.isTransitioningToMain &&

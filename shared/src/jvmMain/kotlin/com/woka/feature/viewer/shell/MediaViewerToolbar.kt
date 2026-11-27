@@ -17,7 +17,10 @@ import androidx.compose.ui.unit.dp
 import com.woka.core.data.MediaItem
 import com.woka.core.data.isPlayable
 import com.woka.core.ui.theme.Theme
+import com.woka.core.ui.components.frames.FrameTransport
+import com.woka.feature.viewer.video.FrameTransportBar
 import com.woka.feature.viewer.video.MediaViewerVideoControls
+import com.woka.feature.viewer.video.viewerTransport
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -38,7 +41,9 @@ fun MediaViewerToolbar(
     soundBoost: Boolean = false,
     onToggleFullscreen: () -> Unit,
     /** Left inset for the Prev arrow: the frame strip stands where it does. */
-    navStartInset: Dp = 0.dp
+    navStartInset: Dp = 0.dp,
+    /** An animation's clock (RD-501); null for anything that does not play by frames. */
+    frameTransport: FrameTransport? = null
 ) {
     // Two linear scans over the playlist; unremembered they ran on every
     // recomposition, which — before the backdrop moved out below — meant on every
@@ -66,7 +71,7 @@ fun MediaViewerToolbar(
                 hasPrev = hasPrev,
                 hasNext = hasNext,
                 hasCarousel = chrome.isCarouselEnabled && mediaItems.size > 1 && !chrome.isFullscreen,
-                isVideo = currentItem?.isPlayable == true
+                isVideo = currentItem?.isPlayable == true || frameTransport != null
             )
             .background(Theme.colors.background.copy(alpha = 0.35f)),
         contentAlignment = Alignment.TopCenter
@@ -114,6 +119,16 @@ fun MediaViewerToolbar(
                     canFullscreen = currentItem is MediaItem.Video,
                     onToggleFullscreen = onToggleFullscreen,
                     soundBoost = soundBoost
+                )
+            } else if (frameTransport != null && currentItem != null) {
+                FrameTransportBar(
+                    transport = frameTransport,
+                    colors = viewerTransport(),
+                    tooltip = { text, content -> SimpleTooltip(text, content) },
+                    loadPreview = { frame -> thumbnails.preview(currentItem, frame) },
+                    modifier = Modifier.padding(horizontal = 32.dp, vertical = 8.dp),
+                    onSpeedHover = { hover.setHovered(HoverTarget.Speed, it) },
+                    onSeekHover = { hover.setHovered(HoverTarget.Seeker, it) }
                 )
             }
 

@@ -3,6 +3,7 @@ package com.woka.feature.viewer
 import androidx.compose.runtime.Composable
 import com.woka.core.data.MediaItem
 import com.woka.core.ui.image.ImageBitmapCache
+import com.woka.feature.editor.EditorTarget
 import com.woka.feature.viewer.shell.MediaThumbnails
 import com.woka.feature.viewer.shell.MediaViewerScreen
 import com.woka.feature.viewer.shell.ViewerThumbnails
@@ -24,7 +25,7 @@ actual fun NativeMediaViewer(
     initialId: String,
     mediaItems: List<MediaItem>,
     onClose: (String) -> Unit,
-    onEdit: (String, Int) -> Unit,
+    onEdit: (EditorTarget) -> Unit,
     isFrozen: Boolean
 ) {
     MediaViewerScreen(

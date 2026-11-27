@@ -116,6 +116,7 @@ class EditorFrameStripUiTest {
         onAllNodesWithContentDescription("Frame 1").assertCountEquals(0)
     }
 
+    /** Not from the scope's controls: an animation's strip is its engine's (`EditorGifTransportUiTest`). */
     @Test
     fun `an animation gets none either`() =
         onStrip(ANIM_GIF, EditorFrames(count = ANIM_FRAME_COUNT, playsAsAnimation = true)) {

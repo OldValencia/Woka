@@ -4,6 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.Dp
 import com.woka.core.data.MediaItem
+import com.woka.core.ui.components.frames.FrameTransport
+import com.woka.feature.viewer.video.FrameSpeedPopover
 import com.woka.feature.viewer.video.PlayerSettingsOverlay
 import com.woka.feature.viewer.video.SubtitleVerticalOverlay
 import com.woka.feature.viewer.video.VolumeVerticalOverlay
@@ -39,7 +41,9 @@ internal fun MediaViewerPlayerOverlays(
      * receives the same tap and the same Space as everything else, and answering it
      * with a pause glyph is the HUD claiming something stopped that never moved.
      */
-    framePlaying: Boolean? = null
+    framePlaying: Boolean? = null,
+    /** An animation's clock, for its speed popover (RD-501). */
+    frameTransport: FrameTransport? = null
 ) {
     // Read unconditionally: inside the `||` below it would be a conditional
     // composable call, which Compose cannot key.
@@ -79,6 +83,15 @@ internal fun MediaViewerPlayerOverlays(
             alignment = alignment,
             player = video.player,
             onHover = { state.hover.setHovered(HoverTarget.Subtitle, it) }
+        )
+    }
+    frameTransport?.let { transport ->
+        FrameSpeedPopover(
+            isVisible = state.hover.visibleTarget == HoverTarget.Speed,
+            transport = transport,
+            bottomPadding = bottomPadding,
+            alignment = alignment,
+            onHover = { state.hover.setHovered(HoverTarget.Speed, it) }
         )
     }
     // Any player, a track's included (AP-003): its ⚙ is where Repeat and Shuffle live.

@@ -1,31 +1,23 @@
 package com.woka.feature.viewer.video
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsHoveredAsState
-import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
-import com.woka.core.ui.icons.Icons
-import com.woka.core.ui.theme.Theme
 import com.woka.feature.viewer.shell.SimpleTooltip
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.engine.togglePlayPause
-import org.jetbrains.compose.resources.painterResource
 
+/**
+ * The transport for a film and a track (RD-501, `#viewer/video`, `#viewer/track`): the round
+ * knob, the time and the seek on the left, the per-kind slots on the right. An animation's
+ * bar is `FrameTransportBar`, the same box with its own slots.
+ */
 @Composable
 fun MediaViewerVideoControls(
     videoState: VideoPlayerState?,
@@ -42,51 +34,20 @@ fun MediaViewerVideoControls(
     /** Passed straight through to the speaker's wheel — see `MediaViewerVolumeControl`. */
     soundBoost: Boolean = false
 ) {
+    val colors = viewerTransport()
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 32.dp, vertical = 8.dp)
-            .height(48.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(Theme.colors.surfaceElevated.copy(alpha = 0.5f))
-            .padding(horizontal = 16.dp),
+            .transportBar(colors),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+        horizontalArrangement = Arrangement.spacedBy(TransportTokens.gap)
     ) {
         val isPlaying = videoState?.isPlaying == true
-        
-        val interactionSource = remember { MutableInteractionSource() }
-        val isHovered by interactionSource.collectIsHoveredAsState()
-        val isPressed by interactionSource.collectIsPressedAsState()
-        
-        val iconAlpha by animateFloatAsState(
-            when {
-                isPressed -> 0.5f
-                isHovered -> 0.8f
-                else -> 1f
-            }
-        )
-        
         SimpleTooltip(if (isPlaying) "Pause   ·   Space" else "Play   ·   Space") {
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .pointerHoverIcon(PointerIcon.Hand)
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = null
-                    ) { videoState?.togglePlayPause() },
-                contentAlignment = Alignment.Center
-            ) {
-                Image(
-                    painter = painterResource(if (isPlaying) Icons.Static.Pause else Icons.Static.PlayFill),
-                    contentDescription = "Play/Pause",
-                    modifier = Modifier.size(20.dp),
-                    colorFilter = ColorFilter.tint(Theme.colors.textPrimary.copy(alpha = iconAlpha))
-                )
-            }
+            PlayKnob(isPlaying, colors.knob, "viewer-transport-play") { videoState?.togglePlayPause() }
         }
-        
+
         // The play head is handed over as a lambda, never read here: `durationMs`
         // changes once per file, `currentPositionMs` changes at the presenter's
         // rate and used to recompose this entire row with it (§10.5).
@@ -103,9 +64,9 @@ fun MediaViewerVideoControls(
         } else {
             Spacer(Modifier.weight(1f))
         }
-        
+
         Row(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(TransportTokens.gap),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Hidden entirely when the file has no subtitle tracks (§2.2); the time
@@ -124,26 +85,7 @@ fun MediaViewerVideoControls(
                 soundBoost = soundBoost
             )
             PlayerSettingsControl(onHoverChange = onSettingsHoverChange)
-            if (canFullscreen) SimpleTooltip(if (isFullscreen) "Exit Fullscreen   ·   F" else "Fullscreen   ·   F") {
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .pointerHoverIcon(PointerIcon.Hand)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) { onToggleFullscreen() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Image(
-                        painter = painterResource(if (isFullscreen) Icons.Static.Collapse else Icons.Static.Expand),
-                        contentDescription = "Fullscreen",
-                        modifier = Modifier.size(16.dp),
-                        colorFilter = ColorFilter.tint(Theme.colors.textPrimary.copy(alpha = iconAlpha))
-                    )
-                }
-            }
+            if (canFullscreen) MediaViewerFullscreenButton(isFullscreen, onToggleFullscreen)
         }
     }
 }

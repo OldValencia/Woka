@@ -24,11 +24,16 @@ import com.woka.core.ui.theme.Theme
  * `Subtitles Volume Settings Fullscreen` in `MediaViewerVideoControls`.
  * They were three magic numbers in three files; a change to the icon order has to
  * be reflected here and nowhere else.
+ *
+ * Each is its icon's right edge less 24 dp, measured from the window's edge across the
+ * bar's 32 dp inset, 12 dp padding, 28 dp buttons and 10 dp gaps (RD-501). [FrameSpeed] is an
+ * animation's last slot (`FrameTransportBar`).
  */
 object PopoverAnchor {
-    val Subtitles: Dp = 136.dp
+    val Subtitles: Dp = 134.dp
     val Volume: Dp = 96.dp
-    val Settings: Dp = 60.dp
+    val Settings: Dp = 58.dp
+    val FrameSpeed: Dp = 20.dp
 }
 
 /**

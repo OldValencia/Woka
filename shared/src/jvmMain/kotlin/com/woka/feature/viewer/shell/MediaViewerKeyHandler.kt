@@ -10,6 +10,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import com.woka.core.data.MediaItem
+import com.woka.core.system.layoutFreeKey
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.engine.togglePlayPause
 import com.woka.core.data.volumeCeiling
@@ -30,12 +31,13 @@ fun Modifier.mediaViewerKeyHandler(
     onZoom: (ZoomKey) -> Unit,
     onStepFrame: (Int) -> Unit,
     onToggleFullscreen: () -> Unit,
-    soundBoost: Boolean = false
+    soundBoost: Boolean = false,
+    onFrameKey: (Int) -> Boolean = { false }
 ): Modifier = this.onKeyEvent { event ->
     handleMediaViewerKeyEvent(
         event, currentId, mediaItems, videoState, mediaVolume,
         onClose, onSkip, onNavigate, onVolumeChange, onPlayPause, onCopy, onInfo, onZoom,
-        onStepFrame, onToggleFullscreen, soundBoost
+        onStepFrame, onToggleFullscreen, soundBoost, onFrameKey
     )
 }
 
@@ -62,10 +64,13 @@ fun handleMediaViewerKeyEvent(
     onStepFrame: (Int) -> Unit = {},
     onToggleFullscreen: () -> Unit = {},
     /** So ↑/↓ stop where the slider stops, rather than at 100 % regardless. */
-    soundBoost: Boolean = false
+    soundBoost: Boolean = false,
+    /** `,` / `.` (RD-501): answers whether a frame was stepped, so a playing film lets the key go. */
+    onFrameKey: (Int) -> Boolean = { false }
 ): Boolean {
     val ceiling = volumeCeiling(soundBoost)
-    return when (event.key) {
+    // `,` / `.` by the key, not by what the layout types on it (RD-501).
+    return when (event.layoutFreeKey()) {
         Key.Escape -> {
             if (event.type == KeyEventType.KeyDown) onClose()
             true
@@ -75,6 +80,7 @@ fun handleMediaViewerKeyEvent(
         Key.DirectionRight ->
             handleArrowKey(event, currentId, mediaItems, videoState, 1, onSkip, onNavigate)
         Key.PageUp, Key.PageDown -> handleFrameKey(event, onStepFrame)
+        Key.Comma, Key.Period -> handleOneFrameKey(event, onFrameKey)
         Key.DirectionUp -> {
             if (event.type == KeyEventType.KeyDown && videoState?.hasAudio != false) {
                 onVolumeChange((mediaVolume + 0.1f).coerceIn(0f, ceiling))

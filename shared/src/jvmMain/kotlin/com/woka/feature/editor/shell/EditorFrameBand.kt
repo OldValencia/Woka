@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.woka.core.ui.components.frames.FRAME_STRIP_CARD
+import com.woka.core.ui.components.frames.FrameTransport
 import java.io.File
 
 /**
@@ -18,9 +19,16 @@ import java.io.File
  * **It and the scope line appear together** — both behind `EditorFrames.allowsPerFrame`,
  * through the one `perFrame` value `EditorScreen` builds: the strip chooses which picture
  * is being edited, the line at the inspector's head says whom the edit is for.
+ *
+ * **An animation has no scope** (ME-138) and gets its own band instead: the strip and the
+ * viewer's transport, in the room's colours ([EditorAnimationBand], RD-501).
  */
 @Composable
-internal fun BoxScope.EditorFrameBand(controls: EditorFrameControls, file: File) {
+internal fun BoxScope.EditorFrameBand(controls: EditorFrameControls?, transport: FrameTransport?, file: File) {
+    if (controls == null) {
+        transport?.takeIf { it.frames.isNotEmpty() }?.let { EditorAnimationBand(it, file) }
+        return
+    }
     // A film's clips are chosen on its own band, under the picture (ME-215).
     if (controls.frames.clips) return
     EditorFrameStrip(
@@ -42,5 +50,16 @@ internal fun BoxScope.EditorFrameBand(controls: EditorFrameControls, file: File)
  * the reason it is a padding rather than a smaller canvas is that the picture's own
  * coordinate space must not move (ME-116's zoom fidelity depends on it).
  */
-internal fun canvasInsetFor(controls: EditorFrameControls?): Dp =
-    if (controls != null && !controls.frames.clips) FRAME_STRIP_CARD else 0.dp
+internal fun canvasInsetFor(controls: EditorFrameControls?, transport: FrameTransport?): Dp =
+    if (controls != null && !controls.frames.clips || transport != null) FRAME_STRIP_CARD else 0.dp
+
+/**
+ * What the canvas gives up at its foot: an animation's bar under the picture
+ * (`.gif-media .stage { padding-bottom: 94px }`, RD-501), the room's own margin otherwise.
+ * Taken from the moment the engine says it is an animation, not when its frames land, so
+ * the picture does not jump when the bar appears.
+ */
+internal fun canvasBottomFor(transport: FrameTransport?): Dp =
+    if (transport != null) ANIMATION_BAR_INSET else EditorTokens.Canvas.topInset
+
+private val ANIMATION_BAR_INSET = 94.dp

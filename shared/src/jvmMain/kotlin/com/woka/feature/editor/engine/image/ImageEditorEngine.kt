@@ -3,9 +3,13 @@ package com.woka.feature.editor.engine.image
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.MediaKind
 import com.woka.core.data.StillColorInfo
+import com.woka.core.ui.components.frames.FrameTransport
+import com.woka.core.ui.components.frames.step
+import com.woka.feature.editor.FrameClockStart
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditorFrames
@@ -27,7 +31,9 @@ internal class ImageEditorEngine(
     private val frameIndex: Int,
     private val registry: EditorToolRegistry,
     /** Passed in, never re-derived: the factory has already asked (§5.1). */
-    capability: EditCapability
+    capability: EditCapability,
+    /** An animation's clock as the viewer left it (RD-501). */
+    clock: FrameClockStart = FrameClockStart()
 ) : ImageEditorOutputs(file, frameIndex, capability) {
 
     override val kind = MediaKind.Image
@@ -57,7 +63,10 @@ internal class ImageEditorEngine(
     override fun previewMatrix(document: EditDocument): Matrix = recipe(document).matrix
 
     /** Whether the canvas is running, when the file is something that runs. */
-    private val playback = EditorPlayback()
+    private val playback = EditorPlayback(frameIndex, clock)
+
+    /** An animation's transport (RD-501); a burst's frames are walked by the scope's strip. */
+    override val frameTransport: FrameTransport? get() = playback.takeIf { frames.playsAsAnimation }
 
     /** Measured off the proxy the canvas already decoded, never by decoding again. */
     private val measured = SourceStatsHolder()
@@ -65,6 +74,13 @@ internal class ImageEditorEngine(
     override val stats: SourceStats? get() = measured.stats
 
     override fun togglePlayback() = playback.toggle()
+
+    /** `,` / `.` step an animation, always (RD-501); a still leaves them alone. */
+    override fun timelineKey(key: Key): Boolean {
+        val transport = frameTransport?.takeIf { key == Key.Comma || key == Key.Period } ?: return false
+        transport.step(if (key == Key.Period) 1 else -1)
+        return true
+    }
 
     /**
      * The proxy is remembered on the file, **not on the document**: editing changes the

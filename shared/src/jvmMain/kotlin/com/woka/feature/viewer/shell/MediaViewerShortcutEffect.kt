@@ -4,9 +4,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import com.woka.core.data.MediaItem
 import com.woka.app.shell.GlobalShortcutState
+import com.woka.app.shell.LocalGlobalShortcuts
 import com.woka.feature.viewer.video.engine.VideoPlayerState
+import com.woka.feature.viewer.video.rememberResultClock
 
 /**
  * Registers the viewer shortcuts app-wide so they fire in the key-event preview
@@ -38,6 +42,8 @@ internal fun MediaViewerShortcutEffect(
     val curVolumeChange by rememberUpdatedState(onVolumeChange)
     val curSizeModeChange by rememberUpdatedState(onSizeModeChange)
     val curToggleFullscreen by rememberUpdatedState(onToggleFullscreen)
+    // A cut film steps on the result's timeline, as its slider reads (RD-501).
+    val curClock by rememberUpdatedState(rememberResultClock(videoState))
 
     DisposableEffect(globalShortcuts) {
         // Give back what was found rather than clearing the slot (ME-124), symmetric
@@ -70,9 +76,62 @@ internal fun MediaViewerShortcutEffect(
                 onInfo = { curInfo() },
                 onZoom = { key -> state.applyZoomKey(key) { curSizeModeChange(it) } },
                 onToggleFullscreen = { curToggleFullscreen() },
-                soundBoost = curBoost
+                soundBoost = curBoost,
+                onFrameKey = { dir -> state.stepOneFrame(curVideoState, curClock, dir) }
             )
         }
         onDispose { globalShortcuts.onPreviewKey = previous }
     }
+}
+
+/**
+ * Both of the viewer's key paths: the window-wide preview hook above and the focused player's
+ * own handler, which take the same actions. One call, split out of `MediaViewerScreen` when
+ * RD-501 needed a line there; [setVolume] is the bare write, each path adds its own flash.
+ */
+@Composable
+internal fun viewerKeyedModifier(
+    state: MediaViewerState,
+    mediaItems: List<MediaItem>,
+    videoState: VideoPlayerState?,
+    mediaVolume: Float,
+    isFullscreen: Boolean,
+    focusRequester: FocusRequester,
+    onClose: (String) -> Unit,
+    copyAction: () -> Unit,
+    infoAction: () -> Unit,
+    onSizeModeChange: (SizeMode) -> Unit,
+    setVolume: (Float) -> Unit,
+    onToggleFullscreen: () -> Unit,
+    soundBoost: Boolean
+): Modifier {
+    MediaViewerShortcutEffect(
+        state = state,
+        mediaItems = mediaItems,
+        videoState = videoState,
+        mediaVolume = mediaVolume,
+        globalShortcuts = LocalGlobalShortcuts.current,
+        onClose = onClose,
+        onVolumeChange = setVolume,
+        onCopy = { copyAction() },
+        onInfo = { infoAction() },
+        onSizeModeChange = onSizeModeChange,
+        onToggleFullscreen = onToggleFullscreen,
+        soundBoost = soundBoost
+    )
+    return Modifier.mediaViewerPlayerModifier(
+        state = state,
+        videoState = videoState,
+        mediaItems = mediaItems,
+        mediaVolume = mediaVolume,
+        isFullscreen = isFullscreen,
+        focusRequester = focusRequester,
+        onClose = onClose,
+        copyAction = copyAction,
+        infoAction = infoAction,
+        onSizeModeChange = onSizeModeChange,
+        onVolumeChange = { vol -> setVolume(vol); state.volumeEvent.raise() },
+        onToggleFullscreen = onToggleFullscreen,
+        soundBoost = soundBoost
+    )
 }

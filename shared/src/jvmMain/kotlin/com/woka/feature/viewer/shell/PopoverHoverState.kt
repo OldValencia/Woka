@@ -17,8 +17,10 @@ import kotlin.time.Duration.Companion.milliseconds
  * preview is the clearest case there is of the UI being in use. Without it the bar
  * hid itself out from under the cursor after the auto-hide delay, since a
  * *stationary* pointer emits no Move events to keep the timer alive.
+ *
+ * [Speed] is an animation's speed popover (RD-501), opened by hover like ⚙.
  */
-enum class HoverTarget { None, Volume, Subtitle, Settings, Seeker }
+enum class HoverTarget { None, Volume, Subtitle, Settings, Seeker, Speed }
 
 /**
  * Single source of truth for the Volume, Subtitle and Settings hover popovers.

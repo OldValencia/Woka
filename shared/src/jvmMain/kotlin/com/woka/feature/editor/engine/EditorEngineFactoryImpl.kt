@@ -2,6 +2,7 @@ package com.woka.feature.editor.engine
 
 import com.woka.core.data.MediaKind
 import com.woka.core.data.mediaKind
+import com.woka.feature.editor.FrameClockStart
 import com.woka.feature.editor.core.EditCapability
 import com.woka.feature.editor.core.EditorEngine
 import com.woka.feature.editor.core.EditorEngineFactory
@@ -82,7 +83,7 @@ class EditorEngineFactoryImpl(
      * format with neither a carrier nor an encoder now has no engine at all, so
      * both doors grey out before anything is edited.
      */
-    override fun create(path: String, frameIndex: Int): EditorEngine? {
+    override fun create(path: String, frameIndex: Int, clock: FrameClockStart): EditorEngine? {
         val file = File(path)
         val capability = capability(path)
         if (capability == EditCapability.Unavailable) return null
@@ -92,7 +93,7 @@ class EditorEngineFactoryImpl(
         return when (file.mediaKind()) {
             // `capability` stays cheap for menus; the box walk it skips is asked once, here.
             MediaKind.Video -> VideoEditorEngine(file, registry, if (carriesWhole(file)) capability else EditCapability.RenderOnly)
-            else -> ImageEditorEngine(file, frameIndex, registry, capability)
+            else -> ImageEditorEngine(file, frameIndex, registry, capability, clock)
         }
     }
 }

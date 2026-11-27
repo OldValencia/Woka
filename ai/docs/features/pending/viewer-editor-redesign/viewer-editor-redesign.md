@@ -23,8 +23,9 @@ the tree as it is (`tickets.md` §1). The prototype itself is finished —
 | [RD-205 — Straighten](tickets/RD-205-straighten.md) | **done** 2026-11-26 |
 | [RD-301 — Timeline](tickets/RD-301-timeline.md) | **done** 2026-11-26 |
 | [RD-302 — Clip and Sound tabs, the scope line](tickets/RD-302-clip-sound-tabs.md) | **done** 2026-11-26 |
-| [RD-401 — Ways out](tickets/RD-401-ways-out.md) | implemented 2026-11-27, awaiting the author's check by hand |
-| RD-501…RD-802 | [backlog](tickets/backlog.md) |
+| [RD-401 — Ways out](tickets/RD-401-ways-out.md) | **done** 2026-11-27 |
+| [RD-501 — One transport and the GIF](tickets/RD-501-one-transport-gif.md) | implemented 2026-11-27, awaiting the author's check by hand |
+| RD-502…RD-802 | [backlog](tickets/backlog.md) |
 
 ## The spec, scene by scene
 
@@ -156,4 +157,10 @@ pill with HDR met `Original` at 960 px, measured 2026-11-25), so the window's mi
 | 2026-11-27 | SDR in `Create a copy` | No switch: a copy follows the pill's colour mode, with a note when that retones the picture | The author: every encode is SDR with the screen's tone map; a separate switch moved nothing for a photo and only a cuts-only film for a video |
 | 2026-11-27 | `Custom` limits | Photo 1–16384 px a side; video even, within 4096 × 2304; enlarging allowed | The author |
 | 2026-11-27 | `Create a copy` and the editor | The editor stays open; the progress toast reports over it | As the prototype; only a `RenderOnly` file's `Done` closes first |
+| 2026-11-27 | GIF Loop | On at every open, not remembered; the file's repeat count is not read by the clock; Off stops on the last frame | The author: a GIF is a looping picture; finite ones are not met in practice |
+| 2026-11-27 | GIF speed | `PlayerSpeedSlider` in a popover, the animation's own value, 1× at every open in viewer and editor; kept as an edit in 1.1.0 | The author: no saving yet, many tickets left |
+| 2026-11-27 | Loop On colours | Viewer accent on `accentSoft`; editor in the room (`accentText` on `accentFill`, seek `accent`, the timeline's knob) | The prototype's accent-on-`accentEditorSoft` was an accident of `button.selected` |
+| 2026-11-27 | Transport time labels | 15 sp, the prototype follows (15 px, 60 px fixed width) | The author: at 13 the label read as a caption |
+| 2026-11-27 | GIF speed scale | 0.25–5×, two log halves with 1× at the centre, detents 0.5…5×; the film's slider stays 0.5–2× | The author, after trying 0.5–2× |
+| 2026-11-27 | GIF into the editor | Frame, play/pause, Loop and the label's mode carried; speed starts at 1× | The author |
 | 2026-11-26 | Markup and a clip | Markup is the whole film's: opening it clears the clip, a shape is a crumb; a clip's stored markup left to the readers | The author: as the prototype; the Markup lane is in film time |

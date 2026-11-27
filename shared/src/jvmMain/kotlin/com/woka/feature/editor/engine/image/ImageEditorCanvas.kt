@@ -59,7 +59,7 @@ internal fun ImageCanvas(
      */
     onProxy: suspend (ImageBitmap) -> Unit = {}
 ) {
-    val source = rememberCanvasSource(file, frameIndex, playback, sourceSize)
+    val source = rememberCanvasSource(file, frameIndex, playback, sourceSize, runsClock = !fill)
     if (source == null) {
         // Until the editor's own copy is decoded, the picture the viewer was showing — the
         // same file with the same stored edit, already in memory — rather than an empty room
@@ -104,9 +104,11 @@ internal fun rememberCanvasSource(
     file: File,
     frameIndex: Int,
     playback: EditorPlayback,
-    sourceSize: IntSize
+    sourceSize: IntSize,
+    /** False for a thumbnail, which shows the canvas's frame and runs no clock of its own. */
+    runsClock: Boolean = true
 ): ImageBitmap? {
-    val frame = rememberEditorFrame(file, frameIndex, playback)
+    val frame = rememberEditorFrame(file, frameIndex, playback, runsClock)
     val proxy = frame.bitmap
     val proxyScale = if (proxy != null && sourceSize.width > 0) {
         proxy.width.toFloat() / sourceSize.width

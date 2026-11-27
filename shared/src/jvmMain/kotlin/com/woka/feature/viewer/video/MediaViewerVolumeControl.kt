@@ -78,7 +78,7 @@ fun MediaViewerVolumeControl(
         SimpleTooltip(if (!hasAudio) "Audio track unavailable" else if (mediaVolume == 0f) "Unmute" else "Mute") {
             Box(
                 modifier = Modifier
-                    .size(32.dp)
+                    .size(TransportTokens.button)
                     .clip(RoundedCornerShape(6.dp))
                     .pointerHoverIcon(PointerIcon.Hand)
                     // Through the player, so the button and the M shortcut share one
@@ -92,7 +92,7 @@ fun MediaViewerVolumeControl(
                 Image(
                     painter = painterResource(speakerIcon),
                     contentDescription = "Volume",
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(TransportTokens.glyph),
                     colorFilter = ColorFilter.tint(speakerTint)
                 )
             }

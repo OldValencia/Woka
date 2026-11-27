@@ -34,7 +34,6 @@ private const val BUDGET_BYTES = 96L * 1024 * 1024
  */
 internal class EditorAnimation(
     val frames: List<ImageFrame>,
-    val repeatCount: Int?,
     private val bitmaps: Map<Int, ImageBitmap>
 ) {
     /** Null for a frame the walk did not reach, which falls back to the still. */
@@ -66,7 +65,7 @@ internal fun editorAnimationOf(file: File): EditorAnimation? {
     }.getOrElse { return null }
 
     if (bitmaps.isEmpty()) return null
-    return EditorAnimation(set.frames, set.repeatCount, bitmaps)
+    return EditorAnimation(set.frames, bitmaps)
 }
 
 /** What the whole animation will occupy once every frame is capped to the proxy size. */

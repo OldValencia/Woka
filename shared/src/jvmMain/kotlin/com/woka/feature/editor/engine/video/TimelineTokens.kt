@@ -30,8 +30,6 @@ internal object TimelineTokens {
     val transportStart = 14.dp
     val transportTop = 10.dp
     val transportBottom = 6.dp
-    val playSize = 32.dp
-    val playGlyph = 15.dp
     val timeGap = 6.dp
     val buttonHeight = 32.dp
     val buttonRadius = RoundedCornerShape(8.dp)

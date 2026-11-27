@@ -16,7 +16,20 @@ import com.woka.feature.editor.core.EditorEngineFactory
  */
 data class EditorTarget(
     val path: String,
-    val frameIndex: Int = 0
+    val frameIndex: Int = 0,
+    /** An animation's clock as the viewer left it (RD-501); the defaults are a fresh open. */
+    val clock: FrameClockStart = FrameClockStart()
+)
+
+/**
+ * How an animation's clock starts in the editor (RD-501): the viewer's play/pause, Loop and
+ * label mode, carried as the prototype's one clock carries them. Speed is not here — it
+ * opens at 1× in the editor whatever the viewer played at (the author, 2026-11-27).
+ */
+data class FrameClockStart(
+    val playing: Boolean = true,
+    val loop: Boolean = true,
+    val frameNumbers: Boolean = false
 )
 
 /**

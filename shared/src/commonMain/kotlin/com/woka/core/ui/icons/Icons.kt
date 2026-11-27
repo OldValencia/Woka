@@ -22,6 +22,10 @@ object Icons {
         val Pause = Res.drawable.pause
         val SkipForward5 = Res.drawable.skip_forward_5_clockwise
         val SkipBackward5 = Res.drawable.skip_backward_5_counterclockwise
+        /** An animation's transport (RD-501): loop, and a frame back / forward. */
+        val Repeat = Res.drawable.repeat
+        val FrameBack = Res.drawable.skip_back
+        val FrameForward = Res.drawable.skip_forward
         val SpeakerSlashFill = Res.drawable.speaker_slash_fill
         val SpeakerWave1Fill = Res.drawable.speaker_wave_1_fill
         val SpeakerWave2Fill = Res.drawable.speaker_wave_2_fill

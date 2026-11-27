@@ -13,6 +13,9 @@ private const val DEFAULT_FRAME_MS = 100
 /** Below this, GIFs in the wild mean "the shortest you will actually draw". */
 private const val MINIMUM_FRAME_MS = 20
 
+/** A guard, not a range: the slider stops at 0.5×, and a zero must never divide. */
+private const val MINIMUM_SPEED = 0.1f
+
 /**
  * The clock an animation runs on, as a suspend loop over nothing but frames.
  *
@@ -27,13 +30,17 @@ private const val MINIMUM_FRAME_MS = 20
  *
  * Returns immediately for anything that is not an animation: a photograph, a HEIC burst
  * and a multi-page TIFF have frames and no timings, so they never get a clock at all.
+ *
+ * [speed] is read before every delay rather than once, so the transport's speed slider
+ * (RD-501) takes effect from the next frame instead of from the next play.
  */
 suspend fun playFrames(
     frames: List<ImageFrame>,
     repeatCount: Int?,
     frameAt: () -> Int,
     show: (Int) -> Unit,
-    onFinished: () -> Unit = {}
+    onFinished: () -> Unit = {},
+    speed: () -> Float = { 1f }
 ) {
     // A Live Photo's motion entry sits at the end of the strip carrying no duration,
     // and running the clock into it would try to play a `.mov` as a still. Frames that
@@ -49,7 +56,7 @@ suspend fun playFrames(
 
     while (true) {
         val current = playable.firstOrNull { it.index == frameAt() } ?: return
-        delay(current.delayMs().toLong().milliseconds)
+        delay((current.frameDelayMs() / speed().coerceAtLeast(MINIMUM_SPEED)).toLong().milliseconds)
 
         val next = playable.nextAfter(frameAt())
         if (next.index <= frameAt()) {
@@ -65,7 +72,11 @@ suspend fun playFrames(
     }
 }
 
-private fun ImageFrame.delayMs(): Int =
+/**
+ * How long this frame stays on screen at 1× — the one rule the clock waits by and the
+ * transport's time labels count with (RD-501), so the label and the picture agree.
+ */
+fun ImageFrame.frameDelayMs(): Int =
     (durationMs ?: DEFAULT_FRAME_MS).coerceAtLeast(MINIMUM_FRAME_MS)
 
 /**

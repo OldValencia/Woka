@@ -26,9 +26,7 @@ import java.io.File
  */
 data class FrameStripModel(
     val frames: List<ImageFrame> = emptyList(),
-    val motion: File? = null,
-    /** Skia's own numbers: `-1` forever, `0` once, `n` that many more passes. */
-    val repeatCount: Int? = null
+    val motion: File? = null
 ) {
     /** Nothing to show: one picture and no clip beside it. */
     val isSingle: Boolean get() = frames.size <= 1
@@ -77,7 +75,7 @@ internal fun rememberFrameStrip(item: MediaItem?): FrameStripModel {
         if (item == null || item is MediaItem.Video) return@LaunchedEffect
         val set = MediaThumbnails.frameSet(item)
         val motion = motionSiblingOf(item.file)
-        model = FrameStripModel(framesOf(set, motion != null), motion, set.repeatCount)
+        model = FrameStripModel(framesOf(set, motion != null), motion)
     }
     return model
 }

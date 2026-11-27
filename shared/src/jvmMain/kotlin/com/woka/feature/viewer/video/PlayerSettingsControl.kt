@@ -36,7 +36,7 @@ fun PlayerSettingsControl(
     SimpleTooltip("Settings") {
         Box(
             modifier = modifier
-                .size(32.dp)
+                .size(TransportTokens.button)
                 .clip(RoundedCornerShape(6.dp))
                 // Opened by hover rather than by a click, but it reads as a button
                 // and has to feel like the rest of the pill.
@@ -48,7 +48,7 @@ fun PlayerSettingsControl(
             Image(
                 painter = painterResource(Icons.Static.Settings),
                 contentDescription = "Settings",
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(TransportTokens.glyph),
                 colorFilter = ColorFilter.tint(Theme.colors.textPrimary)
             )
         }

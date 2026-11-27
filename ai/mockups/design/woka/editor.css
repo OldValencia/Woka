@@ -329,6 +329,12 @@ button.crumb:hover{color:var(--e-text);background:var(--e-hover-strong)}
 .app-shell.editing .editor.gif-media .stage{padding-bottom:94px}
 .app-shell.editing .viewer-playback{background:var(--e-panel);border:1px solid var(--e-line);backdrop-filter:none;box-shadow:none}
 .app-shell.editing .editor.gif-media .frame-column{max-height:calc(100% - 100px)}
+/* In the room the bar takes the room: the timeline's knob, the editor orange for Loop and the played part (RD-501). */
+.app-shell.editing .viewer-playback .transport-play{background:var(--e-well-2);color:var(--e-text)}
+.app-shell.editing .viewer-playback .transport-play:hover{background:var(--e-knob)}
+.app-shell.editing .viewer-playback #viewer-loop.selected{color:var(--e-accent-text);background:var(--e-accent-fill)}
+.app-shell.editing .viewer-playback .media-range::-webkit-slider-runnable-track{background:linear-gradient(to right,var(--e-accent) 0 var(--range-fill,25%),var(--text-secondary) var(--range-fill,25%) 100%)}
+.app-shell.editing .viewer-playback .media-range::-webkit-slider-thumb{background:var(--e-accent)}
 .inspector .scope .scope-note{flex-basis:100%;margin:7px 2px 0;font-size:11px;color:var(--e-muted)}
 .tools{display:flex;position:relative;margin:12px 12px 0;padding:4px;gap:2px;background:var(--e-track);border:0;border-radius:12px}
 .tools button{display:flex;align-items:center;justify-content:center;flex-direction:column;min-width:0;overflow:hidden;position:relative;z-index:1;flex:1 1 auto;min-height:54px;padding:7px 2px;gap:5px;border-radius:9px;color:var(--e-muted);background:transparent!important;font-size:11px}

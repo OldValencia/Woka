@@ -49,11 +49,20 @@ internal fun formatTime(ms: Long, withHours: Boolean): String {
 private fun Long.pad(): String = toString().padStart(2, '0')
 
 /**
+ * An animation's time, `m:ss.d` (the prototype's `clipTime`, RD-501): a GIF lasts seconds,
+ * and whole seconds would leave its label standing still through most of a loop.
+ */
+internal fun formatTenths(ms: Long): String {
+    val tenths = ms.coerceAtLeast(0L) / 100
+    return "${tenths / 600}:${(tenths / 10 % 60).pad()}.${tenths % 10}"
+}
+
+/**
  * Tabular figures, so the width does not breathe as the seconds tick. A face
  * without a `tnum` table ignores it, which is exactly today's behaviour.
  */
 @Composable
-private fun timeLabelStyle(): TextStyle = TextStyle(
+internal fun timeLabelStyle(): TextStyle = TextStyle(
     // 15sp against the row's 16–20dp icons; at 13 it read as a caption beside them.
     fontSize = 15.sp,
     color = Theme.colors.textPrimary,
@@ -62,9 +71,10 @@ private fun timeLabelStyle(): TextStyle = TextStyle(
 
 /** Calls [position] in its own scope, so a moving play head recomposes only this. */
 @Composable
-internal fun TimeLabel(withHours: Boolean, position: () -> Long) {
+internal fun TimeLabel(withHours: Boolean, position: () -> Long, modifier: Modifier = Modifier) {
     BasicText(
         text = formatTime(position(), withHours),
+        modifier = modifier,
         style = timeLabelStyle(),
         maxLines = 1
     )

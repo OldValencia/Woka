@@ -3,6 +3,7 @@ package com.woka.feature.viewer.shell.frames
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import com.woka.core.data.playFrames
+import com.woka.core.ui.components.frames.repeatCountFor
 import com.woka.feature.viewer.shell.MediaViewerState
 
 /**
@@ -14,7 +15,8 @@ import com.woka.feature.viewer.shell.MediaViewerState
  * advancing that index on the frame's own timing — no second decode path, no player, and
  * the frame strip keeps working exactly as it did because it reads the same number.
  * The arithmetic of durations and repeats is `playFrames`, which the editor's canvas
- * runs too.
+ * runs too. The file's own repeat count is not read: Loop decides (RD-501), and it is a
+ * key, so switching it mid-pass restarts the loop with the new count from where it stands.
  *
  * **Nothing runs for a still.** A photograph, a HEIC burst and a multi-page TIFF have no
  * durations ([FrameStripModel.isAnimated] is false), and this returns before its first
@@ -35,14 +37,15 @@ internal fun FramePlaybackEffect(
     strip: FrameStripModel,
     isFrozen: Boolean = false
 ) {
-    LaunchedEffect(state.activeItemPath, strip, state.isFramePlaying, isFrozen) {
+    LaunchedEffect(state.activeItemPath, strip, state.isFramePlaying, state.isFrameLooping, isFrozen) {
         if (isFrozen || !strip.isAnimated || !state.isFramePlaying) return@LaunchedEffect
         playFrames(
             frames = strip.frames,
-            repeatCount = strip.repeatCount,
+            repeatCount = repeatCountFor(state.isFrameLooping),
             frameAt = { state.frameIndex },
             show = { state.frameIndex = it },
-            onFinished = { state.isFramePlaying = false }
+            onFinished = { state.isFramePlaying = false },
+            speed = { state.frameSpeed }
         )
     }
 }

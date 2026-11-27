@@ -10,6 +10,7 @@ import com.woka.feature.editor.tools.trim.stepPicture
 import com.woka.feature.editor.tools.trim.timelineOf
 import com.woka.feature.editor.tools.trim.totalMs
 import com.woka.feature.viewer.video.engine.VideoPlayerState
+import com.woka.feature.viewer.video.engine.frameRate
 import com.woka.feature.viewer.video.engine.heldMs
 import com.woka.feature.viewer.video.engine.playRanges
 import com.woka.feature.viewer.video.engine.rangeIndex
@@ -98,10 +99,3 @@ internal class ClipWalk(private val player: () -> VideoPlayerState?) {
         return clips.startOf(at) + (shown - clips[at].fromMs) / clips[at].speed.toDouble()
     }
 }
-
-/** The source's frame rate, or the render's own fallback when the container does not say. */
-internal fun VideoPlayerState.frameRate(): Double =
-    tracks.mediaTracks.video.firstOrNull { it.index == tracks.selectedVideoIndex }
-        ?.frameRate?.takeIf { it.isFinite() && it > 1.0 } ?: FALLBACK_FPS
-
-private const val FALLBACK_FPS = 30.0

@@ -48,7 +48,7 @@ fun SubtitleControl(
         SimpleTooltip(if (isOff) "Subtitles: Off" else "Subtitles") {
             Box(
                 modifier = Modifier
-                    .size(32.dp)
+                    .size(TransportTokens.button)
                     .clip(RoundedCornerShape(6.dp))
                     .pointerHoverIcon(PointerIcon.Hand)
                     .onPointerEvent(PointerEventType.Enter) { onHoverChange(true) }
@@ -68,7 +68,7 @@ fun SubtitleControl(
                 Image(
                     painter = painterResource(icon),
                     contentDescription = "Subtitles",
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(TransportTokens.glyph),
                     colorFilter = ColorFilter.tint(tint)
                 )
             }

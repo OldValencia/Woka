@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.woka.core.data.MediaItem
+import com.woka.core.ui.components.frames.FrameTransport
 import com.woka.feature.viewer.shell.frames.FramePauseRequestEffect
 import com.woka.feature.viewer.shell.frames.FramePlaybackEffect
 import com.woka.core.ui.components.frames.FrameStrip
@@ -36,11 +37,20 @@ internal fun BoxScope.MediaViewerPlayerFrames(
     thumbnails: ViewerThumbnails,
     showStrip: Boolean,
     bottomPadding: Dp,
-    isFrozen: Boolean = false
+    isFrozen: Boolean = false,
+    /** An animation's clock (RD-501), published for the keys. */
+    transport: FrameTransport? = null
 ) {
     // Only for a file that has more than one picture in it, so an ordinary
     // photograph composes byte for byte the tree it always did.
-    LaunchedEffect(strip) { state.frameCount = strip.frames.size.coerceAtLeast(1) }
+    LaunchedEffect(transport) { state.frameTransport = transport }
+    LaunchedEffect(strip) {
+        state.frameCount = strip.frames.size.coerceAtLeast(1)
+        // The label's frame numbers last from one animation to the next and end with the first
+        // file of another kind — a film, a track, or a read strip that does not play (RD-501).
+        val otherKind = activeItem !is MediaItem.Image || (strip.frames.isNotEmpty() && !strip.isAnimated)
+        if (otherKind) state.showFrameNumbers = false
+    }
     FramePlaybackEffect(state, strip, isFrozen)
     FramePauseRequestEffect(state, strip)
 

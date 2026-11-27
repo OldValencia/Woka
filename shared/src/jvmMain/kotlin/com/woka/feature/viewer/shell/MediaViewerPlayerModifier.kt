@@ -16,6 +16,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import com.woka.core.data.MediaItem
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.viewer.video.engine.VideoPlayerState
+import com.woka.feature.viewer.video.rememberResultClock
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -33,37 +34,42 @@ internal fun Modifier.mediaViewerPlayerModifier(
     onVolumeChange: (Float) -> Unit,
     onToggleFullscreen: () -> Unit,
     soundBoost: Boolean = false
-): Modifier = this
-    .fillMaxSize()
-    .clipToBounds()
-    .background(if (isFullscreen) Color.Black else Theme.colors.background)
-    .onPointerEvent(PointerEventType.Move) {
-        state.lastInteractionTime = System.currentTimeMillis()
-        state.isUiVisible = true
-    }
-    .focusRequester(focusRequester)
-    .focusable()
-    .mediaViewerKeyHandler(
-        currentId = state.currentId,
-        mediaItems = mediaItems,
-        videoState = videoState,
-        mediaVolume = mediaVolume,
-        onClose = { onClose(state.currentId) },
-        onSkip = { dir -> state.skipDirection = dir; state.skipEvent.raise() },
-        onNavigate = { dir, newId -> state.animationDirection = dir; state.currentId = newId },
-        onVolumeChange = onVolumeChange,
-        onPlayPause = { state.playPauseEvent.raise() },
-        onCopy = copyAction,
-        onInfo = infoAction,
-        onZoom = { key -> state.applyZoomKey(key, onSizeModeChange) },
-        onStepFrame = { step ->
-            state.frameIndex = (state.frameIndex + step).coerceIn(0, state.frameCount - 1)
-        },
-        onToggleFullscreen = onToggleFullscreen,
-        soundBoost = soundBoost
-    )
-    .pointerInput(Unit) {
-        awaitPointerEventScope {
-            while (true) if (awaitPointerEvent().type == PointerEventType.Press) focusRequester.requestFocus()
+): Modifier {
+    // A cut film steps on the result's timeline, as its slider reads (RD-501).
+    val clock = rememberResultClock(videoState)
+    return this
+        .fillMaxSize()
+        .clipToBounds()
+        .background(if (isFullscreen) Color.Black else Theme.colors.background)
+        .onPointerEvent(PointerEventType.Move) {
+            state.lastInteractionTime = System.currentTimeMillis()
+            state.isUiVisible = true
         }
-    }
+        .focusRequester(focusRequester)
+        .focusable()
+        .mediaViewerKeyHandler(
+            currentId = state.currentId,
+            mediaItems = mediaItems,
+            videoState = videoState,
+            mediaVolume = mediaVolume,
+            onClose = { onClose(state.currentId) },
+            onSkip = { dir -> state.skipDirection = dir; state.skipEvent.raise() },
+            onNavigate = { dir, newId -> state.animationDirection = dir; state.currentId = newId },
+            onVolumeChange = onVolumeChange,
+            onPlayPause = { state.playPauseEvent.raise() },
+            onCopy = copyAction,
+            onInfo = infoAction,
+            onZoom = { key -> state.applyZoomKey(key, onSizeModeChange) },
+            onStepFrame = { step ->
+                state.frameIndex = (state.frameIndex + step).coerceIn(0, state.frameCount - 1)
+            },
+            onToggleFullscreen = onToggleFullscreen,
+            soundBoost = soundBoost,
+            onFrameKey = { dir -> state.stepOneFrame(videoState, clock, dir) }
+        )
+        .pointerInput(Unit) {
+            awaitPointerEventScope {
+                while (true) if (awaitPointerEvent().type == PointerEventType.Press) focusRequester.requestFocus()
+            }
+        }
+}
