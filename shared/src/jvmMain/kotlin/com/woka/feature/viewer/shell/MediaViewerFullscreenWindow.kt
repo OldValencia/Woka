@@ -15,6 +15,7 @@ import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.rememberWindowState
 import com.woka.core.data.MediaItem
 import com.woka.core.data.SettingsRepository
+import com.woka.core.ui.icons.appWindowIcon
 import com.woka.feature.viewer.pip.PipManager
 import com.woka.feature.viewer.video.engine.VideoPlayerState
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -50,6 +51,7 @@ fun MediaViewerFullscreenWindow(
         // flag would pin the whole desktop.
         alwaysOnTop = fsSettings.pipAlwaysOnTop && PipManager.isPipWindow,
         title = item.file.name,
+        icon = appWindowIcon(),
         // Preview phase so shortcuts fire before any focused button in the
         // window gets the key (and consume it), matching the main window.
         onPreviewKeyEvent = {

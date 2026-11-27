@@ -105,5 +105,7 @@ object Icons {
         val SubtitlesOff = Res.drawable.captions_bubble_slash
 
         val Logo = Res.drawable.woka_logo
+        /** The app's own mark, as `icons/woka.png` beside the installer's `.ico` — for window icons. */
+        val AppIcon = Res.drawable.woka_icon
     }
 }

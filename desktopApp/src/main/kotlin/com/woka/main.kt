@@ -28,6 +28,7 @@ import com.woka.core.system.WindowsCommandLine
 import com.woka.core.system.StartupTiming
 import java.awt.Point
 import com.woka.app.App
+import com.woka.core.ui.icons.appWindowIcon
 import java.awt.Dimension
 
 fun main(rawArgs: Array<String>) {
@@ -61,6 +62,7 @@ fun main(rawArgs: Array<String>) {
         Window(
             onCloseRequest = { AppExitRequest.request() },
             title = "Woka",
+            icon = appWindowIcon(),
             undecorated = true,
             transparent = true,
             state = windowState,
