@@ -26,7 +26,8 @@ the tree as it is (`tickets.md` §1). The prototype itself is finished —
 | [RD-401 — Ways out](tickets/RD-401-ways-out.md) | **done** 2026-11-27 |
 | [RD-501 — One transport and the GIF](tickets/RD-501-one-transport-gif.md) | **done** 2026-11-27 |
 | [RD-502 — Carousel badges and Original](tickets/RD-502-carousel-badges-original.md) | **done** 2026-11-28 |
-| RD-601…RD-802 | [backlog](tickets/backlog.md) |
+| [RD-601 — Fullscreen pill and the compact PiP](tickets/RD-601-fullscreen-pill-compact-pip.md) | written 2026-11-28 |
+| RD-701…RD-802 | [backlog](tickets/backlog.md) |
 
 ## The spec, scene by scene
 
@@ -169,3 +170,5 @@ pill with HDR met `Original` at 960 px, measured 2026-11-25), so the window's mi
 | 2026-11-28 | The editor's `Original` | The prototype's: click toggles, hold, `\`, the label, Esc — one control with the viewer's | The author; RD-201 had kept it hold-only |
 | 2026-11-28 | An animation's carousel badge | The file's format, from its extension (`GIF`, `WEBP`) | The author |
 | 2026-11-28 | A cut film's carousel length | The result's length, as the transport reads it | The author |
+| 2026-11-28 | PiP resize | All four corners and sides, the opposite one anchored; the film's ratio, Alt frees it; no setting | The author |
+| 2026-11-28 | Windows' own resize on the fullscreen window | Off; Woka's handles in PiP only, into PiP by the button alone | The author: Windows keeps no ratio, and two mechanisms on one edge fight |

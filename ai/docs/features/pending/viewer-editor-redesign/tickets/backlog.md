@@ -2,14 +2,8 @@
 
 Blocks are promoted into ticket files when they are next, re-cut against the tree as it then is
 (`tickets.md` §1, §4). No file lists here. The feature doc's questions were answered on
-2026-11-25; RD-101…RD-502 are tickets, RD-601 is the next block. Each block is promoted and built
+2026-11-25; RD-101…RD-601 are tickets, RD-701 is the next block. Each block is promoted and built
 whole — the author's call, 2026-11-25 (`tickets.md` §4a waived).
-
-## Fullscreen and PiP
-
-### RD-601 — Fullscreen pill and the compact PiP
-Size | PiP in fullscreen; in PiP no size control, a compact transport, resize at the film's
-proportions and free with Alt. Covers the PiP items of 1.0.9 in `next_steps.md`.
 
 ## Size
 

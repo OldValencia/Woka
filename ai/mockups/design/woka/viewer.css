@@ -104,20 +104,31 @@
 .chrome-idle .editor.viewing .viewer-pill{opacity:0;transform:translateY(-8px);pointer-events:none}
 .chrome-idle .editor.viewing .viewer-playback{opacity:0;transform:translateY(12px);pointer-events:none}
 .chrome-idle .stage{cursor:none}
-/* PiP: the same window, 480 px wide and anchored 24 px from the screen's bottom-right corner, over a
-   stand-in for whatever is behind it. */
+/* PiP: the same window, 480 px wide and entered 24 px from the screen's bottom-right corner, over a
+   stand-in for whatever is behind it. It is placed by its left and top, so a resize keeps whichever
+   corner or side is opposite the grabbed one. */
 .pip-desktop,.pip-resize{display:none}
 .app-shell.pip-view{display:block;position:relative}
 .app-shell.pip-view .pip-desktop{display:block;position:absolute;inset:0;overflow:hidden}
 .pip-desktop svg{display:block;width:100%;height:100%;filter:blur(18px) brightness(.55);transform:scale(1.08)}
 .app-shell.pip-view .library-sidebar{display:none}
-.app-shell.pip-view .editor{position:absolute;right:24px;bottom:24px;width:var(--pip-width,480px);height:var(--pip-height,270px);border-radius:10px;overflow:hidden;border:1px solid var(--white-14);box-shadow:0 24px 60px var(--black-60)}
+.app-shell.pip-view .editor{position:absolute;left:var(--pip-left,0);top:var(--pip-top,0);width:var(--pip-width,480px);height:var(--pip-height,270px);border-radius:10px;overflow:hidden;border:1px solid var(--white-14);box-shadow:0 24px 60px var(--black-60)}
 .app-shell.pip-view .viewer-bottom{left:10px;right:10px;bottom:10px}
 .app-shell.pip-view .viewer-playback{height:40px;border-radius:12px;gap:6px}
 .app-shell.pip-view .viewer-playback :is(.skip,#viewer-subtitles,#viewer-settings){display:none}
 .app-shell.pip-view .editor.viewing .viewer-pill{top:8px;right:8px}
 .app-shell.pip-view .size-part{display:none!important}
-.app-shell.pip-view .pip-resize{display:block;position:absolute;left:0;top:0;width:16px;height:16px;z-index:6;cursor:nwse-resize}
+/* Eight resize zones inside the window: 16 px corners, 6 px sides between them. They lie under the
+   pill (the header, z-index 10) and the transport (.viewer-layer, 4), so a control wins where the
+   two overlap. The header's empty trailing box would otherwise take the top strip's pointer. */
+.app-shell.pip-view .pip-resize{display:block;position:absolute;z-index:3}
+.app-shell.pip-view .editor.viewing .header-trailing{visibility:hidden}
+.pip-resize[data-edge*=n]{top:0}.pip-resize[data-edge*=s]{bottom:0}.pip-resize[data-edge*=w]{left:0}.pip-resize[data-edge*=e]{right:0}
+.pip-resize:is([data-edge=nw],[data-edge=ne],[data-edge=se],[data-edge=sw]){width:16px;height:16px}
+.pip-resize:is([data-edge=n],[data-edge=s]){left:16px;right:16px;height:6px;cursor:ns-resize}
+.pip-resize:is([data-edge=e],[data-edge=w]){top:16px;bottom:16px;width:6px;cursor:ew-resize}
+.pip-resize:is([data-edge=nw],[data-edge=se]){cursor:nwse-resize}
+.pip-resize:is([data-edge=ne],[data-edge=sw]){cursor:nesw-resize}
 
 /* Dialogs over the viewer take the viewer's palette; over the editor they keep the dark room's. */
 body:has(.app-shell:not(.editing)) dialog{background:var(--surface-elevated);border-color:var(--border);color:var(--text-primary)}

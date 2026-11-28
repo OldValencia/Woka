@@ -7,7 +7,7 @@ Object.assign(icons,{
   pip:'<rect x="3" y="5" width="18" height="14" rx="2"/><rect x="12" y="11" width="7" height="6" rx="1" fill="currentColor" stroke="none"/>',
   collapse:'<path d="M4 9h5V4m6 0v5h5M4 15h5v5m6 0v-5h5"/>'
 });
-const CHROME_IDLE_MS=2500,PIP_WIDTH=480,PIP_MIN_WIDTH=320;
+const CHROME_IDLE_MS=2500,PIP_WIDTH=480,PIP_MIN_WIDTH=320,PIP_MIN_HEIGHT=180;
 let windowMode='window',chromeTimer=null;
 function setWindowMode(mode){
   if(mode!=='window'&&!currentMedia().video)mode='window';
@@ -15,7 +15,7 @@ function setWindowMode(mode){
   const shell=$('#app-shell');
   shell.classList.toggle('focus-view',mode!=='window');
   shell.classList.toggle('pip-view',mode==='pip');
-  if(mode==='pip')sizePip(PIP_WIDTH,PIP_WIDTH*9/16);
+  if(mode==='pip')enterPip();
   closeChromePopover();syncWindowControls();pokeChrome();measurePicture();
 }
 /* Called from syncWokaChrome: a window mode belongs to a video in the viewer and nothing else. */
@@ -29,10 +29,32 @@ function syncWindowControls(){
   if(exit){exit.innerHTML=icon(full?'collapse':'expand');exit.setAttribute('aria-label',full?'Exit fullscreen (Esc)':'Fullscreen');}
   if(!full)$('#app-shell').classList.remove('chrome-idle');
 }
-function sizePip(width,height){
-  const shell=$('#app-shell').getBoundingClientRect();
-  width=clamp(width,PIP_MIN_WIDTH,shell.width-48);height=clamp(height,PIP_MIN_WIDTH*9/16,shell.height-48);
-  const root=document.documentElement.style;root.setProperty('--pip-width',`${width}px`);root.setProperty('--pip-height',`${height}px`);
+function filmRatio(){const view=currentMedia().view.split(' ').map(Number);return view[2]/view[3];}
+/* Entered 480 px wide at the film's proportions, 24 px from the bottom-right corner (pipBounds). */
+function enterPip(){
+  const shell=$('#app-shell').getBoundingClientRect(),w=Math.min(PIP_WIDTH,shell.width-48),h=w/filmRatio();
+  placePip({x:shell.width-24-w,y:shell.height-24-h,w,h});
+}
+function placePip(box){
+  const root=document.documentElement.style;
+  [['left',box.x],['top',box.y],['width',box.w],['height',box.h]].forEach(([key,value])=>root.setProperty(`--pip-${key}`,`${value}px`));
+}
+/* One resize per the RD-601 table (PipResize.resizedBounds): the grabbed corner moves both sides, a
+   side moves its axis; locked, the other axis follows the ratio, down for a side's height and right
+   for a side's width. The opposite corner or side stays. Only the minimum is enforced, 320 × 180 at
+   any ratio, so the compact transport always fits; the window may grow onto another screen. A null
+   ratio is free (Alt). */
+function resizedPip(start,edge,dx,dy,ratio){
+  const west=edge.includes('w'),east=edge.includes('e'),north=edge.includes('n'),south=edge.includes('s');
+  let w=start.w+(east?dx:west?-dx:0),h=start.h+(south?dy:north?-dy:0);
+  if(!ratio){w=Math.max(w,PIP_MIN_WIDTH);h=Math.max(h,PIP_MIN_HEIGHT);}
+  else if(west||east){w=Math.max(w,PIP_MIN_WIDTH,PIP_MIN_HEIGHT*ratio);h=w/ratio;}
+  else{h=Math.max(h,PIP_MIN_HEIGHT,PIP_MIN_WIDTH/ratio);w=h*ratio;}
+  return {x:west?start.x+start.w-w:start.x,y:north?start.y+start.h-h:start.y,w,h};
+}
+function pipBox(){
+  const shell=$('#app-shell').getBoundingClientRect(),box=$('#editor').getBoundingClientRect();
+  return {x:box.left-shell.left,y:box.top-shell.top,w:box.width,h:box.height};
 }
 /* Movement brings the chrome back; stillness takes it away again, unless something is being read. */
 function pokeChrome(){
@@ -54,14 +76,14 @@ function initFullscreen(){
     pokeChrome();
     if(event.key==='Escape'&&$('#chrome-popover').hidden&&!$('#dialog').open){event.stopImmediatePropagation();setWindowMode('window');}
   },true);
-  // The window grows from its top-left corner, away from the corner it is anchored to. The
-  // frame keeps the film's proportions; Alt frees them (1.0.9).
-  $('#pip-resize').addEventListener('pointerdown',event=>{
-    if(event.button!==0)return;event.preventDefault();
-    const box=$('#editor').getBoundingClientRect(),x=event.clientX,y=event.clientY;
-    const move=e=>{const width=box.width+x-e.clientX;sizePip(width,e.altKey?box.height+y-e.clientY:width*9/16);measurePicture();};
+  // Any corner or side resizes; the frame keeps the film's proportions, and Alt, read on every
+  // move, frees them (1.0.9).
+  document.querySelectorAll('.pip-resize').forEach(handle=>handle.addEventListener('pointerdown',event=>{
+    if(event.button!==0)return;event.preventDefault();event.stopPropagation();
+    const start=pipBox(),x=event.clientX,y=event.clientY;
+    const move=e=>{placePip(resizedPip(start,handle.dataset.edge,e.clientX-x,e.clientY-y,e.altKey?null:filmRatio()));measurePicture();};
     document.addEventListener('pointermove',move);
     document.addEventListener('pointerup',()=>document.removeEventListener('pointermove',move),{once:true});
-  });
+  }));
   syncWindowControls();
 }
