@@ -82,27 +82,32 @@ fun MediaViewerScreen(
 
     val media = rememberViewerMedia(state.imageBitmap, videoState, state.sourceSize, state.stillColor)
 
+    ViewerOriginalEffect(state, activeItem)
+
+    // A still compares through its loader; a film's frame reads this (RD-502).
     val playerContent = @Composable {
-        MediaViewerPlayer(
-            modifier = playerModifier,
-            state = state,
-            media = media,
-            mediaItems = mediaItems,
-            activeItem = activeItem,
-            mediaVolume = mediaVolume,
-            chrome = ViewerChromeState(settings.mediaViewerCarouselMode, isFullscreen, settings.ambientFill),
-            actions = ViewerActions(editAction, copyAction, infoAction, extra = exportEntries),
-            showInfoDialog = showInfoDialog,
-            onShowInfoDialogChange = { showInfoDialog = it },
-            onVolumeChange = { mediaVolume = it },
-            soundBoost = settings.soundBoost,
-            onSoundBoostChange = soundBoostSetter(settingsRepo, { mediaVolume }) { mediaVolume = it },
-            onSizeModeChange = onSizeModeChange,
-            onToggleFullscreen = toggleFullscreen,
-            thumbnails = thumbnails,
-            strip = strip,
-            isFrozen = isFrozen
-        )
+        CompositionLocalProvider(LocalViewerOriginal provides state.original.active) {
+            MediaViewerPlayer(
+                modifier = playerModifier,
+                state = state,
+                media = media,
+                mediaItems = mediaItems,
+                activeItem = activeItem,
+                mediaVolume = mediaVolume,
+                chrome = ViewerChromeState(settings.mediaViewerCarouselMode, isFullscreen, settings.ambientFill),
+                actions = ViewerActions(editAction, copyAction, infoAction, extra = exportEntries),
+                showInfoDialog = showInfoDialog,
+                onShowInfoDialogChange = { showInfoDialog = it },
+                onVolumeChange = { mediaVolume = it },
+                soundBoost = settings.soundBoost,
+                onSoundBoostChange = soundBoostSetter(settingsRepo, { mediaVolume }) { mediaVolume = it },
+                onSizeModeChange = onSizeModeChange,
+                onToggleFullscreen = toggleFullscreen,
+                thumbnails = thumbnails,
+                strip = strip,
+                isFrozen = isFrozen
+            )
+        }
     }
 
     MediaViewerLayoutWrapper(
@@ -121,6 +126,7 @@ fun MediaViewerScreen(
         // On an HDR film or still, never a track — `hdrControlApplies` holds why (ME-303, ME-304).
         showHdrMode = activeItem !is MediaItem.Audio && hdrControlVisible(videoState?.streamHdrInfo?.toColour() ?: state.stillColor),
         showSizeControl = activeItem !is MediaItem.Audio,
+        original = state.offeredOriginal(),
         playerContent = playerContent
     )
 }

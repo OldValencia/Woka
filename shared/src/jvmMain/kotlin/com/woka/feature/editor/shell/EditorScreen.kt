@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import com.woka.core.data.MediaKind
+import com.woka.core.ui.components.OriginalCompare
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.editor.core.EditScope
 import com.woka.feature.editor.core.EditorEngine
@@ -51,13 +52,14 @@ internal fun EditorScreen(
     /** Null for a file holding one picture, which pays one comparison for it (ME-156). */
     frameControls: EditorFrameControls? = null,
     /** Built above as well, so F6 — handled there — reaches it. */
-    panel: EditorPanelState = remember { EditorPanelState() }
+    panel: EditorPanelState = remember { EditorPanelState() },
+    /** `Original` — built above too, so `\` and Esc reach it (RD-502). */
+    original: OriginalCompare = remember { OriginalCompare() }
 ) {
     val document by session.document.collectAsState()
     val canUndo by session.canUndo.collectAsState()
     val canRedo by session.canRedo.collectAsState()
     val tools = toolsForPicture(registry, engine)
-    val peek = remember { PeekState() }
     // Hoisted out of the overlay's scope (ME-114): the inspector restyles what the canvas selected.
     val selection = remember(session) { ToolSelection() }
     var helpOpen by remember { mutableStateOf(false) }
@@ -68,7 +70,7 @@ internal fun EditorScreen(
         isEdited = !document.isEmpty,
         canUndo = canUndo,
         canRedo = canRedo,
-        peek = peek,
+        original = original,
         panel = panel,
         onLeave = onCancel,
         onUndo = session::undo,
@@ -100,7 +102,7 @@ internal fun EditorScreen(
     LaunchedEffect(activeTool?.manifest?.id) {
         if (engine.frames.clips && clearsClipSelection(activeTool?.manifest?.domain)) session.pickClip(null, NO_CLIP)
     }
-    val canvasDocument = canvasDocumentFor(activeTool, document, peek.active)
+    val canvasDocument = canvasDocumentFor(activeTool, document, original.active)
     val skipped = skippedOps(document, registry, engine.kind)
     val onCopy = LocalDoneChoices.current.onCopy
     if (helpOpen) {
@@ -123,7 +125,7 @@ internal fun EditorScreen(
         // The canvas over the medium's timeline, docked under it beside the inspector (RD-301).
         Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                EditorCanvasLayer(engine, session, tools, activeTool, canvasDocument, perFrame, canvasKeys, selection, peek)
+                EditorCanvasLayer(engine, session, tools, activeTool, canvasDocument, perFrame, canvasKeys, selection, original)
                 EditorFrameBand(perFrame, engine.frameTransport, session.media.file)
                 EditorBottomPanel(session, engine, registry, skipped)
             }

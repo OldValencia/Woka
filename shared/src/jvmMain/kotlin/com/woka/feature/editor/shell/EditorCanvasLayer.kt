@@ -1,10 +1,14 @@
 package com.woka.feature.editor.shell
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.woka.core.ui.components.OriginalCompare
+import com.woka.core.ui.components.OriginalLabel
 import com.woka.feature.editor.core.ClipLooks
 import com.woka.feature.editor.core.EditDocument
 import com.woka.feature.editor.core.EditScope
@@ -29,13 +33,17 @@ internal fun EditorCanvasLayer(
     frameControls: EditorFrameControls?,
     canvasKeys: CanvasKeys?,
     selection: ToolSelection,
-    peek: PeekState
+    original: OriginalCompare
 ) {
     // A film draws each clip through its own layer (ME-215); the session holds them.
     val open = session.frame.takeIf { frameControls?.scope == EditScope.SingleFrame }
     val looks = ClipLooks(open, session.sharedOps) { key -> session.ownOpsOf(key) }.takeIf { engine.frames.clips }
-    CompositionLocalProvider(LocalClipLooks provides looks) {
-        CanvasHostWith(engine, session, tools, activeTool, document, frameControls, canvasKeys, selection, peek)
+    // The label over the canvas, as the viewer's over its picture (RD-502, `.original-label`).
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+        CompositionLocalProvider(LocalClipLooks provides looks) {
+            CanvasHostWith(engine, session, tools, activeTool, document, frameControls, canvasKeys, selection, original)
+        }
+        OriginalLabel(original.active)
     }
 }
 
@@ -49,7 +57,7 @@ private fun CanvasHostWith(
     frameControls: EditorFrameControls?,
     canvasKeys: CanvasKeys?,
     selection: ToolSelection,
-    peek: PeekState
+    original: OriginalCompare
 ) {
     // A turn or a flip plays on the picture rather than jumping to the result (RD-203).
     val motion = rememberCanvasMotion(session, tools)
@@ -79,7 +87,7 @@ private fun CanvasHostWith(
                 geometry = geometry,
                 canvasKeys = canvasKeys,
                 selection = selection,
-                peeking = peek.active
+                peeking = original.active
             )
         }
     )

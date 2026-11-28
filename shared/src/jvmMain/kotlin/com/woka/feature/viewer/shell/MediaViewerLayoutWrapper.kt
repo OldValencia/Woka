@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.CarouselVisibility
 import com.woka.core.data.SettingsRepository
+import com.woka.core.ui.components.OriginalCompare
 
 @Composable
 fun MediaViewerLayoutWrapper(
@@ -23,6 +24,8 @@ fun MediaViewerLayoutWrapper(
     showHdrMode: Boolean = true,
     /** See `MediaViewerNormalControls.showSizeControl`. */
     showSizeControl: Boolean = true,
+    /** See `MediaViewerNormalControls.original`. */
+    original: OriginalCompare? = null,
     playerContent: @Composable () -> Unit
 ) {
     MediaViewerTopBarSetup(
@@ -39,7 +42,8 @@ fun MediaViewerLayoutWrapper(
         onInfo = onInfo,
         isInfoOpen = isInfoOpen,
         showHdrMode = showHdrMode,
-        showSizeControl = showSizeControl
+        showSizeControl = showSizeControl,
+        original = original
     )
     playerContent()
 }

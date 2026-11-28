@@ -77,7 +77,8 @@ internal fun MediaViewerShortcutEffect(
                 onZoom = { key -> state.applyZoomKey(key) { curSizeModeChange(it) } },
                 onToggleFullscreen = { curToggleFullscreen() },
                 soundBoost = curBoost,
-                onFrameKey = { dir -> state.stepOneFrame(curVideoState, curClock, dir) }
+                onFrameKey = { dir -> state.stepOneFrame(curVideoState, curClock, dir) },
+                original = state.offeredOriginal()
             )
         }
         onDispose { globalShortcuts.onPreviewKey = previous }

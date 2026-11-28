@@ -43,6 +43,12 @@ interface ViewerThumbnails {
     suspend fun stillColor(item: MediaItem): StillColorInfo
 
     /**
+     * The frame as shot, with no kept edit folded — what `Original` shows (RD-502).
+     * Defaulted to [full], so a substitute with no notion of an edit has an honest answer.
+     */
+    suspend fun original(item: MediaItem, frameIndex: Int = 0): ImageBitmap? = full(item, frameIndex)
+
+    /**
      * [full] if it is already decoded and in memory, else null — without
      * blocking or decoding.
      *

@@ -53,10 +53,18 @@ internal fun StillLoadEffect(
         showConflictDialog,
         state.frameIndex,
         reloadKey,
-        settings.hdrViewMode
+        settings.hdrViewMode,
+        state.original.active
     ) {
         if (showConflictDialog || activeItem == null) return@LaunchedEffect
         val frame = state.frameIndex
+        // `Original` (RD-502): the frame as shot replaces the edited one, with no preview step
+        // — the edit stays up until the original lands. A film answers null and is compared
+        // in its frame (`LocalViewerOriginal`). Leaving it is a reload of the shown key below.
+        if (state.original.active) {
+            thumbnails.original(activeItem, frame)?.let { state.imageBitmap = it }
+            return@LaunchedEffect
+        }
         val key = activeItem.file.absolutePath to frame
         // The same picture asked for again — a save's reload — keeps what is on screen.
         val reloading = shown.key == key && state.imageBitmap != null

@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.woka.app.shell.LocalCanvasOverride
 import com.woka.app.shell.LocalTopBarAccessories
+import com.woka.core.ui.components.OriginalCompare
 import com.woka.core.ui.icons.Icons
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.viewer.shell.CanvasZoomPill
@@ -41,7 +42,7 @@ internal fun EditorTopBarSetup(
     isEdited: Boolean,
     canUndo: Boolean,
     canRedo: Boolean,
-    peek: PeekState,
+    original: OriginalCompare,
     panel: EditorPanelState,
     onLeave: () -> Unit,
     onUndo: () -> Unit,
@@ -57,7 +58,7 @@ internal fun EditorTopBarSetup(
     // the accessory while the user is looking at it.
     val curCanUndo by rememberUpdatedState(canUndo)
     val curCanRedo by rememberUpdatedState(canRedo)
-    val curPeek by rememberUpdatedState(peek)
+    val curOriginal by rememberUpdatedState(original)
     val curPanel by rememberUpdatedState(panel)
     val curLeave by rememberUpdatedState(onLeave)
     val curUndo by rememberUpdatedState(onUndo)
@@ -90,7 +91,7 @@ internal fun EditorTopBarSetup(
         accessories.centerTrailingAccessory = null
         accessories.rightAccessory = {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(EditorTokens.TopBar.controlGap)) {
-                EditorPeekButton(curPeek)
+                EditorPeekButton(curOriginal)
                 TopBarGlyphButton("?", "Tips for this task", "editor-help-button", onClick = { curHelp() })
                 TopBarIconButton(Icons.Static.PanelToggle, "Show or hide the panel (F6)", "editor-panel-toggle", onClick = { curPanel.toggle() })
                 HeaderDivider()

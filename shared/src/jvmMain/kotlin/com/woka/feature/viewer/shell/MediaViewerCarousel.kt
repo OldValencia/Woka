@@ -1,34 +1,46 @@
 package com.woka.feature.viewer.shell
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.*
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import com.woka.core.ui.theme.Theme
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.woka.core.data.MediaItem
-import com.woka.core.ui.icons.Icons
-import com.woka.core.ui.image.rememberReloadKey
+import com.woka.core.ui.theme.Theme
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.painterResource
 
+internal const val CAROUSEL_TAG = "viewer-carousel"
+
+/**
+ * The folder's files under the picture, in a well (`#viewer/photo`, `.carousel-well`, RD-502):
+ * neighbours dimmed, the current one larger and ringed, each tile saying what its file is.
+ *
+ * The well is the background at 48 %, not `glass`, as the prototype mixes it
+ * (`color-mix(background 48 %)`); its `backdrop-filter` blur is not drawn, as the
+ * transport's is not.
+ */
 @Composable
 fun MediaViewerCarousel(
     mediaItems: List<MediaItem>,
@@ -41,19 +53,25 @@ fun MediaViewerCarousel(
 
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
-    
+
     LaunchedEffect(currentId) {
         if (currentIndex >= 0) {
             listState.animateScrollToItem(currentIndex, scrollOffset = -200)
         }
     }
-    
+
+    val shape = RoundedCornerShape(CarouselTokens.wellRadius)
     LazyRow(
         state = listState,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 32.dp)
-            .height(80.dp)
+            .padding(horizontal = CarouselTokens.wellInset)
+            .shadow(CarouselTokens.wellShadow, shape, clip = false, spotColor = Color.Black.copy(alpha = 0.047f))
+            .clip(shape)
+            .background(Theme.colors.background.copy(alpha = CarouselTokens.wellFill))
+            .border(1.dp, Theme.colors.border, shape)
+            .height(CarouselTokens.rowHeight)
+            .testTag(CAROUSEL_TAG)
             .draggable(
                 orientation = Orientation.Horizontal,
                 state = rememberDraggableState { delta ->
@@ -76,65 +94,17 @@ fun MediaViewerCarousel(
                     }
                 }
             },
-        contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+        contentPadding = PaddingValues(horizontal = CarouselTokens.wellPadding),
+        horizontalArrangement = Arrangement.spacedBy(CarouselTokens.gap, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically
     ) {
         items(mediaItems, key = { it.file.absolutePath }) { item ->
-            var thumbnailBitmap by remember(item.file.absolutePath) { mutableStateOf<ImageBitmap?>(null) }
-            // The tile follows its file's saves (ME-135); the path alone never moves.
-            val reloadKey = rememberReloadKey(item.file.absolutePath)
-            LaunchedEffect(item.file.absolutePath, reloadKey) {
-                thumbnailBitmap = thumbnails.preview(item)
-            }
-            var lastClickTime by remember { mutableStateOf(0L) }
-            val isSelected = item.file.absolutePath == currentId
-            Box(
-                modifier = Modifier
-                    .size(if (isSelected) 72.dp else 56.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .pointerHoverIcon(PointerIcon.Hand)
-                    .pointerInput(Unit) {
-                        detectTapGestures {
-                            val now = System.currentTimeMillis()
-                            if (now - lastClickTime > 300) {
-                                lastClickTime = now
-                                onSelectMedia(item.file.absolutePath)
-                            }
-                        }
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                if (thumbnailBitmap != null) {
-                    Image(
-                        bitmap = thumbnailBitmap!!,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    Box(modifier = Modifier.fillMaxSize().background(Color.Gray.copy(alpha = 0.3f)))
-                }
-                if (!isSelected) {
-                    Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)))
-                }
-                if (item is MediaItem.Video) {
-                    Box(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clip(CircleShape)
-                            .background(Color.Black.copy(alpha = 0.5f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            painter = painterResource(Icons.Static.PlayFill),
-                            contentDescription = "Video",
-                            modifier = Modifier.size(12.dp),
-                            colorFilter = ColorFilter.tint(Theme.viewer.onScrim)
-                        )
-                    }
-                }
-            }
+            CarouselItem(
+                item = item,
+                isCurrent = item.file.absolutePath == currentId,
+                thumbnails = thumbnails,
+                onSelect = { onSelectMedia(item.file.absolutePath) }
+            )
         }
     }
 }

@@ -15,6 +15,8 @@ import com.woka.feature.viewer.video.engine.VideoPlayerState
 import com.woka.feature.viewer.video.engine.togglePlayPause
 import com.woka.core.data.volumeCeiling
 import com.woka.feature.viewer.video.engine.toggleMute
+import com.woka.core.ui.components.OriginalCompare
+import com.woka.core.ui.components.holdOnKey
 
 fun Modifier.mediaViewerKeyHandler(
     currentId: String,
@@ -32,12 +34,14 @@ fun Modifier.mediaViewerKeyHandler(
     onStepFrame: (Int) -> Unit,
     onToggleFullscreen: () -> Unit,
     soundBoost: Boolean = false,
-    onFrameKey: (Int) -> Boolean = { false }
+    onFrameKey: (Int) -> Boolean = { false },
+    /** Read per key, so a file that gains or loses its edit is answered as it is now (RD-502). */
+    original: () -> OriginalCompare? = { null }
 ): Modifier = this.onKeyEvent { event ->
     handleMediaViewerKeyEvent(
         event, currentId, mediaItems, videoState, mediaVolume,
         onClose, onSkip, onNavigate, onVolumeChange, onPlayPause, onCopy, onInfo, onZoom,
-        onStepFrame, onToggleFullscreen, soundBoost, onFrameKey
+        onStepFrame, onToggleFullscreen, soundBoost, onFrameKey, original()
     )
 }
 
@@ -66,13 +70,16 @@ fun handleMediaViewerKeyEvent(
     /** So ↑/↓ stop where the slider stops, rather than at 100 % regardless. */
     soundBoost: Boolean = false,
     /** `,` / `.` (RD-501): answers whether a frame was stepped, so a playing film lets the key go. */
-    onFrameKey: (Int) -> Boolean = { false }
+    onFrameKey: (Int) -> Boolean = { false },
+    /** `Original`, when the file offers it: `\` holds it, Esc ends it before closing (RD-502). */
+    original: OriginalCompare? = null
 ): Boolean {
     val ceiling = volumeCeiling(soundBoost)
+    if (original?.holdOnKey(event) == true) return true
     // `,` / `.` by the key, not by what the layout types on it (RD-501).
     return when (event.layoutFreeKey()) {
         Key.Escape -> {
-            if (event.type == KeyEventType.KeyDown) onClose()
+            if (event.type == KeyEventType.KeyDown && original?.endIfActive() != true) onClose()
             true
         }
         Key.DirectionLeft ->

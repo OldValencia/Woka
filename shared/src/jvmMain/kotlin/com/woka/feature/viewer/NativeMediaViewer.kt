@@ -7,6 +7,7 @@ import com.woka.feature.editor.EditorTarget
 import com.woka.feature.viewer.shell.MediaThumbnails
 import com.woka.feature.viewer.shell.MediaViewerScreen
 import com.woka.feature.viewer.shell.ViewerThumbnails
+import com.woka.feature.viewer.shell.loadOriginalStill
 
 /** The real decoders. Tests substitute their own — see `ViewerHarness`. */
 private object RealViewerThumbnails : ViewerThumbnails {
@@ -16,6 +17,7 @@ private object RealViewerThumbnails : ViewerThumbnails {
         MediaThumbnails.loadPreview(item, frameIndex)
     override suspend fun sourceSize(item: MediaItem) = MediaThumbnails.sourceSize(item)
     override suspend fun stillColor(item: MediaItem) = MediaThumbnails.stillColor(item)
+    override suspend fun original(item: MediaItem, frameIndex: Int) = loadOriginalStill(item, frameIndex)
     override fun cachedFull(item: MediaItem, frameIndex: Int) =
         ImageBitmapCache[ImageBitmapCache.key(item.file.absolutePath, frameIndex)]
 }

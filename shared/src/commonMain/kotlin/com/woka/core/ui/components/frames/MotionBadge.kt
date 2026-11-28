@@ -18,9 +18,9 @@ import org.jetbrains.compose.resources.painterResource
 /**
  * Marks the one frame in a strip that plays: a Live Photo's motion clip.
  *
- * The same circular play badge `MediaViewerCarousel` puts on a video item, at
- * the smaller size the strip works at — it means the same thing in both places,
- * so it should not be a second design.
+ * The circular play badge the carousel put on a video item until RD-502 gave its
+ * tiles chips, at the smaller size the strip works at; a motion frame has no length
+ * to show, so the circle stays here.
  */
 @Composable
 internal fun MotionBadge() {

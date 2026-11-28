@@ -3,13 +3,12 @@ package com.woka.feature.editor.shell
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.woka.app.shell.LocalGlobalShortcuts
 import com.woka.core.data.MediaItem
+import com.woka.core.ui.components.OriginalCompare
 import com.woka.feature.editor.EditorTarget
 import com.woka.feature.editor.core.EditorEngine
 import com.woka.feature.editor.core.EditorEngineFactory
@@ -84,6 +83,8 @@ internal fun EditorHost(
     // the active canvas tool — two composables down — writes it (ME-114).
     val canvasKeys = remember(session) { CanvasKeys() }
     val panel = remember(session) { EditorPanelState() }
+    // `Original` too: `\` and Esc reach it through the keys, the button through the screen (RD-502).
+    val original = remember(session) { OriginalCompare() }
 
     EditorHostControls(
         engine = engine,
@@ -102,20 +103,7 @@ internal fun EditorHost(
         // that cannot keep the edit the render takes `Done`'s place (ME-289).
         val choices = actions.choices
         val done = actions.done
-        EditorKeyEffect(
-            globalShortcuts = LocalGlobalShortcuts.current,
-            canUndo = session.canUndo.collectAsState().value,
-            canRedo = session.canRedo.collectAsState().value,
-            onCancel = actions.leave,
-            onUndo = session::undo,
-            onRedo = session::redo,
-            onDone = done,
-            onTogglePlayback = engine::togglePlayback,
-            onStep = engine::stepPlayHead,
-            canvasKeys = canvasKeys,
-            onTogglePanel = panel::toggle,
-            onTimelineKey = engine::timelineKey
-        )
+        EditorHostKeyEffect(engine, session, actions, canvasKeys, panel, original)
 
         CompositionLocalProvider(LocalDoneChoices provides choices, LocalCanvasKeys provides canvasKeys) {
             EditorScreen(
@@ -124,6 +112,7 @@ internal fun EditorHost(
                 registry = dependencies.registry,
                 canvasKeys = canvasKeys,
                 panel = panel,
+                original = original,
                 onCancel = actions.leave,
                 onDone = done,
                 canRevert = actions.canRevert,

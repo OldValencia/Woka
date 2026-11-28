@@ -1,6 +1,7 @@
 package com.woka.feature.viewer.image
 
 import androidx.compose.ui.graphics.ImageBitmap
+import com.woka.core.data.HdrView
 import com.woka.core.ui.image.AppliedStillEdits
 import com.woka.core.ui.image.ImageBitmapCache
 import java.io.File
@@ -35,4 +36,29 @@ object ImageLoader {
         ImageBitmapCache[ImageBitmapCache.key(file.absolutePath, frameIndex)] = bitmap
         return bitmap
     }
+
+    /**
+     * Frame [frameIndex] of [file] as shot — the same decode as [load] with no recipe
+     * folded, for `Original` (RD-502). Tone mapped as [load] is, so the comparison differs
+     * by the edit alone.
+     *
+     * **Cached in the same LRU budget**, under its own key: a second click is instant and an
+     * animation compared while it plays does not rebuild its frame chain on every tick
+     * (`SkiaFrameWalk`), and the budget, not this, bounds the memory.
+     */
+    fun loadOriginal(file: File, frameIndex: Int = 0): ImageBitmap {
+        val key = originalKey(file.absolutePath, frameIndex)
+        ImageBitmapCache[key]?.let { return it }
+        val bitmap = displayable(file, stillDecoderFor(file).frame(file, frameIndex))
+        ImageBitmapCache[key] = bitmap
+        return bitmap
+    }
 }
+
+/**
+ * `path#original<frame>`: under the `path#` prefix `ImageBitmapCache.removeAllFor` drops, so
+ * a file written over loses its original with its edited frames. Here rather than beside
+ * `ImageBitmapCache.key` because that file is at the size mandate.
+ */
+private fun originalKey(path: String, frameIndex: Int): String =
+    "$path#original$frameIndex" + HdrView.cacheSuffix

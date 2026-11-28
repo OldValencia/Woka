@@ -14,6 +14,8 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
 import com.woka.app.shell.GlobalShortcutState
 import com.woka.core.system.layoutFreeKey
+import com.woka.core.ui.components.OriginalCompare
+import com.woka.core.ui.components.holdOnKey
 
 /**
  * The editor's keyboard, and the handler it has to give back.
@@ -55,7 +57,9 @@ internal fun EditorKeyEffect(
     /** F6 shows or hides the inspector (RD-201, `#focus` in the prototype). */
     onTogglePanel: () -> Unit = {},
     /** The timeline's keys — `S`, `Home`, `End`, a clip's `Delete` (RD-301); `false` leaves one unconsumed. */
-    onTimelineKey: (Key) -> Boolean = { false }
+    onTimelineKey: (Key) -> Boolean = { false },
+    /** `Original` — `\` holds it, Esc ends it before anything else (RD-502). */
+    original: OriginalCompare = OriginalCompare()
 ) {
     val curCancel by rememberUpdatedState(onCancel)
     val curUndo by rememberUpdatedState(onUndo)
@@ -68,6 +72,7 @@ internal fun EditorKeyEffect(
     val curCanvasKeys by rememberUpdatedState(canvasKeys)
     val curTogglePanel by rememberUpdatedState(onTogglePanel)
     val curTimelineKey by rememberUpdatedState(onTimelineKey)
+    val curOriginal by rememberUpdatedState(original)
 
     DisposableEffect(globalShortcuts) {
         val previous = globalShortcuts.onPreviewKey
@@ -76,15 +81,19 @@ internal fun EditorKeyEffect(
         // keyboard while it is open, and a click on the picture leaves focus nowhere.
         globalShortcuts.ownsWindow = true
         globalShortcuts.onPreviewKey = handler@{ event ->
-            if (event.type != KeyEventType.KeyDown) return@handler false
             // **Everything through, while a tool is taking typed input** (ME-145). This
             // handler is previewed at the window root, before focus, so without this
             // `Backspace` deletes the shape being typed into and `Esc` closes the editor
             // out from under the field. The field handles both itself.
             if (curCanvasKeys?.yields(event.key) == true) return@handler false
+            // `\` is a hold, so its release counts as much as its press (RD-502).
+            if (curOriginal.holdOnKey(event)) return@handler true
+            if (event.type != KeyEventType.KeyDown) return@handler false
             when {
-                // A film's selection first, as the prototype's Esc (RD-302); with none, the editor.
-                event.key == Key.Escape -> consume { if (curCanvasKeys?.onBack?.invoke() != true) curCancel() }
+                // The original first (RD-502); then a film's selection, as the prototype's Esc
+                // (RD-302); with neither, the editor.
+                event.key == Key.Escape ->
+                    consume { if (!curOriginal.endIfActive() && curCanvasKeys?.onBack?.invoke() != true) curCancel() }
                 event.isCtrlPressed && event.key == Key.S -> consume { curDone() }
                 // Both spellings of redo, because both are muscle memory and neither
                 // is wrong. Checked before undo: `Ctrl+Shift+Z` also matches the undo

@@ -143,7 +143,7 @@ function helpDialog(){
     <button class="help-option" data-action="help-styles"><strong>1. Try a style</strong><span>Point at a style to preview it on your photo, click to keep it.</span></button>
     <button class="help-option" data-action="help-adjust"><strong>2. Fine-tune light and colour</strong><span>Try Auto first. Sliders stick at zero, and a changed value can be reset with one click.</span></button>
     <button class="help-option" data-action="help-crop"><strong>3. Frame the picture</strong><span>Choose a shape, drag the edges, level the horizon with Straighten.</span></button>
-    <button class="help-option" data-action="help-output"><strong>4. Compare, then finish</strong><span>Hold Original to see the photo before your edits. Done keeps your edit; Create a copy makes a separate file.</span></button>`);
+    <button class="help-option" data-action="help-output"><strong>4. Compare, then finish</strong><span>Click Original, or hold it or \\, to see the photo before your edits. Done keeps your edit; Create a copy makes a separate file.</span></button>`);
 }
 function initExperience(){
   savedSnapshot=JSON.stringify(state);

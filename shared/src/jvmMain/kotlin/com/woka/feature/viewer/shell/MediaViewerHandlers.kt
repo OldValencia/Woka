@@ -31,6 +31,8 @@ internal fun viewerEditAction(
     } else {
         // An animation's clock goes with it, all but its speed (RD-501).
         val clock = FrameClockStart(state.isFramePlaying, state.isFrameLooping, state.showFrameNumbers)
+        // The editor opens on the edit, and the viewer comes back to it (`setViewer`, RD-502).
+        state.original.end()
         onEdit(EditorTarget(state.currentId, strip.editableFrameOf(state.frameIndex), clock))
     }
 }

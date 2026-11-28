@@ -8,6 +8,7 @@ import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.CarouselVisibility
 import com.woka.core.data.SettingsRepository
 import com.woka.app.shell.LocalTopBarAccessories
+import com.woka.core.ui.components.OriginalCompare
 
 @Composable
 fun MediaViewerTopBarSetup(
@@ -26,7 +27,9 @@ fun MediaViewerTopBarSetup(
     /** See `MediaViewerNormalControls.showHdrMode` — false on an SDR picture and on a track. */
     showHdrMode: Boolean = true,
     /** See `MediaViewerNormalControls.showSizeControl` — false while a track is open. */
-    showSizeControl: Boolean = true
+    showSizeControl: Boolean = true,
+    /** See `MediaViewerNormalControls.original` — null while the file carries no edit. */
+    original: OriginalCompare? = null
 ) {
     val topBarAccessories = LocalTopBarAccessories.current
 
@@ -42,6 +45,7 @@ fun MediaViewerTopBarSetup(
     val curIsInfoOpen by rememberUpdatedState(isInfoOpen)
     val curShowHdr by rememberUpdatedState(showHdrMode)
     val curShowSize by rememberUpdatedState(showSizeControl)
+    val curOriginal by rememberUpdatedState(original)
     val curOnSizeModeChange by rememberUpdatedState(onSizeModeChange)
     val curOnOffsetReset by rememberUpdatedState(onOffsetReset)
     val curOnClose by rememberUpdatedState(onClose)
@@ -77,7 +81,8 @@ fun MediaViewerTopBarSetup(
                 onInfo = { curOnInfo() },
                 isInfoOpen = curIsInfoOpen,
                 showHdrMode = curShowHdr,
-                showSizeControl = curShowSize
+                showSizeControl = curShowSize,
+                original = curOriginal
             )
         }
         onDispose {

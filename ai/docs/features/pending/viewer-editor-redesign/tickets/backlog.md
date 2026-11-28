@@ -2,16 +2,8 @@
 
 Blocks are promoted into ticket files when they are next, re-cut against the tree as it then is
 (`tickets.md` §1, §4). No file lists here. The feature doc's questions were answered on
-2026-11-25; RD-101…RD-501 are tickets, RD-502 is the next block. Each block is promoted and built
+2026-11-25; RD-101…RD-502 are tickets, RD-601 is the next block. Each block is promoted and built
 whole — the author's call, 2026-11-25 (`tickets.md` §4a waived).
-
-## Viewer
-
-### RD-502 — Carousel badges and Original
-Badges on the carousel; `Original` in the pill for an edited file with click, hold and `\`.
-Theme colours still outside `Theme.kt` after RD-501: `accentEditorSoft` (the prototype's
-`.info-edited`, `#compare` pressed, `button.selected`) and `canvas` (overridden wherever it is set,
-never drawn) — added only if this draws one.
 
 ## Fullscreen and PiP
 

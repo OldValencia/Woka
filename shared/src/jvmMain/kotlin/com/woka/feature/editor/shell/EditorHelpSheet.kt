@@ -61,7 +61,7 @@ private val PHOTO_STEPS = listOf(
     HelpCard("3. Frame the picture", "Choose a shape, drag the edges, level the horizon with Straighten.", HelpStep.Tool("crop")),
     HelpCard(
         "4. Compare, then finish",
-        "Hold Original to see the photo before your edits. Done keeps your edit; Create a copy makes a separate file.",
+        "Click Original, or hold it or \\, to see the photo before your edits. Done keeps your edit; Create a copy makes a separate file.",
         HelpStep.Copy
     )
 )

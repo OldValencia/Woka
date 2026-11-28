@@ -1,9 +1,13 @@
 package com.woka.feature.viewer.shell
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import com.woka.core.data.MediaItem
+import com.woka.core.ui.components.OriginalLabel
 import com.woka.core.ui.components.frames.FrameTransport
 import com.woka.feature.viewer.video.FrameSpeedPopover
 import com.woka.feature.viewer.video.PlayerSettingsOverlay
@@ -61,6 +65,10 @@ internal fun MediaViewerPlayerOverlays(
         event = state.zoomHudEvent,
         label = "${state.sizeMode.percentIn(state.containerSize, state.nativeSize)}%"
     )
+    // Over the picture while `Original` shows (RD-502, `.original-label`).
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+        OriginalLabel(state.original.active)
+    }
     VolumeVerticalOverlay(
         isVisible = state.hover.visibleTarget == HoverTarget.Volume || volumeFlash,
         volume = mediaVolume,

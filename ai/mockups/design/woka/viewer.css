@@ -90,7 +90,7 @@
 .audio-artist{font-size:13px;color:var(--text-secondary);margin-top:-14px}
 
 /* Carousel badges: what a file is, and whether it carries an edit. */
-.media-chip{position:absolute;left:4px;bottom:4px;display:flex;align-items:center;gap:2px;height:16px;padding:0 4px;border-radius:5px;background:var(--black-53p3);color:var(--white);font-size:9px;font-weight:600;line-height:1}
+.media-chip{position:absolute;left:4px;bottom:4px;display:flex;align-items:center;gap:2px;height:16px;padding:0 4px;border-radius:5px;background:var(--black-50);color:var(--white);font-size:9px;font-weight:600;line-height:1}
 .media-chip svg{width:8px;height:8px}
 .media-edited{position:absolute;right:4px;top:4px;width:7px;height:7px;border-radius:50%;background:var(--accent-editor);box-shadow:0 0 0 1.5px var(--black-40)}
 #viewer-original[aria-pressed=true]{color:var(--accent)}

@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.IntSize
 import com.woka.core.data.ScalePreset
 import com.woka.core.data.StillColorInfo
+import com.woka.core.ui.components.OriginalCompare
 import com.woka.core.ui.components.frames.FrameTransport
 
 @Stable
@@ -36,6 +37,10 @@ class MediaViewerState(initialId: String) {
     var frameSpeed by mutableStateOf(1f)
     var showFrameNumbers by mutableStateOf(false)
     var frameTransport by mutableStateOf<FrameTransport?>(null)
+    // `Original` (RD-502): offered only for a file that carries an edit, outside fullscreen,
+    // which `MediaViewerPlayer` publishes; ended wherever the file or the screen changes.
+    val original = OriginalCompare()
+    var canShowOriginal by mutableStateOf(false)
     // Semantic size state (drives the indicator, clicks, Ctrl+Scroll).
     var sizeMode by mutableStateOf<SizeMode>(SizeMode.Preset(ScalePreset.Fit))
     // Derived graphics-layer scale published by MediaViewerContent, consumed by the

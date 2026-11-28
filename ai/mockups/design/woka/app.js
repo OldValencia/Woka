@@ -227,6 +227,8 @@ $('#audio-file').onchange=event=>{
 };
 document.addEventListener('keydown',event=>{
   if($('#dialog').open||document.activeElement.isContentEditable||['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName))return;
+  // Hold \ to see the original (RD-502): the editor always, the viewer for an edited file, never in fullscreen.
+  if(event.key==='\\'&&!event.repeat&&(!viewerMode||editedIds.has(currentScene))&&!$('#app-shell').classList.contains('focus-view')){event.preventDefault();heldBackslash=compareOriginal;toggleComparison(true);}
   if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='z'){event.preventDefault();event.shiftKey?redo():undo();}
   if(event.code==='Space'&&document.activeElement.tagName!=='BUTTON'){event.preventDefault();play();}
   if(event.key.toLowerCase()==='s'&&!event.ctrlKey&&!event.metaKey&&!event.altKey&&state.mode==='video'&&!viewerMode){event.preventDefault();splitClip();}
@@ -235,5 +237,7 @@ document.addEventListener('keydown',event=>{
   if(event.key==='Escape'){if(!$('#tooltip').hidden){hideTooltip();return;}if(compareOriginal)toggleComparison(false);else if($('#editor').classList.contains('focus'))$('#focus').click();else if(state.selection){state.selection=null;render();}else requestExit();}
   if(event.key==='Delete'&&!viewerMode){if(selectedAudio())action('delete-audio');else if(selectedClip())action('delete-clip');else if(state.selection==='caption')action('remove-text');}
 });
+let heldBackslash=null;
+document.addEventListener('keyup',event=>{if(event.key==='\\'&&heldBackslash!==null){toggleComparison(heldBackslash);heldBackslash=null;}});
 window.addEventListener('resize',updatePlayhead);
 initTimeline();initCrop();initWoka();initTransport();initNowPlaying();initFullscreen();initDialogs();initSettings();initLibrary();setScene('photo');initExperience();initRefine();initInstruments();

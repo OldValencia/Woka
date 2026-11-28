@@ -131,7 +131,7 @@ object MediaThumbnails {
  *
  * [report] is false where a failure is an ordinary answer rather than news.
  */
-private inline fun <T> decoded(fallback: T, report: Boolean, body: () -> T): T =
+internal inline fun <T> decoded(fallback: T, report: Boolean, body: () -> T): T =
     try {
         body()
     } catch (e: CancellationException) {

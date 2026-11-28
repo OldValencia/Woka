@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.woka.app.shell.LocalCanvasOverride
 import com.woka.core.data.CarouselVisibility
+import com.woka.core.ui.components.OriginalCompare
 import com.woka.core.ui.theme.Theme
 import com.woka.feature.viewer.shell.zoom.SizeControl
 
@@ -67,6 +68,8 @@ fun MediaViewerNormalControls(
     showHdrMode: Boolean = true,
     /** Fit/Fill and zoom; false for a track, whose cover is not a picture to size (AP-003). */
     showSizeControl: Boolean = true,
+    /** `Original` for a file that carries an edit; null hides it (RD-502). */
+    original: OriginalCompare? = null,
     modifier: Modifier = Modifier
 ) {
     val override = LocalCanvasOverride.current
@@ -112,6 +115,11 @@ fun MediaViewerNormalControls(
         AnimatedVisibility(visible = !override.editing) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 PillGap()
+                // First in the group, as `.viewer-actions` orders it: Original, carousel, | Edit.
+                original?.let { compare ->
+                    ViewerOriginalButton(compare)
+                    PillGap()
+                }
                 ToggleCarouselButton(carouselMode, onToggleCarousel)
                 if (onEdit != null) EditGroup(onEdit)
             }

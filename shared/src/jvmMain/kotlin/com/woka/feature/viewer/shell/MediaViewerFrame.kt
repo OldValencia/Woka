@@ -6,6 +6,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
@@ -24,6 +25,13 @@ import com.woka.feature.viewer.video.engine.PlayEditedRanges
 import com.woka.feature.viewer.video.engine.PlayEditedSound
 import com.woka.feature.viewer.video.engine.activeCue
 import com.woka.feature.viewer.video.SubtitleBitmapLayer
+
+/**
+ * Whether the viewer shows the picture as shot (RD-502), for a film's frame. A local rather
+ * than a parameter because the frame is four layers of pass-through below the state that
+ * holds it; a surface that provides nothing — the fullscreen window — never compares.
+ */
+internal val LocalViewerOriginal = compositionLocalOf { false }
 
 /**
  * The drawn frame itself: picks the tone-mapping painter for HDR video, applies the
@@ -63,7 +71,11 @@ fun MediaViewerFrame(
     val edit = remember(file, AppliedVideoEdits.generation) { file?.let { AppliedVideoEdits.editOf(it) } }
     // Where the frame stands, for timed markup (ME-263) — read with the frame it belongs to.
     val atMs = video?.player?.currentPositionMs
-    val edited = remember(frameToDraw, edit, color, moving) { edit?.painter(frameToDraw, color, moving, atMs) }
+    // `Original` draws the frame bare (RD-502): the look goes, the kept ranges and sound play on.
+    val original = LocalViewerOriginal.current
+    val edited = remember(frameToDraw, edit, color, moving, original) {
+        if (original) null else edit?.painter(frameToDraw, color, moving, atMs)
+    }
     val painter = edited ?: rememberFramePainter(frameToDraw, color, moving = moving)
     if (video != null && edit != null) PlayEditedRanges(video.player, edit.clock)
     if (video != null && edit != null) PlayEditedSound(video.player, edit)

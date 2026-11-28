@@ -65,7 +65,8 @@ internal fun Modifier.mediaViewerPlayerModifier(
             },
             onToggleFullscreen = onToggleFullscreen,
             soundBoost = soundBoost,
-            onFrameKey = { dir -> state.stepOneFrame(videoState, clock, dir) }
+            onFrameKey = { dir -> state.stepOneFrame(videoState, clock, dir) },
+            original = { state.offeredOriginal() }
         )
         .pointerInput(Unit) {
             awaitPointerEventScope {

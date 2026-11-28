@@ -24,8 +24,9 @@ the tree as it is (`tickets.md` §1). The prototype itself is finished —
 | [RD-301 — Timeline](tickets/RD-301-timeline.md) | **done** 2026-11-26 |
 | [RD-302 — Clip and Sound tabs, the scope line](tickets/RD-302-clip-sound-tabs.md) | **done** 2026-11-26 |
 | [RD-401 — Ways out](tickets/RD-401-ways-out.md) | **done** 2026-11-27 |
-| [RD-501 — One transport and the GIF](tickets/RD-501-one-transport-gif.md) | implemented 2026-11-27, awaiting the author's check by hand |
-| RD-502…RD-802 | [backlog](tickets/backlog.md) |
+| [RD-501 — One transport and the GIF](tickets/RD-501-one-transport-gif.md) | **done** 2026-11-27 |
+| [RD-502 — Carousel badges and Original](tickets/RD-502-carousel-badges-original.md) | **done** 2026-11-28 |
+| RD-601…RD-802 | [backlog](tickets/backlog.md) |
 
 ## The spec, scene by scene
 
@@ -164,3 +165,7 @@ pill with HDR met `Original` at 960 px, measured 2026-11-25), so the window's mi
 | 2026-11-27 | GIF speed scale | 0.25–5×, two log halves with 1× at the centre, detents 0.5…5×; the film's slider stays 0.5–2× | The author, after trying 0.5–2× |
 | 2026-11-27 | GIF into the editor | Frame, play/pause, Loop and the label's mode carried; speed starts at 1× | The author |
 | 2026-11-26 | Markup and a clip | Markup is the whole film's: opening it clears the clip, a shape is a crumb; a clip's stored markup left to the readers | The author: as the prototype; the Markup lane is in film time |
+| 2026-11-28 | A film's `Original` in the viewer | The same moment without the look; cuts, speed and sound stay | The author: as the editor's `Original`; no seek into the uncut source |
+| 2026-11-28 | The editor's `Original` | The prototype's: click toggles, hold, `\`, the label, Esc — one control with the viewer's | The author; RD-201 had kept it hold-only |
+| 2026-11-28 | An animation's carousel badge | The file's format, from its extension (`GIF`, `WEBP`) | The author |
+| 2026-11-28 | A cut film's carousel length | The result's length, as the transport reads it | The author |
